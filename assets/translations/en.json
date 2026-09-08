@@ -1,0 +1,158 @@
+{
+  "app_name": "CG-NET",
+  "common": {
+    "continue": "Continue",
+    "next": "Next",
+    "skip": "Skip",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success",
+    "search": "Search",
+    "done": "Done",
+    "logout": "Log out",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "home": "Home",
+    "package": "Packages",
+    "inbox": "Inbox",
+    "support": "Help",
+    "profile": "Account"
+  },
+  "language": {
+    "title": "Choose your language",
+    "subtitle": "You can change this later in Profile settings.",
+    "english": "English",
+    "myanmar": "မြန်မာ",
+    "chinese": "中文"
+  },
+  "splash": {
+    "tagline": "Stay connected"
+  },
+  "onboarding": {
+    "slide1_title": "Fast fiber internet",
+    "slide1_body": "Reliable high-speed broadband for home and business.",
+    "slide2_title": "Manage your plan",
+    "slide2_body": "View packages, invoices, and account details in one place.",
+    "slide3_title": "24/7 support",
+    "slide3_body": "Chat with our team whenever you need help.",
+    "get_started": "Get started"
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Enter your mobile number to sign in.",
+    "phone_label": "Phone number",
+    "phone_hint": "9xxxxxxxxx",
+    "send_otp": "Send OTP",
+    "country_restricted": "Available for Myanmar, Thailand, and China numbers."
+  },
+  "otp": {
+    "title": "Verify OTP",
+    "subtitle": "Enter the 6-digit code sent to {phone}",
+    "resend": "Resend code",
+    "verify": "Verify",
+    "success_title": "Verified!",
+    "success_body": "Your phone number has been verified successfully.",
+    "continue_setup": "Continue setup"
+  },
+  "set_credentials": {
+    "title": "Create account",
+    "subtitle": "Choose a username and password to secure your account.",
+    "username": "Username",
+    "password": "Password",
+    "confirm_password": "Confirm password",
+    "create": "Create account"
+  },
+  "home": {
+    "title": "Home",
+    "account_number": "Account number",
+    "balance_label": "Available balance",
+    "balance_value": "{amount} MMK",
+    "action_topup": "Top up",
+    "action_transfer": "Transfer",
+    "action_history": "History",
+    "action_link": "Link account",
+    "plan_expires": "Expires {date}",
+    "in_use": "In Use",
+    "view_details": "VIEW DETAILS",
+    "login_info": "LOGIN INFORMATION",
+    "username": "Username",
+    "password": "Password",
+    "services": "Services",
+    "see_all": "See all",
+    "service_pay": "Pay Bill",
+    "service_check": "Check Bill",
+    "service_history": "History",
+    "promo_title": "CG Net Store",
+    "promo_body": "Manage plans and offers in one place.",
+    "promo_cta": "Download Now",
+    "special_offers": "Special data packages",
+    "offer_month": "/ month",
+    "buy_now": "Buy now"
+  },
+  "package": {
+    "title": "Packages",
+    "current": "Current plan",
+    "speed": "Speed",
+    "price": "Price",
+    "billing": "Billing",
+    "data": "Data",
+    "features": "Features",
+    "empty_title": "No packages available",
+    "empty_body": "Please check back later for available plans.",
+    "monthly": " / month"
+  },
+  "inbox": {
+    "title": "Inbox",
+    "empty_title": "No messages",
+    "empty_body": "You'll see announcements and notifications here.",
+    "detail_title": "Message"
+  },
+  "support": {
+    "title": "Support",
+    "chat_list_title": "Conversations",
+    "empty_title": "No chats yet",
+    "empty_body": "Start a conversation with our support team.",
+    "chat_detail_title": "Chat",
+    "type_message": "Type a message..."
+  },
+  "profile": {
+    "title": "Profile",
+    "edit": "Edit profile",
+    "language": "Language",
+    "change_password": "Change password",
+    "devices": "Devices & sessions",
+    "notifications": "Notification preferences",
+    "about": "About app",
+    "edit_title": "Edit profile",
+    "full_name": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "language_title": "Language settings",
+    "password_title": "Change password",
+    "current_password": "Current password",
+    "new_password": "New password",
+    "devices_title": "Devices & sessions",
+    "notifications_title": "Notifications",
+    "about_title": "About",
+    "version": "Version",
+    "push_notifications": "Push notifications",
+    "email_notifications": "Email notifications",
+    "sms_notifications": "SMS notifications"
+  },
+  "shared": {
+    "no_internet_title": "No internet connection",
+    "no_internet_body": "Please check your connection and try again.",
+    "force_update_title": "Update required",
+    "force_update_body": "A new version of CG Net is available. Please update to continue.",
+    "update_now": "Update now",
+    "not_found_title": "Page not found",
+    "not_found_body": "The page you're looking for doesn't exist.",
+    "go_home": "Go home"
+  }
+}

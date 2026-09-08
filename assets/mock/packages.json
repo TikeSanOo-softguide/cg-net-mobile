@@ -1,0 +1,66 @@
+[
+  {
+    "id": "pkg_home_50",
+    "name": "Home Fiber 50",
+    "speed": "50 Mbps",
+    "price": 25000,
+    "currency": "MMK",
+    "billing_cycle": "monthly",
+    "data_limit": "Unlimited",
+    "is_current": true,
+    "features": [
+      "Unlimited data",
+      "Free Wi-Fi router",
+      "24/7 support",
+      "No contract lock-in"
+    ]
+  },
+  {
+    "id": "pkg_home_100",
+    "name": "Home Fiber 100",
+    "speed": "100 Mbps",
+    "price": 45000,
+    "currency": "MMK",
+    "billing_cycle": "monthly",
+    "data_limit": "Unlimited",
+    "is_current": false,
+    "features": [
+      "Unlimited data",
+      "Free Wi-Fi 6 router",
+      "Priority support",
+      "Static IP option"
+    ]
+  },
+  {
+    "id": "pkg_biz_200",
+    "name": "Business Pro 200",
+    "speed": "200 Mbps",
+    "price": 98000,
+    "currency": "MMK",
+    "billing_cycle": "monthly",
+    "data_limit": "Unlimited",
+    "is_current": false,
+    "features": [
+      "SLA 99.5% uptime",
+      "Dedicated account manager",
+      "Static public IP",
+      "Business-hours install"
+    ]
+  },
+  {
+    "id": "pkg_ultra_500",
+    "name": "Ultra Fiber 500",
+    "speed": "500 Mbps",
+    "price": 165000,
+    "currency": "MMK",
+    "billing_cycle": "monthly",
+    "data_limit": "Unlimited",
+    "is_current": false,
+    "features": [
+      "Ultra-low latency",
+      "Wi-Fi 6E mesh kit",
+      "Priority support",
+      "Free installation"
+    ]
+  }
+]

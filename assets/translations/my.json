@@ -1,0 +1,158 @@
+{
+  "app_name": "CG-NET",
+  "common": {
+    "continue": "ဆက်လုပ်မည်",
+    "next": "ရှေ့သို့",
+    "skip": "ကျော်မည်",
+    "back": "နောက်သို့",
+    "save": "သိမ်းမည်",
+    "cancel": "ပယ်ဖျက်မည်",
+    "retry": "ပြန်ကြိုးစားမည်",
+    "submit": "တင်သွင်းမည်",
+    "loading": "ဖွင့်နေသည်...",
+    "error": "တစ်ခုခုမှားယွင်းနေသည်",
+    "success": "အောင်မြင်ပါသည်",
+    "search": "ရှာဖွေမည်",
+    "done": "ပြီးပါပြီ",
+    "logout": "ထွက်မည်",
+    "confirm": "အတည်ပြုမည်"
+  },
+  "nav": {
+    "home": "ပင်မ",
+    "package": "ပက်ကေ့ချ်များ",
+    "inbox": "စာအိတ်",
+    "support": "အကူအညီ",
+    "profile": "အကောင့်"
+  },
+  "language": {
+    "title": "ဘာသာစကားရွေးချယ်ပါ",
+    "subtitle": "နောက်မှ ပရိုဖိုင်ဆက်တင်တွင် ပြောင်းနိုင်ပါသည်။",
+    "english": "English",
+    "myanmar": "မြန်မာ",
+    "chinese": "中文"
+  },
+  "splash": {
+    "tagline": "ချိတ်ဆက်နေပါစေ"
+  },
+  "onboarding": {
+    "slide1_title": "အမြန်ဖိုင်ဘာအင်တာနက်",
+    "slide1_body": "အိမ်နှင့်လုပ်ငန်းအတွက် ယုံကြည်စိတ်ချရသော မြန်နှုန်းမြင့် အင်တာနက်။",
+    "slide2_title": "ပလန်စီမံခန့်ခွဲပါ",
+    "slide2_body": "ပက်ကေ့ချ်၊ ငွေတောင်းခံလွှာနှင့် အကောင့်အချက်အလက်များကို တစ်နေရာတည်းတွင် ကြည့်ရှုပါ။",
+    "slide3_title": "၂၄/၇ အကူအညီ",
+    "slide3_body": "လိုအပ်သည့်အခါ အဖွဲ့နှင့် ချက်ချင်း စကားပြောနိုင်ပါသည်။",
+    "get_started": "စတင်မည်"
+  },
+  "login": {
+    "title": "ပြန်လည်ကြိုဆိုပါသည်",
+    "subtitle": "ဝင်ရောက်ရန် ဖုန်းနံပါတ်ထည့်ပါ။",
+    "phone_label": "ဖုန်းနံပါတ်",
+    "phone_hint": "9xxxxxxxxx",
+    "send_otp": "OTP ပို့မည်",
+    "country_restricted": "မြန်မာ၊ ထိုင်းနှင့် တရုတ် နံပါတ်များသာ ရရှိနိုင်သည်။"
+  },
+  "otp": {
+    "title": "OTP အတည်ပြုရန်",
+    "subtitle": "{phone} သို့ ပို့ထားသော ဂဏန်း ၆ လုံး ကုဒ်ကို ထည့်ပါ",
+    "resend": "ကုဒ်ပြန်ပို့မည်",
+    "verify": "အတည်ပြုမည်",
+    "success_title": "အတည်ပြုပြီး!",
+    "success_body": "သင့်ဖုန်းနံပါတ်ကို အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ။",
+    "continue_setup": "ဆက်လက်သတ်မှတ်မည်"
+  },
+  "set_credentials": {
+    "title": "အကောင့်ဖန်တီးမည်",
+    "subtitle": "အကောင့်လုံခြုံရန် အသုံးပြုသူအမည်နှင့် စကားဝှက် ရွေးပါ။",
+    "username": "အသုံးပြုသူအမည်",
+    "password": "စကားဝှက်",
+    "confirm_password": "စကားဝှက်အတည်ပြုရန်",
+    "create": "အကောင့်ဖန်တီးမည်"
+  },
+  "home": {
+    "title": "ပင်မ",
+    "account_number": "အကောင့်နံပါတ်",
+    "balance_label": "လက်ကျန်ငွေ ပမာဏ",
+    "balance_value": "{amount} ကျပ်",
+    "action_topup": "ငွေဖြည့်ရန်",
+    "action_transfer": "ငွေလွှဲ",
+    "action_history": "မှတ်တမ်း",
+    "action_link": "အကောင့်ချိတ်ရန်",
+    "plan_expires": "သက်တမ်းကုန် {date}",
+    "in_use": "In Use",
+    "view_details": "အသေးစိတ်ကြည့်ရန်",
+    "login_info": "LOGIN INFORMATION",
+    "username": "Username",
+    "password": "Password",
+    "services": "ဝန်ဆောင်မှုများ",
+    "see_all": "အားလုံးကြည့်ရန်",
+    "service_pay": "ဘေလ်ပေးရန်",
+    "service_check": "ဘေလ်စစ်ရန်",
+    "service_history": "မှတ်တမ်း",
+    "promo_title": "CG Net Store",
+    "promo_body": "ပလန်နှင့်အထူးကမ်းလှမ်းမှုများကို တစ်နေရာတည်းတွင် စီမံပါ။",
+    "promo_cta": "Download Now",
+    "special_offers": "အထူး ဒေတာပက်ကေ့ချ်များ",
+    "offer_month": "/ လ",
+    "buy_now": "ဝယ်မည်"
+  },
+  "package": {
+    "title": "ပက်ကေ့ချ်များ",
+    "current": "လက်ရှိပလန်",
+    "speed": "မြန်နှုန်း",
+    "price": "စျေးနှုန်း",
+    "billing": "ငွေပေးချေမှု",
+    "data": "ဒေတာ",
+    "features": "အင်္ဂါရပ်များ",
+    "empty_title": "ပက်ကေ့ချ်မရှိပါ",
+    "empty_body": "ရရှိနိုင်သော ပလန်များအတွက် နောက်မှ ပြန်စစ်ပါ။",
+    "monthly": " / လ"
+  },
+  "inbox": {
+    "title": "စာတိုက်",
+    "empty_title": "မက်ဆေ့ချ်မရှိပါ",
+    "empty_body": "ကြေညာချက်နှင့် အသိပေးချက်များကို ဤနေရာတွင် မြင်ရပါမည်။",
+    "detail_title": "မက်ဆေ့ချ်"
+  },
+  "support": {
+    "title": "အကူအညီ",
+    "chat_list_title": "စကားဝိုင်းများ",
+    "empty_title": "စကားဝိုင်းမရှိသေးပါ",
+    "empty_body": "အကူအညီအဖွဲ့နှင့် စကားပြောရန် စတင်ပါ။",
+    "chat_detail_title": "စကားပြော",
+    "type_message": "မက်ဆေ့ချ် ရိုက်ထည့်ပါ..."
+  },
+  "profile": {
+    "title": "ပရိုဖိုင်",
+    "edit": "ပရိုဖိုင်ပြင်ဆင်ရန်",
+    "language": "ဘာသာစကား",
+    "change_password": "စကားဝှက်ပြောင်းရန်",
+    "devices": "စက်နှင့် ဆက်ရှင်များ",
+    "notifications": "အသိပေးချက် ဦးစားပေးများ",
+    "about": "အက်ပ်အကြောင်း",
+    "edit_title": "ပရိုဖိုင်ပြင်ဆင်ရန်",
+    "full_name": "အမည်အပြည့်အစုံ",
+    "email": "အီးမေးလ်",
+    "phone": "ဖုန်း",
+    "language_title": "ဘာသာစကားဆက်တင်",
+    "password_title": "စကားဝှက်ပြောင်းရန်",
+    "current_password": "လက်ရှိစကားဝှက်",
+    "new_password": "စကားဝှက်အသစ်",
+    "devices_title": "စက်နှင့် ဆက်ရှင်များ",
+    "notifications_title": "အသိပေးချက်များ",
+    "about_title": "အကြောင်း",
+    "version": "ဗားရှင်း",
+    "push_notifications": "ပုရှ်အသိပေးချက်",
+    "email_notifications": "အီးမေးလ်အသိပေးချက်",
+    "sms_notifications": "SMS အသိပေးချက်"
+  },
+  "shared": {
+    "no_internet_title": "အင်တာနက်မရှိပါ",
+    "no_internet_body": "ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။",
+    "force_update_title": "အပ်ဒိတ်လိုအပ်သည်",
+    "force_update_body": "CG Net ဗားရှင်းအသစ် ရရှိနိုင်ပါသည်။ ဆက်လုပ်ရန် အပ်ဒိတ်လုပ်ပါ။",
+    "update_now": "ယခုအပ်ဒိတ်လုပ်မည်",
+    "not_found_title": "စာမျက်နှာမတွေ့ပါ",
+    "not_found_body": "သင်ရှာနေသော စာမျက်နှာ မရှိပါ။",
+    "go_home": "ပင်မသို့သွားမည်"
+  }
+}
