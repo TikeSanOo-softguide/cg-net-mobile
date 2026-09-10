@@ -49,6 +49,5 @@ class PackageModel {
         'features': features,
       };
 
-  String get formattedPrice =>
-      '$currency ${price.toStringAsFixed(0)}';
+  String get formattedPrice => '$currency ${price.toStringAsFixed(0)}';
 }

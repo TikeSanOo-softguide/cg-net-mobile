@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'inbox_detail_controller.dart';
+import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 
 class InboxDetailPage extends ConsumerWidget {
   const InboxDetailPage({super.key, required this.id});
@@ -13,8 +14,9 @@ class InboxDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final message = ref.watch(inboxDetailControllerProvider(id));
 
-    return Scaffold(
-      appBar: AppBar(title: Text('inbox.detail_title'.tr())),
+    return AppCurvedScaffold(
+      title: Text('inbox.detail_title'.tr()),
+      showBack: true,
       body: message.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),

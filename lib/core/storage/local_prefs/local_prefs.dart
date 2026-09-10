@@ -25,7 +25,8 @@ class LocalPrefs {
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('sharedPreferencesProvider must be overridden in main');
+  throw UnimplementedError(
+      'sharedPreferencesProvider must be overridden in main');
 });
 
 final localPrefsProvider = Provider<LocalPrefs>((ref) {

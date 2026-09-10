@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'notification_preferences_controller.dart';
+import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 
 class NotificationPreferencesPage extends ConsumerWidget {
   const NotificationPreferencesPage({super.key});
@@ -13,8 +14,9 @@ class NotificationPreferencesPage extends ConsumerWidget {
     final controller =
         ref.read(notificationPreferencesControllerProvider.notifier);
 
-    return Scaffold(
-      appBar: AppBar(title: Text('profile.notifications_title'.tr())),
+    return AppCurvedScaffold(
+      title: Text('profile.notifications_title'.tr()),
+      showBack: true,
       body: ListView(
         children: [
           SwitchListTile(

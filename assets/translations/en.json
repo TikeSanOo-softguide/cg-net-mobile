@@ -49,11 +49,18 @@
     "phone_label": "Phone number",
     "phone_hint": "9xxxxxxxxx",
     "send_otp": "Send OTP",
+    "terms_prefix": "I agree to the ",
+    "terms_link": "Terms & Conditions",
+    "terms_suffix": "",
     "country_restricted": "Available for Myanmar, Thailand, and China numbers."
+  },
+  "terms": {
+    "title": "Terms & Conditions",
+    "body": "By using the CG-NET mobile app, you agree to use our internet services lawfully and keep your account credentials secure.\n\nYou are responsible for activity under your account. CG-NET may update these terms to improve service quality, security, and compliance.\n\nWe collect only the information needed to provide connectivity, billing, and support. Your data is handled according to our privacy practices.\n\nService availability depends on network coverage and plan status. For support, contact CG-NET Help from the app anytime."
   },
   "otp": {
     "title": "Verify OTP",
-    "subtitle": "Enter the 6-digit code sent to {phone}",
+    "subtitle": "Enter the 4-digit code sent to {phone}",
     "resend": "Resend code",
     "verify": "Verify",
     "success_title": "Verified!",
@@ -71,8 +78,9 @@
   "home": {
     "title": "Home",
     "account_number": "Account number",
-    "balance_label": "Available balance",
+    "balance_label": "Balance",
     "balance_value": "{amount} MMK",
+    "bind_now": "Bind Now",
     "action_topup": "Top up",
     "action_transfer": "Transfer",
     "action_history": "History",
@@ -84,15 +92,22 @@
     "username": "Username",
     "password": "Password",
     "services": "Services",
-    "see_all": "See all",
+    "see_all": "See All",
     "service_pay": "Pay Bill",
     "service_check": "Check Bill",
     "service_history": "History",
+    "service_packages": "Installation",
+    "service_support": "Complaint",
+    "service_alerts": "Relocation",
+    "service_check_cpe": "Check CPE",
+    "service_change_plan": "Change Plan",
+    "service_change_wifi": "Change WiFi Password",
     "promo_title": "CG Net Store",
     "promo_body": "Manage plans and offers in one place.",
     "promo_cta": "Download Now",
     "special_offers": "Special data packages",
     "offer_month": "/ month",
+    "popular": "Popular",
     "buy_now": "Buy now"
   },
   "package": {
@@ -105,7 +120,19 @@
     "features": "Features",
     "empty_title": "No packages available",
     "empty_body": "Please check back later for available plans.",
-    "monthly": " / month"
+    "monthly": " / month",
+    "input_example_title": "Common input fields",
+    "input_example_body": "Example form using shared AppInput styles.",
+    "search_label": "Search package",
+    "search_hint": "e.g. 20Mbps",
+    "account_label": "Account number",
+    "account_hint": "Enter account number",
+    "email_hint": "name@example.com",
+    "pin_label": "PIN",
+    "pin_hint": "6-digit PIN",
+    "note_label": "Note",
+    "note_hint": "Optional note",
+    "input_saved": "Form values captured (example)."
   },
   "inbox": {
     "title": "Inbox",
@@ -115,14 +142,16 @@
   },
   "support": {
     "title": "Support",
+    "chat_title": "Support chat",
     "chat_list_title": "Conversations",
     "empty_title": "No chats yet",
     "empty_body": "Start a conversation with our support team.",
     "chat_detail_title": "Chat",
-    "type_message": "Type a message..."
+    "type_message": "Type something..."
   },
   "profile": {
-    "title": "Profile",
+    "title": "Account",
+    "general": "General settings",
     "edit": "Edit profile",
     "language": "Language",
     "change_password": "Change password",
@@ -141,6 +170,7 @@
     "notifications_title": "Notifications",
     "about_title": "About",
     "version": "Version",
+    "icon_credits": "Receipt icons created by srip - Flaticon",
     "push_notifications": "Push notifications",
     "email_notifications": "Email notifications",
     "sms_notifications": "SMS notifications"

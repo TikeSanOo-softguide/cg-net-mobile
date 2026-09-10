@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
+import '../../core/theme/app_style/app_style.dart';
+import '../../core/theme/app_theme/app_theme.dart';
 import '../app_button/app_button.dart';
 
 class EmptyState extends StatelessWidget {
@@ -8,7 +11,7 @@ class EmptyState extends StatelessWidget {
     super.key,
     required this.title,
     required this.message,
-    this.icon = Icons.inbox_outlined,
+    this.icon = LucideIcons.inbox,
     this.actionLabel,
     this.onAction,
   });
@@ -23,25 +26,25 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppStyle.spaceXxxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 64, color: AppColors.textSecondary),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppStyle.spaceLg),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: AppTheme.pageTitle(),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppStyle.spaceSm),
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: AppTheme.bodySecondary(),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppStyle.spaceXxl),
               AppButton(
                 label: actionLabel!,
                 onPressed: onAction,

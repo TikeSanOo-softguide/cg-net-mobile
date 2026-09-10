@@ -1,67 +1,78 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../../core/theme/app_colors/app_colors.dart';
+import '../../../../core/theme/app_style/app_style.dart';
+import '../../../../core/theme/app_theme/app_theme.dart';
 
 class HomeQuickActions extends StatelessWidget {
   const HomeQuickActions({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final locale = context.locale.languageCode;
     final actions = [
-      (Icons.add_card_rounded, 'home.action_topup'.tr()),
-      (Icons.send_rounded, 'home.action_transfer'.tr()),
-      (Icons.history_rounded, 'home.action_history'.tr()),
-      (Icons.router_rounded, 'home.action_link'.tr()),
+      (LucideIcons.wallet, context.tr('home.action_topup')),
+      (LucideIcons.arrow_left_right, context.tr('home.action_transfer')),
+      (LucideIcons.clipboard_clock, context.tr('home.action_history')),
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      key: ValueKey('quick-actions-$locale'),
+      margin: AppStyle.pagePaddingH,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppStyle.spaceSm,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: AppStyle.borderRadiusMd,
+        boxShadow: AppStyle.cardShadowElevated,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: actions
-            .map(
-              (a) => Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.softBlue,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(a.$1, color: AppColors.primary, size: 20),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      a.$2,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
+        children: [
+          for (var i = 0; i < actions.length; i++) ...[
+            if (i > 0)
+              Container(
+                width: 1,
+                height: 32,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                color: AppColors.borderLight,
               ),
-            )
-            .toList(),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: AppStyle.iconChipDecoration(),
+                    child: Icon(
+                      actions[i].$1,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      actions[i].$2,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionSm(color: AppColors.primary)
+                          .copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        height: 1.15,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

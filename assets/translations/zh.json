@@ -49,11 +49,18 @@
     "phone_label": "手机号码",
     "phone_hint": "9xxxxxxxxx",
     "send_otp": "发送验证码",
+    "terms_prefix": "我同意",
+    "terms_link": "服务条款",
+    "terms_suffix": "",
     "country_restricted": "仅支持缅甸、泰国和中国号码。"
+  },
+  "terms": {
+    "title": "服务条款",
+    "body": "使用 CG-NET 移动应用，即表示您同意合法使用我们的互联网服务，并妥善保管账户凭证。\n\n您对账户下的所有活动负责。CG-NET 可能会更新本条款，以提升服务质量、安全与合规。\n\n我们仅收集提供连接、账单与支持所需的信息，并按隐私规范处理您的数据。\n\n服务可用性取决于网络覆盖与套餐状态。如需帮助，请随时通过应用内 CG-NET Help 联系我们。"
   },
   "otp": {
     "title": "验证码确认",
-    "subtitle": "请输入发送至 {phone} 的 6 位验证码",
+    "subtitle": "请输入发送至 {phone} 的 4 位验证码",
     "resend": "重新发送",
     "verify": "验证",
     "success_title": "验证成功！",
@@ -71,8 +78,9 @@
   "home": {
     "title": "首页",
     "account_number": "账号",
-    "balance_label": "可用余额",
+    "balance_label": "余额",
     "balance_value": "{amount} 缅币",
+    "bind_now": "立即绑定",
     "action_topup": "充值",
     "action_transfer": "转账",
     "action_history": "记录",
@@ -88,11 +96,18 @@
     "service_pay": "缴账单",
     "service_check": "查账单",
     "service_history": "记录",
+    "service_packages": "安装",
+    "service_support": "投诉",
+    "service_alerts": "迁移",
+    "service_check_cpe": "检查 CPE",
+    "service_change_plan": "更换套餐",
+    "service_change_wifi": "修改 WiFi 密码",
     "promo_title": "CG Net Store",
     "promo_body": "在一个地方管理套餐与优惠。",
     "promo_cta": "立即下载",
     "special_offers": "特惠流量套餐",
     "offer_month": "/ 月",
+    "popular": "热门",
     "buy_now": "立即购买"
   },
   "package": {
@@ -105,7 +120,19 @@
     "features": "功能",
     "empty_title": "暂无套餐",
     "empty_body": "请稍后再查看可用方案。",
-    "monthly": " / 月"
+    "monthly": " / 月",
+    "input_example_title": "Common input fields",
+    "input_example_body": "Example form using shared AppInput styles.",
+    "search_label": "Search package",
+    "search_hint": "e.g. 20Mbps",
+    "account_label": "Account number",
+    "account_hint": "Enter account number",
+    "email_hint": "name@example.com",
+    "pin_label": "PIN",
+    "pin_hint": "6-digit PIN",
+    "note_label": "Note",
+    "note_hint": "Optional note",
+    "input_saved": "Form values captured (example)."
   },
   "inbox": {
     "title": "收件箱",
@@ -115,14 +142,16 @@
   },
   "support": {
     "title": "支持",
+    "chat_title": "Support chat",
     "chat_list_title": "会话",
     "empty_title": "暂无会话",
     "empty_body": "与我们的支持团队开始对话。",
     "chat_detail_title": "聊天",
-    "type_message": "输入消息..."
+    "type_message": "Type something..."
   },
   "profile": {
-    "title": "我的",
+    "title": "账户",
+    "general": "通用设置",
     "edit": "编辑资料",
     "language": "语言",
     "change_password": "修改密码",
@@ -141,6 +170,7 @@
     "notifications_title": "通知",
     "about_title": "关于",
     "version": "版本",
+    "icon_credits": "Receipt icons created by srip - Flaticon",
     "push_notifications": "推送通知",
     "email_notifications": "邮件通知",
     "sms_notifications": "短信通知"

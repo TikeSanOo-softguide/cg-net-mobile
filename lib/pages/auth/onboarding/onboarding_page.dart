@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -17,17 +18,17 @@ class OnboardingPage extends ConsumerWidget {
       (
         title: 'onboarding.slide1_title'.tr(),
         body: 'onboarding.slide1_body'.tr(),
-        icon: Icons.speed,
+        icon: LucideIcons.gauge,
       ),
       (
         title: 'onboarding.slide2_title'.tr(),
         body: 'onboarding.slide2_body'.tr(),
-        icon: Icons.manage_accounts_outlined,
+        icon: LucideIcons.user_cog,
       ),
       (
         title: 'onboarding.slide3_title'.tr(),
         body: 'onboarding.slide3_body'.tr(),
-        icon: Icons.support_agent,
+        icon: LucideIcons.headset,
       ),
     ];
 

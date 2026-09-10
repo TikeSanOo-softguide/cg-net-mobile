@@ -1,9 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_colors/app_colors.dart';
 import 'device_session_controller.dart';
+import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 
 class DeviceSessionPage extends ConsumerWidget {
   const DeviceSessionPage({super.key});
@@ -12,8 +14,9 @@ class DeviceSessionPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final devices = ref.watch(deviceSessionControllerProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: Text('profile.devices_title'.tr())),
+    return AppCurvedScaffold(
+      title: Text('profile.devices_title'.tr()),
+      showBack: true,
       body: ListView.separated(
         itemCount: devices.length,
         separatorBuilder: (_, __) => const Divider(height: 1),
@@ -21,7 +24,9 @@ class DeviceSessionPage extends ConsumerWidget {
           final device = devices[index];
           return ListTile(
             leading: Icon(
-              device.isCurrent ? Icons.smartphone : Icons.devices_other,
+              device.isCurrent
+                  ? LucideIcons.smartphone
+                  : LucideIcons.monitor_smartphone,
               color: AppColors.secondary,
             ),
             title: Text(device.name),

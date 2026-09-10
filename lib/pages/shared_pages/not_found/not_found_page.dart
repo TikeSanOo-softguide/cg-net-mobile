@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -19,7 +20,7 @@ class NotFoundPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.search_off,
+                LucideIcons.search_x,
                 size: 72,
                 color: AppColors.textSecondary,
               ),

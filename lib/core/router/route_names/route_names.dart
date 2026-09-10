@@ -1,10 +1,10 @@
 class RouteNames {
   RouteNames._();
 
-  static const language = 'language';
   static const splash = 'splash';
   static const onboarding = 'onboarding';
   static const login = 'login';
+  static const terms = 'terms';
   static const otpVerification = 'otpVerification';
   static const otpSuccess = 'otpSuccess';
   static const setUsernamePassword = 'setUsernamePassword';
@@ -13,8 +13,7 @@ class RouteNames {
   static const packageList = 'packageList';
   static const inboxList = 'inboxList';
   static const inboxDetail = 'inboxDetail';
-  static const chatList = 'chatList';
-  static const chatDetail = 'chatDetail';
+  static const supportChat = 'supportChat';
 
   static const profile = 'profile';
   static const editProfile = 'editProfile';
@@ -32,10 +31,10 @@ class RouteNames {
 class RoutePaths {
   RoutePaths._();
 
-  static const language = '/language';
   static const splash = '/splash';
   static const onboarding = '/onboarding';
   static const login = '/login';
+  static const terms = '/terms';
   static const otpVerification = '/otp-verification';
   static const otpSuccess = '/otp-success';
   static const setUsernamePassword = '/set-username-password';
@@ -44,8 +43,7 @@ class RoutePaths {
   static const packageList = '/package';
   static const inboxList = '/inbox';
   static const inboxDetail = '/inbox/:id';
-  static const chatList = '/support';
-  static const chatDetail = '/support/:id';
+  static const supportChat = '/support';
 
   static const profile = '/profile';
   static const editProfile = '/profile/edit';

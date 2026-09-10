@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -18,7 +19,7 @@ class ErrorNoInternetPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.wifi_off,
+                LucideIcons.wifi_off,
                 size: 72,
                 color: AppColors.textSecondary,
               ),

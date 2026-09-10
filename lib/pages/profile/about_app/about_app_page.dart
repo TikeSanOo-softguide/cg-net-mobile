@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/app_logo/app_logo.dart';
 import '../../../core/utils/version_check/version_check.dart';
 import 'about_app_controller.dart';
 
@@ -13,20 +15,17 @@ class AboutAppPage extends ConsumerWidget {
     ref.watch(aboutAppControllerProvider);
     final versionAsync = ref.watch(packageInfoProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: Text('profile.about_title'.tr())),
+    return AppCurvedScaffold(
+      title: Text('profile.about_title'.tr()),
+      showBack: true,
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Image.asset(
-                'assets/images/cg_net_logo.png',
-                width: 72,
-                height: 72,
-                fit: BoxFit.contain,
-              ),
+          const Center(
+            child: AppLogo(
+              size: 88,
+              padding: 12,
+              borderRadius: 18,
             ),
           ),
           const SizedBox(height: 16),
@@ -47,6 +46,20 @@ class AboutAppPage extends ConsumerWidget {
               'profile.version'.tr(),
               textAlign: TextAlign.center,
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'profile.icon_credits'.tr(),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'https://www.flaticon.com/free-icons/receipt',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
         ],
       ),

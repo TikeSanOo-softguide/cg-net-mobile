@@ -30,8 +30,7 @@ class PackageListState {
 }
 
 class PackageListController extends StateNotifier<PackageListState> {
-  PackageListController(this._repository)
-      : super(const PackageListState()) {
+  PackageListController(this._repository) : super(const PackageListState()) {
     load();
   }
 

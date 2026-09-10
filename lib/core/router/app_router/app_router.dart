@@ -9,10 +9,10 @@ import '../../../pages/auth/otp_success/otp_success_page.dart';
 import '../../../pages/auth/otp_verification/otp_verification_page.dart';
 import '../../../pages/auth/set_username_password/set_username_password_page.dart';
 import '../../../pages/auth/splash/splash_page.dart';
+import '../../../pages/auth/terms/terms_page.dart';
 import '../../../pages/home/home/home_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
-import '../../../pages/language/language_selection/language_selection_page.dart';
 import '../../../pages/package/package_list/package_list_page.dart';
 import '../../../pages/profile/about_app/about_app_page.dart';
 import '../../../pages/profile/change_password/change_password_page.dart';
@@ -24,9 +24,7 @@ import '../../../pages/profile/profile/profile_page.dart';
 import '../../../pages/shared_pages/error_no_internet/error_no_internet_page.dart';
 import '../../../pages/shared_pages/force_update/force_update_page.dart';
 import '../../../pages/shared_pages/not_found/not_found_page.dart';
-import '../../../pages/support/chat_detail/chat_detail_page.dart';
-import '../../../pages/support/chat_list/chat_list_page.dart';
-import '../../storage/local_prefs/local_prefs.dart';
+import '../../../pages/support/support_chat/support_chat_page.dart';
 import '../../storage/secure_storage/secure_storage.dart';
 import '../route_names/route_names.dart';
 
@@ -34,27 +32,19 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final secureStorage = ref.watch(secureStorageProvider);
-  final localPrefs = ref.watch(localPrefsProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: RoutePaths.language,
+    initialLocation: RoutePaths.splash,
     debugLogDiagnostics: true,
     redirect: (context, state) async {
       final loc = state.matchedLocation;
-      final languageChosen = localPrefs.hasChosenLanguage;
       final hasToken = await secureStorage.hasToken();
-
-      if (!languageChosen) {
-        return loc == RoutePaths.language ? null : RoutePaths.language;
-      }
-      if (loc == RoutePaths.language) {
-        return hasToken ? RoutePaths.home : RoutePaths.splash;
-      }
 
       final isPublic = loc == RoutePaths.splash ||
           loc == RoutePaths.onboarding ||
           loc == RoutePaths.login ||
+          loc == RoutePaths.terms ||
           loc.startsWith('/otp') ||
           loc.startsWith('/set-username') ||
           loc.startsWith('/error') ||
@@ -76,11 +66,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const NotFoundPage(),
     routes: [
       GoRoute(
-        path: RoutePaths.language,
-        name: RouteNames.language,
-        builder: (context, state) => const LanguageSelectionPage(),
-      ),
-      GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
         builder: (context, state) => const SplashPage(),
@@ -94,6 +79,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.login,
         name: RouteNames.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.terms,
+        name: RouteNames.terms,
+        builder: (context, state) => const TermsPage(),
       ),
       GoRoute(
         path: RoutePaths.otpVerification,
@@ -179,19 +169,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: RoutePaths.chatList,
-                name: RouteNames.chatList,
-                builder: (context, state) => const ChatListPage(),
-                routes: [
-                  GoRoute(
-                    path: ':id',
-                    name: RouteNames.chatDetail,
-                    builder: (context, state) {
-                      final id = state.pathParameters['id']!;
-                      return ChatDetailPage(id: id);
-                    },
-                  ),
-                ],
+                path: RoutePaths.supportChat,
+                name: RouteNames.supportChat,
+                builder: (context, state) => const SupportChatPage(),
               ),
             ],
           ),

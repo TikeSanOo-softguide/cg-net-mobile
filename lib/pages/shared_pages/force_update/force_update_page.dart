@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -17,7 +18,7 @@ class ForceUpdatePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.system_update,
+                LucideIcons.download,
                 size: 72,
                 color: AppColors.secondary,
               ),

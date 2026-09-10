@@ -1,33 +1,46 @@
 import 'package:flutter/material.dart';
 
-/// CG Net brand tokens aligned with Figma CG-NT Home.
+/// CG-NET brand color tokens.
 class AppColors {
   AppColors._();
 
-  /// Main brand blue (header, bottom nav, CTAs)
-  static const Color primary = Color(0xFF0100CA);
+  /// Main brand blue — CTAs, header, nav, focus rings
+  static const Color primary = Color(0xFF004AC6);
 
-  /// Accent yellow — Figma "secondary color"
+  /// Light primary surfaces (icon chips, soft fills, secondary buttons)
+  static const Color primaryLight = Color(0xFFE2F1FF);
+
+  /// Softer primary wash (hover / selected chips)
+  static const Color primarySoft = Color(0xFFF3F8FF);
+
+  /// Mid primary tint (pressed / hover borders)
+  static const Color primaryMuted = Color(0xFFB2D0F6);
+
+  /// Darker primary for gradients / emphasis
+  static const Color primaryDark = Color(0xFF003A9E);
+
+  /// Accent yellow
   static const Color accent = Color(0xFFFFEE13);
 
-  /// Dark ink (legacy brand / on-accent text)
+  /// Dark ink (on-accent text)
   static const Color brandDark = Color(0xFF173236);
 
-  /// Soft blue surfaces — Figma "Main back Ground"
-  static const Color softBlue = Color(0xFFE2F1FF);
+  /// Legacy aliases → primary light family
+  static const Color softBlue = primaryLight;
+  static const Color hoverBlue = primaryMuted;
 
-  /// Hover / chip blue
-  static const Color hoverBlue = Color(0xFFB2D0F6);
-
-  /// Page background — Figma "background"
+  /// Page background
   static const Color background = Color(0xFFEDF3F8);
 
-  /// Alternate light surface — Figma "Exactly Use Color"
+  /// Alternate light surface
   static const Color backgroundAlt = Color(0xFFF7FAFC);
 
   static const Color surface = Color(0xFFFFFFFF);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color onAccent = Color(0xFF173236);
+
+  /// Circular top-bar button fill (soft glass on primary)
+  static const Color circleButtonFill = Color(0x2EFFFFFF);
 
   /// Alias for white-on-blue surfaces
   static const Color onSecondary = onPrimary;

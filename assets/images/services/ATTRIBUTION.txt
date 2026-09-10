@@ -1,0 +1,23 @@
+# Home service icons — Flaticon + app icons
+
+Receipt icons created by srip - Flaticon
+https://www.flaticon.com/free-icons/receipt
+
+Additional related Flaticon icons used for Installation, Complaint, and Relocation
+(free license with attribution).
+
+App-generated icons (matching style):
+- check_cpe.png
+- change_plan.png
+- change_wifi.png
+
+Files:
+- pay_bill.png
+- check_bill.png
+- history.png
+- installation.png
+- complaint.png
+- relocation.png
+- check_cpe.png
+- change_plan.png
+- change_wifi.png

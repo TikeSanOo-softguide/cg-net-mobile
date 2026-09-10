@@ -14,22 +14,6 @@ class InboxMessageModel {
   final bool isRead;
 }
 
-class ChatThreadModel {
-  const ChatThreadModel({
-    required this.id,
-    required this.title,
-    required this.lastMessage,
-    required this.updatedAt,
-    this.unreadCount = 0,
-  });
-
-  final String id;
-  final String title;
-  final String lastMessage;
-  final DateTime updatedAt;
-  final int unreadCount;
-}
-
 class UserProfileModel {
   const UserProfileModel({
     required this.id,

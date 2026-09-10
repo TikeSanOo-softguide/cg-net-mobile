@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/storage/local_prefs/local_prefs.dart';
 
 class LanguageSelectionState {
@@ -26,9 +27,10 @@ class LanguageSelectionState {
 
 class LanguageSelectionController
     extends StateNotifier<LanguageSelectionState> {
-  LanguageSelectionController(this._localPrefs)
+  LanguageSelectionController(this._ref, this._localPrefs)
       : super(LanguageSelectionState(selectedCode: _localPrefs.languageCode));
 
+  final Ref _ref;
   final LocalPrefs _localPrefs;
 
   void select(String code) {
@@ -46,11 +48,16 @@ class LanguageSelectionController
       _ => const Locale('en'),
     };
     await context.setLocale(locale);
+    _ref.read(appLocaleProvider.notifier).state = code;
     state = state.copyWith(isSaving: false);
   }
 }
 
-final languageSelectionControllerProvider = StateNotifierProvider<
-    LanguageSelectionController, LanguageSelectionState>((ref) {
-  return LanguageSelectionController(ref.watch(localPrefsProvider));
+final languageSelectionControllerProvider =
+    StateNotifierProvider<LanguageSelectionController, LanguageSelectionState>(
+        (ref) {
+  return LanguageSelectionController(
+    ref,
+    ref.watch(localPrefsProvider),
+  );
 });

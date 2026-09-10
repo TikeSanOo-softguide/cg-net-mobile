@@ -3,10 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../components/app_logo/app_logo.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import 'splash_controller.dart';
 
-/// Premium circular-reveal splash: white → expanding #0100CA → logo → app.
+/// Premium circular-reveal splash: white → expanding #004AC6 → logo → app.
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
@@ -89,12 +90,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
                   opacity: _logoOpacity.value.clamp(0.0, 1.0),
                   child: Transform.scale(
                     scale: _logoScale.value,
-                    child: Image.asset(
-                      'assets/images/cg_net_logo.png',
-                      width: 160,
-                      height: 160,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
+                    child: const AppLogo(
+                      size: 160,
+                      padding: 20,
+                      borderRadius: 28,
                     ),
                   ),
                 ),
@@ -115,8 +114,7 @@ class _CircleRevealClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    return Path()
-      ..addOval(Rect.fromCircle(center: center, radius: radius));
+    return Path()..addOval(Rect.fromCircle(center: center, radius: radius));
   }
 
   @override

@@ -19,7 +19,7 @@
   },
   "nav": {
     "home": "ပင်မ",
-    "package": "ပက်ကေ့ချ်များ",
+    "package": "ပက်ကေ့ချ်",
     "inbox": "စာအိတ်",
     "support": "အကူအညီ",
     "profile": "အကောင့်"
@@ -49,11 +49,18 @@
     "phone_label": "ဖုန်းနံပါတ်",
     "phone_hint": "9xxxxxxxxx",
     "send_otp": "OTP ပို့မည်",
+    "terms_prefix": "ကျွန်ုပ်သည် ",
+    "terms_link": "စည်းကမ်းနှင့် သတ်မှတ်ချက်များ",
+    "terms_suffix": " ကို သဘောတူပါသည်",
     "country_restricted": "မြန်မာ၊ ထိုင်းနှင့် တရုတ် နံပါတ်များသာ ရရှိနိုင်သည်။"
+  },
+  "terms": {
+    "title": "စည်းကမ်းနှင့် သတ်မှတ်ချက်များ",
+    "body": "CG-NET မိုဘိုင်းအက်ပ်ကို အသုံးပြုခြင်းဖြင့် သင်သည် ကျွန်ုပ်တို့၏ အင်တာနက်ဝန်ဆောင်မှုများကို တရားဝင်အသုံးပြုရန်နှင့် သင့်အကောင့်လုံခြုံရေးကို ထိန်းသိမ်းရန် သဘောတူပါသည်။\n\nသင့်အကောင့်အောက်ရှိ လုပ်ဆောင်ချက်များအတွက် သင်တွင် တာဝန်ရှိပါသည်။ ဝန်ဆောင်မှုအရည်အသွေး၊ လုံခြုံရေးနှင့် စည်းမျဉ်းလိုက်နာမှုအတွက် CG-NET သည် ဤစည်းကမ်းများကို အပ်ဒိတ်လုပ်နိုင်ပါသည်။\n\nချိတ်ဆက်မှု၊ ငွေတောင်းခံမှုနှင့် ပံ့ပိုးကူညီမှုအတွက် လိုအပ်သော အချက်အလက်များကိုသာ စုဆောင်းပါသည်။\n\nဝန်ဆောင်မှုရရှိနိုင်မှုသည် ကွန်ရက်လွှမ်းခြုံမှုနှင့် ပလန်အခြေအနေပေါ် မူတည်ပါသည်။ အကူအညီလိုပါက အက်ပ်အတွင်းမှ CG-NET Help ကို ဆက်သွယ်ပါ။"
   },
   "otp": {
     "title": "OTP အတည်ပြုရန်",
-    "subtitle": "{phone} သို့ ပို့ထားသော ဂဏန်း ၆ လုံး ကုဒ်ကို ထည့်ပါ",
+    "subtitle": "{phone} သို့ ပို့ထားသော ဂဏန်း ၄ လုံး ကုဒ်ကို ထည့်ပါ",
     "resend": "ကုဒ်ပြန်ပို့မည်",
     "verify": "အတည်ပြုမည်",
     "success_title": "အတည်ပြုပြီး!",
@@ -71,8 +78,9 @@
   "home": {
     "title": "ပင်မ",
     "account_number": "အကောင့်နံပါတ်",
-    "balance_label": "လက်ကျန်ငွေ ပမာဏ",
+    "balance_label": "လက်ကျန်ငွေ",
     "balance_value": "{amount} ကျပ်",
+    "bind_now": "Bind Now",
     "action_topup": "ငွေဖြည့်ရန်",
     "action_transfer": "ငွေလွှဲ",
     "action_history": "မှတ်တမ်း",
@@ -88,11 +96,18 @@
     "service_pay": "ဘေလ်ပေးရန်",
     "service_check": "ဘေလ်စစ်ရန်",
     "service_history": "မှတ်တမ်း",
+    "service_packages": "တပ်ဆင်ခြင်း",
+    "service_support": "တိုင်ကြားရန်",
+    "service_alerts": "နေရာပြောင်းရန်",
+    "service_check_cpe": "CPE စစ်ရန်",
+    "service_change_plan": "ပလန်ပြောင်းရန်",
+    "service_change_wifi": "WiFi စကားဝှက်ပြောင်းရန်",
     "promo_title": "CG Net Store",
     "promo_body": "ပလန်နှင့်အထူးကမ်းလှမ်းမှုများကို တစ်နေရာတည်းတွင် စီမံပါ။",
     "promo_cta": "Download Now",
     "special_offers": "အထူး ဒေတာပက်ကေ့ချ်များ",
     "offer_month": "/ လ",
+    "popular": "လူကြိုက်များ",
     "buy_now": "ဝယ်မည်"
   },
   "package": {
@@ -105,7 +120,19 @@
     "features": "အင်္ဂါရပ်များ",
     "empty_title": "ပက်ကေ့ချ်မရှိပါ",
     "empty_body": "ရရှိနိုင်သော ပလန်များအတွက် နောက်မှ ပြန်စစ်ပါ။",
-    "monthly": " / လ"
+    "monthly": " / လ",
+    "input_example_title": "Common input fields",
+    "input_example_body": "Example form using shared AppInput styles.",
+    "search_label": "Search package",
+    "search_hint": "e.g. 20Mbps",
+    "account_label": "Account number",
+    "account_hint": "Enter account number",
+    "email_hint": "name@example.com",
+    "pin_label": "PIN",
+    "pin_hint": "6-digit PIN",
+    "note_label": "Note",
+    "note_hint": "Optional note",
+    "input_saved": "Form values captured (example)."
   },
   "inbox": {
     "title": "စာတိုက်",
@@ -115,14 +142,16 @@
   },
   "support": {
     "title": "အကူအညီ",
+    "chat_title": "Support chat",
     "chat_list_title": "စကားဝိုင်းများ",
     "empty_title": "စကားဝိုင်းမရှိသေးပါ",
     "empty_body": "အကူအညီအဖွဲ့နှင့် စကားပြောရန် စတင်ပါ။",
     "chat_detail_title": "စကားပြော",
-    "type_message": "မက်ဆေ့ချ် ရိုက်ထည့်ပါ..."
+    "type_message": "Type something..."
   },
   "profile": {
-    "title": "ပရိုဖိုင်",
+    "title": "အကောင့်",
+    "general": "အထွေထွေ ဆက်တင်များ",
     "edit": "ပရိုဖိုင်ပြင်ဆင်ရန်",
     "language": "ဘာသာစကား",
     "change_password": "စကားဝှက်ပြောင်းရန်",
@@ -141,6 +170,7 @@
     "notifications_title": "အသိပေးချက်များ",
     "about_title": "အကြောင်း",
     "version": "ဗားရှင်း",
+    "icon_credits": "Receipt icons created by srip - Flaticon",
     "push_notifications": "ပုရှ်အသိပေးချက်",
     "email_notifications": "အီးမေးလ်အသိပေးချက်",
     "sms_notifications": "SMS အသိပေးချက်"

@@ -14,15 +14,22 @@ class LoginState {
   const LoginState({
     this.country = CountryDial.myanmar,
     this.isLoading = false,
+    this.acceptedTerms = false,
   });
 
   final CountryDial country;
   final bool isLoading;
+  final bool acceptedTerms;
 
-  LoginState copyWith({CountryDial? country, bool? isLoading}) {
+  LoginState copyWith({
+    CountryDial? country,
+    bool? isLoading,
+    bool? acceptedTerms,
+  }) {
     return LoginState(
       country: country ?? this.country,
       isLoading: isLoading ?? this.isLoading,
+      acceptedTerms: acceptedTerms ?? this.acceptedTerms,
     );
   }
 }
@@ -34,7 +41,12 @@ class LoginController extends StateNotifier<LoginState> {
     state = state.copyWith(country: country);
   }
 
+  void setAcceptedTerms(bool value) {
+    state = state.copyWith(acceptedTerms: value);
+  }
+
   Future<String?> submit(String rawPhone) async {
+    if (!state.acceptedTerms) return null;
     state = state.copyWith(isLoading: true);
     await Future<void>.delayed(const Duration(milliseconds: 600));
     final digits = rawPhone.replaceAll(RegExp(r'\D'), '');

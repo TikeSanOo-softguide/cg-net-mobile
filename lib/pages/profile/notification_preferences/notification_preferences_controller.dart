@@ -29,7 +29,8 @@ class NotificationPreferencesController
   void setSms(bool value) => state = state.copyWith(sms: value);
 }
 
-final notificationPreferencesControllerProvider = StateNotifierProvider<
-    NotificationPreferencesController, NotificationPrefs>((ref) {
+final notificationPreferencesControllerProvider =
+    StateNotifierProvider<NotificationPreferencesController, NotificationPrefs>(
+        (ref) {
   return NotificationPreferencesController();
 });
