@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_circle_icon_button/app_circle_icon_button.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -124,12 +125,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         icon: LucideIcons.languages,
         onPressed: _showLanguagePicker,
       ),
+      header: const AppLogo(
+        size: 120,
+        padding: 0,
+        borderRadius: 0,
+        backgroundColor: Colors.transparent,
+        showShadow: false,
+      ),
+      headerTitle: 'login.title'.tr().toUpperCase(),
+      headerTitleGap: 2,
+      compactTop: true,
       card: CommonAuthCard(
-        icon: LucideIcons.smartphone,
-        title: 'login.title'.tr(),
         description: 'login.subtitle'.tr(),
         primaryAction: AppButton(
           label: 'login.send_otp'.tr(),
+          height: 42,
+          fontSize: 13,
           isLoading: state.isLoading,
           onPressed: !state.acceptedTerms
               ? null
@@ -137,7 +148,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   if (!_formKey.currentState!.validate()) return;
                   final phone = await controller.submit(_phoneController.text);
                   if (phone != null && context.mounted) {
-                    context.goNamed(
+                    context.pushNamed(
                       RouteNames.otpVerification,
                       queryParameters: {'phone': phone},
                     );
@@ -149,85 +160,64 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: AppStyle.controlHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
+              AppInput(
+                controller: _phoneController,
+                hint: 'login.phone_hint'.tr(),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(12),
+                ],
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<CountryDial>(
+                      value: state.country,
+                      isDense: true,
                       borderRadius: AppStyle.borderRadiusInput,
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<CountryDial>(
-                        value: state.country,
-                        borderRadius: AppStyle.borderRadiusInput,
-                        icon: const Icon(
-                          LucideIcons.chevron_down,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                        items: CountryDial.values
-                            .map(
-                              (c) => DropdownMenuItem(
-                                value: c,
-                                child: Text(
-                                  '${c.flag} ${c.dialCode}',
-                                  style: AppTheme.english(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
+                      icon: const Icon(
+                        LucideIcons.chevron_down,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                      items: CountryDial.values
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(
+                                '${c.flag} ${c.dialCode}',
+                                style: AppTheme.english(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
                                 ),
                               ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) controller.setCountry(value);
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: AppInput(
-                      controller: _phoneController,
-                      hint: 'login.phone_hint'.tr(),
-                      prefixIcon: LucideIcons.phone,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(12),
-                      ],
-                      validator: (value) {
-                        if (value == null || value.trim().length < 8) {
-                          return 'login.phone_label'.tr();
-                        }
-                        return null;
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) controller.setCountry(value);
                       },
                     ),
                   ),
-                ],
+                ),
+                suffixIcon: LucideIcons.phone,
+                validator: (value) {
+                  if (value == null || value.trim().length < 8) {
+                    return 'login.phone_label'.tr();
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: state.acceptedTerms,
-                      activeColor: AppColors.primary,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onChanged: (value) {
-                        controller.setAcceptedTerms(value ?? false);
-                      },
-                    ),
+                  _LoginCheckbox(
+                    value: state.acceptedTerms,
+                    onChanged: controller.setAcceptedTerms,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(top: 2),
@@ -265,6 +255,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 }
 
+class _LoginCheckbox extends StatelessWidget {
+  const _LoginCheckbox({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: value ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: value ? AppColors.primary : AppColors.border,
+            width: 1.4,
+          ),
+        ),
+        child: value
+            ? const Icon(
+                LucideIcons.check,
+                size: 14,
+                color: AppColors.onPrimary,
+              )
+            : null,
+      ),
+    );
+  }
+}
+
 class _LanguageOption extends StatelessWidget {
   const _LanguageOption({
     required this.label,
@@ -289,7 +317,11 @@ class _LanguageOption extends StatelessWidget {
         ),
       ),
       trailing: selected
-          ? const Icon(LucideIcons.circle_check, color: AppColors.primary, size: 20)
+          ? const Icon(
+              LucideIcons.circle_check,
+              color: AppColors.primary,
+              size: 20,
+            )
           : null,
     );
   }

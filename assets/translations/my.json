@@ -44,7 +44,7 @@
     "get_started": "စတင်မည်"
   },
   "login": {
-    "title": "ပြန်လည်ကြိုဆိုပါသည်",
+    "title": "ကြိုဆိုပါသည်!!",
     "subtitle": "ဝင်ရောက်ရန် ဖုန်းနံပါတ်ထည့်ပါ။",
     "phone_label": "ဖုန်းနံပါတ်",
     "phone_hint": "9xxxxxxxxx",
@@ -60,7 +60,7 @@
   },
   "otp": {
     "title": "OTP အတည်ပြုရန်",
-    "subtitle": "{phone} သို့ ပို့ထားသော ဂဏန်း ၄ လုံး ကုဒ်ကို ထည့်ပါ",
+    "subtitle": "{phone} သို့ ပို့ထားသော ဂဏန်း ၆ လုံး ကုဒ်ကို ထည့်ပါ",
     "resend": "ကုဒ်ပြန်ပို့မည်",
     "verify": "အတည်ပြုမည်",
     "success_title": "အတည်ပြုပြီး!",
@@ -85,8 +85,8 @@
     "action_transfer": "ငွေလွှဲ",
     "action_history": "မှတ်တမ်း",
     "action_link": "အကောင့်ချိတ်ရန်",
-    "plan_expires": "သက်တမ်းကုန် {date}",
-    "in_use": "In Use",
+    "plan_expires": "EXP: {date}",
+    "in_use": "အသုံးပြုနေ",
     "view_details": "အသေးစိတ်ကြည့်ရန်",
     "login_info": "LOGIN INFORMATION",
     "username": "Username",
@@ -121,8 +121,8 @@
     "empty_title": "ပက်ကေ့ချ်မရှိပါ",
     "empty_body": "ရရှိနိုင်သော ပလန်များအတွက် နောက်မှ ပြန်စစ်ပါ။",
     "monthly": " / လ",
-    "input_example_title": "Common input fields",
-    "input_example_body": "Example form using shared AppInput styles.",
+    "input_example_title": "Input field example",
+    "input_example_body": "Shared input styles with icon chips, focus labels, and dropdowns.",
     "search_label": "Search package",
     "search_hint": "e.g. 20Mbps",
     "account_label": "Account number",
@@ -132,6 +132,11 @@
     "pin_hint": "6-digit PIN",
     "note_label": "Note",
     "note_hint": "Optional note",
+    "select_label": "Select package",
+    "select_hint": "Choose a package",
+    "multi_select_label": "Select services",
+    "multi_select_hint": "Choose one or more",
+    "multi_select_sheet_hint": "Tap + to add. Selected items appear as chips.",
     "input_saved": "Form values captured (example)."
   },
   "inbox": {
@@ -147,7 +152,10 @@
     "empty_title": "စကားဝိုင်းမရှိသေးပါ",
     "empty_body": "အကူအညီအဖွဲ့နှင့် စကားပြောရန် စတင်ပါ။",
     "chat_detail_title": "စကားပြော",
-    "type_message": "Type something..."
+    "type_message": "Type something...",
+    "attach_file": "Attach file",
+    "file_attached": "File attached",
+    "file_pick_failed": "Could not pick file"
   },
   "profile": {
     "title": "အကောင့်",
@@ -170,7 +178,7 @@
     "notifications_title": "အသိပေးချက်များ",
     "about_title": "အကြောင်း",
     "version": "ဗားရှင်း",
-    "icon_credits": "Receipt icons created by srip - Flaticon",
+    "icon_credits": "Icons from Flaticon (save-money_1611220 style)",
     "push_notifications": "ပုရှ်အသိပေးချက်",
     "email_notifications": "အီးမေးလ်အသိပေးချက်",
     "sms_notifications": "SMS အသိပေးချက်"

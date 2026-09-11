@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 
-/// Shared circular icon button used on the primary top bar.
+/// Top-bar icon — pure primary bar, white glyph only (no glass / border / shadow).
+/// Same idea as bottom-nav: flat icon color, no light fill overlay.
 class AppCircleIconButton extends StatelessWidget {
   const AppCircleIconButton({
     super.key,
@@ -20,36 +21,29 @@ class AppCircleIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        splashColor: Colors.white24,
-        highlightColor: Colors.white10,
-        child: Ink(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.circleButtonFill,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.28),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: iconSize,
-            color: AppColors.onPrimary,
-          ),
+    return SizedBox(
+      width: size,
+      height: size,
+      child: IconButton(
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.onPrimary,
+          backgroundColor: Colors.transparent,
+          disabledForegroundColor: AppColors.onPrimary,
+          overlayColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          minimumSize: Size(size, size),
+          maximumSize: Size(size, size),
+          padding: EdgeInsets.zero,
+        ),
+        icon: Icon(
+          icon,
+          size: iconSize,
+          color: AppColors.onPrimary,
         ),
       ),
     );

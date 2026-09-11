@@ -88,7 +88,8 @@ class AppTheme {
         height: AppStyle.lineHeightBody,
       );
 
-  static TextStyle caption({Color? color, FontWeight weight = FontWeight.w400}) =>
+  static TextStyle caption(
+          {Color? color, FontWeight weight = FontWeight.w400}) =>
       english(
         fontSize: AppStyle.fontCaption,
         fontWeight: weight,
@@ -121,16 +122,41 @@ class AppTheme {
         height: 1.15,
       );
 
+  /// Explicit scheme — pure `#0100CA` primary, no seed-derived blues.
+  /// Soft blues stay on [AppColors.primaryLight]/[AppColors.primarySoft] only
+  /// when UI code opts in; Material containers use neutrals so M3 never invents
+  /// a lighter primary surface automatically.
+  static ColorScheme get _colorScheme => const ColorScheme(
+        brightness: Brightness.light,
+        primary: AppColors.primary,
+        onPrimary: AppColors.onPrimary,
+        primaryContainer: AppColors.backgroundAlt,
+        onPrimaryContainer: AppColors.primary,
+        secondary: AppColors.accent,
+        onSecondary: AppColors.onAccent,
+        secondaryContainer: AppColors.backgroundAlt,
+        onSecondaryContainer: AppColors.onAccent,
+        tertiary: AppColors.backgroundAlt,
+        onTertiary: AppColors.textPrimary,
+        tertiaryContainer: AppColors.borderLight,
+        onTertiaryContainer: AppColors.textPrimary,
+        error: AppColors.error,
+        onError: AppColors.onPrimary,
+        surface: AppColors.surface,
+        onSurface: AppColors.textPrimary,
+        onSurfaceVariant: AppColors.textSecondary,
+        outline: AppColors.border,
+        outlineVariant: AppColors.borderLight,
+        shadow: Color(0xFF000000),
+        scrim: Color(0xFF000000),
+        inverseSurface: AppColors.textPrimary,
+        onInverseSurface: AppColors.onPrimary,
+        inversePrimary: AppColors.onPrimary,
+        surfaceTint: Color(0x00000000),
+      );
+
   static ThemeData get light {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      primary: AppColors.primary,
-      secondary: AppColors.accent,
-      tertiary: AppColors.primaryLight,
-      surface: AppColors.surface,
-      error: AppColors.error,
-      brightness: Brightness.light,
-    );
+    final colorScheme = _colorScheme;
 
     final baseText = GoogleFonts.plusJakartaSansTextTheme().apply(
       bodyColor: AppColors.textPrimary,
@@ -139,9 +165,26 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      applyElevationOverlayColor: false,
       colorScheme: colorScheme,
+      primaryColor: AppColors.primary,
       fontFamily: englishFontFamily,
       scaffoldBackgroundColor: AppColors.background,
+      canvasColor: AppColors.surface,
+      dividerColor: AppColors.border,
+      // Neutral ink — never splash a translucent primary blue over UI.
+      splashColor: Colors.black.withValues(alpha: 0.06),
+      highlightColor: Colors.black.withValues(alpha: 0.04),
+      hoverColor: Colors.black.withValues(alpha: 0.03),
+      focusColor: Colors.black.withValues(alpha: 0.06),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          overlayColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+        ),
+      ),
       textTheme: baseText.copyWith(
         headlineMedium: hero(),
         titleLarge: pageTitle(),
@@ -157,6 +200,8 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 0,
@@ -170,7 +215,11 @@ class AppTheme {
           size: AppStyle.iconSizeLg,
         ),
         titleTextStyle: topBarTitle(),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: AppColors.primary,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
@@ -185,23 +234,184 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
+          disabledBackgroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.onPrimary,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
           minimumSize: const Size.fromHeight(AppStyle.controlHeight),
           shape: RoundedRectangleBorder(
             borderRadius: AppStyle.borderRadiusButton,
           ),
-          textStyle: button(),
+          textStyle: button(color: AppColors.onPrimary),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          disabledBackgroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.onPrimary,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+          minimumSize: const Size.fromHeight(AppStyle.controlHeight),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppStyle.borderRadiusButton,
+          ),
+          textStyle: button(color: AppColors.onPrimary),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          disabledBackgroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.onPrimary,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+          side: BorderSide.none,
           minimumSize: const Size.fromHeight(AppStyle.controlHeight),
-          side: AppStyle.borderSide,
           shape: RoundedRectangleBorder(
             borderRadius: AppStyle.borderRadiusButton,
           ),
+          textStyle: button(color: AppColors.onPrimary),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
           textStyle: button(color: AppColors.primary),
         ),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        splashColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.primary;
+          }
+          return AppColors.surface;
+        }),
+        checkColor: const WidgetStatePropertyAll(AppColors.onPrimary),
+        side: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.primary;
+          }
+          return AppColors.textMuted;
+        }),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.onPrimary;
+          }
+          return AppColors.surface;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.primary;
+          }
+          return AppColors.border;
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.primary;
+          }
+          return AppColors.border;
+        }),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.borderLight,
+        circularTrackColor: AppColors.borderLight,
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textMuted,
+        indicatorColor: AppColors.primary,
+        dividerColor: AppColors.borderLight,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textMuted,
+        backgroundColor: AppColors.surface,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.backgroundAlt,
+        selectedColor: AppColors.primary,
+        disabledColor: AppColors.borderLight,
+        labelStyle: caption(color: AppColors.primary, weight: FontWeight.w600),
+        secondaryLabelStyle: caption(color: AppColors.onPrimary),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: AppColors.primary,
+        selectedColor: AppColors.primary,
+        selectedTileColor: AppColors.backgroundAlt,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppStyle.borderRadiusLg,
+        ),
+        titleTextStyle: pageTitle(),
+        contentTextStyle: body(),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppStyle.radiusCurve),
+          ),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.primary,
+        contentTextStyle: body(color: AppColors.onPrimary),
+        actionTextColor: AppColors.accent,
+        behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppStyle.borderRadiusSm,
+        ),
+      ),
+      iconTheme: const IconThemeData(
+        color: AppColors.primary,
+        size: AppStyle.iconSizeLg,
+      ),
+      primaryIconTheme: const IconThemeData(
+        color: AppColors.onPrimary,
+        size: AppStyle.iconSizeLg,
       ),
       inputDecorationTheme: InputDecorationTheme(
         isDense: true,
@@ -218,6 +428,13 @@ class AppTheme {
         focusedErrorBorder: AppStyle.inputErrorBorder,
         prefixIconColor: AppColors.primary,
         suffixIconColor: AppColors.primary,
+        floatingLabelStyle: const TextStyle(color: AppColors.primary),
+      ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: AppColors.primary,
+        // Solid soft token — not alpha-blended primary.
+        selectionColor: AppColors.primaryLight,
+        selectionHandleColor: AppColors.primary,
       ),
     );
   }

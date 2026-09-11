@@ -5,8 +5,8 @@ import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
-/// Common text field. Field icons render on the **right** by default.
-class AppInput extends StatelessWidget {
+/// Common text field. Field icons render plain on the right (no icon background).
+class AppInput extends StatefulWidget {
   const AppInput({
     super.key,
     this.controller,
@@ -61,23 +61,153 @@ class AppInput extends StatelessWidget {
   final bool autofocus;
   final FocusNode? focusNode;
 
+  /// Trailing field icon (no background).
+  static Widget iconChip({
+    required IconData icon,
+    double size = 32,
+    double iconSize = 18,
+    bool focused = false,
+    Color? backgroundColor,
+    Color? iconColor,
+    VoidCallback? onTap,
+  }) {
+    final fg = iconColor ?? (focused ? AppColors.primary : AppColors.primary);
+
+    final iconWidget = SizedBox(
+      width: size,
+      height: size,
+      child: Icon(icon, size: iconSize, color: fg),
+    );
+
+    final child = onTap == null
+        ? iconWidget
+        : InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: iconWidget,
+          );
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: child,
+    );
+  }
+
+  /// Compact + / check action used by multi-select (no background).
+  static Widget actionButton({
+    required IconData icon,
+    VoidCallback? onTap,
+    bool active = false,
+    double size = 30,
+    double iconSize = 18,
+  }) {
+    final child = SizedBox(
+      width: size,
+      height: size,
+      child: Icon(
+        icon,
+        size: iconSize,
+        color: active ? AppColors.primary : AppColors.primary,
+      ),
+    );
+
+    if (onTap == null) return child;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: child,
+    );
+  }
+
+  @override
+  State<AppInput> createState() => _AppInputState();
+}
+
+class _AppInputState extends State<AppInput> {
+  FocusNode? _ownedFocus;
+  late FocusNode _focusNode;
+
+  FocusNode get _effectiveFocus => widget.focusNode ?? _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.focusNode == null) {
+      _ownedFocus = FocusNode();
+      _focusNode = _ownedFocus!;
+    } else {
+      _focusNode = widget.focusNode!;
+    }
+    _effectiveFocus.addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      _effectiveFocus.removeListener(_onFocusChange);
+      _ownedFocus?.dispose();
+      _ownedFocus = null;
+      if (widget.focusNode == null) {
+        _ownedFocus = FocusNode();
+        _focusNode = _ownedFocus!;
+      } else {
+        _focusNode = widget.focusNode!;
+      }
+      _effectiveFocus.addListener(_onFocusChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    _effectiveFocus.removeListener(_onFocusChange);
+    _ownedFocus?.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  TextStyle _labelStyle(Set<WidgetState> states) {
+    final focused = states.contains(WidgetState.focused);
+    return AppTheme.english(
+      fontSize: AppStyle.fontSecondary,
+      fontWeight: FontWeight.w600,
+      color: focused ? AppColors.primary : AppColors.textSecondary,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final focused = _effectiveFocus.hasFocus;
+    final labelStyle = WidgetStateTextStyle.resolveWith(_labelStyle);
+    final fill = !widget.enabled
+        ? AppColors.backgroundAlt
+        : focused
+            ? AppColors.surface
+            : AppColors.primarySoft;
+
     return TextFormField(
-      controller: controller,
-      focusNode: focusNode,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      validator: validator,
-      onChanged: onChanged,
-      onFieldSubmitted: onSubmitted,
-      maxLength: maxLength,
-      maxLines: obscureText ? 1 : maxLines,
-      enabled: enabled,
-      readOnly: readOnly,
-      inputFormatters: inputFormatters,
-      autofocus: autofocus,
+      controller: widget.controller,
+      focusNode: _effectiveFocus,
+      obscureText: widget.obscureText,
+      keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onSubmitted,
+      maxLength: widget.maxLength,
+      maxLines: widget.obscureText ? 1 : widget.maxLines,
+      enabled: widget.enabled,
+      readOnly: widget.readOnly,
+      inputFormatters: widget.inputFormatters,
+      autofocus: widget.autofocus,
       style: AppTheme.english(
         fontSize: AppStyle.inputFontSize,
         fontWeight: FontWeight.w500,
@@ -86,53 +216,58 @@ class AppInput extends StatelessWidget {
       cursorColor: AppColors.primary,
       decoration: InputDecoration(
         isDense: true,
-        labelText: label,
-        hintText: hint,
+        labelText: widget.label,
+        hintText: widget.hint,
         hintStyle: AppTheme.english(
           fontSize: AppStyle.inputFontSize,
           color: AppColors.textMuted,
           fontWeight: FontWeight.w400,
         ),
-        labelStyle: AppTheme.bodySecondary(
-          color: AppColors.textSecondary,
-        ).copyWith(fontWeight: FontWeight.w500),
+        labelStyle: labelStyle,
+        floatingLabelStyle: labelStyle,
         filled: true,
-        fillColor: enabled ? AppColors.surface : AppColors.backgroundAlt,
+        fillColor: fill,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppStyle.spaceMd,
-          vertical: AppStyle.spaceMd,
+          horizontal: 14,
+          vertical: 14,
         ),
-        prefixIcon: prefix,
-        suffixIcon: _buildTrailing(),
+        prefixIcon: widget.prefix,
+        suffixIcon: _buildTrailing(focused),
         prefixIconConstraints: const BoxConstraints(
-          minWidth: AppStyle.iconBox,
-          minHeight: AppStyle.controlHeight,
+          minWidth: 40,
+          minHeight: 48,
         ),
         suffixIconConstraints: const BoxConstraints(
-          minWidth: AppStyle.iconBox,
-          minHeight: AppStyle.controlHeight,
+          minWidth: 40,
+          minHeight: 48,
         ),
-        border: AppStyle.inputBorder,
-        enabledBorder: AppStyle.inputBorder,
-        focusedBorder: AppStyle.inputFocusedBorder,
+        border: _border(false),
+        enabledBorder: _border(false),
+        focusedBorder: _border(true),
         errorBorder: AppStyle.inputErrorBorder,
         focusedErrorBorder: AppStyle.inputErrorBorder,
-        disabledBorder: AppStyle.inputBorder,
+        disabledBorder: _border(false),
         counterText: '',
       ),
     );
   }
 
-  Widget? _buildTrailing() {
-    if (suffix != null) return suffix;
+  OutlineInputBorder _border(bool focused) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(
+        color: focused ? AppColors.primary : AppColors.border,
+        width: focused ? 1.4 : 1,
+      ),
+    );
+  }
 
-    final icon = suffixIcon ?? prefixIcon;
+  Widget? _buildTrailing(bool focused) {
+    if (widget.suffix != null) return widget.suffix;
+
+    final icon = widget.suffixIcon ?? widget.prefixIcon;
     if (icon == null) return null;
 
-    return Icon(
-      icon,
-      size: AppStyle.iconSizeSm,
-      color: AppColors.primary,
-    );
+    return AppInput.iconChip(icon: icon, focused: focused);
   }
 }

@@ -20,7 +20,7 @@ class OtpVerificationController extends StateNotifier<OtpVerificationState> {
   Future<bool> verify(String code) async {
     state = state.copyWith(isLoading: true, error: null);
     await Future<void>.delayed(const Duration(milliseconds: 700));
-    final ok = code.length == 4;
+    final ok = code.length == 6;
     state = state.copyWith(
       isLoading: false,
       error: ok ? null : 'invalid',

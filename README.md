@@ -7,7 +7,7 @@ Customer-facing ISP mobile app scaffold (Flutter).
 - Flutter 3.24+ / Dart 3.5+
 - Riverpod, go_router, easy_localization (EN / MY / ZH)
 - Dio, flutter_secure_storage, Lottie, shimmer
-- Material 3 — primary `#004AC6`, accent `#FFEE13`, surfaces `#EDF3F8` / `#E2F1FF`
+- Material 3 — primary `#0100CA`, primary light `#EBEBFB`, accent `#FFEE13`, surfaces `#EDF3F8`
 
 ## Setup
 

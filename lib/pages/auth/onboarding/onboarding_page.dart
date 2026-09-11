@@ -58,14 +58,14 @@ class OnboardingPage extends ConsumerWidget {
                         Container(
                           width: 120,
                           height: 120,
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.1),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primaryLight,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             slide.icon,
                             size: 56,
-                            color: AppColors.secondary,
+                            color: AppColors.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -96,7 +96,7 @@ class OnboardingPage extends ConsumerWidget {
                   width: active ? 22 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: active ? AppColors.secondary : AppColors.border,
+                    color: active ? AppColors.primary : AppColors.border,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 );

@@ -20,7 +20,7 @@ class ForceUpdatePage extends StatelessWidget {
               const Icon(
                 LucideIcons.download,
                 size: 72,
-                color: AppColors.secondary,
+                color: AppColors.primary,
               ),
               const SizedBox(height: 16),
               Text(

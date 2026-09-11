@@ -41,7 +41,7 @@ class LanguageSettingsPage extends ConsumerWidget {
     return ListTile(
       title: Text(label),
       trailing: selected == value
-          ? const Icon(LucideIcons.circle_check, color: AppColors.secondary)
+          ? const Icon(LucideIcons.circle_check, color: AppColors.primary)
           : null,
       onTap: () => controller.change(context, value),
     );

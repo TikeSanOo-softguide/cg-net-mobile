@@ -8,6 +8,7 @@ import '../../core/locale/app_locale_provider.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
+import '../../core/ui/bottom_nav_visibility_provider.dart';
 
 /// Common bottom navigation — full-width surface, primary selected state.
 class BottomNavBar extends ConsumerWidget {
@@ -19,66 +20,69 @@ class BottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final index = navigationShell.currentIndex;
     final locale = ref.watch(appLocaleProvider);
+    final showNav = ref.watch(bottomNavVisibleProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: navigationShell,
-      bottomNavigationBar: Material(
-        color: AppColors.surface,
-        elevation: 0,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            border: Border(
-              top: BorderSide(
-                color: AppColors.borderLight,
-                width: 0.5,
+      bottomNavigationBar: showNav
+          ? Material(
+              color: AppColors.surface,
+              elevation: 0,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.borderLight,
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    key: ValueKey('bottom-nav-$locale'),
+                    height: AppStyle.bottomNavHeight,
+                    child: Row(
+                      children: [
+                        _NavItem(
+                          icon: LucideIcons.house,
+                          label: context.tr('nav.home'),
+                          selected: index == 0,
+                          onTap: () => _go(0),
+                        ),
+                        _NavItem(
+                          icon: LucideIcons.package,
+                          label: context.tr('nav.package'),
+                          selected: index == 1,
+                          onTap: () => _go(1),
+                        ),
+                        _NavItem(
+                          icon: LucideIcons.mail,
+                          label: context.tr('nav.inbox'),
+                          selected: index == 2,
+                          onTap: () => _go(2),
+                        ),
+                        _NavItem(
+                          icon: LucideIcons.bot,
+                          label: context.tr('nav.support'),
+                          selected: index == 3,
+                          onTap: () => _go(3),
+                        ),
+                        _NavItem(
+                          icon: LucideIcons.user,
+                          label: context.tr('nav.profile'),
+                          selected: index == 4,
+                          onTap: () => _go(4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: SizedBox(
-              key: ValueKey('bottom-nav-$locale'),
-              height: AppStyle.bottomNavHeight,
-              child: Row(
-                children: [
-                  _NavItem(
-                    icon: LucideIcons.house,
-                    label: context.tr('nav.home'),
-                    selected: index == 0,
-                    onTap: () => _go(0),
-                  ),
-                  _NavItem(
-                    icon: LucideIcons.package,
-                    label: context.tr('nav.package'),
-                    selected: index == 1,
-                    onTap: () => _go(1),
-                  ),
-                  _NavItem(
-                    icon: LucideIcons.mail,
-                    label: context.tr('nav.inbox'),
-                    selected: index == 2,
-                    onTap: () => _go(2),
-                  ),
-                  _NavItem(
-                    icon: LucideIcons.bot,
-                    label: context.tr('nav.support'),
-                    selected: index == 3,
-                    onTap: () => _go(3),
-                  ),
-                  _NavItem(
-                    icon: LucideIcons.user,
-                    label: context.tr('nav.profile'),
-                    selected: index == 4,
-                    onTap: () => _go(4),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+            )
+          : null,
     );
   }
 
@@ -112,8 +116,8 @@ class _NavItem extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          splashColor: AppColors.primary.withValues(alpha: 0.08),
-          highlightColor: AppColors.primary.withValues(alpha: 0.04),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

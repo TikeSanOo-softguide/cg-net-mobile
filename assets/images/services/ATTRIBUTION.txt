@@ -1,23 +1,15 @@
-# Home service icons — Flaticon + app icons
+Home service icons — Flaticon sources, solid primary #0100CA on light chip.
 
-Receipt icons created by srip - Flaticon
-https://www.flaticon.com/free-icons/receipt
+Sources:
+- pay_bill: income_11771937 — https://www.flaticon.com/free-icon/income_11771937
+- check_bill: invoice_9484272 — https://www.flaticon.com/free-icon/invoice_9484272
+- history: checklist_12178821 — https://www.flaticon.com/free-icon/checklist_12178821
+- installation: maintenance_12313789 — https://www.flaticon.com/free-icon/maintenance_12313789
+- complaint: complaint_18392952 — https://www.flaticon.com/free-icon/complaint_18392952
+- relocation: relocation_12201646 — https://www.flaticon.com/free-icon/relocation_12201646
+- check_cpe: router_6890265 — https://www.flaticon.com/free-icon/router_6890265
+- change_plan: change_10384429 — https://www.flaticon.com/free-icon/change_10384429
+- change_wifi: wifi_14489284 — https://www.flaticon.com/free-icon/wifi_14489284
 
-Additional related Flaticon icons used for Installation, Complaint, and Relocation
-(free license with attribution).
-
-App-generated icons (matching style):
-- check_cpe.png
-- change_plan.png
-- change_wifi.png
-
-Files:
-- pay_bill.png
-- check_bill.png
-- history.png
-- installation.png
-- complaint.png
-- relocation.png
-- check_cpe.png
-- change_plan.png
-- change_wifi.png
+Icons by Flaticon authors — https://www.flaticon.com
+Recolored for CG-NET: solid #0100CA. Chip: primaryLight.

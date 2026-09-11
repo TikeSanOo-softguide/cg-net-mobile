@@ -54,6 +54,8 @@ class HomeOffersSection extends StatelessWidget {
               InkWell(
                 onTap: () {},
                 borderRadius: AppStyle.borderRadiusSm,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppStyle.spaceXs,
@@ -153,7 +155,7 @@ class _PackageImageCard extends StatelessWidget {
               borderRadius: AppStyle.borderRadiusMd,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -186,12 +188,7 @@ class _PackageImageCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppColors.accent,
-                            Color(0xFFFFD54F),
-                          ],
-                        ),
+                        color: AppColors.accent,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -221,21 +218,21 @@ class _PackageImageCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 28,
-            child: Material(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                onTap: () {},
-                borderRadius: BorderRadius.circular(8),
-                child: Center(
-                  child: Text(
-                    context.tr('home.buy_now'),
-                    style: AppTheme.captionSm(color: AppColors.onPrimary)
-                        .copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                      height: 1,
-                    ),
+            child: GestureDetector(
+              onTap: () {},
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  context.tr('home.buy_now'),
+                  style: AppTheme.captionSm(color: AppColors.onPrimary)
+                      .copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                    height: 1,
                   ),
                 ),
               ),

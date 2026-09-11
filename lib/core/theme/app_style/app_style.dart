@@ -25,7 +25,6 @@ class AppStyle {
   static const double radiusMd = 12;
   static const double radiusLg = 16;
   static const double radiusXl = 20;
-  static const double radiusNav = 24;
   static const double radiusCurve = 28;
   static const double radiusInput = 8;
   static const double radiusButton = 10;
@@ -38,8 +37,6 @@ class AppStyle {
       BorderRadius.circular(radiusInput);
   static BorderRadius get borderRadiusButton =>
       BorderRadius.circular(radiusButton);
-  static BorderRadius get borderRadiusNav =>
-      const BorderRadius.vertical(bottom: Radius.circular(radiusNav));
   static BorderRadius get borderRadiusCurve =>
       const BorderRadius.vertical(top: Radius.circular(radiusCurve));
 
@@ -75,9 +72,6 @@ class AppStyle {
   static const double lineHeightTitle = 1.25;
   static const double lineHeightCaption = 1.35;
 
-  // Legacy aliases (keep call sites stable)
-  static const double topBarTitleSize = fontTopBarTitle;
-  static const double buttonFontSize = fontButton;
   static const double inputFontSize = fontBody;
 
   // —— Shadows ——
@@ -106,17 +100,6 @@ class AppStyle {
 
   static BorderSide get borderSideFocus =>
       const BorderSide(color: AppColors.primary, width: 1.5);
-
-  // —— Primary light surfaces ——
-  static BoxDecoration get primaryLightDecoration => BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: borderRadiusMd,
-      );
-
-  static BoxDecoration get primarySoftDecoration => BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: borderRadiusMd,
-      );
 
   static BoxDecoration iconChipDecoration({
     double size = iconBox,

@@ -28,7 +28,7 @@ class HomeController extends StateNotifier<HomeDashboardData> {
             balanceLabel: '25000',
             balanceAmount: '25000',
             planTitle: 'Unlimited Data',
-            planExpiry: '31 Aug 2024',
+            planExpiry: '2024.08.31',
             username: 'cgnet_user',
             password: '********',
           ),

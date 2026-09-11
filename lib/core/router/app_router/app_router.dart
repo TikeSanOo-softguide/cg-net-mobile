@@ -13,6 +13,8 @@ import '../../../pages/auth/terms/terms_page.dart';
 import '../../../pages/home/home/home_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
+import '../../../pages/launch/advertisement/advertisement_page.dart';
+import '../../../pages/launch/skip_timer_image/skip_timer_image_page.dart';
 import '../../../pages/package/package_list/package_list_page.dart';
 import '../../../pages/profile/about_app/about_app_page.dart';
 import '../../../pages/profile/change_password/change_password_page.dart';
@@ -108,6 +110,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final phone = state.uri.queryParameters['phone'] ?? '';
           return SetUsernamePasswordPage(phone: phone);
         },
+      ),
+      GoRoute(
+        path: RoutePaths.skipTimerImage,
+        name: RouteNames.skipTimerImage,
+        builder: (context, state) => const SkipTimerImagePage(),
+      ),
+      GoRoute(
+        path: RoutePaths.advertisement,
+        name: RouteNames.advertisement,
+        builder: (context, state) => const AdvertisementPage(),
       ),
       GoRoute(
         path: RoutePaths.errorNoInternet,

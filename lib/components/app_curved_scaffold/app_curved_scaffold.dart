@@ -40,24 +40,19 @@ class AppCurvedScaffold extends StatelessWidget {
     final showLeading = showBack && (onBack != null || canPop);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
       child: Scaffold(
         backgroundColor: AppColors.primary,
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
         floatingActionButton: floatingActionButton,
         body: Column(
           children: [
-            DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primaryDark,
-                    AppColors.primary,
-                  ],
-                ),
-              ),
+            ColoredBox(
+              color: AppColors.primary,
               child: SafeArea(
                 bottom: false,
                 child: Padding(
@@ -113,13 +108,6 @@ class AppCurvedScaffold extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(AppStyle.radiusCurve),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.14),
-                      blurRadius: 12,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: body,

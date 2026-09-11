@@ -1,33 +1,39 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../components/app_button/app_button.dart';
-import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../../../core/theme/app_colors/app_colors.dart';
 
-class OtpSuccessPage extends StatelessWidget {
+/// Kept for route compatibility — success UX now lives as a bottom drawer
+/// on [OtpVerificationPage]. Forwards to create-account if opened directly.
+class OtpSuccessPage extends StatefulWidget {
   const OtpSuccessPage({super.key, required this.phone});
 
   final String phone;
 
   @override
+  State<OtpSuccessPage> createState() => _OtpSuccessPageState();
+}
+
+class _OtpSuccessPageState extends State<OtpSuccessPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.goNamed(
+        RouteNames.setUsernamePassword,
+        queryParameters: {'phone': widget.phone},
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AuthBackgroundScaffold(
-      card: CommonAuthCard(
-        icon: LucideIcons.circle_check,
-        title: 'otp.success_title'.tr(),
-        description: 'otp.success_body'.tr(),
-        primaryAction: AppButton(
-          label: 'otp.continue_setup'.tr(),
-          onPressed: () {
-            context.goNamed(
-              RouteNames.setUsernamePassword,
-              queryParameters: {'phone': phone},
-            );
-          },
-        ),
+    return const Scaffold(
+      backgroundColor: AppColors.primary,
+      body: Center(
+        child: CircularProgressIndicator(color: AppColors.onPrimary),
       ),
     );
   }

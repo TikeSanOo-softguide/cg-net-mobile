@@ -27,7 +27,7 @@ class DeviceSessionPage extends ConsumerWidget {
               device.isCurrent
                   ? LucideIcons.smartphone
                   : LucideIcons.monitor_smartphone,
-              color: AppColors.secondary,
+              color: AppColors.primary,
             ),
             title: Text(device.name),
             subtitle: Text(device.lastActive),

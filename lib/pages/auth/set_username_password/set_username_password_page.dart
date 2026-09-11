@@ -42,12 +42,16 @@ class _SetUsernamePasswordPageState
 
     return AuthBackgroundScaffold(
       showBack: true,
+      compactTop: true,
+      topBarTitle: 'set_credentials.title'.tr(),
       card: CommonAuthCard(
         icon: LucideIcons.user_round_plus,
         title: 'set_credentials.title'.tr(),
         description: 'set_credentials.subtitle'.tr(),
         primaryAction: AppButton(
           label: 'set_credentials.create'.tr(),
+          height: 42,
+          fontSize: 13,
           isLoading: state.isLoading,
           onPressed: () async {
             if (!_formKey.currentState!.validate()) return;
@@ -69,7 +73,9 @@ class _SetUsernamePasswordPageState
               AppInput(
                 controller: _username,
                 label: 'set_credentials.username'.tr(),
-                prefixIcon: LucideIcons.user,
+                hint: 'set_credentials.username'.tr(),
+                suffixIcon: LucideIcons.user,
+                textInputAction: TextInputAction.next,
                 validator: (v) =>
                     (v == null || v.trim().length < 3) ? 'Username' : null,
               ),
@@ -77,8 +83,10 @@ class _SetUsernamePasswordPageState
               AppInput(
                 controller: _password,
                 label: 'set_credentials.password'.tr(),
-                prefixIcon: LucideIcons.lock,
+                hint: 'set_credentials.password'.tr(),
+                suffixIcon: LucideIcons.lock,
                 obscureText: true,
+                textInputAction: TextInputAction.next,
                 validator: (v) =>
                     (v == null || v.length < 6) ? 'Password' : null,
               ),
@@ -86,8 +94,10 @@ class _SetUsernamePasswordPageState
               AppInput(
                 controller: _confirm,
                 label: 'set_credentials.confirm_password'.tr(),
-                prefixIcon: LucideIcons.lock,
+                hint: 'set_credentials.confirm_password'.tr(),
+                suffixIcon: LucideIcons.lock,
                 obscureText: true,
+                textInputAction: TextInputAction.done,
                 validator: (v) =>
                     v != _password.text ? 'Password mismatch' : null,
               ),

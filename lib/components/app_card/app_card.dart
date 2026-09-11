@@ -49,6 +49,8 @@ class AppCard extends StatelessWidget {
               child: InkWell(
                 onTap: onTap,
                 borderRadius: radius,
+                splashColor: Colors.black.withValues(alpha: 0.06),
+                highlightColor: Colors.black.withValues(alpha: 0.04),
                 child: content,
               ),
             ),

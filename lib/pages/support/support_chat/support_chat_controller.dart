@@ -5,11 +5,13 @@ class ChatMessage {
     required this.text,
     required this.isMine,
     required this.sentAt,
+    this.fileName,
   });
 
   final String text;
   final bool isMine;
   final DateTime sentAt;
+  final String? fileName;
 }
 
 class SupportChatController extends StateNotifier<List<ChatMessage>> {
@@ -22,14 +24,23 @@ class SupportChatController extends StateNotifier<List<ChatMessage>> {
           ),
         ]);
 
-  void send(String text) {
+  void send(String text, {String? fileName}) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty && (fileName == null || fileName.isEmpty)) return;
+
     final now = DateTime.now();
     state = [
       ...state,
-      ChatMessage(text: text, isMine: true, sentAt: now),
       ChatMessage(
-        text:
-            'Thanks for your message. Our support team will follow up shortly.',
+        text: trimmed,
+        isMine: true,
+        sentAt: now,
+        fileName: fileName,
+      ),
+      ChatMessage(
+        text: fileName != null
+            ? 'Thanks — we received your file ($fileName). Our support team will follow up shortly.'
+            : 'Thanks for your message. Our support team will follow up shortly.',
         isMine: false,
         sentAt: now.add(const Duration(seconds: 1)),
       ),

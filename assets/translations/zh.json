@@ -44,7 +44,7 @@
     "get_started": "开始使用"
   },
   "login": {
-    "title": "欢迎回来",
+    "title": "欢迎!!",
     "subtitle": "输入手机号码登录。",
     "phone_label": "手机号码",
     "phone_hint": "9xxxxxxxxx",
@@ -60,7 +60,7 @@
   },
   "otp": {
     "title": "验证码确认",
-    "subtitle": "请输入发送至 {phone} 的 4 位验证码",
+    "subtitle": "请输入发送至 {phone} 的 6 位验证码",
     "resend": "重新发送",
     "verify": "验证",
     "success_title": "验证成功！",
@@ -85,7 +85,7 @@
     "action_transfer": "转账",
     "action_history": "记录",
     "action_link": "绑定账户",
-    "plan_expires": "有效期至 {date}",
+    "plan_expires": "EXP: {date}",
     "in_use": "使用中",
     "view_details": "查看详情",
     "login_info": "登录信息",
@@ -121,8 +121,8 @@
     "empty_title": "暂无套餐",
     "empty_body": "请稍后再查看可用方案。",
     "monthly": " / 月",
-    "input_example_title": "Common input fields",
-    "input_example_body": "Example form using shared AppInput styles.",
+    "input_example_title": "Input field example",
+    "input_example_body": "Shared input styles with icon chips, focus labels, and dropdowns.",
     "search_label": "Search package",
     "search_hint": "e.g. 20Mbps",
     "account_label": "Account number",
@@ -132,6 +132,11 @@
     "pin_hint": "6-digit PIN",
     "note_label": "Note",
     "note_hint": "Optional note",
+    "select_label": "Select package",
+    "select_hint": "Choose a package",
+    "multi_select_label": "Select services",
+    "multi_select_hint": "Choose one or more",
+    "multi_select_sheet_hint": "Tap + to add. Selected items appear as chips.",
     "input_saved": "Form values captured (example)."
   },
   "inbox": {
@@ -147,7 +152,10 @@
     "empty_title": "暂无会话",
     "empty_body": "与我们的支持团队开始对话。",
     "chat_detail_title": "聊天",
-    "type_message": "Type something..."
+    "type_message": "Type something...",
+    "attach_file": "Attach file",
+    "file_attached": "File attached",
+    "file_pick_failed": "Could not pick file"
   },
   "profile": {
     "title": "账户",
@@ -170,7 +178,7 @@
     "notifications_title": "通知",
     "about_title": "关于",
     "version": "版本",
-    "icon_credits": "Receipt icons created by srip - Flaticon",
+    "icon_credits": "Icons from Flaticon (save-money_1611220 style)",
     "push_notifications": "推送通知",
     "email_notifications": "邮件通知",
     "sms_notifications": "短信通知"

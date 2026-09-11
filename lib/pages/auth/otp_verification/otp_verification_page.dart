@@ -10,6 +10,7 @@ import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import 'otp_success_drawer.dart';
 import 'otp_verification_controller.dart';
 
 class OtpVerificationPage extends ConsumerStatefulWidget {
@@ -23,9 +24,8 @@ class OtpVerificationPage extends ConsumerStatefulWidget {
 }
 
 class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
-  static const _length = 4;
-  static const _gap = 10.0;
-  static const _squareSize = 58.0;
+  static const _length = 6;
+  static const _gap = 12.0;
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _focusNodes = List.generate(_length, (_) => FocusNode());
@@ -46,7 +46,6 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   bool get _isComplete => _code.length == _length;
 
   void _onDigitChanged(int index, String value) {
-    // Support paste of full OTP into one box.
     final digits = value.replaceAll(RegExp(r'\D'), '');
     if (digits.length > 1) {
       for (var i = 0; i < _length; i++) {
@@ -76,57 +75,66 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
 
     return AuthBackgroundScaffold(
       showBack: true,
+      compactTop: true,
+      topBarTitle: 'otp.title'.tr(),
       card: CommonAuthCard(
         icon: LucideIcons.shield_check,
         title: 'otp.title'.tr(),
         description: 'otp.subtitle'.tr(namedArgs: {'phone': widget.phone}),
         primaryAction: AppButton(
           label: 'otp.verify'.tr(),
+          height: 42,
+          fontSize: 13,
           isLoading: state.isLoading,
           onPressed: !_isComplete
               ? null
               : () async {
                   final ok = await controller.verify(_code);
-                  if (ok && context.mounted) {
-                    context.goNamed(
-                      RouteNames.otpSuccess,
-                      queryParameters: {'phone': widget.phone},
-                    );
-                  }
+                  if (!ok || !context.mounted) return;
+                  await showOtpSuccessDrawer(
+                    context,
+                    onContinue: () {
+                      if (!context.mounted) return;
+                      context.pushNamed(
+                        RouteNames.setUsernamePassword,
+                        queryParameters: {'phone': widget.phone},
+                      );
+                    },
+                  );
                 },
         ),
-        child: Column(
-          children: [
-            Row(
+        secondaryAction: TextButton(
+          onPressed: state.isLoading ? null : () => controller.resend(),
+          child: Text(
+            'otp.resend'.tr(),
+            style: AppTheme.english(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final available =
+                constraints.maxWidth - (_gap * (_length - 1));
+            // Keep true squares that fit the row (no overflow from min clamp).
+            final size = (available / _length).clamp(40.0, 52.0);
+            return Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_length, (index) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    left: index == 0 ? 0 : _gap / 2,
-                    right: index == _length - 1 ? 0 : _gap / 2,
-                  ),
-                  child: _OtpSquare(
-                    size: _squareSize,
+              children: [
+                for (var index = 0; index < _length; index++) ...[
+                  if (index > 0) const SizedBox(width: _gap),
+                  _OtpSquare(
+                    size: size,
                     controller: _controllers[index],
                     focusNode: _focusNodes[index],
                     onChanged: (value) => _onDigitChanged(index, value),
                   ),
-                );
-              }),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: state.isLoading ? null : () => controller.resend(),
-              child: Text(
-                'otp.resend'.tr(),
-                style: AppTheme.english(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
+                ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -154,70 +162,110 @@ class _OtpSquareState extends State<_OtpSquare> {
   @override
   void initState() {
     super.initState();
-    widget.focusNode.addListener(_onFocus);
-    widget.controller.addListener(_onFocus);
+    widget.focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant _OtpSquare oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      oldWidget.focusNode.removeListener(_onFocusChange);
+      widget.focusNode.addListener(_onFocusChange);
+    }
   }
 
   @override
   void dispose() {
-    widget.focusNode.removeListener(_onFocus);
-    widget.controller.removeListener(_onFocus);
+    widget.focusNode.removeListener(_onFocusChange);
     super.dispose();
   }
 
-  void _onFocus() => setState(() {});
+  void _onFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _selectAll() {
+    final text = widget.controller.text;
+    widget.controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: text.length,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final focused = widget.focusNode.hasFocus;
-    // Soft lavender border like the reference squares.
-    const idleBorder = Color(0xFFC5C8E8);
-    const fill = Color(0xFFF8F8FC);
-    const radius = BorderRadius.all(Radius.circular(12));
+    final size = widget.size;
+    final fontSize = size >= 48 ? 22.0 : 20.0;
 
     return SizedBox(
-      width: widget.size,
-      height: widget.size,
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        textAlign: TextAlign.center,
-        textAlignVertical: TextAlignVertical.center,
-        keyboardType: TextInputType.number,
-        maxLength: 4,
-        cursorColor: AppColors.primary,
-        style: AppTheme.english(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          height: 1.1,
+      width: size,
+      height: size,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: focused ? AppColors.primary : AppColors.border,
+            width: focused ? 1.6 : 1.2,
+          ),
         ),
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: InputDecoration(
-          counterText: '',
-          filled: true,
-          fillColor: fill,
-          contentPadding: EdgeInsets.zero,
-          isDense: true,
-          border: const OutlineInputBorder(
-            borderRadius: radius,
-            borderSide: BorderSide(color: idleBorder, width: 1),
-          ),
-          enabledBorder: const OutlineInputBorder(
-            borderRadius: radius,
-            borderSide: BorderSide(color: idleBorder, width: 1),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: radius,
-            borderSide: BorderSide(
-              color: focused ? AppColors.primary : idleBorder,
-              width: focused ? 1.5 : 1,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(
+            child: TextField(
+              controller: widget.controller,
+              focusNode: widget.focusNode,
+              textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.center,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              maxLength: 1,
+              showCursor: true,
+              cursorColor: AppColors.primary,
+              cursorWidth: 2,
+              cursorHeight: fontSize,
+              enableInteractiveSelection: true,
+              style: AppTheme.english(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                height: 1.2,
+              ),
+              strutStyle: StrutStyle(
+                fontSize: fontSize,
+                height: 1.2,
+                forceStrutHeight: true,
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                counterText: '',
+                contentPadding: EdgeInsets.zero,
+              ),
+              onTap: _selectAll,
+              onChanged: (value) {
+                // Keep a single digit and allow replace-on-edit.
+                final digits = value.replaceAll(RegExp(r'\D'), '');
+                final digit = digits.isEmpty ? '' : digits[digits.length - 1];
+                if (widget.controller.text != digit) {
+                  widget.controller.value = TextEditingValue(
+                    text: digit,
+                    selection: TextSelection.collapsed(offset: digit.length),
+                  );
+                }
+                widget.onChanged(digit);
+              },
             ),
           ),
         ),
-        onChanged: widget.onChanged,
       ),
     );
   }
 }
-

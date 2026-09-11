@@ -93,6 +93,8 @@ class ProfilePage extends ConsumerWidget {
                   child: InkWell(
                     onTap: () => context.pushNamed(RouteNames.editProfile),
                     borderRadius: BorderRadius.circular(8),
+                    splashColor: Colors.black.withValues(alpha: 0.06),
+                    highlightColor: Colors.black.withValues(alpha: 0.04),
                     child: const SizedBox(
                       width: 36,
                       height: 36,

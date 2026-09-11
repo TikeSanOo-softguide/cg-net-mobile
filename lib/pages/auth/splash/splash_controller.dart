@@ -20,7 +20,7 @@ class SplashController extends StateNotifier<AsyncValue<void>> {
 
     if (!context.mounted) return;
     if (hasToken) {
-      context.goNamed(RouteNames.home);
+      context.goNamed(RouteNames.skipTimerImage);
     } else if (onboardingDone) {
       context.goNamed(RouteNames.login);
     } else {

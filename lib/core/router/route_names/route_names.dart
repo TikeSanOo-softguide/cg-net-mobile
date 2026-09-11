@@ -8,6 +8,8 @@ class RouteNames {
   static const otpVerification = 'otpVerification';
   static const otpSuccess = 'otpSuccess';
   static const setUsernamePassword = 'setUsernamePassword';
+  static const skipTimerImage = 'skipTimerImage';
+  static const advertisement = 'advertisement';
 
   static const home = 'home';
   static const packageList = 'packageList';
@@ -38,6 +40,8 @@ class RoutePaths {
   static const otpVerification = '/otp-verification';
   static const otpSuccess = '/otp-success';
   static const setUsernamePassword = '/set-username-password';
+  static const skipTimerImage = '/launch/skip-timer';
+  static const advertisement = '/launch/advertisement';
 
   static const home = '/home';
   static const packageList = '/package';
