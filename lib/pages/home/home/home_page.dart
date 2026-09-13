@@ -4,11 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../components/promotion_ads_modal/promotion_ads_modal.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
-import '../../../core/theme/app_style/app_style.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
-import 'components/home_plan_card.dart';
+// import 'components/home_plan_card.dart'; // temporarily unused (plan card hidden)
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_services_section.dart';
@@ -86,26 +85,28 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const Positioned(
                   left: 0,
                   right: 0,
-                  bottom: -18,
+                  // Center card on header bottom curve (~half of ~58 card height).
+                  bottom: -29,
                   child: HomeQuickActions(),
                 ),
               ],
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 36)),
-          SliverToBoxAdapter(
-            child: HomePlanCard(
-              title: data.planTitle,
-              expiry: data.planExpiry,
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppStyle.spaceXl)),
+          const SliverToBoxAdapter(child: SizedBox(height: 47)),
+          // TODO: temporarily hidden — restore Unlimited Data / plan card later
+          // SliverToBoxAdapter(
+          //   child: HomePlanCard(
+          //     title: data.planTitle,
+          //     expiry: data.planExpiry,
+          //   ),
+          // ),
+          // const SliverToBoxAdapter(child: SizedBox(height: AppStyle.spaceXl)),
           const SliverToBoxAdapter(child: HomeServicesSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: AppStyle.spaceXl)),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
           const SliverToBoxAdapter(child: HomeOffersSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: AppStyle.spaceXl)),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
           const SliverToBoxAdapter(child: HomePromoBanner()),
-          const SliverToBoxAdapter(child: SizedBox(height: AppStyle.spaceXxl)),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
     );

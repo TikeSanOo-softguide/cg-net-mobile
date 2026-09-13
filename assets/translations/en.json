@@ -1,5 +1,5 @@
 {
-  "app_name": "CG-NET",
+  "app_name": "YNO",
   "common": {
     "continue": "Continue",
     "next": "Next",
@@ -47,12 +47,31 @@
     "title": "Welcome!!",
     "subtitle": "Enter your mobile number to sign in.",
     "phone_label": "Phone number",
-    "phone_hint": "9xxxxxxxxx",
+    "phone_hint": "9XXXXXXX",
     "send_otp": "Send OTP",
     "terms_prefix": "I agree to the ",
     "terms_link": "Terms & Conditions",
     "terms_suffix": "",
-    "country_restricted": "Available for Myanmar, Thailand, and China numbers."
+    "country_restricted": "Available for Myanmar, Thailand, and China numbers.",
+    "help_prefix": "Need help? Ask ",
+    "help_qa": "Q&A",
+    "hotline_mm": "+95 9 123 456 789",
+    "hotline_th": "+66 2 123 4567",
+    "hotline_cn": "+86 400 123 4567",
+    "contact_via": "Contact via",
+    "contact_phone": "Phone",
+    "contact_viber": "Viber",
+    "contact_telegram": "Telegram",
+    "qa_title": "Q&A",
+    "qa_subtitle": "Common questions about signing in.",
+    "qa_q1": "Which phone numbers can I use?",
+    "qa_a1": "Myanmar (+95), Thailand (+66), and China (+86) mobile numbers are supported.",
+    "qa_q2": "I did not receive the OTP.",
+    "qa_a2": "Wait a moment and tap Resend. Check your signal and that the number is correct.",
+    "qa_q3": "Why must I accept Terms & Conditions?",
+    "qa_a3": "You need to agree before we can send an OTP and create your account.",
+    "qa_q4": "Who can I call for help?",
+    "qa_a4": "Use the hotline for your country shown on the login screen."
   },
   "terms": {
     "title": "Terms & Conditions",
@@ -107,7 +126,7 @@
     "promo_cta": "Download Now",
     "special_offers": "Special data packages",
     "offer_month": "/ month",
-    "popular": "Popular",
+    "popular": "HOT",
     "buy_now": "Buy now"
   },
   "package": {

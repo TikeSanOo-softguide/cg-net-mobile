@@ -23,16 +23,22 @@ class AboutAppPage extends ConsumerWidget {
         children: [
           const Center(
             child: AppLogo(
-              size: 88,
-              padding: 12,
+              width: 200,
+              height: 125,
+              padding: 8,
               borderRadius: 18,
+              backgroundColor: Colors.transparent,
+              showShadow: false,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             'app_name'.tr(),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
           ),
           const SizedBox(height: 8),
           versionAsync.when(

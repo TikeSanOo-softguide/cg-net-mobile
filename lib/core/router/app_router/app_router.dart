@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../components/bottom_nav_bar/bottom_nav_bar.dart';
 import '../../../pages/auth/login/login_page.dart';
+import '../../../pages/auth/login/login_qa_page.dart';
 import '../../../pages/auth/onboarding/onboarding_page.dart';
 import '../../../pages/auth/otp_success/otp_success_page.dart';
 import '../../../pages/auth/otp_verification/otp_verification_page.dart';
@@ -46,6 +47,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPublic = loc == RoutePaths.splash ||
           loc == RoutePaths.onboarding ||
           loc == RoutePaths.login ||
+          loc == RoutePaths.loginQa ||
           loc == RoutePaths.terms ||
           loc.startsWith('/otp') ||
           loc.startsWith('/set-username') ||
@@ -81,6 +83,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.login,
         name: RouteNames.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.loginQa,
+        name: RouteNames.loginQa,
+        builder: (context, state) => const LoginQaPage(),
       ),
       GoRoute(
         path: RoutePaths.terms,

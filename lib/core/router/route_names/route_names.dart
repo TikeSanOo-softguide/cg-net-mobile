@@ -4,6 +4,7 @@ class RouteNames {
   static const splash = 'splash';
   static const onboarding = 'onboarding';
   static const login = 'login';
+  static const loginQa = 'loginQa';
   static const terms = 'terms';
   static const otpVerification = 'otpVerification';
   static const otpSuccess = 'otpSuccess';
@@ -36,6 +37,7 @@ class RoutePaths {
   static const splash = '/splash';
   static const onboarding = '/onboarding';
   static const login = '/login';
+  static const loginQa = '/login/qa';
   static const terms = '/terms';
   static const otpVerification = '/otp-verification';
   static const otpSuccess = '/otp-success';

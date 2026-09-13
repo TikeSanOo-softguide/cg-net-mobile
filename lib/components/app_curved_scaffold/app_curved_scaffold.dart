@@ -63,7 +63,7 @@ class AppCurvedScaffold extends StatelessWidget {
                     AppStyle.spaceMd,
                   ),
                   child: SizedBox(
-                    height: AppStyle.circleButtonSize,
+                    height: AppStyle.topBarHeight,
                     child: Row(
                       children: [
                         if (showLeading)

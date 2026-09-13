@@ -90,7 +90,7 @@ class AppInput extends StatefulWidget {
           );
 
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.only(right: 14),
       child: child,
     );
   }
@@ -227,10 +227,7 @@ class _AppInputState extends State<AppInput> {
         floatingLabelStyle: labelStyle,
         filled: true,
         fillColor: fill,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
+        contentPadding: const EdgeInsets.fromLTRB(14, 14, 18, 14),
         prefixIcon: widget.prefix,
         suffixIcon: _buildTrailing(focused),
         prefixIconConstraints: const BoxConstraints(

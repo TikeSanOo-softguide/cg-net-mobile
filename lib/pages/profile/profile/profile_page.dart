@@ -42,7 +42,7 @@ class ProfilePage extends ConsumerWidget {
     return AppCurvedScaffold(
       title: Text(
         context.tr('profile.title'),
-        style: AppTheme.topBarTitle().copyWith(fontSize: AppStyle.fontTopBarTitle - 1),
+        style: AppTheme.topBarTitle(),
       ),
       showBack: false,
       body: ListView(
@@ -205,8 +205,8 @@ class _AccountAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AppLogo(
-      size: 56,
-      padding: 8,
+      size: 44,
+      padding: 5,
       borderRadius: 8,
     );
   }

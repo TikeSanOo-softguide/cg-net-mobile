@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../../components/app_card/app_card.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
@@ -18,17 +19,14 @@ class HomeQuickActions extends StatelessWidget {
       (LucideIcons.clipboard_clock, context.tr('home.action_history')),
     ];
 
-    return Container(
+    return AppCard(
       key: ValueKey('quick-actions-$locale'),
       margin: AppStyle.pagePaddingH,
+      elevated: true,
+      bordered: false,
       padding: const EdgeInsets.symmetric(
         horizontal: AppStyle.spaceSm,
-        vertical: 10,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppStyle.borderRadiusMd,
-        boxShadow: AppStyle.cardShadowElevated,
+        vertical: 11,
       ),
       child: Row(
         children: [
@@ -63,7 +61,7 @@ class HomeQuickActions extends StatelessWidget {
                       style: AppTheme.captionSm(color: AppColors.primary)
                           .copyWith(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w700,
                         height: 1.15,
                       ),
                     ),

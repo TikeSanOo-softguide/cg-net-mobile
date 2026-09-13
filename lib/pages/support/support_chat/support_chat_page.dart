@@ -173,7 +173,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColors.primarySoft,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: AppColors.border),
                               boxShadow: [
@@ -229,8 +229,8 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                         GestureDetector(
                           onTap: _send,
                           child: Container(
-                            width: 48,
-                            height: 48,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
                               color: AppColors.primary,
@@ -238,7 +238,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                             alignment: Alignment.center,
                             child: const Icon(
                               LucideIcons.send,
-                              size: 18,
+                              size: 16,
                               color: AppColors.onPrimary,
                             ),
                           ),

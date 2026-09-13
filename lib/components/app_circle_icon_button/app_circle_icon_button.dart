@@ -12,12 +12,14 @@ class AppCircleIconButton extends StatelessWidget {
     this.onPressed,
     this.size = AppStyle.circleButtonSize,
     this.iconSize = AppStyle.iconSizeSm,
+    this.backgroundColor,
   });
 
   final IconData icon;
   final VoidCallback? onPressed;
   final double size;
   final double iconSize;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,7 @@ class AppCircleIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
           foregroundColor: AppColors.onPrimary,
-          backgroundColor: Colors.transparent,
+          backgroundColor: backgroundColor ?? Colors.transparent,
           disabledForegroundColor: AppColors.onPrimary,
           overlayColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -39,6 +41,7 @@ class AppCircleIconButton extends StatelessWidget {
           minimumSize: Size(size, size),
           maximumSize: Size(size, size),
           padding: EdgeInsets.zero,
+          shape: const CircleBorder(),
         ),
         icon: Icon(
           icon,

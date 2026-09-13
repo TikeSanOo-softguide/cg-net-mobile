@@ -11,11 +11,13 @@ import '../../../components/app_circle_icon_button/app_circle_icon_button.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../profile/language_settings/language_settings_controller.dart';
+import 'components/login_help_footer.dart';
 import 'login_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -119,22 +121,32 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(loginControllerProvider);
     final controller = ref.read(loginControllerProvider.notifier);
+    final localeCode = ref.watch(appLocaleProvider);
+    final _ = context.locale;
 
     return AuthBackgroundScaffold(
+      key: ValueKey('login-$localeCode'),
       trailing: AppCircleIconButton(
         icon: LucideIcons.languages,
+        backgroundColor: Colors.white.withValues(alpha: 0.18),
         onPressed: _showLanguagePicker,
       ),
       header: const AppLogo(
-        size: 120,
+        width: 84,
+        height: 47,
         padding: 0,
         borderRadius: 0,
         backgroundColor: Colors.transparent,
         showShadow: false,
       ),
       headerTitle: 'login.title'.tr().toUpperCase(),
-      headerTitleGap: 2,
+      headerTitleGap: 4,
+      // Push logo + title down; keep them near the white sheet.
+      headerBodyTopGap: 80,
       compactTop: true,
+      headerTopPadding: 10,
+      headerBottomPadding: 20,
+      sheetRadius: 30,
       card: CommonAuthCard(
         description: 'login.subtitle'.tr(),
         primaryAction: AppButton(
@@ -155,6 +167,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   }
                 },
         ),
+        secondaryAction: LoginHelpFooter(
+          key: ValueKey('login-help-$localeCode'),
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -169,7 +184,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   LengthLimitingTextInputFormatter(12),
                 ],
                 prefix: Padding(
-                  padding: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.only(left: 10),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<CountryDial>(
                       value: state.country,

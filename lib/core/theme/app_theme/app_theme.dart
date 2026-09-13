@@ -55,7 +55,7 @@ class AppTheme {
         fontSize: AppStyle.fontTopBarTitle,
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.onPrimary,
-        letterSpacing: 0.2,
+        letterSpacing: 0.8,
         height: 1.15,
       );
 

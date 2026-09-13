@@ -3,4 +3,5 @@
     <color name="primary">#0100CA</color>
     <color name="primary_light">#EBEBFB</color>
     <color name="primary_dark">#0100CA</color>
+	<color name="ic_launcher_background">#0100CA</color>
 </resources>

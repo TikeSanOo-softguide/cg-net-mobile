@@ -43,7 +43,7 @@ class CgNetApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'CG-NET',
+      title: 'YNO',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,

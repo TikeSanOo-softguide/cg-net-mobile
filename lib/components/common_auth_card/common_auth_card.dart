@@ -93,8 +93,12 @@ class AuthBackgroundScaffold extends StatelessWidget {
     this.header,
     this.headerTitle,
     this.headerTitleGap,
+    this.headerBodyTopGap,
     this.topBarTitle,
     this.compactTop = false,
+    this.headerTopPadding,
+    this.headerBottomPadding,
+    this.sheetRadius,
   });
 
   final Widget card;
@@ -109,11 +113,24 @@ class AuthBackgroundScaffold extends StatelessWidget {
   /// Space between [header] and [headerTitle].
   final double? headerTitleGap;
 
+  /// Space between top bar row and [header] / title block.
+  /// Larger values push logo + title toward the bottom of the blue area.
+  final double? headerBodyTopGap;
+
   /// Centered title inside the compact top bar (OTP / Create account).
   final String? topBarTitle;
 
   /// Tighter blue header (less top/bottom padding).
   final bool compactTop;
+
+  /// Override top padding above the blue header content.
+  final double? headerTopPadding;
+
+  /// Override bottom padding under the blue header content.
+  final double? headerBottomPadding;
+
+  /// White sheet top radius. Defaults to [AppStyle.radiusCurve] (24).
+  final double? sheetRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -136,18 +153,22 @@ class AuthBackgroundScaffold extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   AppStyle.spaceLg,
-                  compactTop ? 0 : AppStyle.spaceXs,
+                  headerTopPadding ??
+                      (compactTop ? AppStyle.spaceSm : AppStyle.spaceXs),
                   AppStyle.spaceLg,
-                  useTopBarTitle
-                      ? AppStyle.spaceMd
-                      : (hasHeaderContent
-                          ? (compactTop ? AppStyle.spaceMd : AppStyle.spaceLg)
-                          : AppStyle.spaceMd),
+                  headerBottomPadding ??
+                      (useTopBarTitle
+                          ? AppStyle.spaceMd
+                          : (hasHeaderContent
+                              ? (compactTop
+                                  ? AppStyle.spaceMd
+                                  : AppStyle.spaceLg)
+                              : AppStyle.spaceMd)),
                 ),
                 child: Column(
                   children: [
                     SizedBox(
-                      height: AppStyle.circleButtonSize,
+                      height: AppStyle.topBarHeight,
                       child: Row(
                         children: [
                           if (showBack)
@@ -176,7 +197,8 @@ class AuthBackgroundScaffold extends StatelessWidget {
                     ),
                     if (header != null) ...[
                       SizedBox(
-                        height: compactTop ? AppStyle.spaceXs : AppStyle.spaceSm,
+                        height: headerBodyTopGap ??
+                            (compactTop ? AppStyle.spaceXs : AppStyle.spaceSm),
                       ),
                       header!,
                     ],
@@ -190,12 +212,7 @@ class AuthBackgroundScaffold extends StatelessWidget {
                       Text(
                         headerTitle!,
                         textAlign: TextAlign.center,
-                        style: AppTheme.english(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onPrimary,
-                          letterSpacing: 0.5,
-                        ),
+                        style: AppTheme.topBarTitle(),
                       ),
                     ],
                   ],
@@ -205,10 +222,12 @@ class AuthBackgroundScaffold extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(AppStyle.radiusCurve),
+                    top: Radius.circular(
+                      sheetRadius ?? AppStyle.radiusCurve,
+                    ),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,

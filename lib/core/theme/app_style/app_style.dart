@@ -11,7 +11,7 @@ class AppStyle {
   static const double spaceSm = 8;
   static const double spaceMd = 12;
   static const double spaceLg = 16;
-  static const double spaceXl = 20;
+  static const double spaceXl = 15;
   static const double spaceXxl = 24;
   static const double spaceXxxl = 32;
 
@@ -25,7 +25,8 @@ class AppStyle {
   static const double radiusMd = 12;
   static const double radiusLg = 16;
   static const double radiusXl = 20;
-  static const double radiusCurve = 28;
+  /// Default curved sheet / top-bar join radius (login uses 30 via override).
+  static const double radiusCurve = 24;
   static const double radiusInput = 8;
   static const double radiusButton = 10;
 
@@ -47,16 +48,16 @@ class AppStyle {
   static const double iconSizeLg = 22;
   static const double iconBox = 40;
   static const double circleButtonSize = 36;
-  static const double topBarHeight = 56;
+  static const double topBarHeight = 40;
   static const double bottomNavHeight = 64;
-  static const double bottomNavIconSize = 22;
-  static const double bottomNavLabelSize = 11;
+  static const double bottomNavIconSize = 23;
+  static const double bottomNavLabelSize = 12;
   static const double bottomNavIconGap = 4;
 
   // —— Typography sizes ——
   static const double fontHero = 28;
   static const double fontPageTitle = 22;
-  static const double fontTopBarTitle = 18;
+  static const double fontTopBarTitle = 15;
   static const double fontSectionTitle = 15;
   static const double fontCardTitle = 15;
   static const double fontBody = 14;
@@ -85,9 +86,9 @@ class AppStyle {
 
   static List<BoxShadow> get cardShadowElevated => [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
       ];
 

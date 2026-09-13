@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../components/app_card/app_card.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../core/ui/bottom_nav_visibility_provider.dart';
 
-/// Home service icons — Flaticon assets recolored to primary `#0100CA` gradient.
+/// Home service icons — one main [AppCard] with flat tinted PNG tiles.
 class HomeServicesSection extends ConsumerWidget {
   const HomeServicesSection({super.key});
 
@@ -16,26 +17,38 @@ class HomeServicesSection extends ConsumerWidget {
         _ServiceItem(
           asset: 'assets/images/services/pay_bill.png',
           label: 'home.service_pay'.tr(),
+          iconColor: const Color(0xFF3A38FF),
+          backgroundColor: const Color(0xFFE0DFFF),
         ),
         _ServiceItem(
           asset: 'assets/images/services/check_bill.png',
           label: 'home.service_check'.tr(),
+          iconColor: const Color(0xFF1AD9A0),
+          backgroundColor: const Color(0xFFD4F7EC),
         ),
         _ServiceItem(
           asset: 'assets/images/services/history.png',
           label: 'home.service_history'.tr(),
+          iconColor: const Color(0xFFB06BFF),
+          backgroundColor: const Color(0xFFE8DBFF),
         ),
         _ServiceItem(
           asset: 'assets/images/services/installation.png',
           label: 'home.service_packages'.tr(),
+          iconColor: const Color(0xFFFF9E3D),
+          backgroundColor: const Color(0xFFFFE0C7),
         ),
         _ServiceItem(
           asset: 'assets/images/services/complaint.png',
           label: 'home.service_support'.tr(),
+          iconColor: const Color(0xFFFF5568),
+          backgroundColor: const Color(0xFFFFDCE1),
         ),
         _ServiceItem(
           asset: 'assets/images/services/relocation.png',
           label: 'home.service_alerts'.tr(),
+          iconColor: const Color(0xFF3DA0FF),
+          backgroundColor: const Color(0xFFD6EBFF),
         ),
       ];
 
@@ -43,14 +56,20 @@ class HomeServicesSection extends ConsumerWidget {
         _ServiceItem(
           asset: 'assets/images/services/check_cpe.png',
           label: 'home.service_check_cpe'.tr(),
+          iconColor: const Color(0xFF2EC862),
+          backgroundColor: const Color(0xFFD8F5E0),
         ),
         _ServiceItem(
           asset: 'assets/images/services/change_plan.png',
           label: 'home.service_change_plan'.tr(),
+          iconColor: const Color(0xFFFF5A9C),
+          backgroundColor: const Color(0xFFFFD9EA),
         ),
         _ServiceItem(
           asset: 'assets/images/services/change_wifi.png',
           label: 'home.service_change_wifi'.tr(),
+          iconColor: const Color(0xFFFFC433),
+          backgroundColor: const Color(0xFFFFF0C7),
         ),
       ];
 
@@ -126,9 +145,9 @@ class HomeServicesSection extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppStyle.spaceLg),
                   _ServiceGrid(items: homeItems.take(3).toList()),
-                  const SizedBox(height: AppStyle.spaceMd),
+                  const SizedBox(height: 8),
                   _ServiceGrid(items: homeItems.skip(3).take(3).toList()),
-                  const SizedBox(height: AppStyle.spaceMd),
+                  const SizedBox(height: 8),
                   _ServiceGrid(items: extraItems),
                   const SizedBox(height: AppStyle.spaceSm),
                 ],
@@ -147,11 +166,11 @@ class HomeServicesSection extends ConsumerWidget {
     final _ = context.locale;
     final items = _homeItems;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppStyle.spaceMd),
-      child: Column(
-        children: [
-          Row(
+    return Column(
+      children: [
+        Padding(
+          padding: AppStyle.pagePaddingH,
+          child: Row(
             children: [
               Expanded(
                 child: Text(
@@ -180,12 +199,25 @@ class HomeServicesSection extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppStyle.spaceMd),
-          _ServiceGrid(items: items.take(3).toList()),
-          const SizedBox(height: AppStyle.spaceMd),
-          _ServiceGrid(items: items.skip(3).take(3).toList()),
-        ],
-      ),
+        ),
+        const SizedBox(height: AppStyle.spaceSm),
+        AppCard(
+          margin: AppStyle.pagePaddingH,
+          elevated: true,
+          bordered: false,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppStyle.spaceSm,
+            vertical: 10,
+          ),
+          child: Column(
+            children: [
+              _ServiceGrid(items: items.take(3).toList()),
+              const SizedBox(height: 10),
+              _ServiceGrid(items: items.skip(3).take(3).toList()),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -195,7 +227,7 @@ class _ServiceGrid extends StatelessWidget {
 
   final List<_ServiceItem> items;
 
-  static const double _gap = AppStyle.spaceSm;
+  static const double _gap = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +235,7 @@ class _ServiceGrid extends StatelessWidget {
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) const SizedBox(width: _gap),
-          Expanded(child: _ServiceCard(item: items[i])),
+          Expanded(child: _ServiceTile(item: items[i])),
         ],
         for (var i = items.length; i < 3; i++) ...[
           const SizedBox(width: _gap),
@@ -217,6 +249,8 @@ class _ServiceGrid extends StatelessWidget {
 class _ServiceItem {
   const _ServiceItem({
     required this.label,
+    required this.iconColor,
+    required this.backgroundColor,
     this.asset,
     this.icon,
   }) : assert(asset != null || icon != null);
@@ -224,83 +258,82 @@ class _ServiceItem {
   final String? asset;
   final IconData? icon;
   final String label;
+  final Color iconColor;
+  final Color backgroundColor;
 }
 
-class _ServiceCard extends StatelessWidget {
-  const _ServiceCard({required this.item});
+/// Flat service tile inside the main [AppCard] (no per-item card).
+class _ServiceTile extends StatelessWidget {
+  const _ServiceTile({required this.item});
 
   final _ServiceItem item;
 
-  static const double _iconSize = 32;
-  static final BorderRadius _radius = AppStyle.borderRadiusMd;
+  static const double _boxSize = 48;
+  static const double _iconSize = 26;
+  static const double _boxRadius = 8;
 
   @override
   Widget build(BuildContext context) {
     final iconWidget = item.asset != null
-        ? Image.asset(
-            item.asset!,
-            width: _iconSize,
-            height: _iconSize,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (_, __, ___) => Icon(
-              item.icon ?? Icons.image_not_supported_outlined,
-              size: 22,
-              color: AppColors.primary,
+        ? ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              item.iconColor,
+              BlendMode.srcIn,
+            ),
+            child: Image.asset(
+              item.asset!,
+              width: _iconSize,
+              height: _iconSize,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => Icon(
+                item.icon ?? Icons.image_not_supported_outlined,
+                size: 18,
+                color: item.iconColor,
+              ),
             ),
           )
         : Icon(
             item.icon,
-            size: 22,
-            color: AppColors.primary,
+            size: 18,
+            color: item.iconColor,
           );
 
-    return Material(
-      color: AppColors.surface,
-      elevation: 0,
-      borderRadius: _radius,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: _radius,
-        splashColor: Colors.black.withValues(alpha: 0.06),
-        highlightColor: Colors.black.withValues(alpha: 0.04),
-        child: Ink(
-          height: 88,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: _radius,
-            boxShadow: AppStyle.cardShadow,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: iconWidget,
+    return InkWell(
+      onTap: () {},
+      borderRadius: AppStyle.borderRadiusSm,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: _boxSize,
+              height: _boxSize,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: item.backgroundColor,
+                borderRadius: BorderRadius.circular(_boxRadius),
               ),
-              const SizedBox(height: AppStyle.spaceSm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  item.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.captionSm(color: AppColors.primary).copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                    height: 1.15,
-                  ),
-                ),
+              child: iconWidget,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              item.label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionSm(color: AppColors.textMuted).copyWith(
+                color: AppColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                height: 1.15,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
-import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
 /// Full-screen image + countdown Skip control with safe single-fire navigation.
@@ -144,8 +144,8 @@ class _TimedSkipImageScaffoldState extends State<TimedSkipImageScaffold>
               ColoredBox(color: widget.backgroundColor),
               _buildImage(),
               Positioned(
-                top: top + AppStyle.spaceMd,
-                right: AppStyle.spaceLg,
+                top: top + 10,
+                right: 14,
                 child: _SkipChip(
                   remaining: _remaining,
                   onSkip: _onSkip,
@@ -159,6 +159,7 @@ class _TimedSkipImageScaffoldState extends State<TimedSkipImageScaffold>
   }
 }
 
+/// Compact glass Skip + countdown — white text only (no primary fill).
 class _SkipChip extends StatelessWidget {
   const _SkipChip({
     required this.remaining,
@@ -174,51 +175,47 @@ class _SkipChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onSkip,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         overlayColor: WidgetStateProperty.all(
-          Colors.white.withValues(alpha: 0.08),
+          Colors.white.withValues(alpha: 0.10),
         ),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.42),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.28),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'common.skip'.tr(),
-                  style: AppTheme.english(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onPrimary,
-                  ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.38),
+                  width: 0.8,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  constraints: const BoxConstraints(minWidth: 22),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$remaining',
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'common.skip'.tr(),
                     style: AppTheme.english(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.2,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    '$remaining',
+                    style: AppTheme.english(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

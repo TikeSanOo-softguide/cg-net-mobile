@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,6 +14,18 @@ class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
+
+  static const _items = [
+    (Icons.home, 'nav.home'),
+    (Icons.widgets, 'nav.package'),
+    (Icons.mail, 'nav.inbox'),
+    (Icons.smart_toy, 'nav.support'),
+    (Icons.person, 'nav.profile'),
+  ];
+
+  static const _pillWidth = 48.0;
+  static const _pillHeight = 30.0;
+  static const _pillTop = 8.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,39 +55,58 @@ class BottomNavBar extends ConsumerWidget {
                   child: SizedBox(
                     key: ValueKey('bottom-nav-$locale'),
                     height: AppStyle.bottomNavHeight,
-                    child: Row(
-                      children: [
-                        _NavItem(
-                          icon: LucideIcons.house,
-                          label: context.tr('nav.home'),
-                          selected: index == 0,
-                          onTap: () => _go(0),
-                        ),
-                        _NavItem(
-                          icon: LucideIcons.package,
-                          label: context.tr('nav.package'),
-                          selected: index == 1,
-                          onTap: () => _go(1),
-                        ),
-                        _NavItem(
-                          icon: LucideIcons.mail,
-                          label: context.tr('nav.inbox'),
-                          selected: index == 2,
-                          onTap: () => _go(2),
-                        ),
-                        _NavItem(
-                          icon: LucideIcons.bot,
-                          label: context.tr('nav.support'),
-                          selected: index == 3,
-                          onTap: () => _go(3),
-                        ),
-                        _NavItem(
-                          icon: LucideIcons.user,
-                          label: context.tr('nav.profile'),
-                          selected: index == 4,
-                          onTap: () => _go(4),
-                        ),
-                      ],
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final itemWidth =
+                            constraints.maxWidth / _items.length;
+                        final pillLeft =
+                            (itemWidth * index) +
+                            ((itemWidth - _pillWidth) / 2);
+
+                        return Stack(
+                          children: [
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 280),
+                              curve: Curves.easeOutCubic,
+                              left: pillLeft,
+                              top: _pillTop,
+                              width: _pillWidth,
+                              height: _pillHeight,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight
+                                      .withValues(alpha: 0.78),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.55),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                for (var i = 0; i < _items.length; i++)
+                                  _NavItem(
+                                    icon: _items[i].$1,
+                                    label: context.tr(_items[i].$2),
+                                    selected: index == i,
+                                    onTap: () => _go(i),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -121,13 +151,24 @@ class _NavItem extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: AppStyle.bottomNavIconSize),
+              SizedBox(
+                height: 30,
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: AppStyle.bottomNavIconSize,
+                ),
+              ),
               const SizedBox(height: AppStyle.bottomNavIconGap),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
                 style: AppTheme.navLabel(selected: selected, color: color),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

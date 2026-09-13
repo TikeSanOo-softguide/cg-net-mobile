@@ -11,8 +11,6 @@ class SplashController extends StateNotifier<AsyncValue<void>> {
   final SecureStorage _secureStorage;
 
   Future<void> bootstrap(BuildContext context) async {
-    // Hold the finished logo beat before routing.
-    await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!context.mounted) return;
 
     final hasToken = await _secureStorage.hasToken();
