@@ -17,38 +17,32 @@ class HomeServicesSection extends ConsumerWidget {
         _ServiceItem(
           asset: 'assets/images/services/pay_bill.png',
           label: 'home.service_pay'.tr(),
-          iconColor: const Color(0xFF3A38FF),
-          backgroundColor: const Color(0xFFE0DFFF),
+          color: const Color(0xFF0100CA),
         ),
         _ServiceItem(
           asset: 'assets/images/services/check_bill.png',
           label: 'home.service_check'.tr(),
-          iconColor: const Color(0xFF1AD9A0),
-          backgroundColor: const Color(0xFFD4F7EC),
+          color: const Color(0xFF0D9488),
         ),
         _ServiceItem(
           asset: 'assets/images/services/history.png',
           label: 'home.service_history'.tr(),
-          iconColor: const Color(0xFFB06BFF),
-          backgroundColor: const Color(0xFFE8DBFF),
+          color: const Color(0xFF7C3AED),
         ),
         _ServiceItem(
           asset: 'assets/images/services/installation.png',
           label: 'home.service_packages'.tr(),
-          iconColor: const Color(0xFFFF9E3D),
-          backgroundColor: const Color(0xFFFFE0C7),
+          color: const Color(0xFFEA580C),
         ),
         _ServiceItem(
           asset: 'assets/images/services/complaint.png',
           label: 'home.service_support'.tr(),
-          iconColor: const Color(0xFFFF5568),
-          backgroundColor: const Color(0xFFFFDCE1),
+          color: const Color(0xFFDC2626),
         ),
         _ServiceItem(
           asset: 'assets/images/services/relocation.png',
           label: 'home.service_alerts'.tr(),
-          iconColor: const Color(0xFF3DA0FF),
-          backgroundColor: const Color(0xFFD6EBFF),
+          color: const Color(0xFF2563EB),
         ),
       ];
 
@@ -56,20 +50,18 @@ class HomeServicesSection extends ConsumerWidget {
         _ServiceItem(
           asset: 'assets/images/services/check_cpe.png',
           label: 'home.service_check_cpe'.tr(),
-          iconColor: const Color(0xFF2EC862),
-          backgroundColor: const Color(0xFFD8F5E0),
+          color: const Color(0xFF059669),
         ),
         _ServiceItem(
           asset: 'assets/images/services/change_plan.png',
           label: 'home.service_change_plan'.tr(),
-          iconColor: const Color(0xFFFF5A9C),
-          backgroundColor: const Color(0xFFFFD9EA),
+          color: const Color(0xFFDB2777),
         ),
         _ServiceItem(
           asset: 'assets/images/services/change_wifi.png',
           label: 'home.service_change_wifi'.tr(),
-          iconColor: const Color(0xFFFFC433),
-          backgroundColor: const Color(0xFFFFF0C7),
+          color: const Color(0xFF0891B2),
+          backgroundColor: const Color(0xFFEEF2FF),
         ),
       ];
 
@@ -249,17 +241,22 @@ class _ServiceGrid extends StatelessWidget {
 class _ServiceItem {
   const _ServiceItem({
     required this.label,
-    required this.iconColor,
-    required this.backgroundColor,
+    required this.color,
     this.asset,
     this.icon,
+    this.backgroundColor,
   }) : assert(asset != null || icon != null);
 
   final String? asset;
   final IconData? icon;
   final String label;
-  final Color iconColor;
-  final Color backgroundColor;
+  final Color color;
+  final Color? backgroundColor;
+
+  /// Soft chip fill ≈ color at 14% on white, unless [backgroundColor] is set.
+  Color get chipBackground =>
+      backgroundColor ??
+      Color.alphaBlend(color.withValues(alpha: 0.14), Colors.white);
 }
 
 /// Flat service tile inside the main [AppCard] (no per-item card).
@@ -268,18 +265,16 @@ class _ServiceTile extends StatelessWidget {
 
   final _ServiceItem item;
 
-  static const double _boxSize = 48;
-  static const double _iconSize = 26;
-  static const double _boxRadius = 8;
+  static const double _boxSize = 42;
+  static const double _iconSize = 28;
+  static const double _boxRadius = 10;
 
   @override
   Widget build(BuildContext context) {
+    final color = item.color;
     final iconWidget = item.asset != null
         ? ColorFiltered(
-            colorFilter: ColorFilter.mode(
-              item.iconColor,
-              BlendMode.srcIn,
-            ),
+            colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
             child: Image.asset(
               item.asset!,
               width: _iconSize,
@@ -288,15 +283,15 @@ class _ServiceTile extends StatelessWidget {
               filterQuality: FilterQuality.high,
               errorBuilder: (_, __, ___) => Icon(
                 item.icon ?? Icons.image_not_supported_outlined,
-                size: 18,
-                color: item.iconColor,
+                size: 20,
+                color: color,
               ),
             ),
           )
         : Icon(
             item.icon,
-            size: 18,
-            color: item.iconColor,
+            size: 20,
+            color: color,
           );
 
     return InkWell(
@@ -315,7 +310,7 @@ class _ServiceTile extends StatelessWidget {
               height: _boxSize,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: item.backgroundColor,
+                color: item.chipBackground,
                 borderRadius: BorderRadius.circular(_boxRadius),
               ),
               child: iconWidget,

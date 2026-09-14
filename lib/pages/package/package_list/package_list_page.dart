@@ -52,16 +52,16 @@ class PackageListPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppStyle.spaceLg,
-          15, // top bar → title
+          8,
           AppStyle.spaceLg,
           AppStyle.spaceXxl,
         ),
         children: [
           Text(
-            'home.special_offers'.tr(),
+            'package.select_label'.tr(),
             style: AppTheme.sectionTitle().copyWith(height: 1.1),
           ),
-          const SizedBox(height: 4), // title → image (tighter visual gap)
+          const SizedBox(height: 4),
           GridView.builder(
             key: ValueKey('package-grid-$locale'),
             shrinkWrap: true,

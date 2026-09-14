@@ -151,7 +151,7 @@
     "pin_hint": "6-digit PIN",
     "note_label": "Note",
     "note_hint": "Optional note",
-    "select_label": "Select package",
+    "select_label": "选择套餐",
     "select_hint": "Choose a package",
     "multi_select_label": "Select services",
     "multi_select_hint": "Choose one or more",
