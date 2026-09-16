@@ -5,6 +5,7 @@ import '../../models/advertisement_model/advertisement_model.dart';
 /// Local/mock launch creatives. Swap implementation for Laravel API later.
 class LaunchPromoRepository {
   static const skipTimerAsset = 'assets/images/launch/skip_timer.png';
+  static const networkNoticeAsset = 'assets/images/launch/network_notice.png';
   static const advertisementAsset = 'assets/images/launch/advertisement.png';
 
   Future<SkipTimerPromo> fetchSkipTimerPromo() async {
@@ -13,6 +14,27 @@ class LaunchPromoRepository {
       image: skipTimerAsset,
       durationSeconds: 5,
     );
+  }
+
+  /// Network / outage notice shown before the promotion ad.
+  Future<Advertisement?> fetchNetworkNotice() async {
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+
+    final notice = Advertisement(
+      id: 'local_network_notice',
+      image: networkNoticeAsset,
+      title: 'Network notice',
+      description: 'Service disruption notice',
+      durationSeconds: 0,
+      isActive: true,
+      startDate: DateTime(2025, 1, 1),
+      endDate: DateTime(2027, 12, 31, 23, 59, 59),
+      actionUrl: null,
+      actionType: 'none',
+    );
+
+    if (!notice.isCurrentlyValid) return null;
+    return notice;
   }
 
   /// Returns null when no active advertisement should be shown.
@@ -45,9 +67,13 @@ final skipTimerPromoProvider = FutureProvider<SkipTimerPromo>((ref) {
   return ref.watch(launchPromoRepositoryProvider).fetchSkipTimerPromo();
 });
 
+final networkNoticeProvider = FutureProvider<Advertisement?>((ref) {
+  return ref.watch(launchPromoRepositoryProvider).fetchNetworkNotice();
+});
+
 final activeAdvertisementProvider = FutureProvider<Advertisement?>((ref) {
   return ref.watch(launchPromoRepositoryProvider).fetchActiveAdvertisement();
 });
 
-/// When true, [HomePage] presents the launch promotion modal once after open.
+/// When true, [HomePage] presents launch notice + promotion modals once after open.
 final pendingLaunchPromotionProvider = StateProvider<bool>((ref) => false);

@@ -42,6 +42,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     ref.read(pendingLaunchPromotionProvider.notifier).state = false;
 
     try {
+      // 1) Network notice first, then 2) promotion ad.
+      final notice = await ref.read(networkNoticeProvider.future);
+      if (!mounted) return;
+      if (notice != null && notice.isCurrentlyValid) {
+        await showPromotionAdsModal(
+          context,
+          imagePath: notice.image,
+          barrierDismissible: false,
+        );
+      }
+
+      if (!mounted) return;
       final ad = await ref.read(activeAdvertisementProvider.future);
       if (!mounted) return;
       if (ad == null || !ad.isCurrentlyValid) return;
@@ -78,21 +90,27 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                HomeHeader(
-                  accountNumber: data.accountNumber,
-                  balanceAmount: data.balanceAmount,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    HomeHeader(
+                      accountNumber: data.accountNumber,
+                      balanceAmount: data.balanceAmount,
+                    ),
+                    // Keeps quick-actions card inside hit-test bounds.
+                    const SizedBox(height: 29),
+                  ],
                 ),
                 const Positioned(
                   left: 0,
                   right: 0,
-                  // Center card on header bottom curve (~half of ~58 card height).
-                  bottom: -29,
+                  bottom: 0,
                   child: HomeQuickActions(),
                 ),
               ],
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 47)),
+          const SliverToBoxAdapter(child: SizedBox(height: 18)),
           // TODO: temporarily hidden — restore Unlimited Data / plan card later
           // SliverToBoxAdapter(
           //   child: HomePlanCard(

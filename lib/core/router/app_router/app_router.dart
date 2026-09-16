@@ -12,6 +12,7 @@ import '../../../pages/auth/set_username_password/set_username_password_page.dar
 import '../../../pages/auth/splash/splash_page.dart';
 import '../../../pages/auth/terms/terms_page.dart';
 import '../../../pages/home/home/home_page.dart';
+import '../../../pages/home/top_up/top_up_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
 import '../../../pages/launch/advertisement/advertisement_page.dart';
@@ -154,6 +155,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: RoutePaths.home,
                 name: RouteNames.home,
                 builder: (context, state) => const HomePage(),
+                routes: [
+                  GoRoute(
+                    path: 'top-up',
+                    name: RouteNames.topUp,
+                    builder: (context, state) => const TopUpPage(),
+                  ),
+                ],
               ),
             ],
           ),

@@ -13,6 +13,7 @@ class RouteNames {
   static const advertisement = 'advertisement';
 
   static const home = 'home';
+  static const topUp = 'topUp';
   static const packageList = 'packageList';
   static const inboxList = 'inboxList';
   static const inboxDetail = 'inboxDetail';
@@ -46,6 +47,7 @@ class RoutePaths {
   static const advertisement = '/launch/advertisement';
 
   static const home = '/home';
+  static const topUp = '/home/top-up';
   static const packageList = '/package';
   static const inboxList = '/inbox';
   static const inboxDetail = '/inbox/:id';

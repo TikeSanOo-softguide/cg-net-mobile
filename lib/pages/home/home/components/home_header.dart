@@ -7,6 +7,7 @@ import '../../../../components/app_logo/app_logo.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
+import 'bind_broadband_drawer.dart';
 
 class HomeHeader extends StatefulWidget {
   const HomeHeader({
@@ -24,6 +25,7 @@ class HomeHeader extends StatefulWidget {
 
 class _HomeHeaderState extends State<HomeHeader> {
   bool _balanceVisible = false;
+  BoundBroadband? _bound;
 
   String get _maskedAmount => '********';
 
@@ -34,12 +36,27 @@ class _HomeHeaderState extends State<HomeHeader> {
     return NumberFormat('#,##0').format(value);
   }
 
+  Future<void> _onHeaderActionTap() async {
+    if (_bound == null) {
+      final result = await showBindBroadbandDrawer(context);
+      if (!mounted || result == null) return;
+      setState(() => _bound = result);
+      await showBindSuccessModal(context);
+      return;
+    }
+
+    final removed = await showBoundAccountDrawer(context, bound: _bound!);
+    if (!mounted || !removed) return;
+    setState(() => _bound = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    // Responsive overlay sizes — bigger, more visible; no small third circle.
-    final topOrb = (w * 0.48).clamp(160.0, 210.0);
+    // Slightly smaller / softer top-right glass orb.
+    final topOrb = (w * 0.40).clamp(130.0, 175.0);
     final bottomOrb = (w * 0.32).clamp(110.0, 150.0);
+    final bound = _bound;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -50,7 +67,6 @@ class _HomeHeaderState extends State<HomeHeader> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Rounded primary fill (clips only the blue surface).
           Positioned.fill(
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(
@@ -59,36 +75,38 @@ class _HomeHeaderState extends State<HomeHeader> {
               child: const ColoredBox(color: AppColors.primary),
             ),
           ),
-          // Top-right orb — kept off Bind Now (far top-right corner).
           Positioned(
-            top: -(topOrb * 0.42),
-            right: -(topOrb * 0.38),
-            child: Container(
-              width: topOrb,
-              height: topOrb,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.24),
-                  width: 0.6,
+            top: -(topOrb * 0.58),
+            right: -(topOrb * 0.55),
+            child: IgnorePointer(
+              child: Container(
+                width: topOrb,
+                height: topOrb,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 0.45,
+                  ),
                 ),
               ),
             ),
           ),
-          // Bottom-left orb — peeks under header curve / Top-up card.
           Positioned(
             bottom: -(bottomOrb * 0.28),
             left: -(bottomOrb * 0.32),
-            child: Container(
-              width: bottomOrb,
-              height: bottomOrb,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.14),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.20),
-                  width: 0.6,
+            child: IgnorePointer(
+              child: Container(
+                width: bottomOrb,
+                height: bottomOrb,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.07),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10),
+                    width: 0.5,
+                  ),
                 ),
               ),
             ),
@@ -137,7 +155,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                       Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () {},
+                          onTap: _onHeaderActionTap,
                           borderRadius: BorderRadius.circular(8),
                           overlayColor: WidgetStateProperty.all(
                             Colors.white.withValues(alpha: 0.08),
@@ -148,28 +166,40 @@ class _HomeHeaderState extends State<HomeHeader> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
+                              color: Colors.white.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.28),
+                                color: Colors.white.withValues(alpha: 0.18),
+                                width: 0.7,
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  LucideIcons.link,
+                                Icon(
+                                  bound == null
+                                      ? LucideIcons.link
+                                      : LucideIcons.router,
                                   color: AppColors.onPrimary,
                                   size: 13,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  'home.bind_now'.tr(),
-                                  style: AppTheme.english(
-                                    color: AppColors.onPrimary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.1,
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 108,
+                                  ),
+                                  child: Text(
+                                    bound == null
+                                        ? 'home.bind_now'.tr()
+                                        : bound.account,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.english(
+                                      color: AppColors.onPrimary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.1,
+                                    ),
                                   ),
                                 ),
                               ],

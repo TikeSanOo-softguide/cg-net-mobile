@@ -172,6 +172,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                       children: [
                         Expanded(
                           child: Container(
+                            constraints: const BoxConstraints(minHeight: 40),
                             decoration: BoxDecoration(
                               color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
@@ -184,14 +185,13 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                                 ),
                               ],
                             ),
-                            padding: const EdgeInsets.only(left: 6, right: 8),
+                            padding: const EdgeInsets.only(left: 4, right: 8),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: 8,
-                                    top: 8,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
                                   ),
                                   child: AppInput.iconChip(
                                     icon: LucideIcons.paperclip,
@@ -211,12 +211,13 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                                     decoration: InputDecoration(
                                       hintText: 'support.type_message'.tr(),
                                       hintStyle: AppTheme.bodySecondary(),
+                                      isDense: true,
                                       border: InputBorder.none,
                                       enabledBorder: InputBorder.none,
                                       focusedBorder: InputBorder.none,
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                        vertical: 12,
+                                        vertical: 10,
                                       ),
                                     ),
                                   ),

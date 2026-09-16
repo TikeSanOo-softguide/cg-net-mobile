@@ -6,9 +6,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 
-/// Presents a premium promotion card as a modal overlay.
-///
-/// Reusable for any local asset or network promotion image.
+/// Presents a promotion / notice card as a modal overlay.
 Future<void> showPromotionAdsModal(
   BuildContext context, {
   required String imagePath,
@@ -45,7 +43,7 @@ Future<void> showPromotionAdsModal(
   );
 }
 
-/// Centered promotion card — image framed + floating glass close.
+/// Centered ad image with top-right glass close (no extra frame layer).
 class PromotionAdsModal extends StatelessWidget {
   const PromotionAdsModal({
     super.key,
@@ -81,17 +79,16 @@ class PromotionAdsModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.paddingOf(context);
-    final maxWidth = (size.width - 48).clamp(260.0, 400.0);
+    final maxWidth = (size.width - 40).clamp(260.0, 400.0);
     final maxHeight =
-        (size.height - padding.vertical - 72).clamp(280.0, 560.0);
+        (size.height - padding.vertical - 48).clamp(280.0, 560.0);
 
     return Material(
       type: MaterialType.transparency,
       child: SafeArea(
         child: Center(
           child: Padding(
-            // Keep card visually centered; leave room for floating close.
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: maxWidth,
@@ -99,32 +96,26 @@ class PromotionAdsModal extends StatelessWidget {
               ),
               child: Stack(
                 clipBehavior: Clip.none,
-                alignment: Alignment.center,
                 children: [
-                  // Ads image — centered, rounded, soft glow.
                   DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: AppStyle.borderRadiusXl,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.32),
-                          blurRadius: 32,
-                          offset: const Offset(0, 14),
+                          blurRadius: 28,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
                     child: ClipRRect(
                       borderRadius: AppStyle.borderRadiusXl,
-                      child: ColoredBox(
-                        color: AppColors.surface,
-                        child: _buildImage(),
-                      ),
+                      child: _buildImage(),
                     ),
                   ),
-                  // Close — floating top-right outside the card.
                   Positioned(
-                    top: -14,
-                    right: -10,
+                    top: 10,
+                    right: 10,
                     child: _CloseButton(onPressed: onClose),
                   ),
                 ],
@@ -156,22 +147,15 @@ class _CloseButton extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.22),
+                color: Colors.black.withValues(alpha: 0.28),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.55),
-                  width: 1.2,
+                  width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
               ),
               alignment: Alignment.center,
               child: const Icon(
@@ -194,11 +178,15 @@ class _ImageFallback extends StatelessWidget {
   Widget build(BuildContext context) {
     return const ColoredBox(
       color: AppColors.primarySoft,
-      child: Center(
-        child: Icon(
-          LucideIcons.image_off,
-          color: AppColors.primary,
-          size: 28,
+      child: SizedBox(
+        width: 200,
+        height: 240,
+        child: Center(
+          child: Icon(
+            LucideIcons.image_off,
+            color: AppColors.primary,
+            size: 28,
+          ),
         ),
       ),
     );

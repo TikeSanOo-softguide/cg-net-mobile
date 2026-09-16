@@ -8,7 +8,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import 'splash_controller.dart';
 
-/// Splash — vertical: logo (2s) → title words (2s) → subtitle.
+/// Splash — logo entrance, then static titles (no title animation).
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
@@ -18,19 +18,17 @@ class SplashPage extends ConsumerStatefulWidget {
 
 class _SplashPageState extends ConsumerState<SplashPage>
     with SingleTickerProviderStateMixin {
-  static const _titleWords = ['YOUNG', 'NI', 'OO'];
+  static const _titleZh = '晨光产电';
+  static const _titleMy = 'မိုင်းလားရောင်နီဦးကုမ္ပဏီ';
   static const _subtitle = 'WELCOME';
 
-  /// logo 2s + title 2s + subtitle ~1.6s + short hold
-  static const _totalMs = 6000;
+  static const _totalMs = 4200;
 
   late final AnimationController _controller;
 
   late final Animation<double> _logoOpacity;
   late final Animation<double> _logoScale;
   late final Animation<Offset> _logoSlide;
-
-  late final Animation<double> _titleProgress;
 
   late final Animation<double> _subtitleOpacity;
   late final Animation<double> _subtitleScale;
@@ -46,15 +44,14 @@ class _SplashPageState extends ConsumerState<SplashPage>
       duration: const Duration(milliseconds: _totalMs),
     );
 
-    // 0.00–0.33 ≈ 2s — logo slow entrance
     _logoOpacity = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.28, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.35, curve: Curves.easeOut),
     );
     _logoScale = Tween<double>(begin: 0.72, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.33, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.42, curve: Curves.easeOutCubic),
       ),
     );
     _logoSlide = Tween<Offset>(
@@ -63,31 +60,24 @@ class _SplashPageState extends ConsumerState<SplashPage>
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.33, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.42, curve: Curves.easeOutCubic),
       ),
     );
 
-    // 0.33–0.66 ≈ 2s — title word by word
-    _titleProgress = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.33, 0.66, curve: Curves.linear),
-    );
-
-    // 0.66–0.93 — subtitle: blur clear + elastic + letter-spacing settle
     _subtitleOpacity = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.66, 0.88, curve: Curves.easeOut),
+      curve: const Interval(0.58, 0.82, curve: Curves.easeOut),
     );
     _subtitleScale = Tween<double>(begin: 0.82, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.66, 0.93, curve: Curves.elasticOut),
+        curve: const Interval(0.58, 0.88, curve: Curves.elasticOut),
       ),
     );
     _subtitleBlur = Tween<double>(begin: 10, end: 0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.66, 0.86, curve: Curves.easeOut),
+        curve: const Interval(0.58, 0.80, curve: Curves.easeOut),
       ),
     );
     _subtitleSlide = Tween<Offset>(
@@ -96,13 +86,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.66, 0.88, curve: Curves.easeOutCubic),
+        curve: const Interval(0.58, 0.82, curve: Curves.easeOutCubic),
       ),
     );
     _subtitleLetterSpread = Tween<double>(begin: 8, end: 3.2).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.66, 0.92, curve: Curves.easeOutCubic),
+        curve: const Interval(0.58, 0.86, curve: Curves.easeOutCubic),
       ),
     );
 
@@ -120,15 +110,6 @@ class _SplashPageState extends ConsumerState<SplashPage>
     super.dispose();
   }
 
-  double _wordOpacity(int index) {
-    final t = _titleProgress.value;
-    final start = index / _titleWords.length;
-    final end = (index + 1) / _titleWords.length;
-    if (t <= start) return 0;
-    if (t >= end) return 1;
-    return ((t - start) / (end - start)).clamp(0.0, 1.0);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,7 +124,6 @@ class _SplashPageState extends ConsumerState<SplashPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 1) Logo under center — slow fade + scale + rise (2s)
                     SlideTransition(
                       position: _logoSlide,
                       child: FadeTransition(
@@ -161,25 +141,21 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-
-                    // 2) Title under logo — word by word (2s)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (var i = 0; i < _titleWords.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 8),
-                          _TitleWord(
-                            word: _titleWords[i],
-                            progress: _wordOpacity(i),
-                          ),
-                        ],
-                      ],
+                    const SizedBox(height: 5),
+                    // Static titles — golden linear gradient, no motion.
+                    _GoldenTitle(
+                      text: _titleZh,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
                     ),
-                    const SizedBox(height: 12),
-
-                    // 3) Subtitle — blur → sharp + elastic + spacing
+                    const SizedBox(height: 8),
+                    _GoldenTitle(
+                      text: _titleMy,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    const SizedBox(height: 14),
                     SlideTransition(
                       position: _subtitleSlide,
                       child: FadeTransition(
@@ -217,36 +193,46 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 }
 
-class _TitleWord extends StatelessWidget {
-  const _TitleWord({
-    required this.word,
-    required this.progress,
+class _GoldenTitle extends StatelessWidget {
+  const _GoldenTitle({
+    required this.text,
+    required this.fontSize,
+    required this.fontWeight,
+    this.letterSpacing,
   });
 
-  final String word;
-  final double progress;
+  final String text;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double? letterSpacing;
+
+  static const _goldGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFFFFF8DC), // cornsilk
+      Color(0xFFFFE082), // soft gold
+      Color(0xFFFFD54F), // amber
+      Color(0xFFFFC107), // primary gold
+      Color(0xFFB8860B), // dark goldenrod
+    ],
+    stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+  );
 
   @override
   Widget build(BuildContext context) {
-    final dy = (1 - progress) * 14;
-    final scale = 0.86 + (0.14 * progress);
-
-    return Opacity(
-      opacity: progress,
-      child: Transform.translate(
-        offset: Offset(0, dy),
-        child: Transform.scale(
-          scale: scale,
-          child: Text(
-            word,
-            style: AppTheme.english(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.onPrimary,
-              letterSpacing: 0.8,
-              height: 1.15,
-            ),
-          ),
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => _goldGradient.createShader(bounds),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: AppTheme.english(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          color: Colors.white,
+          letterSpacing: letterSpacing,
+          height: 1.3,
         ),
       ),
     );
