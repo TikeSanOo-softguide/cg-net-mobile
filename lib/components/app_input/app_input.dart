@@ -64,14 +64,15 @@ class AppInput extends StatefulWidget {
   /// Trailing field icon (no background).
   static Widget iconChip({
     required IconData icon,
-    double size = 32,
-    double iconSize = 18,
+    double size = 28,
+    double iconSize = 15,
     bool focused = false,
     Color? backgroundColor,
     Color? iconColor,
     VoidCallback? onTap,
   }) {
-    final fg = iconColor ?? (focused ? AppColors.primary : AppColors.primary);
+    final fg = iconColor ??
+        (focused ? AppColors.primary : AppColors.primary.withValues(alpha: 0.72));
 
     final iconWidget = SizedBox(
       width: size,
@@ -83,14 +84,14 @@ class AppInput extends StatefulWidget {
         ? iconWidget
         : InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             child: iconWidget,
           );
 
     return Padding(
-      padding: const EdgeInsets.only(right: 14),
+      padding: const EdgeInsets.only(right: 10),
       child: child,
     );
   }
@@ -174,10 +175,13 @@ class _AppInputState extends State<AppInput> {
     if (mounted) setState(() {});
   }
 
+  static const Color _idleBorder = AppColors.textMuted;
+  static const Color _idleFill = AppColors.surface;
+
   TextStyle _labelStyle(Set<WidgetState> states) {
     final focused = states.contains(WidgetState.focused);
     return AppTheme.english(
-      fontSize: AppStyle.fontSecondary,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       color: focused ? AppColors.primary : AppColors.textSecondary,
     );
@@ -191,7 +195,7 @@ class _AppInputState extends State<AppInput> {
         ? AppColors.backgroundAlt
         : focused
             ? AppColors.surface
-            : AppColors.primarySoft;
+            : _idleFill;
 
     return TextFormField(
       controller: widget.controller,
@@ -209,7 +213,7 @@ class _AppInputState extends State<AppInput> {
       inputFormatters: widget.inputFormatters,
       autofocus: widget.autofocus,
       style: AppTheme.english(
-        fontSize: AppStyle.inputFontSize,
+        fontSize: 13,
         fontWeight: FontWeight.w500,
         color: AppColors.textPrimary,
       ),
@@ -219,7 +223,7 @@ class _AppInputState extends State<AppInput> {
         labelText: widget.label,
         hintText: widget.hint,
         hintStyle: AppTheme.english(
-          fontSize: AppStyle.inputFontSize,
+          fontSize: 12,
           color: AppColors.textMuted,
           fontWeight: FontWeight.w400,
         ),
@@ -227,16 +231,16 @@ class _AppInputState extends State<AppInput> {
         floatingLabelStyle: labelStyle,
         filled: true,
         fillColor: fill,
-        contentPadding: const EdgeInsets.fromLTRB(14, 14, 18, 14),
+        contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         prefixIcon: widget.prefix,
         suffixIcon: _buildTrailing(focused),
         prefixIconConstraints: const BoxConstraints(
-          minWidth: 40,
-          minHeight: 48,
+          minWidth: 36,
+          minHeight: 44,
         ),
         suffixIconConstraints: const BoxConstraints(
-          minWidth: 40,
-          minHeight: 48,
+          minWidth: 36,
+          minHeight: 44,
         ),
         border: _border(false),
         enabledBorder: _border(false),
@@ -253,7 +257,7 @@ class _AppInputState extends State<AppInput> {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(
-        color: focused ? AppColors.primary : AppColors.border,
+        color: focused ? AppColors.primary : _idleBorder,
         width: focused ? 1.4 : 1,
       ),
     );

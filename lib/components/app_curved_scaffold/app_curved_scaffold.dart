@@ -69,6 +69,8 @@ class AppCurvedScaffold extends StatelessWidget {
                         if (showLeading)
                           AppCircleIconButton(
                             icon: LucideIcons.chevron_left,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.22),
                             onPressed: onBack ??
                                 () => Navigator.of(context).maybePop(),
                           )
@@ -90,6 +92,8 @@ class AppCurvedScaffold extends StatelessWidget {
                         else if (trailingIcon != null)
                           AppCircleIconButton(
                             icon: trailingIcon!,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.22),
                             onPressed: onTrailingPressed,
                           )
                         else

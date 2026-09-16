@@ -246,7 +246,12 @@ class _PackageImageCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppStyle.spaceSm),
-          _BuyNowButton(onTap: () {}),
+          _BuyNowButton(
+            onTap: () => context.pushNamed(
+              RouteNames.packageDetail,
+              pathParameters: {'id': id},
+            ),
+          ),
         ],
       ),
     );

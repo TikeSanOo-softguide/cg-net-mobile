@@ -2,16 +2,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../components/app_button/app_button.dart';
+import '../../../components/activity_list_card/activity_list_card.dart';
+import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
-import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 
-/// Top-up — normal app form layout (serial check, account, PIN).
+/// Top-up — card layout matching Transfer page style.
 class TopUpPage extends StatefulWidget {
   const TopUpPage({super.key});
 
@@ -25,6 +26,36 @@ class _TopUpPageState extends State<TopUpPage> {
   final _pin = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _serialChecked = false;
+
+  List<ActivityItem> get _recent => [
+        ActivityItem(
+          id: 'tu1',
+          kind: ActivityKind.topUp,
+          title: 'history.item_topup_title'.tr(),
+          subtitle: 'topup.recent_added'.tr(),
+          amount: 2500,
+          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+          isCredit: true,
+        ),
+        ActivityItem(
+          id: 'tu2',
+          kind: ActivityKind.topUp,
+          title: 'history.item_topup_title'.tr(),
+          subtitle: 'topup.recent_added'.tr(),
+          amount: 500,
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+          isCredit: true,
+        ),
+        ActivityItem(
+          id: 'tu3',
+          kind: ActivityKind.topUp,
+          title: 'history.item_topup_title'.tr(),
+          subtitle: 'topup.recent_added'.tr(),
+          amount: 100,
+          createdAt: DateTime.now().subtract(const Duration(days: 3)),
+          isCredit: true,
+        ),
+      ];
 
   @override
   void dispose() {
@@ -77,27 +108,72 @@ class _TopUpPageState extends State<TopUpPage> {
     return AppCurvedScaffold(
       title: Text('topup.title'.tr()),
       showBack: true,
+      onBack: () => context.pop(),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
           children: [
-            Text(
-              'topup.serial_label'.tr(),
-              style: AppTheme.english(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: AppInput(
+            AppCard(
+              elevated: true,
+              bordered: false,
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          LucideIcons.wallet,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'topup.form_title'.tr(),
+                          style: AppTheme.english(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (_serialChecked)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'topup.verified'.tr(),
+                            style: AppTheme.english(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF15803D),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  AppInput(
                     controller: _serial,
+                    label: 'topup.serial_label'.tr(),
                     hint: 'topup.serial_hint'.tr(),
+                    prefixIcon: LucideIcons.barcode,
                     textInputAction: TextInputAction.next,
                     onChanged: (_) {
                       if (_serialChecked) {
@@ -111,78 +187,115 @@ class _TopUpPageState extends State<TopUpPage> {
                       return null;
                     },
                   ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: AppStyle.controlHeight,
-                  child: FilledButton(
-                    onPressed: _checkSerial,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppStyle.radiusInput,
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      height: 36,
+                      child: FilledButton.icon(
+                        onPressed: _checkSerial,
+                        icon: const Icon(LucideIcons.badge_check, size: 14),
+                        label: Text(
+                          'topup.check'.tr(),
+                          style: AppTheme.english(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                         ),
                       ),
                     ),
-                    child: Text(
-                      'topup.check'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onPrimary,
+                  ),
+                  const SizedBox(height: 14),
+                  AppInput(
+                    controller: _account,
+                    label: 'topup.account_label'.tr(),
+                    hint: 'topup.account_hint'.tr(),
+                    prefixIcon: LucideIcons.hash,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'topup.account_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  AppInput(
+                    controller: _pin,
+                    label: 'topup.pin_label'.tr(),
+                    hint: 'topup.pin_hint'.tr(),
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 12,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _submit(),
+                    suffixIcon: LucideIcons.scan_line,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'topup.pin_required'.tr();
+                      }
+                      if (v.trim().length != 12) {
+                        return 'topup.pin_invalid'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      height: 36,
+                      child: FilledButton.icon(
+                        onPressed: _submit,
+                        icon: const Icon(LucideIcons.wallet, size: 14),
+                        label: Text(
+                          'topup.submit'.tr(),
+                          style: AppTheme.english(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            AppInput(
-              controller: _account,
-              label: 'topup.account_label'.tr(),
-              hint: 'topup.account_hint'.tr(),
-              suffixIcon: LucideIcons.qr_code,
-              textInputAction: TextInputAction.next,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'topup.account_required'.tr();
-                }
-                return null;
-              },
+            const SizedBox(height: 18),
+            Text(
+              'topup.recent_title'.tr(),
+              style: AppTheme.sectionTitle(),
             ),
-            const SizedBox(height: 16),
-            AppInput(
-              controller: _pin,
-              label: 'topup.pin_label'.tr(),
-              hint: 'topup.pin_hint'.tr(),
-              suffixIcon: LucideIcons.qr_code,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 12,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _submit(),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'topup.pin_required'.tr();
-                }
-                if (v.trim().length != 12) {
-                  return 'topup.pin_invalid'.tr();
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 32),
-            AppButton(
-              label: 'topup.submit'.tr(),
-              height: 44,
-              fontSize: 14,
-              onPressed: _submit,
-            ),
+            const SizedBox(height: 10),
+            for (var i = 0; i < _recent.length; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              ActivityListCard(
+                item: _recent[i],
+                index: i,
+              ),
+            ],
           ],
         ),
       ),

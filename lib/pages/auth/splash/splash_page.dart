@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +6,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import 'splash_controller.dart';
 
-/// Splash — logo entrance, then static titles (no title animation).
+/// Splash — logo, then titles word-by-word with golden gradient.
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
@@ -18,11 +16,12 @@ class SplashPage extends ConsumerStatefulWidget {
 
 class _SplashPageState extends ConsumerState<SplashPage>
     with SingleTickerProviderStateMixin {
-  static const _titleZh = '晨光产电';
-  static const _titleMy = 'မိုင်းလားရောင်နီဦးကုမ္ပဏီ';
-  static const _subtitle = 'WELCOME';
+  static const _titleZhWords = ['晨光', '产电'];
+  static const _titleMyWords = ['မိုင်းလား', 'ရောင်နီဦး', 'ကုမ္ပဏီ'];
+  static const _subtitleWords = ['WELCOME'];
 
-  static const _totalMs = 4200;
+  /// logo ~1.4s + titles ~2s + subtitle ~1.2s
+  static const _totalMs = 5200;
 
   late final AnimationController _controller;
 
@@ -30,11 +29,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
   late final Animation<double> _logoScale;
   late final Animation<Offset> _logoSlide;
 
-  late final Animation<double> _subtitleOpacity;
-  late final Animation<double> _subtitleScale;
-  late final Animation<double> _subtitleBlur;
-  late final Animation<Offset> _subtitleSlide;
-  late final Animation<double> _subtitleLetterSpread;
+  late final Animation<double> _titleZhProgress;
+  late final Animation<double> _titleMyProgress;
+  late final Animation<double> _subtitleProgress;
 
   @override
   void initState() {
@@ -44,56 +41,43 @@ class _SplashPageState extends ConsumerState<SplashPage>
       duration: const Duration(milliseconds: _totalMs),
     );
 
+    // 0.00–0.28 logo
     _logoOpacity = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.35, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.22, curve: Curves.easeOut),
     );
     _logoScale = Tween<double>(begin: 0.72, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.42, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.28, curve: Curves.easeOutCubic),
       ),
     );
     _logoSlide = Tween<Offset>(
-      begin: const Offset(0, 0.28),
+      begin: const Offset(0, 0.22),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.42, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.28, curve: Curves.easeOutCubic),
       ),
     );
 
-    _subtitleOpacity = CurvedAnimation(
+    // 0.28–0.52 Chinese title word by word
+    _titleZhProgress = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.58, 0.82, curve: Curves.easeOut),
+      curve: const Interval(0.28, 0.52, curve: Curves.linear),
     );
-    _subtitleScale = Tween<double>(begin: 0.82, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.58, 0.88, curve: Curves.elasticOut),
-      ),
+
+    // 0.48–0.74 Myanmar title word by word
+    _titleMyProgress = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.48, 0.74, curve: Curves.linear),
     );
-    _subtitleBlur = Tween<double>(begin: 10, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.58, 0.80, curve: Curves.easeOut),
-      ),
-    );
-    _subtitleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.58, 0.82, curve: Curves.easeOutCubic),
-      ),
-    );
-    _subtitleLetterSpread = Tween<double>(begin: 8, end: 3.2).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.58, 0.86, curve: Curves.easeOutCubic),
-      ),
+
+    // 0.72–0.95 subtitle word by word
+    _subtitleProgress = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.72, 0.95, curve: Curves.easeOutCubic),
     );
 
     _controller.forward();
@@ -110,6 +94,15 @@ class _SplashPageState extends ConsumerState<SplashPage>
     super.dispose();
   }
 
+  double _wordProgress(Animation<double> animation, int index, int count) {
+    final t = animation.value;
+    final start = index / count;
+    final end = (index + 1) / count;
+    if (t <= start) return 0;
+    if (t >= end) return 1;
+    return ((t - start) / (end - start)).clamp(0.0, 1.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,6 +115,8 @@ class _SplashPageState extends ConsumerState<SplashPage>
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SlideTransition(
@@ -141,45 +136,50 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    // Static titles — golden linear gradient, no motion.
-                    _GoldenTitle(
-                      text: _titleZh,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                    ),
-                    const SizedBox(height: 8),
-                    _GoldenTitle(
-                      text: _titleMy,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    const SizedBox(height: 14),
-                    SlideTransition(
-                      position: _subtitleSlide,
-                      child: FadeTransition(
-                        opacity: _subtitleOpacity,
-                        child: ScaleTransition(
-                          scale: _subtitleScale,
-                          child: ImageFiltered(
-                            imageFilter: ImageFilter.blur(
-                              sigmaX: _subtitleBlur.value,
-                              sigmaY: _subtitleBlur.value,
-                            ),
-                            child: Text(
-                              _subtitle,
-                              style: AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.onPrimary
-                                    .withValues(alpha: 0.9),
-                                letterSpacing: _subtitleLetterSpread.value,
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
+                    // No gap between logo and title.
+                    SizedBox(
+                      width: double.infinity,
+                      child: _WordRow(
+                        words: _titleZhWords,
+                        progressFor: (i) => _wordProgress(
+                          _titleZhProgress,
+                          i,
+                          _titleZhWords.length,
                         ),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                        wordGap: 6,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _WordRow(
+                        words: _titleMyWords,
+                        progressFor: (i) => _wordProgress(
+                          _titleMyProgress,
+                          i,
+                          _titleMyWords.length,
+                        ),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        wordGap: 6,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: _WordRow(
+                        words: _subtitleWords,
+                        progressFor: (i) => _wordProgress(
+                          _subtitleProgress,
+                          i,
+                          _subtitleWords.length,
+                        ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2.8,
                       ),
                     ),
                   ],
@@ -193,46 +193,99 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 }
 
-class _GoldenTitle extends StatelessWidget {
-  const _GoldenTitle({
-    required this.text,
+class _WordRow extends StatelessWidget {
+  const _WordRow({
+    required this.words,
+    required this.progressFor,
+    required this.fontSize,
+    required this.fontWeight,
+    this.letterSpacing,
+    this.wordGap = 8,
+  });
+
+  final List<String> words;
+  final double Function(int index) progressFor;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double? letterSpacing;
+  final double wordGap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < words.length; i++) ...[
+          if (i > 0) SizedBox(width: wordGap),
+          _GoldenWord(
+            word: words[i],
+            progress: progressFor(i),
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            letterSpacing: letterSpacing,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _GoldenWord extends StatelessWidget {
+  const _GoldenWord({
+    required this.word,
+    required this.progress,
     required this.fontSize,
     required this.fontWeight,
     this.letterSpacing,
   });
 
-  final String text;
+  final String word;
+  final double progress;
   final double fontSize;
   final FontWeight fontWeight;
   final double? letterSpacing;
 
   static const _goldGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
     colors: [
-      Color(0xFFFFF8DC), // cornsilk
-      Color(0xFFFFE082), // soft gold
-      Color(0xFFFFD54F), // amber
-      Color(0xFFFFC107), // primary gold
-      Color(0xFFB8860B), // dark goldenrod
+      Color(0xFFFFFDE7),
+      Color(0xFFFFE082),
+      Color(0xFFFFD54F),
+      Color(0xFFFFC107),
+      Color(0xFFFFB300),
+      Color(0xFFFF8F00),
     ],
-    stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+    stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
   );
 
   @override
   Widget build(BuildContext context) {
-    return ShaderMask(
-      blendMode: BlendMode.srcIn,
-      shaderCallback: (bounds) => _goldGradient.createShader(bounds),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: AppTheme.english(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          color: Colors.white,
-          letterSpacing: letterSpacing,
-          height: 1.3,
+    final dy = (1 - progress) * 10;
+    final scale = 0.88 + (0.12 * progress);
+
+    return Opacity(
+      opacity: progress,
+      child: Transform.translate(
+        offset: Offset(0, dy),
+        child: Transform.scale(
+          scale: scale,
+          child: ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => _goldGradient.createShader(bounds),
+            child: Text(
+              word,
+              textAlign: TextAlign.center,
+              style: AppTheme.english(
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                color: Colors.white,
+                letterSpacing: letterSpacing,
+                height: 1.25,
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -1,46 +1,24 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../package_catalog.dart';
 
 /// Packages tab — 3×2 grid, same image/button style as home offers.
 class PackageListPage extends StatelessWidget {
   const PackageListPage({super.key});
 
-  static const _packages = [
-    _PackageItem(
-      id: '1m',
-      imagePath: 'assets/images/packages/package_1m.png',
-      popular: true,
-    ),
-    _PackageItem(
-      id: '3m',
-      imagePath: 'assets/images/packages/package_3m.png',
-    ),
-    _PackageItem(
-      id: '6m',
-      imagePath: 'assets/images/packages/package_6m.png',
-    ),
-    _PackageItem(
-      id: '1y',
-      imagePath: 'assets/images/packages/package_1y.png',
-    ),
-    _PackageItem(
-      id: '1m_b',
-      imagePath: 'assets/images/packages/package_1m.png',
-    ),
-    _PackageItem(
-      id: '3m_b',
-      imagePath: 'assets/images/packages/package_3m.png',
-    ),
-  ];
-
   static const _hGap = 8.0;
   static const _vGap = 12.0;
+
+  static final _packages =
+      PackageCatalog.items.where((e) => e.id != '1m_extra').toList();
 
   @override
   Widget build(BuildContext context) {
@@ -49,57 +27,33 @@ class PackageListPage extends StatelessWidget {
     return AppCurvedScaffold(
       title: Text('package.title'.tr()),
       showBack: false,
-      body: ListView(
+      body: GridView.builder(
+        key: ValueKey('package-grid-$locale'),
         padding: const EdgeInsets.fromLTRB(
           AppStyle.spaceLg,
-          8,
+          14,
           AppStyle.spaceLg,
           AppStyle.spaceXxl,
         ),
-        children: [
-          Text(
-            'package.select_label'.tr(),
-            style: AppTheme.sectionTitle().copyWith(height: 1.1),
-          ),
-          const SizedBox(height: 4),
-          GridView.builder(
-            key: ValueKey('package-grid-$locale'),
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: _hGap,
-              mainAxisSpacing: _vGap,
-              // Slightly larger W/H than before (3×2).
-              childAspectRatio: 0.68,
-            ),
-            itemCount: _packages.length,
-            itemBuilder: (context, index) {
-              final package = _packages[index];
-              return _PackageGridCard(
-                id: package.id,
-                imagePath: package.imagePath,
-                popular: package.popular,
-                locale: locale,
-              );
-            },
-          ),
-        ],
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: _hGap,
+          mainAxisSpacing: _vGap,
+          childAspectRatio: 0.68,
+        ),
+        itemCount: _packages.length,
+        itemBuilder: (context, index) {
+          final package = _packages[index];
+          return _PackageGridCard(
+            id: package.id,
+            imagePath: package.imagePath,
+            popular: package.popular,
+            locale: locale,
+          );
+        },
       ),
     );
   }
-}
-
-class _PackageItem {
-  const _PackageItem({
-    required this.id,
-    required this.imagePath,
-    this.popular = false,
-  });
-
-  final String id;
-  final String imagePath;
-  final bool popular;
 }
 
 /// Matches home [_PackageImageCard] look (gradient frame + Buy Now).
@@ -209,7 +163,12 @@ class _PackageGridCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppStyle.spaceSm),
-        _BuyNowButton(onTap: () {}),
+        _BuyNowButton(
+          onTap: () => context.pushNamed(
+            RouteNames.packageDetail,
+            pathParameters: {'id': id},
+          ),
+        ),
       ],
     );
   }

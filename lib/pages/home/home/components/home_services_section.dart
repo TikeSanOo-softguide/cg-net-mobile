@@ -2,12 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../components/app_card/app_card.dart';
+import '../../../../components/app_dialog/app_dialog.dart';
+import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../core/ui/bottom_nav_visibility_provider.dart';
+import '../bound_broadband_provider.dart';
 
 /// Home service icons — one main [AppCard] with flat tinted PNG tiles.
 class HomeServicesSection extends ConsumerWidget {
@@ -15,31 +19,37 @@ class HomeServicesSection extends ConsumerWidget {
 
   List<_ServiceItem> get _homeItems => [
         _ServiceItem(
+          id: 'pay_bill',
           asset: 'assets/images/services/pay_bill.png',
           label: 'home.service_pay'.tr(),
           color: const Color(0xFF0100CA),
         ),
         _ServiceItem(
+          id: 'check_bill',
           asset: 'assets/images/services/check_bill.png',
           label: 'home.service_check'.tr(),
           color: const Color(0xFF0D9488),
         ),
         _ServiceItem(
+          id: 'history',
           asset: 'assets/images/services/history.png',
           label: 'home.service_history'.tr(),
           color: const Color(0xFF7C3AED),
         ),
         _ServiceItem(
+          id: 'installation',
           asset: 'assets/images/services/installation.png',
           label: 'home.service_packages'.tr(),
           color: const Color(0xFFEA580C),
         ),
         _ServiceItem(
+          id: 'complaint',
           asset: 'assets/images/services/complaint.png',
           label: 'home.service_support'.tr(),
           color: const Color(0xFFDC2626),
         ),
         _ServiceItem(
+          id: 'relocation',
           asset: 'assets/images/services/relocation.png',
           label: 'home.service_alerts'.tr(),
           color: const Color(0xFF2563EB),
@@ -48,22 +58,49 @@ class HomeServicesSection extends ConsumerWidget {
 
   List<_ServiceItem> get _extraItems => [
         _ServiceItem(
+          id: 'check_cpe',
           asset: 'assets/images/services/check_cpe.png',
           label: 'home.service_check_cpe'.tr(),
           color: const Color(0xFF059669),
         ),
         _ServiceItem(
+          id: 'change_plan',
           asset: 'assets/images/services/change_plan.png',
           label: 'home.service_change_plan'.tr(),
           color: const Color(0xFFDB2777),
         ),
         _ServiceItem(
+          id: 'change_wifi',
           asset: 'assets/images/services/change_wifi.png',
           label: 'home.service_change_wifi'.tr(),
           color: const Color(0xFF0891B2),
           backgroundColor: const Color(0xFFEEF2FF),
         ),
       ];
+
+  Future<void> _onServiceTap(
+    BuildContext context,
+    WidgetRef ref,
+    _ServiceItem item, {
+    bool fromSheet = false,
+  }) async {
+    if (ref.read(boundBroadbandProvider) == null) {
+      await showAppAlertModal(
+        context,
+        message: 'home.service_bind_required'.tr(),
+      );
+      return;
+    }
+
+    final router = GoRouter.of(context);
+    if (fromSheet) {
+      Navigator.of(context).pop();
+    }
+    router.pushNamed(
+      RouteNames.servicePlaceholder,
+      pathParameters: {'id': item.id},
+    );
+  }
 
   Future<void> _openServicesDrawer(
     BuildContext context,
@@ -136,11 +173,35 @@ class HomeServicesSection extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppStyle.spaceLg),
-                  _ServiceGrid(items: homeItems.take(3).toList()),
+                  _ServiceGrid(
+                    items: homeItems.take(3).toList(),
+                    onTap: (item) => _onServiceTap(
+                      sheetContext,
+                      ref,
+                      item,
+                      fromSheet: true,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  _ServiceGrid(items: homeItems.skip(3).take(3).toList()),
+                  _ServiceGrid(
+                    items: homeItems.skip(3).take(3).toList(),
+                    onTap: (item) => _onServiceTap(
+                      sheetContext,
+                      ref,
+                      item,
+                      fromSheet: true,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  _ServiceGrid(items: extraItems),
+                  _ServiceGrid(
+                    items: extraItems,
+                    onTap: (item) => _onServiceTap(
+                      sheetContext,
+                      ref,
+                      item,
+                      fromSheet: true,
+                    ),
+                  ),
                   const SizedBox(height: AppStyle.spaceSm),
                 ],
               ),
@@ -203,9 +264,15 @@ class HomeServicesSection extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              _ServiceGrid(items: items.take(3).toList()),
+              _ServiceGrid(
+                items: items.take(3).toList(),
+                onTap: (item) => _onServiceTap(context, ref, item),
+              ),
               const SizedBox(height: 10),
-              _ServiceGrid(items: items.skip(3).take(3).toList()),
+              _ServiceGrid(
+                items: items.skip(3).take(3).toList(),
+                onTap: (item) => _onServiceTap(context, ref, item),
+              ),
             ],
           ),
         ),
@@ -215,9 +282,13 @@ class HomeServicesSection extends ConsumerWidget {
 }
 
 class _ServiceGrid extends StatelessWidget {
-  const _ServiceGrid({required this.items});
+  const _ServiceGrid({
+    required this.items,
+    required this.onTap,
+  });
 
   final List<_ServiceItem> items;
+  final ValueChanged<_ServiceItem> onTap;
 
   static const double _gap = 8;
 
@@ -227,7 +298,12 @@ class _ServiceGrid extends StatelessWidget {
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) const SizedBox(width: _gap),
-          Expanded(child: _ServiceTile(item: items[i])),
+          Expanded(
+            child: _ServiceTile(
+              item: items[i],
+              onTap: () => onTap(items[i]),
+            ),
+          ),
         ],
         for (var i = items.length; i < 3; i++) ...[
           const SizedBox(width: _gap),
@@ -240,6 +316,7 @@ class _ServiceGrid extends StatelessWidget {
 
 class _ServiceItem {
   const _ServiceItem({
+    required this.id,
     required this.label,
     required this.color,
     this.asset,
@@ -247,6 +324,7 @@ class _ServiceItem {
     this.backgroundColor,
   }) : assert(asset != null || icon != null);
 
+  final String id;
   final String? asset;
   final IconData? icon;
   final String label;
@@ -261,9 +339,13 @@ class _ServiceItem {
 
 /// Flat service tile inside the main [AppCard] (no per-item card).
 class _ServiceTile extends StatelessWidget {
-  const _ServiceTile({required this.item});
+  const _ServiceTile({
+    required this.item,
+    required this.onTap,
+  });
 
   final _ServiceItem item;
+  final VoidCallback onTap;
 
   static const double _boxSize = 42;
   static const double _iconSize = 28;
@@ -295,7 +377,7 @@ class _ServiceTile extends StatelessWidget {
           );
 
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: AppStyle.borderRadiusSm,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,

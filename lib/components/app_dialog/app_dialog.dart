@@ -8,11 +8,46 @@ import '../../core/theme/app_theme/app_theme.dart';
 
 /// Soft chip wash — same recipe as home Pay Bill icon chip.
 Color _primaryChipBackground() =>
-    Color.alphaBlend(AppColors.primary.withValues(alpha: 0.14), Colors.white);
+    Color.alphaBlend(AppColors.primary.withValues(alpha: 0.10), Colors.white);
 
 const _danger = Color(0xFFF44336);
 Color _dangerLight() =>
-    Color.alphaBlend(_danger.withValues(alpha: 0.12), Colors.white);
+    Color.alphaBlend(_danger.withValues(alpha: 0.10), Colors.white);
+
+const double _modalBtnHeight = 32;
+const double _modalBtnMinWidth = 120;
+const double _modalBtnFontSize = 11;
+
+ButtonStyle _primaryModalBtnStyle() => FilledButton.styleFrom(
+      backgroundColor: AppColors.primary,
+      foregroundColor: AppColors.onPrimary,
+      elevation: 0,
+      minimumSize: const Size(_modalBtnMinWidth, _modalBtnHeight),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyle.radiusInput),
+      ),
+    );
+
+ButtonStyle _dangerModalBtnStyle() => FilledButton.styleFrom(
+      backgroundColor: _danger,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      minimumSize: const Size(_modalBtnMinWidth, _modalBtnHeight),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyle.radiusInput),
+      ),
+    );
+
+TextStyle _modalBtnText({required Color color, FontWeight weight = FontWeight.w600}) =>
+    AppTheme.english(
+      fontSize: _modalBtnFontSize,
+      fontWeight: weight,
+      color: color,
+    );
 
 /// Shared success dialog — white card, primary chip-style icon wash.
 Future<void> showAppSuccessModal(
@@ -37,15 +72,15 @@ Future<void> showAppSuccessModal(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: _primaryChipBackground(),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   LucideIcons.circle_check,
-                  size: 26,
+                  size: 20,
                   color: AppColors.primary,
                 ),
               ),
@@ -67,25 +102,86 @@ Future<void> showAppSuccessModal(
               ),
               const SizedBox(height: 14),
               SizedBox(
-                height: 42,
-                width: double.infinity,
+                height: _modalBtnHeight,
                 child: FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppStyle.radiusInput),
-                    ),
-                  ),
+                  style: _primaryModalBtnStyle(),
                   child: Text(
                     buttonLabel ?? 'common.done'.tr(),
-                    style: AppTheme.english(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onPrimary,
-                    ),
+                    style: _modalBtnText(color: AppColors.onPrimary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Simple alert — message + single OK (no secondary action).
+Future<void> showAppAlertModal(
+  BuildContext context, {
+  required String message,
+  String? buttonLabel,
+  String? title,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) {
+      return Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppStyle.radiusXl),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _primaryChipBackground(),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.circle_alert,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+              ),
+              if (title != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.english(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: AppTheme.bodySecondary().copyWith(fontSize: 13),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: _modalBtnHeight,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  style: _primaryModalBtnStyle(),
+                  child: Text(
+                    buttonLabel ?? 'common.ok'.tr(),
+                    style: _modalBtnText(color: AppColors.onPrimary),
                   ),
                 ),
               ),
@@ -121,15 +217,15 @@ Future<bool> showAppConfirmModal(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: _dangerLight(),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   LucideIcons.circle_alert,
-                  size: 22,
+                  size: 18,
                   color: _danger,
                 ),
               ),
@@ -151,58 +247,32 @@ Future<bool> showAppConfirmModal(
               ),
               const SizedBox(height: 14),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 34,
-                      child: FilledButton(
-                        onPressed: () =>
-                            Navigator.of(dialogContext).pop(false),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _danger,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppStyle.radiusInput),
-                          ),
-                        ),
-                        child: Text(
-                          cancelLabel ?? 'common.cancel'.tr(),
-                          style: AppTheme.english(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                  SizedBox(
+                    height: _modalBtnHeight,
+                    child: FilledButton(
+                      onPressed: () =>
+                          Navigator.of(dialogContext).pop(false),
+                      style: _dangerModalBtnStyle(),
+                      child: Text(
+                        cancelLabel ?? 'common.cancel'.tr(),
+                        style: _modalBtnText(color: Colors.white),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 34,
-                      child: FilledButton(
-                        onPressed: () =>
-                            Navigator.of(dialogContext).pop(true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.onPrimary,
-                          elevation: 0,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppStyle.radiusInput),
-                          ),
-                        ),
-                        child: Text(
-                          confirmLabel ?? 'common.confirm'.tr(),
-                          style: AppTheme.english(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onPrimary,
-                          ),
+                  SizedBox(
+                    height: _modalBtnHeight,
+                    child: FilledButton(
+                      onPressed: () =>
+                          Navigator.of(dialogContext).pop(true),
+                      style: _primaryModalBtnStyle(),
+                      child: Text(
+                        confirmLabel ?? 'common.confirm'.tr(),
+                        style: _modalBtnText(
+                          color: AppColors.onPrimary,
+                          weight: FontWeight.w700,
                         ),
                       ),
                     ),

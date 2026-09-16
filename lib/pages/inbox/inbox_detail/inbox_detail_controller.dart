@@ -14,6 +14,7 @@ final inboxDetailControllerProvider =
         title: 'Message',
         body: 'Message details unavailable.',
         createdAt: DateTime.now(),
+        category: InboxCategory.system,
       ),
     );
   });

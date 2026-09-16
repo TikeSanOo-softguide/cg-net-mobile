@@ -14,7 +14,11 @@ class RouteNames {
 
   static const home = 'home';
   static const topUp = 'topUp';
+  static const transfer = 'transfer';
+  static const history = 'history';
+  static const servicePlaceholder = 'servicePlaceholder';
   static const packageList = 'packageList';
+  static const packageDetail = 'packageDetail';
   static const inboxList = 'inboxList';
   static const inboxDetail = 'inboxDetail';
   static const supportChat = 'supportChat';
@@ -47,8 +51,12 @@ class RoutePaths {
   static const advertisement = '/launch/advertisement';
 
   static const home = '/home';
-  static const topUp = '/home/top-up';
+  static const topUp = '/top-up';
+  static const transfer = '/transfer';
+  static const history = '/history';
+  static const servicePlaceholder = '/service/:id';
   static const packageList = '/package';
+  static const packageDetail = '/package-detail/:id';
   static const inboxList = '/inbox';
   static const inboxDetail = '/inbox/:id';
   static const supportChat = '/support';

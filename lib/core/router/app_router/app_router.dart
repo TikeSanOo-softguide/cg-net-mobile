@@ -11,12 +11,16 @@ import '../../../pages/auth/otp_verification/otp_verification_page.dart';
 import '../../../pages/auth/set_username_password/set_username_password_page.dart';
 import '../../../pages/auth/splash/splash_page.dart';
 import '../../../pages/auth/terms/terms_page.dart';
+import '../../../pages/home/history/history_page.dart';
 import '../../../pages/home/home/home_page.dart';
+import '../../../pages/home/service_placeholder/service_placeholder_page.dart';
 import '../../../pages/home/top_up/top_up_page.dart';
+import '../../../pages/home/transfer/transfer_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
 import '../../../pages/launch/advertisement/advertisement_page.dart';
 import '../../../pages/launch/skip_timer_image/skip_timer_image_page.dart';
+import '../../../pages/package/package_detail/package_detail_page.dart';
 import '../../../pages/package/package_list/package_list_page.dart';
 import '../../../pages/profile/about_app/about_app_page.dart';
 import '../../../pages/profile/change_password/change_password_page.dart';
@@ -144,6 +148,43 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.notFound,
         builder: (context, state) => const NotFoundPage(),
       ),
+      // Full-screen pages above the bottom-nav shell (avoids blank shell child).
+      GoRoute(
+        path: RoutePaths.topUp,
+        name: RouteNames.topUp,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TopUpPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.transfer,
+        name: RouteNames.transfer,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TransferPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.history,
+        name: RouteNames.history,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HistoryPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.servicePlaceholder,
+        name: RouteNames.servicePlaceholder,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ServicePlaceholderPage(serviceId: id);
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.packageDetail,
+        name: RouteNames.packageDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return PackageDetailPage(packageId: id);
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return BottomNavBar(navigationShell: navigationShell);
@@ -155,13 +196,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: RoutePaths.home,
                 name: RouteNames.home,
                 builder: (context, state) => const HomePage(),
-                routes: [
-                  GoRoute(
-                    path: 'top-up',
-                    name: RouteNames.topUp,
-                    builder: (context, state) => const TopUpPage(),
-                  ),
-                ],
               ),
             ],
           ),

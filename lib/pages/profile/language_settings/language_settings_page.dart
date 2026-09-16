@@ -38,15 +38,15 @@ class LanguageSettingsPage extends ConsumerWidget {
               color: selected == option.$1
                   ? AppColors.primarySoft
                   : AppColors.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               onTap: () => controller.change(context, option.$1),
               child: Row(
                 children: [
                   Container(
-                    width: 40,
-                    height: 28,
+                    width: 36,
+                    height: 24,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.borderLight),
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -57,18 +57,18 @@ class LanguageSettingsPage extends ConsumerWidget {
                         color: AppColors.primaryLight,
                         child: Icon(
                           LucideIcons.globe,
-                          size: 14,
+                          size: 12,
                           color: AppColors.primary,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       option.$2.tr(),
                       style: AppTheme.english(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
@@ -78,7 +78,7 @@ class LanguageSettingsPage extends ConsumerWidget {
                     selected == option.$1
                         ? LucideIcons.circle_check
                         : LucideIcons.circle,
-                    size: 20,
+                    size: 18,
                     color: selected == option.$1
                         ? AppColors.primary
                         : AppColors.border,
@@ -86,7 +86,7 @@ class LanguageSettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
           ],
         ],
       ),

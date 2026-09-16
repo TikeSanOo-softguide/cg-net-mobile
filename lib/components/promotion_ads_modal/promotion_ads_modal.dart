@@ -114,8 +114,8 @@ class PromotionAdsModal extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 10,
-                    right: 10,
+                    top: 6,
+                    right: 6,
                     child: _CloseButton(onPressed: onClose),
                   ),
                 ],
@@ -133,35 +133,47 @@ class _CloseButton extends StatelessWidget {
 
   final VoidCallback onPressed;
 
+  static const double _size = 26;
+  static const double _radius = 6;
+  static const Color _iconColor = Color(0xFFFFFFFF);
+
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        customBorder: const CircleBorder(),
         onTap: onPressed,
+        borderRadius: BorderRadius.circular(_radius),
         overlayColor: WidgetStateProperty.all(
-          Colors.white.withValues(alpha: 0.14),
+          Colors.white.withValues(alpha: 0.18),
         ),
-        child: ClipOval(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_radius),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              width: 34,
-              height: 34,
+              width: _size,
+              height: _size,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black.withValues(alpha: 0.28),
+                borderRadius: BorderRadius.circular(_radius),
+                color: AppColors.primaryLight.withValues(alpha: 0.42),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  width: 1,
+                  color: Colors.white.withValues(alpha: 0.35),
+                  width: 0.6,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
               alignment: Alignment.center,
               child: const Icon(
                 LucideIcons.x,
-                size: 16,
-                color: Colors.white,
+                size: 12,
+                color: _iconColor,
               ),
             ),
           ),

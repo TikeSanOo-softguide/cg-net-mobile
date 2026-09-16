@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -15,50 +16,130 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/user_model/user_model.dart';
 import 'inbox_list_controller.dart';
 
-class InboxListPage extends ConsumerWidget {
+class InboxListPage extends ConsumerStatefulWidget {
   const InboxListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InboxListPage> createState() => _InboxListPageState();
+}
+
+class _InboxListPageState extends ConsumerState<InboxListPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  static const _tabLabels = [
+    'inbox.tab_all',
+    'inbox.tab_announcement',
+    'inbox.tab_system',
+    'inbox.tab_promotion',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  List<InboxMessageModel> _itemsForTab(
+    List<InboxMessageModel> all,
+    int index,
+  ) {
+    switch (index) {
+      case 1:
+        return all
+            .where((e) => e.category == InboxCategory.announcement)
+            .toList();
+      case 2:
+        return all.where((e) => e.category == InboxCategory.system).toList();
+      case 3:
+        return all
+            .where((e) => e.category == InboxCategory.promotion)
+            .toList();
+      default:
+        return all;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(inboxListControllerProvider);
 
     return AppCurvedScaffold(
       title: Text('inbox.title'.tr()),
       showBack: false,
-      body: state.when(
-        loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
-        error: (e, _) => EmptyState(
-          title: 'common.error'.tr(),
-          message: e.toString(),
-          actionLabel: 'common.retry'.tr(),
-          onAction: () => ref.invalidate(inboxListControllerProvider),
-        ),
-        data: (messages) {
-          if (messages.isEmpty) {
-            return EmptyState(
-              title: 'inbox.empty_title'.tr(),
-              message: 'inbox.empty_body'.tr(),
-              icon: LucideIcons.mail_open,
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            itemCount: messages.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final item = messages[index];
-              return _InboxCard(
-                item: item,
-                index: index,
-                onTap: () => context.pushNamed(
-                  RouteNames.inboxDetail,
-                  pathParameters: {'id': item.id},
-                ),
-              );
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+            child: AppGlassTabBar(
+              controller: _tabController,
+              labels: _tabLabels,
+            ),
+          ),
+          Expanded(
+            child: state.when(
+              loading: () =>
+                  const ShimmerLoading(itemCount: 5, itemHeight: 88),
+              error: (e, _) => EmptyState(
+                title: 'common.error'.tr(),
+                message: e.toString(),
+                actionLabel: 'common.retry'.tr(),
+                onAction: () => ref.invalidate(inboxListControllerProvider),
+              ),
+              data: (messages) {
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    for (var t = 0; t < 4; t++)
+                      _InboxList(
+                        items: _itemsForTab(messages, t),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _InboxList extends StatelessWidget {
+  const _InboxList({required this.items});
+
+  final List<InboxMessageModel> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return EmptyState(
+        title: 'inbox.empty_title'.tr(),
+        message: 'inbox.empty_body'.tr(),
+        icon: LucideIcons.mail_open,
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _InboxCard(
+          item: item,
+          onTap: () => context.pushNamed(
+            RouteNames.inboxDetail,
+            pathParameters: {'id': item.id},
+          ),
+        );
+      },
     );
   }
 }
@@ -66,25 +147,38 @@ class InboxListPage extends ConsumerWidget {
 class _InboxCard extends StatelessWidget {
   const _InboxCard({
     required this.item,
-    required this.index,
     required this.onTap,
   });
 
   final InboxMessageModel item;
-  final int index;
   final VoidCallback onTap;
 
-  static const _iconStyles = [
-    (LucideIcons.clipboard_clock, Color(0xFFFFF3C4), Color(0xFFB45309)),
-    (LucideIcons.settings, Color(0xFFFFE4E6), Color(0xFFE11D48)),
-    (LucideIcons.megaphone, Color(0xFFEDE9FE), Color(0xFF7C3AED)),
-    (LucideIcons.mail, AppColors.primaryLight, AppColors.primary),
-    (LucideIcons.bell, Color(0xFFDCFCE7), Color(0xFF15803D)),
-  ];
+  static (IconData, Color, Color) _styleFor(InboxCategory category) {
+    switch (category) {
+      case InboxCategory.announcement:
+        return (
+          LucideIcons.megaphone,
+          const Color(0xFFEDE9FE),
+          const Color(0xFF7C3AED),
+        );
+      case InboxCategory.system:
+        return (
+          LucideIcons.settings,
+          const Color(0xFFE0E7FF),
+          AppColors.primary,
+        );
+      case InboxCategory.promotion:
+        return (
+          LucideIcons.gift,
+          const Color(0xFFFFE4E6),
+          const Color(0xFFE11D48),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final style = _iconStyles[index % _iconStyles.length];
+    final style = _styleFor(item.category);
     final unread = !item.isRead;
 
     return AppCard(

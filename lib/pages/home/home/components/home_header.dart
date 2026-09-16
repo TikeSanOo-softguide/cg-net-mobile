@@ -2,14 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../components/app_logo/app_logo.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
+import '../bound_broadband_provider.dart';
 import 'bind_broadband_drawer.dart';
 
-class HomeHeader extends StatefulWidget {
+class HomeHeader extends ConsumerStatefulWidget {
   const HomeHeader({
     super.key,
     required this.accountNumber,
@@ -20,12 +22,11 @@ class HomeHeader extends StatefulWidget {
   final String balanceAmount;
 
   @override
-  State<HomeHeader> createState() => _HomeHeaderState();
+  ConsumerState<HomeHeader> createState() => _HomeHeaderState();
 }
 
-class _HomeHeaderState extends State<HomeHeader> {
+class _HomeHeaderState extends ConsumerState<HomeHeader> {
   bool _balanceVisible = false;
-  BoundBroadband? _bound;
 
   String get _maskedAmount => '********';
 
@@ -37,26 +38,26 @@ class _HomeHeaderState extends State<HomeHeader> {
   }
 
   Future<void> _onHeaderActionTap() async {
-    if (_bound == null) {
+    final bound = ref.read(boundBroadbandProvider);
+    if (bound == null) {
       final result = await showBindBroadbandDrawer(context);
       if (!mounted || result == null) return;
-      setState(() => _bound = result);
+      ref.read(boundBroadbandProvider.notifier).state = result;
       await showBindSuccessModal(context);
       return;
     }
 
-    final removed = await showBoundAccountDrawer(context, bound: _bound!);
+    final removed = await showBoundAccountDrawer(context, bound: bound);
     if (!mounted || !removed) return;
-    setState(() => _bound = null);
+    ref.read(boundBroadbandProvider.notifier).state = null;
   }
 
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    // Slightly smaller / softer top-right glass orb.
-    final topOrb = (w * 0.40).clamp(130.0, 175.0);
-    final bottomOrb = (w * 0.32).clamp(110.0, 150.0);
-    final bound = _bound;
+    // Bottom corner glass orbs (left + matching right).
+    final bottomOrb = (w * 0.42).clamp(150.0, 200.0);
+    final bound = ref.watch(boundBroadbandProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -76,18 +77,18 @@ class _HomeHeaderState extends State<HomeHeader> {
             ),
           ),
           Positioned(
-            top: -(topOrb * 0.58),
-            right: -(topOrb * 0.55),
+            bottom: -(bottomOrb * 0.28),
+            left: -(bottomOrb * 0.32),
             child: IgnorePointer(
               child: Container(
-                width: topOrb,
-                height: topOrb,
+                width: bottomOrb,
+                height: bottomOrb,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: Colors.white.withValues(alpha: 0.07),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 0.45,
+                    color: Colors.white.withValues(alpha: 0.10),
+                    width: 0.5,
                   ),
                 ),
               ),
@@ -95,7 +96,7 @@ class _HomeHeaderState extends State<HomeHeader> {
           ),
           Positioned(
             bottom: -(bottomOrb * 0.28),
-            left: -(bottomOrb * 0.32),
+            right: -(bottomOrb * 0.32),
             child: IgnorePointer(
               child: Container(
                 width: bottomOrb,
@@ -119,7 +120,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                 children: [
                   Row(
                     children: [
-                      AppLogo(
+                      const AppLogo(
                         width: 60,
                         height: 50,
                         padding: 0,
@@ -136,7 +137,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                               'home.account_number'.tr(),
                               style: AppTheme.english(
                                 color: AppColors.onPrimary,
-                                fontSize: 11,
+                                fontSize: 9,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -145,7 +146,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                               widget.accountNumber,
                               style: AppTheme.english(
                                 color: AppColors.onPrimary,
-                                fontSize: 15,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

@@ -24,12 +24,12 @@ class HomeQuickActions extends StatelessWidget {
       (
         LucideIcons.arrow_left_right,
         context.tr('home.action_transfer'),
-        null,
+        RouteNames.transfer,
       ),
       (
         LucideIcons.clipboard_clock,
         context.tr('home.action_history'),
-        null,
+        RouteNames.history,
       ),
     ];
 
@@ -56,9 +56,7 @@ class HomeQuickActions extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: actions[i].$3 == null
-                      ? null
-                      : () => context.pushNamed(actions[i].$3!),
+                  onTap: () => context.pushNamed(actions[i].$3),
                   borderRadius: BorderRadius.circular(8),
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
