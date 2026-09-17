@@ -129,7 +129,7 @@ class _InboxList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 5),
       itemBuilder: (context, index) {
         final item = items[index];
         return _InboxCard(
@@ -187,11 +187,12 @@ class _InboxCard extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(unread ? 12 : 14, 8, 14, 8),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.primaryLight,
                         borderRadius: AppStyle.borderRadiusSm,
@@ -199,7 +200,7 @@ class _InboxCard extends StatelessWidget {
                       child: Icon(
                         _iconFor(item.category),
                         color: AppColors.primary,
-                        size: 16,
+                        size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -208,7 +209,7 @@ class _InboxCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Expanded(
                                 child: Text(
@@ -221,6 +222,7 @@ class _InboxCard extends StatelessWidget {
                                         ? FontWeight.w700
                                         : FontWeight.w600,
                                     color: AppColors.primary,
+                                    height: 1.25,
                                   ),
                                 ),
                               ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 
-/// Shared surface card used across lists and home sections.
+/// Shared flat card — white surface, no border / shadow.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
@@ -22,18 +22,18 @@ class AppCard extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final bool elevated;
+
+  /// Kept for call-site compatibility. Cards stay flat (no edge).
   final bool bordered;
   final Color? color;
   final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? AppStyle.borderRadiusMd;
+    final radius = borderRadius ?? AppStyle.borderRadiusSm;
     final decoration = BoxDecoration(
       color: color ?? AppColors.surface,
       borderRadius: radius,
-      border: bordered ? Border.fromBorderSide(AppStyle.borderSideLight) : null,
-      boxShadow: elevated ? AppStyle.cardShadowElevated : AppStyle.cardShadow,
     );
 
     final content = Padding(padding: padding, child: child);

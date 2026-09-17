@@ -86,6 +86,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 8),
                 _LanguageOption(
+                  flagAsset: 'assets/images/flags/en.png',
                   label: 'language.english'.tr(),
                   selected: selected == 'en',
                   onTap: () async {
@@ -94,6 +95,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   },
                 ),
                 _LanguageOption(
+                  flagAsset: 'assets/images/flags/my.png',
                   label: 'language.myanmar'.tr(),
                   selected: selected == 'my',
                   onTap: () async {
@@ -102,6 +104,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   },
                 ),
                 _LanguageOption(
+                  flagAsset: 'assets/images/flags/zh.png',
                   label: 'language.chinese'.tr(),
                   selected: selected == 'zh',
                   onTap: () async {
@@ -310,11 +313,13 @@ class _LoginCheckbox extends StatelessWidget {
 
 class _LanguageOption extends StatelessWidget {
   const _LanguageOption({
+    required this.flagAsset,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
+  final String flagAsset;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -323,6 +328,27 @@ class _LanguageOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
+      leading: Container(
+        width: 36,
+        height: 24,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppStyle.radiusSm),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Image.asset(
+          flagAsset,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const ColoredBox(
+            color: AppColors.primaryLight,
+            child: Icon(
+              LucideIcons.globe,
+              size: 12,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      ),
       title: Text(
         label,
         style: AppTheme.english(

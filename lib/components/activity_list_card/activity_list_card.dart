@@ -80,11 +80,12 @@ class ActivityListCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.primaryLight,
                 borderRadius: AppStyle.borderRadiusSm,
@@ -92,7 +93,7 @@ class ActivityListCard extends StatelessWidget {
               child: Icon(
                 _iconFor(item.kind),
                 color: AppColors.primary,
-                size: 16,
+                size: 20,
               ),
             ),
             const SizedBox(width: 12),
@@ -101,7 +102,7 @@ class ActivityListCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
@@ -112,6 +113,7 @@ class ActivityListCard extends StatelessWidget {
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primary,
+                            height: 1.25,
                           ),
                         ),
                       ),

@@ -124,15 +124,15 @@ class _TopUpPageState extends State<TopUpPage> {
                   Row(
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(
                           LucideIcons.wallet,
-                          size: 16,
+                          size: 20,
                           color: AppColors.primary,
                         ),
                       ),
@@ -290,7 +290,7 @@ class _TopUpPageState extends State<TopUpPage> {
             ),
             const SizedBox(height: 10),
             for (var i = 0; i < _recent.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
+              if (i > 0) const SizedBox(height: 5),
               ActivityListCard(
                 item: _recent[i],
                 index: i,

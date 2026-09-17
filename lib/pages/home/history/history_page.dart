@@ -152,7 +152,7 @@ class _HistoryList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 5),
       itemBuilder: (context, index) {
         return ActivityListCard(
           item: items[index],

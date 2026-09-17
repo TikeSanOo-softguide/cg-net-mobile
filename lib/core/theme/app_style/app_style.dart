@@ -76,21 +76,9 @@ class AppStyle {
   static const double inputFontSize = fontBody;
 
   // —— Shadows ——
-  static List<BoxShadow> get cardShadow => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 4,
-          offset: const Offset(0, 1),
-        ),
-      ];
+  static List<BoxShadow> get cardShadow => const <BoxShadow>[];
 
-  static List<BoxShadow> get cardShadowElevated => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ];
+  static List<BoxShadow> get cardShadowElevated => const <BoxShadow>[];
 
   // —— Borders ——
   static BorderSide get borderSide =>
@@ -98,6 +86,10 @@ class AppStyle {
 
   static BorderSide get borderSideLight =>
       const BorderSide(color: AppColors.borderLight, width: 0.5);
+
+  /// Paper-edge outline (optional; AppCard is flat / borderless).
+  static BorderSide get borderSidePaper =>
+      const BorderSide(color: AppColors.paperBorder, width: 0.8);
 
   static BorderSide get borderSideFocus =>
       const BorderSide(color: AppColors.primary, width: 1.5);
@@ -114,9 +106,7 @@ class AppStyle {
   // —— Decorations ——
   static BoxDecoration get cardDecoration => BoxDecoration(
         color: AppColors.surface,
-        borderRadius: borderRadiusMd,
-        border: Border.fromBorderSide(borderSideLight),
-        boxShadow: cardShadow,
+        borderRadius: borderRadiusSm,
       );
 
   static InputBorder get inputBorder => OutlineInputBorder(

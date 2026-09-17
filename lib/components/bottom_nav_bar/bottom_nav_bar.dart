@@ -47,11 +47,17 @@ class BottomNavBar extends ConsumerWidget {
               decoration: const BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: navTopRadius,
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.paperBorder,
+                    width: 0.8,
+                  ),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 16,
-                    offset: Offset(0, -4),
+                    color: Color(0x0A000000),
+                    blurRadius: 10,
+                    offset: Offset(0, -2),
                   ),
                 ],
               ),

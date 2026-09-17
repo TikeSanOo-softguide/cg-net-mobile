@@ -99,15 +99,15 @@ class _TransferPageState extends State<TransferPage> {
                   Row(
                     children: [
                       Container(
-                        width: 34,
-                        height: 34,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(
                           LucideIcons.arrow_left_right,
-                          size: 16,
+                          size: 20,
                           color: AppColors.primary,
                         ),
                       ),
@@ -217,7 +217,7 @@ class _TransferPageState extends State<TransferPage> {
             ),
             const SizedBox(height: 10),
             for (var i = 0; i < _recent.length; i++) ...[
-              if (i > 0) const SizedBox(height: 10),
+              if (i > 0) const SizedBox(height: 5),
               ActivityListCard(
                 item: _recent[i],
                 index: i,

@@ -39,6 +39,9 @@ class AppColors {
   static const Color border = Color(0xFFE0E3E5);
   static const Color borderLight = Color(0xFFF1F5F9);
 
+  /// Ultra-thin paper edge for cards.
+  static const Color paperBorder = Color(0xFFE8E8E8);
+
   static const Color error = Color(0xFFB3261E);
   static const Color success = Color(0xFF1B7A4E);
 }

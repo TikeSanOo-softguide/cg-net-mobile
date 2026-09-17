@@ -347,9 +347,9 @@ class _ServiceTile extends StatelessWidget {
   final _ServiceItem item;
   final VoidCallback onTap;
 
-  static const double _boxSize = 42;
-  static const double _iconSize = 28;
-  static const double _boxRadius = 10;
+  static const double _boxSize = 36;
+  static const double _iconSize = 22;
+  static const double _boxRadius = 8;
 
   @override
   Widget build(BuildContext context) {

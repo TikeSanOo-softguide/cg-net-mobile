@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../components/app_card/app_card.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -35,19 +36,21 @@ class HomeOffersSection extends StatelessWidget {
     ),
   ];
 
-  /// Tighter gap between package images.
-  static const _gap = 4.0;
+  static const _gap = 3.0;
+  static const _buttonHeight = 26.0;
+  static const _buttonPadH = 6.0;
+  static const _buttonPadV = 6.0;
 
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    // Same content width as Services [AppCard] (pagePaddingH both sides).
     final contentWidth = screenWidth - (AppStyle.spaceLg * 2);
-    // Slightly smaller cards; ~2 visible inside content width.
-    final cardWidth = ((contentWidth - _gap) / 2.35).clamp(100.0, 148.0);
-    final imageHeight = cardWidth * 1.12;
-    final slideHeight = imageHeight + 40;
+    // Narrower cards — ~2.85 visible; taller cover image.
+    final cardWidth = ((contentWidth - _gap) / 2.85).clamp(88.0, 112.0);
+    final imageHeight = cardWidth * 1.22;
+    // Full-bleed image + button pad + button.
+    final slideHeight = imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
 
     return Padding(
       key: ValueKey('offers-$locale'),
@@ -84,31 +87,27 @@ class HomeOffersSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 1),
-          // Clip sides — radius 14.
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: SizedBox(
-              width: contentWidth,
-              height: slideHeight,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: _packages.length,
-                separatorBuilder: (_, __) => const SizedBox(width: _gap),
-                itemBuilder: (context, index) {
-                  final package = _packages[index];
-                  return _PackageImageCard(
-                    id: package.id,
-                    imagePath: package.imagePath,
-                    width: cardWidth,
-                    imageHeight: imageHeight,
-                    popular: package.popular,
-                    locale: locale,
-                  );
-                },
-              ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: contentWidth,
+            height: slideHeight,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: _packages.length,
+              separatorBuilder: (_, __) => const SizedBox(width: _gap),
+              itemBuilder: (context, index) {
+                final package = _packages[index];
+                return _PackageOfferCard(
+                  id: package.id,
+                  imagePath: package.imagePath,
+                  width: cardWidth,
+                  imageHeight: imageHeight,
+                  popular: package.popular,
+                  locale: locale,
+                );
+              },
             ),
           ),
         ],
@@ -129,8 +128,9 @@ class _OfferPackage {
   final bool popular;
 }
 
-class _PackageImageCard extends StatelessWidget {
-  const _PackageImageCard({
+/// Full-bleed cover image + outline Buy now; no top/side padding on the image.
+class _PackageOfferCard extends StatelessWidget {
+  const _PackageOfferCard({
     required this.id,
     required this.imagePath,
     required this.width,
@@ -151,108 +151,70 @@ class _PackageImageCard extends StatelessWidget {
     return SizedBox(
       key: ValueKey('package-$id-$locale'),
       width: width,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: width,
-            height: imageHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFE8E8FF),
-                  Color(0xFFF7F8FF),
-                  Color(0xFFFFF8E8),
-                ],
+      child: AppCard(
+        elevated: false,
+        bordered: false,
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(AppStyle.radiusSm),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.10),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(3),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(11),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  const ColoredBox(color: AppColors.primarySoft),
-                  Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0, -0.12),
-                    filterQuality: FilterQuality.high,
-                    gaplessPlayback: true,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: AppColors.primaryLight,
+              child: SizedBox(
+                width: double.infinity,
+                height: imageHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: AppColors.primarySoft),
+                    Image.asset(
+                      imagePath,
+                      fit: BoxFit.cover,
                       alignment: Alignment.center,
-                      child: const Icon(
-                        LucideIcons.image_off,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x00000000),
-                          Color(0x00000000),
-                          Color(0x220100CA),
-                        ],
-                        stops: [0.0, 0.55, 1.0],
-                      ),
-                    ),
-                  ),
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 36,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0x33FFFFFF),
-                            Color(0x00FFFFFF),
-                          ],
+                      filterQuality: FilterQuality.high,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.primaryLight,
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          LucideIcons.image_off,
+                          color: AppColors.primary,
+                          size: 20,
                         ),
                       ),
                     ),
-                  ),
-                  if (popular)
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      child: _PopularCornerBadge(),
-                    ),
-                ],
+                    if (popular)
+                      const Positioned(
+                        top: 0,
+                        left: 0,
+                        child: _PopularCornerBadge(),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppStyle.spaceSm),
-          _BuyNowButton(
-            onTap: () => context.pushNamed(
-              RouteNames.packageDetail,
-              pathParameters: {'id': id},
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                HomeOffersSection._buttonPadH,
+                HomeOffersSection._buttonPadV,
+                HomeOffersSection._buttonPadH,
+                HomeOffersSection._buttonPadV,
+              ),
+              child: SizedBox(
+                height: HomeOffersSection._buttonHeight,
+                child: _BuyNowButton(
+                  onTap: () => context.pushNamed(
+                    RouteNames.packageDetail,
+                    pathParameters: {'id': id},
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -267,7 +229,7 @@ class _PopularCornerBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 5, 10, 5),
+      padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -275,23 +237,16 @@ class _PopularCornerBadge extends StatelessWidget {
           colors: [_coral, _coralDeep],
         ),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(11),
-          bottomRight: Radius.circular(10),
+          topLeft: Radius.circular(AppStyle.radiusSm),
+          bottomRight: Radius.circular(8),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x40000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
       ),
       child: Text(
         context.tr('home.popular'),
         style: AppTheme.captionSm(color: Colors.white).copyWith(
           fontWeight: FontWeight.w800,
-          fontSize: 9,
-          letterSpacing: 0.6,
+          fontSize: 8,
+          letterSpacing: 0.5,
           height: 1.1,
         ),
       ),
@@ -306,25 +261,29 @@ class _BuyNowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(6);
     return Material(
-      color: AppColors.primary,
-      borderRadius: BorderRadius.circular(6),
+      color: Colors.transparent,
+      borderRadius: radius,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        splashColor: Colors.white.withValues(alpha: 0.15),
-        highlightColor: Colors.white.withValues(alpha: 0.06),
-        child: SizedBox(
-          height: 28,
+        borderRadius: radius,
+        splashColor: AppColors.primary.withValues(alpha: 0.10),
+        highlightColor: AppColors.primary.withValues(alpha: 0.05),
+        child: Container(
+          height: 26,
           width: double.infinity,
-          child: Center(
-            child: Text(
-              context.tr('home.buy_now'),
-              style: AppTheme.captionSm(color: AppColors.onPrimary).copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-                height: 1,
-              ),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: AppColors.primary, width: 1.2),
+          ),
+          child: Text(
+            context.tr('home.buy_now'),
+            style: AppTheme.captionSm(color: AppColors.primary).copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              height: 1,
             ),
           ),
         ),
