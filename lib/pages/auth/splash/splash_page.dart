@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import 'splash_controller.dart';
 
-/// Splash — logo, then titles word-by-word with golden gradient.
+/// Splash — logo, then titles word-by-word with metallic gold gradient.
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
@@ -18,10 +18,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
     with SingleTickerProviderStateMixin {
   static const _titleZhWords = ['晨光', '产电'];
   static const _titleMyWords = ['မိုင်းလား', 'ရောင်နီဦး', 'ကုမ္ပဏီ'];
-  static const _subtitleWords = ['WELCOME'];
 
-  /// logo ~1.4s + titles ~2s + subtitle ~1.2s
-  static const _totalMs = 5200;
+  /// logo ~1.4s + titles ~2.4s
+  static const _totalMs = 4000;
 
   late final AnimationController _controller;
 
@@ -31,7 +30,6 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   late final Animation<double> _titleZhProgress;
   late final Animation<double> _titleMyProgress;
-  late final Animation<double> _subtitleProgress;
 
   @override
   void initState() {
@@ -62,22 +60,16 @@ class _SplashPageState extends ConsumerState<SplashPage>
       ),
     );
 
-    // 0.28–0.52 Chinese title word by word
+    // 0.28–0.64 Chinese title word by word
     _titleZhProgress = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.28, 0.52, curve: Curves.linear),
+      curve: const Interval(0.28, 0.64, curve: Curves.linear),
     );
 
-    // 0.48–0.74 Myanmar title word by word
+    // 0.56–1.00 Myanmar title word by word
     _titleMyProgress = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.48, 0.74, curve: Curves.linear),
-    );
-
-    // 0.72–0.95 subtitle word by word
-    _subtitleProgress = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.72, 0.95, curve: Curves.easeOutCubic),
+      curve: const Interval(0.56, 1.00, curve: Curves.linear),
     );
 
     _controller.forward();
@@ -167,21 +159,6 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         wordGap: 6,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: _WordRow(
-                        words: _subtitleWords,
-                        progressFor: (i) => _wordProgress(
-                          _subtitleProgress,
-                          i,
-                          _subtitleWords.length,
-                        ),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 2.8,
-                      ),
-                    ),
                   ],
                 ),
               );
@@ -247,17 +224,16 @@ class _GoldenWord extends StatelessWidget {
   final double? letterSpacing;
 
   static const _goldGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFFFFFDE7),
-      Color(0xFFFFE082),
-      Color(0xFFFFD54F),
-      Color(0xFFFFC107),
-      Color(0xFFFFB300),
-      Color(0xFFFF8F00),
+      Color(0xFFFFF6C8),
+      Color(0xFFFFEE13),
+      Color(0xFFD4AF37),
+      Color(0xFFB8860B),
+      Color(0xFFF3D774),
     ],
-    stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    stops: [0.0, 0.22, 0.48, 0.78, 1.0],
   );
 
   @override

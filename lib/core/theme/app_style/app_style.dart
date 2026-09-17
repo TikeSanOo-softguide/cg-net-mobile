@@ -50,15 +50,15 @@ class AppStyle {
   static const double circleButtonSize = 36;
   static const double topBarHeight = 40;
   static const double bottomNavHeight = 64;
-  static const double bottomNavIconSize = 23;
-  static const double bottomNavLabelSize = 12;
+  static const double bottomNavIconSize = 20;
+  static const double bottomNavLabelSize = 11;
   static const double bottomNavIconGap = 4;
 
   // —— Typography sizes ——
   static const double fontHero = 28;
   static const double fontPageTitle = 22;
   static const double fontTopBarTitle = 15;
-  static const double fontSectionTitle = 15;
+  static const double fontSectionTitle = 14;
   static const double fontCardTitle = 15;
   static const double fontBody = 14;
   static const double fontBodyLg = 15;

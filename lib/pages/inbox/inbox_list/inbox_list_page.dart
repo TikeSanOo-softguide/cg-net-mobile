@@ -153,32 +153,19 @@ class _InboxCard extends StatelessWidget {
   final InboxMessageModel item;
   final VoidCallback onTap;
 
-  static (IconData, Color, Color) _styleFor(InboxCategory category) {
+  static IconData _iconFor(InboxCategory category) {
     switch (category) {
       case InboxCategory.announcement:
-        return (
-          LucideIcons.megaphone,
-          const Color(0xFFEDE9FE),
-          const Color(0xFF7C3AED),
-        );
+        return LucideIcons.megaphone;
       case InboxCategory.system:
-        return (
-          LucideIcons.settings,
-          const Color(0xFFE0E7FF),
-          AppColors.primary,
-        );
+        return LucideIcons.settings;
       case InboxCategory.promotion:
-        return (
-          LucideIcons.gift,
-          const Color(0xFFFFE4E6),
-          const Color(0xFFE11D48),
-        );
+        return LucideIcons.gift;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final style = _styleFor(item.category);
     final unread = !item.isRead;
 
     return AppCard(
@@ -186,7 +173,7 @@ class _InboxCard extends StatelessWidget {
       elevated: true,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusMd,
+      borderRadius: AppStyle.borderRadiusSm,
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -198,18 +185,22 @@ class _InboxCard extends StatelessWidget {
               ),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(unread ? 12 : 14, 12, 14, 12),
+                padding: EdgeInsets.fromLTRB(unread ? 12 : 14, 8, 14, 8),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        color: style.$2,
+                        color: AppColors.primaryLight,
                         borderRadius: AppStyle.borderRadiusSm,
                       ),
-                      child: Icon(style.$1, color: style.$3, size: 22),
+                      child: Icon(
+                        _iconFor(item.category),
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

@@ -47,22 +47,14 @@ class ActivityListCard extends StatelessWidget {
   static const _creditGreen = Color(0xFF15803D);
   static const _debitRed = Color(0xFFDC2626);
 
-  static (IconData, Color, Color) _styleFor(ActivityKind kind) {
+  static IconData _iconFor(ActivityKind kind) {
     switch (kind) {
       case ActivityKind.topUp:
-        return (LucideIcons.wallet, const Color(0xFFE0E7FF), AppColors.primary);
+        return LucideIcons.wallet;
       case ActivityKind.transfer:
-        return (
-          LucideIcons.arrow_left_right,
-          const Color(0xFFDCFCE7),
-          const Color(0xFF15803D),
-        );
+        return LucideIcons.arrow_left_right;
       case ActivityKind.bill:
-        return (
-          LucideIcons.circle_dollar_sign,
-          const Color(0xFFFFF3C4),
-          const Color(0xFFCA8A04),
-        );
+        return LucideIcons.circle_dollar_sign;
     }
   }
 
@@ -76,7 +68,6 @@ class ActivityListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _styleFor(item.kind);
     final amountText =
         '${item.isCredit ? '+' : '-'}${NumberFormat('#,##0').format(item.amount)} Pts';
 
@@ -85,20 +76,24 @@ class ActivityListCard extends StatelessWidget {
       elevated: true,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusMd,
+      borderRadius: AppStyle.borderRadiusSm,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: style.$2,
+                color: AppColors.primaryLight,
                 borderRadius: AppStyle.borderRadiusSm,
               ),
-              child: Icon(style.$1, color: style.$3, size: 22),
+              child: Icon(
+                _iconFor(item.kind),
+                color: AppColors.primary,
+                size: 16,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

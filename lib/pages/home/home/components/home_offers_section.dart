@@ -60,7 +60,7 @@ class HomeOffersSection extends StatelessWidget {
               Expanded(
                 child: Text(
                   context.tr('home.special_offers'),
-                  style: AppTheme.sectionTitle(),
+                  style: AppTheme.sectionTitle(color: AppColors.textMuted),
                 ),
               ),
               InkWell(
@@ -84,7 +84,7 @@ class HomeOffersSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 1),
           // Clip sides — radius 14.
           ClipRRect(
             borderRadius: BorderRadius.circular(14),

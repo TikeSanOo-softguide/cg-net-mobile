@@ -83,48 +83,45 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        key: ValueKey('home-$localeCode'),
-        slivers: [
-          SliverToBoxAdapter(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    HomeHeader(
-                      accountNumber: data.accountNumber,
-                      balanceAmount: data.balanceAmount,
-                    ),
-                    // Keeps quick-actions card inside hit-test bounds.
-                    const SizedBox(height: 29),
-                  ],
+      body: Column(
+        children: [
+          HomePinnedBar(accountNumber: data.accountNumber),
+          Expanded(
+            child: CustomScrollView(
+              key: ValueKey('home-$localeCode'),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          HomeBalanceHeader(
+                            balanceAmount: data.balanceAmount,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                      const Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: HomeQuickActions(),
+                      ),
+                    ],
+                  ),
                 ),
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: HomeQuickActions(),
-                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 3)),
+                const SliverToBoxAdapter(child: HomeServicesSection()),
+                const SliverToBoxAdapter(child: SizedBox(height: 3)),
+                const SliverToBoxAdapter(child: HomeOffersSection()),
+                const SliverToBoxAdapter(child: SizedBox(height: 3)),
+                const SliverToBoxAdapter(child: HomePromoBanner()),
+                const SliverToBoxAdapter(child: SizedBox(height: 15)),
               ],
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 18)),
-          // TODO: temporarily hidden — restore Unlimited Data / plan card later
-          // SliverToBoxAdapter(
-          //   child: HomePlanCard(
-          //     title: data.planTitle,
-          //     expiry: data.planExpiry,
-          //   ),
-          // ),
-          // const SliverToBoxAdapter(child: SizedBox(height: AppStyle.spaceXl)),
-          const SliverToBoxAdapter(child: HomeServicesSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: 10)),
-          const SliverToBoxAdapter(child: HomeOffersSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: 10)),
-          const SliverToBoxAdapter(child: HomePromoBanner()),
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
     );

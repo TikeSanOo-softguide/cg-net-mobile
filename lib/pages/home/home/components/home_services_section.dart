@@ -228,7 +228,7 @@ class HomeServicesSection extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'home.services'.tr(),
-                  style: AppTheme.sectionTitle(),
+                  style: AppTheme.sectionTitle(color: AppColors.textMuted),
                 ),
               ),
               InkWell(
@@ -253,7 +253,7 @@ class HomeServicesSection extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: AppStyle.spaceSm),
+        const SizedBox(height: 1),
         AppCard(
           margin: AppStyle.pagePaddingH,
           elevated: true,

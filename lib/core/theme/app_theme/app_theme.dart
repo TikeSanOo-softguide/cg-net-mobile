@@ -61,7 +61,7 @@ class AppTheme {
 
   static TextStyle sectionTitle({Color? color}) => english(
         fontSize: AppStyle.fontSectionTitle,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: color ?? AppColors.textPrimary,
         height: AppStyle.lineHeightTitle,
       );

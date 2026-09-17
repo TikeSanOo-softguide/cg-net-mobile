@@ -117,15 +117,15 @@ class _TopUpPageState extends State<TopUpPage> {
             AppCard(
               elevated: true,
               bordered: false,
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        width: 34,
-                        height: 34,
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(6),
@@ -151,7 +151,7 @@ class _TopUpPageState extends State<TopUpPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
-                            vertical: 4,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFDCFCE7),
@@ -168,7 +168,7 @@ class _TopUpPageState extends State<TopUpPage> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   AppInput(
                     controller: _serial,
                     label: 'topup.serial_label'.tr(),
@@ -187,7 +187,7 @@ class _TopUpPageState extends State<TopUpPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: SizedBox(
@@ -215,7 +215,7 @@ class _TopUpPageState extends State<TopUpPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   AppInput(
                     controller: _account,
                     label: 'topup.account_label'.tr(),
@@ -230,7 +230,7 @@ class _TopUpPageState extends State<TopUpPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   AppInput(
                     controller: _pin,
                     label: 'topup.pin_label'.tr(),
@@ -252,7 +252,7 @@ class _TopUpPageState extends State<TopUpPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerRight,
                     child: SizedBox(
