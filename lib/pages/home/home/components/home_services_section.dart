@@ -12,6 +12,7 @@ import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../bound_broadband_provider.dart';
+import 'home_section_header.dart';
 
 /// Home service icons — one main [AppCard] with flat tinted PNG tiles.
 class HomeServicesSection extends ConsumerWidget {
@@ -219,42 +220,18 @@ class HomeServicesSection extends ConsumerWidget {
     final _ = context.locale;
     final items = _homeItems;
 
-    return Column(
-      children: [
-        Padding(
-          padding: AppStyle.pagePaddingH,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'home.services'.tr(),
-                  style: AppTheme.sectionTitle(color: AppColors.textMuted),
-                ),
-              ),
-              InkWell(
-                onTap: () => _openServicesDrawer(context, ref),
-                borderRadius: AppStyle.borderRadiusSm,
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppStyle.spaceXs,
-                    vertical: AppStyle.spaceXs,
-                  ),
-                  child: Text(
-                    'home.see_all'.tr(),
-                    style: AppTheme.caption(
-                      color: AppColors.primary,
-                      weight: FontWeight.w500,
-                    ).copyWith(fontSize: 10),
-                  ),
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.only(top: HomeSectionHeader.sectionGap),
+      child: Column(
+        children: [
+          Padding(
+            padding: AppStyle.pagePaddingH,
+            child: HomeSectionHeader(
+              title: 'home.services'.tr(),
+              onSeeAll: () => _openServicesDrawer(context, ref),
+            ),
           ),
-        ),
-        const SizedBox(height: 1),
-        AppCard(
+          AppCard(
           margin: AppStyle.pagePaddingH,
           elevated: true,
           bordered: false,
@@ -276,7 +253,8 @@ class HomeServicesSection extends ConsumerWidget {
             ],
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -403,11 +381,10 @@ class _ServiceTile extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.captionSm(color: AppColors.textMuted).copyWith(
-                color: AppColors.textMuted,
+              style: AppTheme.english(
                 fontSize: 11,
-                fontWeight: FontWeight.w600,
-                height: 1.15,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
               ),
             ),
           ],

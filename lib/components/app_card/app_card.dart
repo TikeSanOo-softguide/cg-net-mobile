@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 
-/// Shared flat card — white surface, no border / shadow.
+/// Shared card — white fill, no border / shadow.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
@@ -31,16 +31,14 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = borderRadius ?? AppStyle.borderRadiusSm;
-    final decoration = BoxDecoration(
-      color: color ?? AppColors.surface,
-      borderRadius: radius,
-    );
-
     final content = Padding(padding: padding, child: child);
 
     return Container(
       margin: margin,
-      decoration: decoration,
+      decoration: BoxDecoration(
+        color: color ?? AppColors.surface,
+        borderRadius: radius,
+      ),
       clipBehavior: Clip.antiAlias,
       child: onTap == null
           ? content

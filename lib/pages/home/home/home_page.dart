@@ -81,48 +81,49 @@ class _HomePageState extends ConsumerState<HomePage> {
     final data = ref.watch(homeControllerProvider);
     final localeCode = ref.watch(appLocaleProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          HomePinnedBar(accountNumber: data.accountNumber),
-          Expanded(
-            child: CustomScrollView(
-              key: ValueKey('home-$localeCode'),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          HomeBalanceHeader(
-                            balanceAmount: data.balanceAmount,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                      const Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: HomeQuickActions(),
-                      ),
-                    ],
+    return MediaQuery.removePadding(
+      context: context,
+      removeBottom: true,
+      child: ColoredBox(
+        color: AppColors.background,
+        child: Column(
+          children: [
+            HomePinnedBar(accountNumber: data.accountNumber),
+            Expanded(
+              child: CustomScrollView(
+                key: ValueKey('home-$localeCode'),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            HomeBalanceHeader(
+                              balanceAmount: data.balanceAmount,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                        const Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: HomeQuickActions(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 3)),
-                const SliverToBoxAdapter(child: HomeServicesSection()),
-                const SliverToBoxAdapter(child: SizedBox(height: 3)),
-                const SliverToBoxAdapter(child: HomeOffersSection()),
-                const SliverToBoxAdapter(child: SizedBox(height: 3)),
-                const SliverToBoxAdapter(child: HomePromoBanner()),
-                const SliverToBoxAdapter(child: SizedBox(height: 15)),
-              ],
+                  const SliverToBoxAdapter(child: HomeServicesSection()),
+                  const SliverToBoxAdapter(child: HomeOffersSection()),
+                  const SliverToBoxAdapter(child: HomePromoBanner()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

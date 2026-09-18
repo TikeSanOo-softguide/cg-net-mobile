@@ -47,7 +47,7 @@ class HomePinnedBar extends ConsumerWidget {
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
             child: Row(
               children: [
                 const AppLogo(
@@ -145,7 +145,7 @@ class HomePinnedBar extends ConsumerWidget {
   }
 }
 
-/// Scrollable header: balance + decorative orbs (below the pinned bar).
+/// Scrollable header: balance (below the pinned bar).
 class HomeBalanceHeader extends ConsumerStatefulWidget {
   const HomeBalanceHeader({super.key, required this.balanceAmount});
 
@@ -169,9 +169,6 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    final bottomOrb = (w * 0.42).clamp(150.0, 200.0);
-
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -181,42 +178,6 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
               bottom: Radius.circular(20),
             ),
             child: const ColoredBox(color: AppColors.primary),
-          ),
-        ),
-        Positioned(
-          bottom: -(bottomOrb * 0.28),
-          left: -(bottomOrb * 0.32),
-          child: IgnorePointer(
-            child: Container(
-              width: bottomOrb,
-              height: bottomOrb,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.07),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.10),
-                  width: 0.5,
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: -(bottomOrb * 0.28),
-          right: -(bottomOrb * 0.32),
-          child: IgnorePointer(
-            child: Container(
-              width: bottomOrb,
-              height: bottomOrb,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.07),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.10),
-                  width: 0.5,
-                ),
-              ),
-            ),
           ),
         ),
         Padding(
