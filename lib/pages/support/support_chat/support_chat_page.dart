@@ -111,6 +111,8 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
             ),
             SafeArea(
               top: false,
+              // Shell bottom nav already consumes system bottom inset.
+              bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Column(

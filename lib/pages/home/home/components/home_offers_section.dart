@@ -41,28 +41,22 @@ class HomeOffersSection extends StatelessWidget {
   static const _buttonHeight = 26.0;
   static const _buttonPadH = 6.0;
   static const _buttonPadV = 6.0;
-  static const _cardPadBottom = 6.0;
 
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final contentWidth = screenWidth - (AppStyle.spaceLg * 2);
+    final contentWidth = screenWidth - (AppStyle.pageMarginH * 2);
     // Slightly smaller cards — ~3.05 visible.
     final cardWidth = ((contentWidth - _gap) / 3.05).clamp(84.0, 104.0);
     final imageHeight = cardWidth * 1.15;
-    // Image + gap above button + button + card bottom padding.
+    // Image + top button pad + button + bottom button pad.
     final slideHeight =
-        imageHeight + _buttonPadV + _buttonHeight + _cardPadBottom;
+        imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
 
     return Padding(
       key: ValueKey('offers-$locale'),
-      padding: const EdgeInsets.fromLTRB(
-        AppStyle.spaceLg,
-        HomeSectionHeader.sectionGap,
-        AppStyle.spaceLg,
-        0,
-      ),
+      padding: AppStyle.pagePaddingH,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -136,7 +130,7 @@ class _PackageOfferCard extends StatelessWidget {
       child: AppCard(
         elevated: false,
         bordered: false,
-        padding: const EdgeInsets.only(bottom: HomeOffersSection._cardPadBottom),
+        padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,7 +177,7 @@ class _PackageOfferCard extends StatelessWidget {
                 HomeOffersSection._buttonPadH,
                 HomeOffersSection._buttonPadV,
                 HomeOffersSection._buttonPadH,
-                0,
+                HomeOffersSection._buttonPadV,
               ),
               child: SizedBox(
                 height: HomeOffersSection._buttonHeight,

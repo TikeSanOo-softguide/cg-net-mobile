@@ -17,7 +17,7 @@ class HomeSectionHeader extends StatelessWidget {
   final VoidCallback onSeeAll;
 
   static const double sectionGap = 10;
-  static const double titleToContent = 5;
+  static const double titleToContent = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class HomeSectionHeader extends StatelessWidget {
                   weight: FontWeight.w500,
                 ).copyWith(
                   fontSize: AppStyle.fontBody - 1,
-                  height: AppStyle.lineHeightBody,
+                  height: 1,
                 ),
               ),
             ),

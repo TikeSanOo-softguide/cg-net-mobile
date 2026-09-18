@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../components/promotion_ads_modal/promotion_ads_modal.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
 // import 'components/home_plan_card.dart'; // temporarily unused (plan card hidden)
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
+import 'components/home_section_header.dart';
 import 'components/home_services_section.dart';
 import 'home_controller.dart';
 
@@ -80,10 +82,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final data = ref.watch(homeControllerProvider);
     final localeCode = ref.watch(appLocaleProvider);
+    final showNav = ref.watch(bottomNavVisibleProvider);
 
+    // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
     return MediaQuery.removePadding(
       context: context,
-      removeBottom: true,
+      removeBottom: showNav,
       child: ColoredBox(
         color: AppColors.background,
         child: Column(
@@ -115,8 +119,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                   ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
                   const SliverToBoxAdapter(child: HomeServicesSection()),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
                   const SliverToBoxAdapter(child: HomeOffersSection()),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
                   const SliverToBoxAdapter(child: HomePromoBanner()),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                 ],

@@ -129,11 +129,7 @@ class _TimedSkipImageScaffoldState extends State<TimedSkipImageScaffold>
     final top = MediaQuery.paddingOf(context).top;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
+      value: AppTheme.systemOverlayImmersive,
       child: PopScope(
         canPop: false,
         child: Scaffold(

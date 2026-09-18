@@ -19,7 +19,7 @@ Future<void> showPromotionAdsModal(
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black.withValues(alpha: 0.62),
-    transitionDuration: const Duration(milliseconds: 300),
+    transitionDuration: const Duration(milliseconds: 380),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return PromotionAdsModal(
         imagePath: imagePath,
@@ -34,8 +34,11 @@ Future<void> showPromotionAdsModal(
       );
       return FadeTransition(
         opacity: curved,
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -0.12),
+            end: Offset.zero,
+          ).animate(curved),
           child: child,
         ),
       );
@@ -43,7 +46,7 @@ Future<void> showPromotionAdsModal(
   );
 }
 
-/// Centered ad image with top-right glass close (no extra frame layer).
+/// Centered ad image with close pinned inside the top-right of the image.
 class PromotionAdsModal extends StatelessWidget {
   const PromotionAdsModal({
     super.key,
@@ -94,31 +97,31 @@ class PromotionAdsModal extends StatelessWidget {
                 maxWidth: maxWidth,
                 maxHeight: maxHeight,
               ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: AppStyle.borderRadiusXl,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.32),
-                          blurRadius: 28,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: AppStyle.borderRadiusXl,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.32),
+                      blurRadius: 28,
+                      offset: const Offset(0, 12),
                     ),
-                    child: ClipRRect(
-                      borderRadius: AppStyle.borderRadiusXl,
-                      child: _buildImage(),
-                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: AppStyle.borderRadiusXl,
+                  child: Stack(
+                    fit: StackFit.passthrough,
+                    children: [
+                      _buildImage(),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: _CloseButton(onPressed: onClose),
+                      ),
+                    ],
                   ),
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: _CloseButton(onPressed: onClose),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -133,8 +136,8 @@ class _CloseButton extends StatelessWidget {
 
   final VoidCallback onPressed;
 
-  static const double _size = 26;
-  static const double _radius = 6;
+  static const double _size = 20;
+  static const double _radius = 5;
   static const Color _iconColor = Color(0xFFFFFFFF);
 
   @override
@@ -150,7 +153,7 @@ class _CloseButton extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(_radius),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
             child: Container(
               width: _size,
               height: _size,
@@ -159,20 +162,13 @@ class _CloseButton extends StatelessWidget {
                 color: AppColors.primaryLight.withValues(alpha: 0.42),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.35),
-                  width: 0.6,
+                  width: 0.5,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
               ),
               alignment: Alignment.center,
               child: const Icon(
                 LucideIcons.x,
-                size: 12,
+                size: 10,
                 color: _iconColor,
               ),
             ),

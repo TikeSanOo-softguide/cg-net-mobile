@@ -5,7 +5,6 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
-import 'home_section_header.dart';
 
 class HomePromoBanner extends StatefulWidget {
   const HomePromoBanner({super.key});
@@ -61,12 +60,7 @@ class _HomePromoBannerState extends State<HomePromoBanner> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppStyle.spaceLg,
-        HomeSectionHeader.sectionGap,
-        AppStyle.spaceLg,
-        0,
-      ),
+      padding: AppStyle.pagePaddingH,
       child: AspectRatio(
         aspectRatio: _bannerAspect,
         child: ClipRRect(

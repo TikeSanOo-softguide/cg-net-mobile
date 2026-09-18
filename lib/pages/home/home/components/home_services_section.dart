@@ -221,38 +221,34 @@ class HomeServicesSection extends ConsumerWidget {
     final items = _homeItems;
 
     return Padding(
-      padding: const EdgeInsets.only(top: HomeSectionHeader.sectionGap),
+      padding: AppStyle.pagePaddingH,
       child: Column(
         children: [
-          Padding(
-            padding: AppStyle.pagePaddingH,
-            child: HomeSectionHeader(
-              title: 'home.services'.tr(),
-              onSeeAll: () => _openServicesDrawer(context, ref),
-            ),
+          HomeSectionHeader(
+            title: 'home.services'.tr(),
+            onSeeAll: () => _openServicesDrawer(context, ref),
           ),
           AppCard(
-          margin: AppStyle.pagePaddingH,
-          elevated: true,
-          bordered: false,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppStyle.spaceSm,
-            vertical: 10,
+            elevated: false,
+            bordered: false,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppStyle.spaceSm,
+              vertical: 10,
+            ),
+            child: Column(
+              children: [
+                _ServiceGrid(
+                  items: items.take(3).toList(),
+                  onTap: (item) => _onServiceTap(context, ref, item),
+                ),
+                const SizedBox(height: 10),
+                _ServiceGrid(
+                  items: items.skip(3).take(3).toList(),
+                  onTap: (item) => _onServiceTap(context, ref, item),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            children: [
-              _ServiceGrid(
-                items: items.take(3).toList(),
-                onTap: (item) => _onServiceTap(context, ref, item),
-              ),
-              const SizedBox(height: 10),
-              _ServiceGrid(
-                items: items.skip(3).take(3).toList(),
-                onTap: (item) => _onServiceTap(context, ref, item),
-              ),
-            ],
-          ),
-        ),
         ],
       ),
     );
@@ -343,14 +339,14 @@ class _ServiceTile extends StatelessWidget {
               filterQuality: FilterQuality.high,
               errorBuilder: (_, __, ___) => Icon(
                 item.icon ?? Icons.image_not_supported_outlined,
-                size: 20,
+                size: _iconSize,
                 color: color,
               ),
             ),
           )
         : Icon(
             item.icon,
-            size: 20,
+            size: _iconSize,
             color: color,
           );
 

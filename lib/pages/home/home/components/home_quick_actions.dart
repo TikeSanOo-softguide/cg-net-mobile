@@ -17,17 +17,17 @@ class HomeQuickActions extends StatelessWidget {
     final locale = context.locale.languageCode;
     final actions = [
       (
-        LucideIcons.wallet,
+        LucideIcons.square_plus,
         context.tr('home.action_topup'),
         RouteNames.topUp,
       ),
       (
-        LucideIcons.arrow_left_right,
+        LucideIcons.send_horizontal,
         context.tr('home.action_transfer'),
         RouteNames.transfer,
       ),
       (
-        LucideIcons.clipboard_clock,
+        LucideIcons.file_clock,
         context.tr('home.action_history'),
         RouteNames.history,
       ),
@@ -36,7 +36,7 @@ class HomeQuickActions extends StatelessWidget {
     return AppCard(
       key: ValueKey('quick-actions-$locale'),
       margin: AppStyle.pagePaddingH,
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: const EdgeInsets.symmetric(
         horizontal: AppStyle.spaceSm,
@@ -84,8 +84,8 @@ class HomeQuickActions extends StatelessWidget {
                             style: AppTheme.captionSm(color: AppColors.primary)
                                 .copyWith(
                               fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              height: 1.15,
+                              fontWeight: FontWeight.w600,
+                              height: AppStyle.lineHeightBody,
                             ),
                           ),
                         ),

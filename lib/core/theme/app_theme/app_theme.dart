@@ -8,6 +8,29 @@ import '../app_style/app_style.dart';
 class AppTheme {
   AppTheme._();
 
+  /// Canonical system bars for primary-header screens (Home shell, curved pages).
+  /// Opaque status + light nav bar; content uses SafeArea / shell bottom nav.
+  static const SystemUiOverlayStyle systemOverlayPrimary =
+      SystemUiOverlayStyle(
+    statusBarColor: AppColors.primary,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: AppColors.surface,
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarDividerColor: Color(0x00000000),
+  );
+
+  /// Full-bleed primary / splash-style screens (transparent status).
+  static const SystemUiOverlayStyle systemOverlayImmersive =
+      SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: AppColors.surface,
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarDividerColor: Color(0x00000000),
+  );
+
   /// Primary UI typeface (EN + shared Latin).
   static String? get englishFontFamily =>
       GoogleFonts.plusJakartaSans().fontFamily;
@@ -215,11 +238,7 @@ class AppTheme {
           size: AppStyle.iconSizeLg,
         ),
         titleTextStyle: topBarTitle(),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: AppColors.primary,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
-        ),
+        systemOverlayStyle: systemOverlayPrimary,
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,

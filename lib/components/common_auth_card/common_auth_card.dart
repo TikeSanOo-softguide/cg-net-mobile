@@ -139,11 +139,7 @@ class AuthBackgroundScaffold extends StatelessWidget {
         topBarTitle != null && topBarTitle!.trim().isNotEmpty;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
+      value: AppTheme.systemOverlayPrimary,
       child: Scaffold(
         backgroundColor: AppColors.primary,
         body: Column(

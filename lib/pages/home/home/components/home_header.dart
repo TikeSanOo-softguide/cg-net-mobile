@@ -37,17 +37,18 @@ class HomePinnedBar extends ConsumerWidget {
     final bound = ref.watch(boundBroadbandProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
+      value: AppTheme.systemOverlayPrimary,
       child: ColoredBox(
         color: AppColors.primary,
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+            padding: const EdgeInsets.fromLTRB(
+              AppStyle.pageMarginH,
+              12,
+              AppStyle.pageMarginH,
+              12,
+            ),
             child: Row(
               children: [
                 const AppLogo(
@@ -181,7 +182,12 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 17, 18, 46),
+          padding: const EdgeInsets.fromLTRB(
+            AppStyle.pageMarginH,
+            17,
+            AppStyle.pageMarginH,
+            46,
+          ),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,

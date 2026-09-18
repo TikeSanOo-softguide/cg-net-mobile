@@ -15,13 +15,16 @@ class AppStyle {
   static const double spaceXxl = 24;
   static const double spaceXxxl = 32;
 
+  /// Horizontal page inset (screen edge → content).
+  static const double pageMarginH = 16;
   static const EdgeInsets pagePadding = EdgeInsets.all(spaceXxl);
-  static const EdgeInsets pagePaddingH = EdgeInsets.symmetric(horizontal: spaceLg);
+  static const EdgeInsets pagePaddingH =
+      EdgeInsets.symmetric(horizontal: pageMarginH);
   static const EdgeInsets cardPadding = EdgeInsets.all(spaceLg);
   static const EdgeInsets sectionGap = EdgeInsets.only(bottom: spaceXl);
 
   // —— Radius ——
-  static const double radiusSm = 8;
+  static const double radiusSm = 10;
   static const double radiusMd = 12;
   static const double radiusLg = 16;
   static const double radiusXl = 20;
@@ -87,9 +90,9 @@ class AppStyle {
   static BorderSide get borderSideLight =>
       const BorderSide(color: AppColors.borderLight, width: 0.5);
 
-  /// Paper-edge outline (optional; AppCard is flat / borderless).
+  /// Thin hairline for cards.
   static BorderSide get borderSidePaper =>
-      const BorderSide(color: AppColors.paperBorder, width: 0.8);
+      const BorderSide(color: Color(0xFFFFFFFF), width: 0.1);
 
   static BorderSide get borderSideFocus =>
       const BorderSide(color: AppColors.primary, width: 1.5);

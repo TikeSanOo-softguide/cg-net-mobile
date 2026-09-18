@@ -40,11 +40,7 @@ class AppCurvedScaffold extends StatelessWidget {
     final showLeading = showBack && (onBack != null || canPop);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
+      value: AppTheme.systemOverlayPrimary,
       child: Scaffold(
         backgroundColor: AppColors.primary,
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
