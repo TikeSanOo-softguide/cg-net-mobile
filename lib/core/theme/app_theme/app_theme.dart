@@ -226,7 +226,6 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AppStyle.borderRadiusMd,
-          side: AppStyle.borderSideLight,
         ),
         margin: EdgeInsets.zero,
       ),

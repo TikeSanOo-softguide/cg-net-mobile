@@ -48,7 +48,7 @@ class HomeQuickActions extends StatelessWidget {
             if (i > 0)
               Container(
                 width: 1,
-                height: 28,
+                height: 32,
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 color: AppColors.borderLight,
               ),
@@ -61,18 +61,18 @@ class HomeQuickActions extends StatelessWidget {
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
                   child: SizedBox(
-                    height: 38,
+                    height: 42,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 32,
-                          height: 32,
-                          decoration: AppStyle.iconChipDecoration(),
+                          width: 36,
+                          height: 36,
+                          decoration: AppStyle.iconChipDecoration(size: 36),
                           child: Icon(
                             actions[i].$1,
                             color: AppColors.primary,
-                            size: 16,
+                            size: 18,
                           ),
                         ),
                         const SizedBox(width: 8),

@@ -138,45 +138,45 @@ class ProfilePage extends ConsumerWidget {
             ),
             onTap: () => context.pushNamed(RouteNames.languageSettings),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.smartphone,
             title: 'profile.edit'.tr(),
             onTap: () => context.pushNamed(RouteNames.editProfile),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.lock_keyhole,
             title: 'profile.change_password'.tr(),
             onTap: () => context.pushNamed(RouteNames.changePassword),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.monitor,
             title: 'profile.devices'.tr(),
             onTap: () => context.pushNamed(RouteNames.deviceSession),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.bell,
             title: 'profile.notifications'.tr(),
             onTap: () =>
                 context.pushNamed(RouteNames.notificationPreferences),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.rotate_ccw_clock,
             title: 'profile.version'.tr(),
             trailingText: versionText,
             onTap: () => context.pushNamed(RouteNames.aboutApp),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.info,
             title: 'profile.about'.tr(),
             onTap: () => context.pushNamed(RouteNames.aboutApp),
           ),
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 5),
           _SettingsCard(
             icon: LucideIcons.log_out,
             iconColor: AppColors.error,
@@ -241,51 +241,52 @@ class _SettingsCard extends StatelessWidget {
       onTap: onTap,
       elevated: true,
       bordered: false,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppStyle.spaceMd,
-        vertical: AppStyle.spaceMd,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: tint,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            alignment: Alignment.center,
-            child: Icon(icon, size: 20, color: iconColor),
-          ),
-          const SizedBox(width: AppStyle.spaceMd),
-          Expanded(
-            child: Text(
-              title,
-              style: AppTheme.body(
-                color: titleColor ?? AppColors.textPrimary,
-                weight: FontWeight.w500,
-              ).copyWith(fontSize: AppStyle.fontBody - 1),
-            ),
-          ),
-          if (trailing != null) ...[
-            trailing!,
-          ] else ...[
-            if (trailingText != null) ...[
-              Text(
-                trailingText!,
-                style: AppTheme.caption(color: AppColors.textMuted).copyWith(
-                  fontSize: AppStyle.fontCaption - 1,
-                ),
+      padding: EdgeInsets.zero,
+      borderRadius: AppStyle.borderRadiusSm,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: tint,
+                borderRadius: AppStyle.borderRadiusSm,
               ),
-              const SizedBox(width: AppStyle.spaceXs),
-            ],
-            Icon(
-              LucideIcons.chevron_right,
-              size: 18,
-              color: chevronColor ?? AppColors.textMuted,
+              child: Icon(icon, size: 20, color: iconColor),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: AppTheme.body(
+                  color: titleColor ?? AppColors.textPrimary,
+                  weight: FontWeight.w500,
+                ).copyWith(fontSize: AppStyle.fontBody - 1),
+              ),
+            ),
+            if (trailing != null) ...[
+              trailing!,
+            ] else ...[
+              if (trailingText != null) ...[
+                Text(
+                  trailingText!,
+                  style: AppTheme.caption(color: AppColors.textMuted).copyWith(
+                    fontSize: AppStyle.fontCaption - 1,
+                  ),
+                ),
+                const SizedBox(width: AppStyle.spaceXs),
+              ],
+              Icon(
+                LucideIcons.chevron_right,
+                size: 18,
+                color: chevronColor ?? AppColors.textMuted,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

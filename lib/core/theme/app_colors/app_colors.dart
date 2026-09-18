@@ -23,8 +23,8 @@ class AppColors {
   /// Dark ink for text on accent
   static const Color onAccent = Color(0xFF173236);
 
-  /// Page background
-  static const Color background = Color(0xFFEDF3F8);
+  /// Page background — KPay-like cool light gray.
+  static const Color background = Color(0xFFF3F5F8);
 
   /// Alternate light surface
   static const Color backgroundAlt = Color(0xFFF7FAFC);

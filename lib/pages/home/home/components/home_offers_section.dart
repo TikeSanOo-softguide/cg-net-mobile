@@ -8,6 +8,7 @@ import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
+import 'home_section_header.dart';
 
 class HomeOffersSection extends StatelessWidget {
   const HomeOffersSection({super.key});
@@ -40,54 +41,35 @@ class HomeOffersSection extends StatelessWidget {
   static const _buttonHeight = 26.0;
   static const _buttonPadH = 6.0;
   static const _buttonPadV = 6.0;
+  static const _cardPadBottom = 6.0;
 
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final contentWidth = screenWidth - (AppStyle.spaceLg * 2);
-    // Narrower cards — ~2.85 visible; taller cover image.
-    final cardWidth = ((contentWidth - _gap) / 2.85).clamp(88.0, 112.0);
-    final imageHeight = cardWidth * 1.22;
-    // Full-bleed image + button pad + button.
-    final slideHeight = imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
+    // Slightly smaller cards — ~3.05 visible.
+    final cardWidth = ((contentWidth - _gap) / 3.05).clamp(84.0, 104.0);
+    final imageHeight = cardWidth * 1.15;
+    // Image + gap above button + button + card bottom padding.
+    final slideHeight =
+        imageHeight + _buttonPadV + _buttonHeight + _cardPadBottom;
 
     return Padding(
       key: ValueKey('offers-$locale'),
-      padding: AppStyle.pagePaddingH,
+      padding: const EdgeInsets.fromLTRB(
+        AppStyle.spaceLg,
+        HomeSectionHeader.sectionGap,
+        AppStyle.spaceLg,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.tr('home.special_offers'),
-                  style: AppTheme.sectionTitle(color: AppColors.textMuted),
-                ),
-              ),
-              InkWell(
-                onTap: () => context.goNamed(RouteNames.packageList),
-                borderRadius: AppStyle.borderRadiusSm,
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppStyle.spaceXs,
-                    vertical: AppStyle.spaceXs,
-                  ),
-                  child: Text(
-                    context.tr('home.see_all'),
-                    style: AppTheme.caption(
-                      color: AppColors.primary,
-                      weight: FontWeight.w500,
-                    ).copyWith(fontSize: 10),
-                  ),
-                ),
-              ),
-            ],
+          HomeSectionHeader(
+            title: context.tr('home.special_offers'),
+            onSeeAll: () => context.goNamed(RouteNames.packageList),
           ),
-          const SizedBox(height: 6),
           SizedBox(
             width: contentWidth,
             height: slideHeight,
@@ -154,7 +136,7 @@ class _PackageOfferCard extends StatelessWidget {
       child: AppCard(
         elevated: false,
         bordered: false,
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(bottom: HomeOffersSection._cardPadBottom),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -201,7 +183,7 @@ class _PackageOfferCard extends StatelessWidget {
                 HomeOffersSection._buttonPadH,
                 HomeOffersSection._buttonPadV,
                 HomeOffersSection._buttonPadH,
-                HomeOffersSection._buttonPadV,
+                0,
               ),
               child: SizedBox(
                 height: HomeOffersSection._buttonHeight,
