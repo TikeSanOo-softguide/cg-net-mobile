@@ -11,8 +11,8 @@ final inboxDetailControllerProvider =
       (m) => m.id == id,
       orElse: () => InboxMessageModel(
         id: id,
-        title: 'Message',
-        body: 'Message details unavailable.',
+        titleKey: 'inbox.detail_fallback_title',
+        bodyKey: 'inbox.detail_fallback_body',
         createdAt: DateTime.now(),
         category: InboxCategory.system,
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../components/activity_list_card/activity_list_card.dart';
 import '../../../components/bottom_nav_bar/bottom_nav_bar.dart';
 import '../../../pages/auth/login/login_page.dart';
 import '../../../pages/auth/login/login_qa_page.dart';
@@ -11,6 +12,7 @@ import '../../../pages/auth/otp_verification/otp_verification_page.dart';
 import '../../../pages/auth/set_username_password/set_username_password_page.dart';
 import '../../../pages/auth/splash/splash_page.dart';
 import '../../../pages/auth/terms/terms_page.dart';
+import '../../../pages/home/activity_detail/activity_detail_page.dart';
 import '../../../pages/home/history/history_page.dart';
 import '../../../pages/home/home/home_page.dart';
 import '../../../pages/home/service_placeholder/service_placeholder_page.dart';
@@ -168,6 +170,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HistoryPage(),
       ),
       GoRoute(
+        path: RoutePaths.activityDetail,
+        name: RouteNames.activityDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final item = state.extra;
+          if (item is! ActivityItem) {
+            return const NotFoundPage();
+          }
+          return ActivityDetailPage(item: item);
+        },
+      ),
+      GoRoute(
         path: RoutePaths.servicePlaceholder,
         name: RouteNames.servicePlaceholder,
         parentNavigatorKey: _rootNavigatorKey,
@@ -246,32 +260,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'edit',
                     name: RouteNames.editProfile,
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const EditProfilePage(),
                   ),
                   GoRoute(
                     path: 'language',
                     name: RouteNames.languageSettings,
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const LanguageSettingsPage(),
                   ),
                   GoRoute(
                     path: 'change-password',
                     name: RouteNames.changePassword,
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const ChangePasswordPage(),
                   ),
                   GoRoute(
                     path: 'devices',
                     name: RouteNames.deviceSession,
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const DeviceSessionPage(),
                   ),
                   GoRoute(
                     path: 'notifications',
                     name: RouteNames.notificationPreferences,
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) =>
                         const NotificationPreferencesPage(),
                   ),
                   GoRoute(
                     path: 'about',
                     name: RouteNames.aboutApp,
+                    parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const AboutAppPage(),
                   ),
                 ],

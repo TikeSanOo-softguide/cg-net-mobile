@@ -16,6 +16,7 @@ class RouteNames {
   static const topUp = 'topUp';
   static const transfer = 'transfer';
   static const history = 'history';
+  static const activityDetail = 'activityDetail';
   static const servicePlaceholder = 'servicePlaceholder';
   static const packageList = 'packageList';
   static const packageDetail = 'packageDetail';
@@ -54,6 +55,7 @@ class RoutePaths {
   static const topUp = '/top-up';
   static const transfer = '/transfer';
   static const history = '/history';
+  static const activityDetail = '/activity-detail';
   static const servicePlaceholder = '/service/:id';
   static const packageList = '/package';
   static const packageDetail = '/package-detail/:id';

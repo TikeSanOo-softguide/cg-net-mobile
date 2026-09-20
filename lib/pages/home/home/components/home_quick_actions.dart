@@ -66,13 +66,17 @@ class HomeQuickActions extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 36,
-                          height: 36,
-                          decoration: AppStyle.iconChipDecoration(size: 36),
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: AppStyle.borderRadiusSm,
+                          ),
                           child: Icon(
                             actions[i].$1,
-                            color: AppColors.primary,
-                            size: 18,
+                            color: AppColors.onPrimary,
+                            size: 15,
                           ),
                         ),
                         const SizedBox(width: 8),

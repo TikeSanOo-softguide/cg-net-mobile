@@ -3,16 +3,18 @@ enum InboxCategory { announcement, system, promotion }
 class InboxMessageModel {
   const InboxMessageModel({
     required this.id,
-    required this.title,
-    required this.body,
+    required this.titleKey,
+    required this.bodyKey,
     required this.createdAt,
     required this.category,
+    this.detailKey,
     this.isRead = false,
   });
 
   final String id;
-  final String title;
-  final String body;
+  final String titleKey;
+  final String bodyKey;
+  final String? detailKey;
   final DateTime createdAt;
   final InboxCategory category;
   final bool isRead;

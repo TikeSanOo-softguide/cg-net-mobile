@@ -9,6 +9,7 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -69,14 +70,16 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inboxListControllerProvider);
+    final locale = ref.watch(appLocaleProvider);
 
     return AppCurvedScaffold(
+      key: ValueKey('inbox-$locale'),
       title: Text('inbox.title'.tr()),
       showBack: false,
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: AppGlassTabBar(
               controller: _tabController,
               labels: _tabLabels,
@@ -98,6 +101,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                   children: [
                     for (var t = 0; t < 4; t++)
                       _InboxList(
+                        key: ValueKey('inbox-list-$locale-$t'),
                         items: _itemsForTab(messages, t),
                       ),
                   ],
@@ -112,7 +116,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
 }
 
 class _InboxList extends StatelessWidget {
-  const _InboxList({required this.items});
+  const _InboxList({super.key, required this.items});
 
   final List<InboxMessageModel> items;
 
@@ -167,6 +171,7 @@ class _InboxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final unread = !item.isRead;
+    final locale = context.locale;
 
     return AppCard(
       onTap: onTap,
@@ -190,17 +195,17 @@ class _InboxCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 32,
+                      height: 32,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
+                        color: AppColors.primary,
                         borderRadius: AppStyle.borderRadiusSm,
                       ),
                       child: Icon(
                         _iconFor(item.category),
-                        color: AppColors.primary,
-                        size: 20,
+                        color: AppColors.onPrimary,
+                        size: 15,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -213,11 +218,11 @@ class _InboxCard extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  item.title,
+                                  item.titleKey.tr(),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTheme.english(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: unread
                                         ? FontWeight.w700
                                         : FontWeight.w600,
@@ -228,7 +233,8 @@ class _InboxCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                DateFormat.MMMd().format(item.createdAt),
+                                DateFormat.MMMd(locale.toString())
+                                    .format(item.createdAt),
                                 style: AppTheme.english(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
@@ -241,13 +247,14 @@ class _InboxCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            item.body,
+                            item.bodyKey.tr(),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.english(
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                               color: AppColors.textMuted,
-                              height: 1.35,
+                              height: 1.5,
                             ),
                           ),
                         ],

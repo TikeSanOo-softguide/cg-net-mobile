@@ -9,6 +9,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 
@@ -33,7 +34,7 @@ class _TransferPageState extends State<TransferPage> {
           id: 't1',
           kind: ActivityKind.transfer,
           title: '09970071489',
-          subtitle: 'transfer.recent_sent'.tr(),
+          subtitleKey: 'transfer.recent_sent',
           amount: 500,
           createdAt: DateTime.now().subtract(const Duration(hours: 5)),
         ),
@@ -41,7 +42,7 @@ class _TransferPageState extends State<TransferPage> {
           id: 't2',
           kind: ActivityKind.transfer,
           title: '09791234567',
-          subtitle: 'transfer.recent_sent'.tr(),
+          subtitleKey: 'transfer.recent_sent',
           amount: 100,
           createdAt: DateTime.now().subtract(const Duration(days: 1)),
         ),
@@ -49,7 +50,7 @@ class _TransferPageState extends State<TransferPage> {
           id: 't3',
           kind: ActivityKind.transfer,
           title: '09420111222',
-          subtitle: 'transfer.recent_sent'.tr(),
+          subtitleKey: 'transfer.recent_sent',
           amount: 250,
           createdAt: DateTime.now().subtract(const Duration(days: 3)),
         ),
@@ -99,16 +100,16 @@ class _TransferPageState extends State<TransferPage> {
                   Row(
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(
                           LucideIcons.arrow_left_right,
-                          size: 20,
-                          color: AppColors.primary,
+                          size: 15,
+                          color: AppColors.onPrimary,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -221,6 +222,10 @@ class _TransferPageState extends State<TransferPage> {
               ActivityListCard(
                 item: _recent[i],
                 index: i,
+                onTap: () => context.pushNamed(
+                  RouteNames.activityDetail,
+                  extra: _recent[i],
+                ),
               ),
             ],
           ],

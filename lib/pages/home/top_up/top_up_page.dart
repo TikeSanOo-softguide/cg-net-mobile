@@ -9,6 +9,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 
@@ -31,8 +32,8 @@ class _TopUpPageState extends State<TopUpPage> {
         ActivityItem(
           id: 'tu1',
           kind: ActivityKind.topUp,
-          title: 'history.item_topup_title'.tr(),
-          subtitle: 'topup.recent_added'.tr(),
+          titleKey: 'history.item_topup_title',
+          subtitleKey: 'topup.recent_added',
           amount: 2500,
           createdAt: DateTime.now().subtract(const Duration(hours: 2)),
           isCredit: true,
@@ -40,8 +41,8 @@ class _TopUpPageState extends State<TopUpPage> {
         ActivityItem(
           id: 'tu2',
           kind: ActivityKind.topUp,
-          title: 'history.item_topup_title'.tr(),
-          subtitle: 'topup.recent_added'.tr(),
+          titleKey: 'history.item_topup_title',
+          subtitleKey: 'topup.recent_added',
           amount: 500,
           createdAt: DateTime.now().subtract(const Duration(days: 1)),
           isCredit: true,
@@ -49,8 +50,8 @@ class _TopUpPageState extends State<TopUpPage> {
         ActivityItem(
           id: 'tu3',
           kind: ActivityKind.topUp,
-          title: 'history.item_topup_title'.tr(),
-          subtitle: 'topup.recent_added'.tr(),
+          titleKey: 'history.item_topup_title',
+          subtitleKey: 'topup.recent_added',
           amount: 100,
           createdAt: DateTime.now().subtract(const Duration(days: 3)),
           isCredit: true,
@@ -124,16 +125,16 @@ class _TopUpPageState extends State<TopUpPage> {
                   Row(
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(
                           LucideIcons.wallet,
-                          size: 20,
-                          color: AppColors.primary,
+                          size: 15,
+                          color: AppColors.onPrimary,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -294,6 +295,10 @@ class _TopUpPageState extends State<TopUpPage> {
               ActivityListCard(
                 item: _recent[i],
                 index: i,
+                onTap: () => context.pushNamed(
+                  RouteNames.activityDetail,
+                  extra: _recent[i],
+                ),
               ),
             ],
           ],

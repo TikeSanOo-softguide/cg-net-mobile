@@ -88,20 +88,20 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppStyle.spaceSm),
                 Material(
-                  color: AppColors.primaryLight,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(8),
                   child: InkWell(
                     onTap: () => context.pushNamed(RouteNames.editProfile),
                     borderRadius: BorderRadius.circular(8),
-                    splashColor: Colors.black.withValues(alpha: 0.06),
-                    highlightColor: Colors.black.withValues(alpha: 0.04),
+                    splashColor: Colors.white.withValues(alpha: 0.18),
+                    highlightColor: Colors.white.withValues(alpha: 0.08),
                     child: const SizedBox(
-                      width: 36,
-                      height: 36,
+                      width: 28,
+                      height: 28,
                       child: Icon(
                         LucideIcons.square_pen,
-                        size: 18,
-                        color: AppColors.primary,
+                        size: 14,
+                        color: AppColors.onPrimary,
                       ),
                     ),
                   ),
@@ -205,8 +205,8 @@ class _AccountAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AppLogo(
-      size: 44,
-      padding: 5,
+      size: 38,
+      padding: 4,
       borderRadius: 8,
     );
   }
@@ -217,8 +217,8 @@ class _SettingsCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
-    this.iconColor = AppColors.primary,
-    this.tint = AppColors.primaryLight,
+    this.iconColor = AppColors.onPrimary,
+    this.tint = AppColors.primary,
     this.trailing,
     this.trailingText,
     this.titleColor,
@@ -248,14 +248,14 @@ class _SettingsCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 28,
+              height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: tint,
                 borderRadius: AppStyle.borderRadiusSm,
               ),
-              child: Icon(icon, size: 20, color: iconColor),
+              child: Icon(icon, size: 14, color: iconColor),
             ),
             const SizedBox(width: 12),
             Expanded(

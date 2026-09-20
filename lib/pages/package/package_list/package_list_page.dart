@@ -57,7 +57,7 @@ class PackageListPage extends StatelessWidget {
   }
 }
 
-/// Same look as home offer cards: full-bleed image + outline Buy now.
+/// Same look as home offer cards: full-bleed image + primary Buy now.
 class _PackageGridCard extends StatelessWidget {
   const _PackageGridCard({
     required this.id,
@@ -173,27 +173,24 @@ class _BuyNowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(6);
     return Material(
-      color: Colors.transparent,
+      color: AppColors.primary,
       borderRadius: radius,
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
-        splashColor: AppColors.primary.withValues(alpha: 0.10),
-        highlightColor: AppColors.primary.withValues(alpha: 0.05),
-        child: Container(
+        splashColor: Colors.white.withValues(alpha: 0.18),
+        highlightColor: Colors.white.withValues(alpha: 0.08),
+        child: SizedBox(
           height: 28,
           width: double.infinity,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            border: Border.all(color: AppColors.primary, width: 1.2),
-          ),
-          child: Text(
-            context.tr('home.buy_now'),
-            style: AppTheme.captionSm(color: AppColors.primary).copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-              height: 1,
+          child: Center(
+            child: Text(
+              context.tr('home.buy_now'),
+              style: AppTheme.captionSm(color: AppColors.onPrimary).copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                height: 1,
+              ),
             ),
           ),
         ),

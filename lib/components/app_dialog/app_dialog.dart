@@ -6,14 +6,8 @@ import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
-/// Soft chip wash — same recipe as home Pay Bill icon chip.
-Color _primaryChipBackground() =>
-    Color.alphaBlend(AppColors.primary.withValues(alpha: 0.10), Colors.white);
-
 const _danger = Color(0xFFF44336);
-Color _dangerLight() =>
-    Color.alphaBlend(_danger.withValues(alpha: 0.10), Colors.white);
-
+const double _dialogRadius = 16;
 const double _modalBtnHeight = 32;
 const double _modalBtnMinWidth = 120;
 const double _modalBtnFontSize = 11;
@@ -42,14 +36,48 @@ ButtonStyle _dangerModalBtnStyle() => FilledButton.styleFrom(
       ),
     );
 
-TextStyle _modalBtnText({required Color color, FontWeight weight = FontWeight.w600}) =>
+TextStyle _modalBtnText({
+  required Color color,
+  FontWeight weight = FontWeight.w600,
+}) =>
     AppTheme.english(
       fontSize: _modalBtnFontSize,
       fontWeight: weight,
       color: color,
     );
 
-/// Shared success dialog — white card, primary chip-style icon wash.
+TextStyle _dialogTitleStyle(Color color) => AppTheme.english(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      color: color,
+      height: 1.3,
+    );
+
+TextStyle _dialogMessageStyle() => AppTheme.english(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: AppColors.textMuted,
+      height: 1.45,
+    );
+
+Widget _dialogIcon({
+  required IconData icon,
+  required Color background,
+  required Color foreground,
+}) {
+  return Container(
+    width: 40,
+    height: 40,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: background,
+      shape: BoxShape.circle,
+    ),
+    child: Icon(icon, size: 20, color: foreground),
+  );
+}
+
+/// Shared success dialog — primary title + primary icon chip (white glyph).
 Future<void> showAppSuccessModal(
   BuildContext context, {
   required String title,
@@ -63,7 +91,7 @@ Future<void> showAppSuccessModal(
       return Dialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppStyle.radiusXl),
+          borderRadius: BorderRadius.circular(_dialogRadius),
         ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 36),
         child: Padding(
@@ -71,34 +99,22 @@ Future<void> showAppSuccessModal(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _primaryChipBackground(),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  LucideIcons.circle_check,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
+              _dialogIcon(
+                icon: LucideIcons.circle_check,
+                background: AppColors.primary,
+                foreground: AppColors.onPrimary,
               ),
               const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: AppTheme.english(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: _dialogTitleStyle(AppColors.primary),
               ),
               const SizedBox(height: 6),
               Text(
                 body,
                 textAlign: TextAlign.center,
-                style: AppTheme.bodySecondary().copyWith(fontSize: 13),
+                style: _dialogMessageStyle(),
               ),
               const SizedBox(height: 14),
               SizedBox(
@@ -120,7 +136,7 @@ Future<void> showAppSuccessModal(
   );
 }
 
-/// Simple alert — message + single OK (no secondary action).
+/// Simple alert — primary title + primary icon chip (white glyph).
 Future<void> showAppAlertModal(
   BuildContext context, {
   required String message,
@@ -134,7 +150,7 @@ Future<void> showAppAlertModal(
       return Dialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppStyle.radiusXl),
+          borderRadius: BorderRadius.circular(_dialogRadius),
         ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 36),
         child: Padding(
@@ -142,36 +158,24 @@ Future<void> showAppAlertModal(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _primaryChipBackground(),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  LucideIcons.circle_alert,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
+              _dialogIcon(
+                icon: LucideIcons.circle_alert,
+                background: AppColors.primary,
+                foreground: AppColors.onPrimary,
               ),
               if (title != null) ...[
                 const SizedBox(height: 10),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: AppTheme.english(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: _dialogTitleStyle(AppColors.primary),
                 ),
               ],
               const SizedBox(height: 10),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: AppTheme.bodySecondary().copyWith(fontSize: 13),
+                style: _dialogMessageStyle(),
               ),
               const SizedBox(height: 14),
               SizedBox(
@@ -193,7 +197,7 @@ Future<void> showAppAlertModal(
   );
 }
 
-/// Shared confirm dialog — white card, danger icon wash, compact buttons.
+/// Shared confirm / danger dialog — red title + red icon chip (white glyph).
 Future<bool> showAppConfirmModal(
   BuildContext context, {
   required String title,
@@ -208,7 +212,7 @@ Future<bool> showAppConfirmModal(
       return Dialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppStyle.radiusXl),
+          borderRadius: BorderRadius.circular(_dialogRadius),
         ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 36),
         child: Padding(
@@ -216,34 +220,22 @@ Future<bool> showAppConfirmModal(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _dangerLight(),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  LucideIcons.circle_alert,
-                  size: 18,
-                  color: _danger,
-                ),
+              _dialogIcon(
+                icon: LucideIcons.circle_alert,
+                background: _danger,
+                foreground: Colors.white,
               ),
               const SizedBox(height: 8),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: AppTheme.english(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: _dialogTitleStyle(_danger),
               ),
               const SizedBox(height: 4),
               Text(
                 body,
                 textAlign: TextAlign.center,
-                style: AppTheme.bodySecondary().copyWith(fontSize: 12),
+                style: _dialogMessageStyle(),
               ),
               const SizedBox(height: 14),
               Row(
@@ -257,7 +249,10 @@ Future<bool> showAppConfirmModal(
                       style: _dangerModalBtnStyle(),
                       child: Text(
                         cancelLabel ?? 'common.cancel'.tr(),
-                        style: _modalBtnText(color: Colors.white),
+                        style: _modalBtnText(
+                          color: Colors.white,
+                          weight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),

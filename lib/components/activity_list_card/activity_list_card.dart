@@ -13,23 +13,44 @@ class ActivityItem {
   const ActivityItem({
     required this.id,
     required this.kind,
-    required this.title,
-    required this.subtitle,
     required this.amount,
     required this.createdAt,
+    this.title,
+    this.titleKey,
+    this.subtitle,
+    this.subtitleKey,
     this.isCredit = false,
-  });
+  }) : assert(
+          title != null || titleKey != null,
+          'Provide title or titleKey',
+        ),
+        assert(
+          subtitle != null || subtitleKey != null,
+          'Provide subtitle or subtitleKey',
+        );
 
   final String id;
   final ActivityKind kind;
-  final String title;
-  final String subtitle;
+  final String? title;
+  final String? titleKey;
+  final String? subtitle;
+  final String? subtitleKey;
   final int amount;
   final DateTime createdAt;
   final bool isCredit;
+
+  String displayTitle(BuildContext context) {
+    if (titleKey != null) return context.tr(titleKey!);
+    return title ?? '';
+  }
+
+  String displaySubtitle(BuildContext context) {
+    if (subtitleKey != null) return context.tr(subtitleKey!);
+    return subtitle ?? '';
+  }
 }
 
-/// Inbox-like activity row used by History + Transfer recent list.
+/// Activity row — 2-line detail with … ; amount bottom-right; tap opens detail.
 class ActivityListCard extends StatelessWidget {
   const ActivityListCard({
     super.key,
@@ -47,7 +68,7 @@ class ActivityListCard extends StatelessWidget {
   static const _creditGreen = Color(0xFF15803D);
   static const _debitRed = Color(0xFFDC2626);
 
-  static IconData _iconFor(ActivityKind kind) {
+  static IconData iconFor(ActivityKind kind) {
     switch (kind) {
       case ActivityKind.topUp:
         return LucideIcons.wallet;
@@ -66,12 +87,15 @@ class ActivityListCard extends StatelessWidget {
     return _debitRed;
   }
 
+  String get amountText =>
+      '${item.isCredit ? '+' : '-'}${NumberFormat('#,##0').format(item.amount)} Pts';
+
   @override
   Widget build(BuildContext context) {
-    final amountText =
-        '${item.isCredit ? '+' : '-'}${NumberFormat('#,##0').format(item.amount)} Pts';
+    final locale = context.locale;
 
     return AppCard(
+      key: ValueKey('activity-card-${item.id}-${locale.languageCode}'),
       onTap: onTap,
       elevated: true,
       bordered: false,
@@ -83,17 +107,17 @@ class ActivityListCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.primaryLight,
+                color: AppColors.primary,
                 borderRadius: AppStyle.borderRadiusSm,
               ),
               child: Icon(
-                _iconFor(item.kind),
-                color: AppColors.primary,
-                size: 20,
+                iconFor(item.kind),
+                color: AppColors.onPrimary,
+                size: 15,
               ),
             ),
             const SizedBox(width: 12),
@@ -106,11 +130,11 @@ class ActivityListCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          item.title,
+                          item.displayTitle(context),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTheme.english(
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primary,
                             height: 1.25,
@@ -119,7 +143,8 @@ class ActivityListCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        DateFormat.MMMd().format(item.createdAt),
+                        DateFormat.MMMd(locale.toString())
+                            .format(item.createdAt),
                         style: AppTheme.english(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -129,30 +154,28 @@ class ActivityListCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                            height: 1.35,
-                          ),
-                        ),
+                  Text(
+                    item.displaySubtitle(context),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textMuted,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      amountText,
+                      style: AppTheme.english(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _resolvedAmountColor,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        amountText,
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: _resolvedAmountColor,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
