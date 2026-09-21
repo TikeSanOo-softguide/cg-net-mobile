@@ -50,3 +50,5 @@ flutter:
     - assets/images/launch/
     - assets/images/branding/
     - assets/images/flags/
+    - assets/images/quick_actions/
+    - assets/images/inbox/

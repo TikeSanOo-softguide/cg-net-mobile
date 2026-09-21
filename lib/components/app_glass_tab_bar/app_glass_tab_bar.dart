@@ -5,7 +5,7 @@ import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
-/// Segmented tabs — taller track, horizontally sliding primary pill.
+/// Segmented tabs — taller track, liquid primary-light sliding pill.
 class AppGlassTabBar extends StatelessWidget {
   const AppGlassTabBar({
     super.key,
@@ -55,15 +55,8 @@ class AppGlassTabBar extends StatelessWidget {
                     child: IgnorePointer(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.22),
-                              blurRadius: 6,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -104,7 +97,7 @@ class AppGlassTabBar extends StatelessWidget {
                                           fontWeight: FontWeight.w700,
                                           color: Color.lerp(
                                             AppColors.textMuted,
-                                            AppColors.onPrimary,
+                                            AppColors.primary,
                                             _selectionStrength(value, i),
                                           ),
                                           height: 1.2,

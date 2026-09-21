@@ -1,0 +1,9 @@
+Inbox category icons — Flaticon sources, primary #0100CA on primaryLight chip.
+
+Sources:
+- settings (system): settings_6463449 — https://www.flaticon.com/free-icon/settings_6463449
+- promotion: discount_11326017 — https://www.flaticon.com/free-icon/discount_11326017
+- message (announcement): email_542689 — https://www.flaticon.com/free-icon/email_542689
+
+Icons by Flaticon authors — https://www.flaticon.com
+Recolored: #0100CA. Soft chip: AppColors.primaryLight.

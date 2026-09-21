@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../components/app_card/app_card.dart';
+import '../../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -11,26 +12,27 @@ import '../../../../core/theme/app_theme/app_theme.dart';
 class HomeQuickActions extends StatelessWidget {
   const HomeQuickActions({super.key});
 
-  static const _iconSize = 25.0;
-
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final actions = [
       (
-        'assets/images/quick_actions/top_up.png',
+        QuickActionIconChip.topUpAsset,
         context.tr('home.action_topup'),
         RouteNames.topUp,
+        QuickActionIconChip.topUpSoft,
       ),
       (
-        'assets/images/quick_actions/transfer.png',
+        QuickActionIconChip.transferAsset,
         context.tr('home.action_transfer'),
         RouteNames.transfer,
+        QuickActionIconChip.transferSoft,
       ),
       (
-        'assets/images/quick_actions/history.png',
+        QuickActionIconChip.historyAsset,
         context.tr('home.action_history'),
         RouteNames.history,
+        QuickActionIconChip.historySoft,
       ),
     ];
 
@@ -67,12 +69,9 @@ class HomeQuickActions extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(
-                          actions[i].$1,
-                          width: _iconSize,
-                          height: _iconSize,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
+                        QuickActionIconChip(
+                          asset: actions[i].$1,
+                          background: actions[i].$4,
                         ),
                         const SizedBox(width: 8),
                         Flexible(

@@ -9,6 +9,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -124,12 +125,9 @@ class _TopUpPageState extends State<TopUpPage> {
                 children: [
                   Row(
                     children: [
-                      Image.asset(
-                        'assets/images/quick_actions/top_up.png',
-                        width: 25,
-                        height: 25,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
+                      const QuickActionIconChip(
+                        asset: QuickActionIconChip.topUpAsset,
+                        background: QuickActionIconChip.topUpSoft,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -254,7 +252,18 @@ class _TopUpPageState extends State<TopUpPage> {
                       height: 36,
                       child: FilledButton.icon(
                         onPressed: _submit,
-                        icon: const Icon(LucideIcons.wallet, size: 14),
+                        icon: ColorFiltered(
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.onPrimary,
+                            BlendMode.srcIn,
+                          ),
+                          child: Image.asset(
+                            QuickActionIconChip.topUpAsset,
+                            width: 14,
+                            height: 14,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                         label: Text(
                           'topup.submit'.tr(),
                           style: AppTheme.english(

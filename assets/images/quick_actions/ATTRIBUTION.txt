@@ -1,10 +1,11 @@
-Home quick-action icons — Flaticon sources, recolored, transparent background.
+Home quick-action icons — Flaticon sources, secondary accent colors.
 
 Sources:
-- top_up: top-up_12444344 — https://www.flaticon.com/free-icon/top-up_12444344
+- top_up: top-up_10440274 — https://www.flaticon.com/free-icon/top-up_10440274
+- payment: cashback_7412808 — https://www.flaticon.com/free-icon/cashback_7412808
 - transfer: paper-plane_1933005 — https://www.flaticon.com/free-icon/paper-plane_1933005
-- history: history_5582302 — https://www.flaticon.com/free-icon/history_5582302
+- history: medical-record_9450510 — https://www.flaticon.com/free-icon/medical-record_9450510
 
 Icons by Flaticon authors — https://www.flaticon.com
-Recolored for CG-NET (top up #0100CA, transfer #0D9488, history #7C3AED).
-Saved at 128×128.
+Recolored: top up #0100CA, payment #FFD51E, transfer #0D9488, history #7C3AED.
+Soft chips behind icons match each accent.

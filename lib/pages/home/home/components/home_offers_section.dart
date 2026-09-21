@@ -47,9 +47,9 @@ class HomeOffersSection extends StatelessWidget {
     final locale = context.locale.languageCode;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final contentWidth = screenWidth - (AppStyle.pageMarginH * 2);
-    // Slightly smaller cards — ~3.05 visible.
-    final cardWidth = ((contentWidth - _gap) / 3.05).clamp(84.0, 104.0);
-    final imageHeight = cardWidth * 1.32;
+    // Slightly smaller cards — ~3.1 visible, shorter image.
+    final cardWidth = ((contentWidth - _gap) / 3.1).clamp(82.0, 100.0);
+    final imageHeight = cardWidth * 1.15;
     // Image + top button pad + button + bottom button pad.
     final slideHeight =
         imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;

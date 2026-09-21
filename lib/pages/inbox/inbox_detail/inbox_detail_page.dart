@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -15,17 +16,6 @@ class InboxDetailPage extends ConsumerWidget {
   const InboxDetailPage({super.key, required this.id});
 
   final String id;
-
-  static IconData _iconFor(InboxCategory category) {
-    switch (category) {
-      case InboxCategory.announcement:
-        return LucideIcons.megaphone;
-      case InboxCategory.system:
-        return LucideIcons.settings;
-      case InboxCategory.promotion:
-        return LucideIcons.gift;
-    }
-  }
 
   static String _categoryLabel(InboxCategory category) {
     switch (category) {
@@ -65,20 +55,7 @@ class InboxDetailPage extends ConsumerWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 35,
-                          height: 35,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: AppStyle.borderRadiusSm,
-                          ),
-                          child: Icon(
-                            _iconFor(item.category),
-                            color: AppColors.onPrimary,
-                            size: 18,
-                          ),
-                        ),
+                        InboxCategoryIcon(category: item.category),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

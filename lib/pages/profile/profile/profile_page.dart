@@ -248,14 +248,22 @@ class _SettingsCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 28,
-              height: 28,
+              width: 30,
+              height: 30,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: tint,
-                borderRadius: AppStyle.borderRadiusSm,
+                color: tint == AppColors.primary
+                    ? AppColors.primaryLight
+                    : tint,
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 14, color: iconColor),
+              child: Icon(
+                icon,
+                size: 15,
+                color: iconColor == AppColors.onPrimary
+                    ? AppColors.primary
+                    : iconColor,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

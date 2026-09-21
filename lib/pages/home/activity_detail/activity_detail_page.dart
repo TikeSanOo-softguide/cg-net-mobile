@@ -62,20 +62,7 @@ class ActivityDetailPage extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 35,
-                      height: 35,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: AppStyle.borderRadiusSm,
-                      ),
-                      child: Icon(
-                        ActivityListCard.iconFor(item.kind),
-                        color: AppColors.onPrimary,
-                        size: 18,
-                      ),
-                    ),
+                    ActivityListCard.kindIcon(item.kind),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(

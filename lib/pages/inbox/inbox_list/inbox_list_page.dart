@@ -8,6 +8,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -157,17 +158,6 @@ class _InboxCard extends StatelessWidget {
   final InboxMessageModel item;
   final VoidCallback onTap;
 
-  static IconData _iconFor(InboxCategory category) {
-    switch (category) {
-      case InboxCategory.announcement:
-        return LucideIcons.megaphone;
-      case InboxCategory.system:
-        return LucideIcons.settings;
-      case InboxCategory.promotion:
-        return LucideIcons.gift;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final unread = !item.isRead;
@@ -190,24 +180,11 @@ class _InboxCard extends StatelessWidget {
               ),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(unread ? 12 : 14, 8, 14, 8),
+                padding: EdgeInsets.fromLTRB(unread ? 12 : 14, 14, 14, 14),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 35,
-                      height: 35,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: AppStyle.borderRadiusSm,
-                      ),
-                      child: Icon(
-                        _iconFor(item.category),
-                        color: AppColors.onPrimary,
-                        size: 18,
-                      ),
-                    ),
+                    InboxCategoryIcon(category: item.category),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -223,9 +200,7 @@ class _InboxCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTheme.english(
                                     fontSize: 14,
-                                    fontWeight: unread
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                     color: AppColors.primary,
                                     height: 1.25,
                                   ),

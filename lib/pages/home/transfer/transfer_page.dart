@@ -9,6 +9,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -99,12 +100,9 @@ class _TransferPageState extends State<TransferPage> {
                 children: [
                   Row(
                     children: [
-                      Image.asset(
-                        'assets/images/quick_actions/transfer.png',
-                        width: 25,
-                        height: 25,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
+                      const QuickActionIconChip(
+                        asset: QuickActionIconChip.transferAsset,
+                        background: QuickActionIconChip.transferSoft,
                       ),
                       const SizedBox(width: 10),
                       Expanded(

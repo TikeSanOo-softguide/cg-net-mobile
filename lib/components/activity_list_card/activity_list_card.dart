@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 import '../app_card/app_card.dart';
+import '../quick_action_icon_chip/quick_action_icon_chip.dart';
 
 enum ActivityKind { topUp, transfer, bill }
 
@@ -68,15 +68,41 @@ class ActivityListCard extends StatelessWidget {
   static const _creditGreen = Color(0xFF15803D);
   static const _debitRed = Color(0xFFDC2626);
 
-  static IconData iconFor(ActivityKind kind) {
+  static const topUpAsset = QuickActionIconChip.topUpAsset;
+  static const transferAsset = QuickActionIconChip.transferAsset;
+  static const historyAsset = QuickActionIconChip.historyAsset;
+  static const paymentAsset = QuickActionIconChip.paymentAsset;
+
+  static String assetFor(ActivityKind kind) {
     switch (kind) {
       case ActivityKind.topUp:
-        return LucideIcons.wallet;
+        return topUpAsset;
       case ActivityKind.transfer:
-        return LucideIcons.arrow_left_right;
+        return transferAsset;
       case ActivityKind.bill:
-        return LucideIcons.circle_dollar_sign;
+        return paymentAsset;
     }
+  }
+
+  static Color softFor(ActivityKind kind) {
+    switch (kind) {
+      case ActivityKind.topUp:
+        return QuickActionIconChip.topUpSoft;
+      case ActivityKind.transfer:
+        return QuickActionIconChip.transferSoft;
+      case ActivityKind.bill:
+        return QuickActionIconChip.paymentSoft;
+    }
+  }
+
+  /// Soft chip + PNG — list size 38 / icon 22, radius [AppStyle.radiusSm].
+  static Widget kindIcon(ActivityKind kind, {double iconSize = 22}) {
+    return QuickActionIconChip(
+      asset: assetFor(kind),
+      background: softFor(kind),
+      size: 38,
+      iconSize: iconSize,
+    );
   }
 
   Color get _resolvedAmountColor {
@@ -102,24 +128,11 @@ class ActivityListCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       borderRadius: AppStyle.borderRadiusSm,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 35,
-              height: 35,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: AppStyle.borderRadiusSm,
-              ),
-              child: Icon(
-                iconFor(item.kind),
-                color: AppColors.onPrimary,
-                size: 18,
-              ),
-            ),
+            kindIcon(item.kind),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -135,7 +148,7 @@ class ActivityListCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: AppTheme.english(
                             fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.primary,
                             height: 1.25,
                           ),
