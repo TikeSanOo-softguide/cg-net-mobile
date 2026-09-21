@@ -1,0 +1,10 @@
+Home quick-action icons — Flaticon sources, recolored, transparent background.
+
+Sources:
+- top_up: top-up_12444344 — https://www.flaticon.com/free-icon/top-up_12444344
+- transfer: paper-plane_1933005 — https://www.flaticon.com/free-icon/paper-plane_1933005
+- history: history_5582302 — https://www.flaticon.com/free-icon/history_5582302
+
+Icons by Flaticon authors — https://www.flaticon.com
+Recolored for CG-NET (top up #0100CA, transfer #0D9488, history #7C3AED).
+Saved at 128×128.

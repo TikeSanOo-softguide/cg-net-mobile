@@ -23,8 +23,8 @@ class _HomePromoBannerState extends State<HomePromoBanner> {
     'assets/images/banners/banner_6.jpg',
   ];
 
-  // Native banner size 1024 x 293 — taller than before, full image shown.
-  static const _bannerAspect = 1024 / 293;
+  // Native 1024 x 293; display slot a bit taller, image still fills the card.
+  static const _bannerAspect = 1024 / 340;
   static const _autoSlide = Duration(seconds: 4);
 
   final _controller = PageController();
@@ -79,7 +79,7 @@ class _HomePromoBannerState extends State<HomePromoBanner> {
                 itemBuilder: (context, index) {
                   return Image.asset(
                     _banners[index],
-                    fit: BoxFit.contain,
+                    fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
                     alignment: Alignment.center,

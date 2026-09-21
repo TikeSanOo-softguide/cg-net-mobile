@@ -99,18 +99,12 @@ class _TransferPageState extends State<TransferPage> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(
-                          LucideIcons.arrow_left_right,
-                          size: 15,
-                          color: AppColors.onPrimary,
-                        ),
+                      Image.asset(
+                        'assets/images/quick_actions/transfer.png',
+                        width: 25,
+                        height: 25,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                       const SizedBox(width: 10),
                       Expanded(

@@ -66,14 +66,14 @@ Widget _dialogIcon({
   required Color foreground,
 }) {
   return Container(
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     alignment: Alignment.center,
     decoration: BoxDecoration(
       color: background,
       shape: BoxShape.circle,
     ),
-    child: Icon(icon, size: 20, color: foreground),
+    child: Icon(icon, size: 16, color: foreground),
   );
 }
 

@@ -32,6 +32,14 @@ class HomePinnedBar extends ConsumerWidget {
 
   final String accountNumber;
 
+  static const double _padV = 14;
+  static const double _logoH = 43;
+
+  /// Status inset + vertical padding + logo row.
+  static double heightOf(BuildContext context) {
+    return MediaQuery.paddingOf(context).top + _padV + _logoH + _padV;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bound = ref.watch(boundBroadbandProvider);
@@ -45,15 +53,15 @@ class HomePinnedBar extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               AppStyle.pageMarginH,
-              12,
+              HomePinnedBar._padV,
               AppStyle.pageMarginH,
-              12,
+              HomePinnedBar._padV,
             ),
             child: Row(
               children: [
-                const AppLogo(
-                  width: 52,
-                  height: 42,
+                    const AppLogo(
+                      width: 53,
+                      height: HomePinnedBar._logoH,
                   padding: 0,
                   borderRadius: 0,
                   backgroundColor: Colors.transparent,
@@ -68,7 +76,7 @@ class HomePinnedBar extends ConsumerWidget {
                         'home.account_number'.tr(),
                         style: AppTheme.english(
                           color: AppColors.onPrimary,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -77,7 +85,7 @@ class HomePinnedBar extends ConsumerWidget {
                         accountNumber,
                         style: AppTheme.english(
                           color: AppColors.onPrimary,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -113,7 +121,7 @@ class HomePinnedBar extends ConsumerWidget {
                                 ? LucideIcons.link
                                 : LucideIcons.router,
                             color: AppColors.onPrimary,
-                            size: 13,
+                            size: 14,
                           ),
                           const SizedBox(width: 4),
                           ConstrainedBox(
@@ -126,7 +134,7 @@ class HomePinnedBar extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                               style: AppTheme.english(
                                 color: AppColors.onPrimary,
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 height: 1.1,
                               ),
@@ -178,15 +186,16 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
             borderRadius: const BorderRadius.vertical(
               bottom: Radius.circular(20),
             ),
+            clipBehavior: Clip.hardEdge,
             child: const ColoredBox(color: AppColors.primary),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppStyle.pageMarginH,
-            17,
+            21,
             AppStyle.pageMarginH,
-            46,
+            50,
           ),
           child: Center(
             child: Column(

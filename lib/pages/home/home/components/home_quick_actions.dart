@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../components/app_card/app_card.dart';
@@ -12,22 +11,24 @@ import '../../../../core/theme/app_theme/app_theme.dart';
 class HomeQuickActions extends StatelessWidget {
   const HomeQuickActions({super.key});
 
+  static const _iconSize = 25.0;
+
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final actions = [
       (
-        LucideIcons.square_plus,
+        'assets/images/quick_actions/top_up.png',
         context.tr('home.action_topup'),
         RouteNames.topUp,
       ),
       (
-        LucideIcons.send_horizontal,
+        'assets/images/quick_actions/transfer.png',
         context.tr('home.action_transfer'),
         RouteNames.transfer,
       ),
       (
-        LucideIcons.file_clock,
+        'assets/images/quick_actions/history.png',
         context.tr('home.action_history'),
         RouteNames.history,
       ),
@@ -38,6 +39,7 @@ class HomeQuickActions extends StatelessWidget {
       margin: AppStyle.pagePaddingH,
       elevated: false,
       bordered: false,
+      borderRadius: AppStyle.borderRadiusMd,
       padding: const EdgeInsets.symmetric(
         horizontal: AppStyle.spaceSm,
         vertical: 7,
@@ -65,19 +67,12 @@ class HomeQuickActions extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: AppStyle.borderRadiusSm,
-                          ),
-                          child: Icon(
-                            actions[i].$1,
-                            color: AppColors.onPrimary,
-                            size: 15,
-                          ),
+                        Image.asset(
+                          actions[i].$1,
+                          width: _iconSize,
+                          height: _iconSize,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
                         ),
                         const SizedBox(width: 8),
                         Flexible(
@@ -85,9 +80,9 @@ class HomeQuickActions extends StatelessWidget {
                             actions[i].$2,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTheme.captionSm(color: AppColors.primary)
+                            style: AppTheme.captionSm(color: AppColors.textMuted)
                                 .copyWith(
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               height: AppStyle.lineHeightBody,
                             ),

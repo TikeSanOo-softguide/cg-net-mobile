@@ -63,8 +63,8 @@ class ActivityDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 35,
+                      height: 35,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
@@ -73,7 +73,7 @@ class ActivityDetailPage extends StatelessWidget {
                       child: Icon(
                         ActivityListCard.iconFor(item.kind),
                         color: AppColors.onPrimary,
-                        size: 15,
+                        size: 18,
                       ),
                     ),
                     const SizedBox(width: 12),

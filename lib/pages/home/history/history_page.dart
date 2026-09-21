@@ -130,7 +130,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
       title: Text('history.title'.tr()),
       showBack: true,
       onBack: () => context.pop(),
-      trailingIcon: LucideIcons.list_filter,
+      trailingIcon: LucideIcons.sliders_horizontal,
       onTrailingPressed: _openFilter,
       body: Column(
         children: [

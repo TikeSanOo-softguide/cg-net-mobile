@@ -52,57 +52,35 @@ class ActivityDateFilter {
   }
 }
 
-/// Opens a left settings-style filter drawer. Returns applied filter or null if dismissed.
+/// Opens a bottom filter drawer. Returns applied filter or null if dismissed.
 Future<ActivityDateFilter?> showActivityFilterDrawer(
   BuildContext context, {
   required ActivityDateFilter initial,
 }) {
-  return showGeneralDialog<ActivityDateFilter>(
+  return showModalBottomSheet<ActivityDateFilter>(
     context: context,
-    barrierLabel: 'history.filter_title'.tr(),
-    barrierDismissible: true,
-    barrierColor: Colors.black.withValues(alpha: 0.35),
-    transitionDuration: const Duration(milliseconds: 280),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: Material(
-          color: Colors.transparent,
-          child: SizedBox(
-            width: (MediaQuery.sizeOf(context).width * 0.82).clamp(280.0, 340.0),
-            height: MediaQuery.sizeOf(context).height,
-            child: _ActivityFilterDrawer(initial: initial),
-          ),
-        ),
-      );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(-1, 0),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
-      );
-    },
+    useRootNavigator: true,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppStyle.radiusCurve),
+      ),
+    ),
+    builder: (sheetContext) => _ActivityFilterSheet(initial: initial),
   );
 }
 
-class _ActivityFilterDrawer extends StatefulWidget {
-  const _ActivityFilterDrawer({required this.initial});
+class _ActivityFilterSheet extends StatefulWidget {
+  const _ActivityFilterSheet({required this.initial});
 
   final ActivityDateFilter initial;
 
   @override
-  State<_ActivityFilterDrawer> createState() => _ActivityFilterDrawerState();
+  State<_ActivityFilterSheet> createState() => _ActivityFilterSheetState();
 }
 
-class _ActivityFilterDrawerState extends State<_ActivityFilterDrawer> {
+class _ActivityFilterSheetState extends State<_ActivityFilterSheet> {
   late ActivityFilterPeriod _period;
   late DateTime _start;
   late DateTime _end;
@@ -240,162 +218,177 @@ class _ActivityFilterDrawerState extends State<_ActivityFilterDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      elevation: 8,
-      child: SafeArea(
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppStyle.spaceLg,
+          AppStyle.spaceMd,
+          AppStyle.spaceLg,
+          AppStyle.spaceLg,
+        ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
-              child: Row(
-                children: [
-                  const Icon(
-                    LucideIcons.list_filter,
-                    size: 18,
-                    color: AppColors.primary,
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppStyle.spaceMd),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'history.filter_title'.tr(),
+                    style: AppTheme.sectionTitle(),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'history.filter_title'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                ),
+                Material(
+                  color: AppColors.primarySoft,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Icon(
+                        LucideIcons.x,
+                        size: 18,
                         color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(
-                      LucideIcons.x,
-                      size: 18,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: AppStyle.spaceLg),
+            Text(
+              'history.filter_period'.tr(),
+              style: AppTheme.english(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
               ),
             ),
-            const Divider(height: 1, color: AppColors.borderLight),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(AppStyle.radiusSm),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    'history.filter_period'.tr(),
-                    style: AppTheme.english(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _PeriodTile(
+                  _PeriodChip(
                     label: 'history.filter_by_day'.tr(),
                     selected: _period == ActivityFilterPeriod.day,
                     onTap: () => _applyPeriod(ActivityFilterPeriod.day),
                   ),
-                  const SizedBox(height: 6),
-                  _PeriodTile(
+                  _PeriodChip(
                     label: 'history.filter_by_month'.tr(),
                     selected: _period == ActivityFilterPeriod.month,
                     onTap: () => _applyPeriod(ActivityFilterPeriod.month),
                   ),
-                  const SizedBox(height: 6),
-                  _PeriodTile(
+                  _PeriodChip(
                     label: 'history.filter_by_range'.tr(),
                     selected: _period == ActivityFilterPeriod.custom,
                     onTap: () => _applyPeriod(ActivityFilterPeriod.custom),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'history.filter_dates'.tr(),
-                    style: AppTheme.english(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _SettingRow(
-                    label: _period == ActivityFilterPeriod.month
-                        ? 'history.filter_month'.tr()
-                        : 'history.filter_start'.tr(),
-                    value: _period == ActivityFilterPeriod.month
-                        ? DateFormat.yMMMM(context.locale.toString())
-                            .format(_start)
-                        : _fmt(_start),
-                    onTap: _pickStart,
-                  ),
-                  if (_period != ActivityFilterPeriod.day) ...[
-                    const SizedBox(height: 8),
-                    _SettingRow(
-                      label: 'history.filter_end'.tr(),
-                      value: _fmt(_end),
-                      onTap: _period == ActivityFilterPeriod.month
-                          ? null
-                          : _pickEnd,
-                      enabled: _period == ActivityFilterPeriod.custom,
-                    ),
-                  ],
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.borderLight),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _reset,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        side: const BorderSide(color: AppColors.border),
-                        minimumSize: const Size(0, 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppStyle.radiusInput),
-                        ),
-                      ),
-                      child: Text(
-                        'history.filter_reset'.tr(),
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _apply,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.onPrimary,
-                        elevation: 0,
-                        minimumSize: const Size(0, 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppStyle.radiusInput),
-                        ),
-                      ),
-                      child: Text(
-                        'history.filter_apply'.tr(),
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 18),
+            Text(
+              'history.filter_dates'.tr(),
+              style: AppTheme.english(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
               ),
+            ),
+            const SizedBox(height: 10),
+            _DateField(
+              label: _period == ActivityFilterPeriod.month
+                  ? 'history.filter_month'.tr()
+                  : 'history.filter_start'.tr(),
+              value: _period == ActivityFilterPeriod.month
+                  ? DateFormat.yMMMM(context.locale.toString()).format(_start)
+                  : _fmt(_start),
+              onTap: _pickStart,
+            ),
+            if (_period != ActivityFilterPeriod.day) ...[
+              const SizedBox(height: 8),
+              _DateField(
+                label: 'history.filter_end'.tr(),
+                value: _fmt(_end),
+                onTap: _period == ActivityFilterPeriod.custom ? _pickEnd : null,
+                enabled: _period == ActivityFilterPeriod.custom,
+              ),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _reset,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: AppColors.primary,
+                      elevation: 0,
+                      side: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1,
+                      ),
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppStyle.radiusInput),
+                      ),
+                    ),
+                    child: Text(
+                      'history.filter_reset'.tr(),
+                      style: AppTheme.english(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _apply,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      elevation: 0,
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppStyle.radiusInput),
+                      ),
+                    ),
+                    child: Text(
+                      'history.filter_apply'.tr(),
+                      style: AppTheme.english(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -404,8 +397,8 @@ class _ActivityFilterDrawerState extends State<_ActivityFilterDrawer> {
   }
 }
 
-class _PeriodTile extends StatelessWidget {
-  const _PeriodTile({
+class _PeriodChip extends StatelessWidget {
+  const _PeriodChip({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -417,42 +410,29 @@ class _PeriodTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.primarySoft : AppColors.background,
-      borderRadius: AppStyle.borderRadiusSm,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppStyle.borderRadiusSm,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: AppStyle.borderRadiusSm,
-            border: Border.all(
-              color: selected ? AppColors.primary : AppColors.borderLight,
-              width: 0.8,
+    return Expanded(
+      child: Material(
+        color: selected ? AppColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.english(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? AppColors.onPrimary : AppColors.textPrimary,
+                height: 1.1,
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected ? LucideIcons.circle_check : LucideIcons.circle,
-                size: 18,
-                color: selected ? AppColors.primary : AppColors.textMuted,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTheme.english(
-                    fontSize: 13,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected
-                        ? AppColors.primary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -460,8 +440,8 @@ class _PeriodTile extends StatelessWidget {
   }
 }
 
-class _SettingRow extends StatelessWidget {
-  const _SettingRow({
+class _DateField extends StatelessWidget {
+  const _DateField({
     required this.label,
     required this.value,
     required this.onTap,
@@ -476,19 +456,17 @@ class _SettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: enabled ? 1 : 0.55,
+      opacity: enabled ? 1 : 0.5,
       child: Material(
-        color: AppColors.background,
+        color: AppColors.primarySoft,
         borderRadius: AppStyle.borderRadiusSm,
         child: InkWell(
           onTap: enabled ? onTap : null,
           borderRadius: AppStyle.borderRadiusSm,
-          child: Container(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: AppStyle.borderRadiusSm,
-              border: Border.all(color: AppColors.borderLight, width: 0.8),
-            ),
             child: Row(
               children: [
                 Expanded(
@@ -515,12 +493,11 @@ class _SettingRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (enabled)
-                  const Icon(
-                    LucideIcons.calendar_days,
-                    size: 16,
-                    color: AppColors.primary,
-                  ),
+                const Icon(
+                  LucideIcons.calendar_days,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
               ],
             ),
           ),

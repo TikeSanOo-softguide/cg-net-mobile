@@ -37,7 +37,7 @@ class HomeOffersSection extends StatelessWidget {
     ),
   ];
 
-  static const _gap = 3.0;
+  static const _gap = 8.0;
   static const _buttonHeight = 26.0;
   static const _buttonPadH = 6.0;
   static const _buttonPadV = 6.0;
@@ -49,7 +49,7 @@ class HomeOffersSection extends StatelessWidget {
     final contentWidth = screenWidth - (AppStyle.pageMarginH * 2);
     // Slightly smaller cards — ~3.05 visible.
     final cardWidth = ((contentWidth - _gap) / 3.05).clamp(84.0, 104.0);
-    final imageHeight = cardWidth * 1.15;
+    final imageHeight = cardWidth * 1.32;
     // Image + top button pad + button + bottom button pad.
     final slideHeight =
         imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
@@ -130,6 +130,7 @@ class _PackageOfferCard extends StatelessWidget {
       child: AppCard(
         elevated: false,
         bordered: false,
+        borderRadius: AppStyle.borderRadiusSm,
         padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,

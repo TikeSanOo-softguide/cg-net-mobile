@@ -195,8 +195,8 @@ class _InboxCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 35,
+                      height: 35,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
@@ -205,7 +205,7 @@ class _InboxCard extends StatelessWidget {
                       child: Icon(
                         _iconFor(item.category),
                         color: AppColors.onPrimary,
-                        size: 15,
+                        size: 18,
                       ),
                     ),
                     const SizedBox(width: 12),

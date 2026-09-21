@@ -75,7 +75,6 @@ class HomeServicesSection extends ConsumerWidget {
           asset: 'assets/images/services/change_wifi.png',
           label: 'home.service_change_wifi'.tr(),
           color: const Color(0xFF0891B2),
-          backgroundColor: const Color(0xFFEEF2FF),
         ),
       ];
 
@@ -231,9 +230,10 @@ class HomeServicesSection extends ConsumerWidget {
           AppCard(
             elevated: false,
             bordered: false,
+            borderRadius: AppStyle.borderRadiusMd,
             padding: const EdgeInsets.symmetric(
               horizontal: AppStyle.spaceSm,
-              vertical: 10,
+              vertical: 16,
             ),
             child: Column(
               children: [
@@ -241,7 +241,7 @@ class HomeServicesSection extends ConsumerWidget {
                   items: items.take(3).toList(),
                   onTap: (item) => _onServiceTap(context, ref, item),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 _ServiceGrid(
                   items: items.skip(3).take(3).toList(),
                   onTap: (item) => _onServiceTap(context, ref, item),
@@ -295,7 +295,6 @@ class _ServiceItem {
     required this.color,
     this.asset,
     this.icon,
-    this.backgroundColor,
   }) : assert(asset != null || icon != null);
 
   final String id;
@@ -303,12 +302,6 @@ class _ServiceItem {
   final IconData? icon;
   final String label;
   final Color color;
-  final Color? backgroundColor;
-
-  /// Soft chip fill ≈ color at 14% on white, unless [backgroundColor] is set.
-  Color get chipBackground =>
-      backgroundColor ??
-      Color.alphaBlend(color.withValues(alpha: 0.14), Colors.white);
 }
 
 /// Flat service tile inside the main [AppCard] (no per-item card).
@@ -321,9 +314,7 @@ class _ServiceTile extends StatelessWidget {
   final _ServiceItem item;
   final VoidCallback onTap;
 
-  static const double _boxSize = 36;
-  static const double _iconSize = 22;
-  static const double _boxRadius = 8;
+  static const double _iconSize = 32;
 
   @override
   Widget build(BuildContext context) {
@@ -356,29 +347,20 @@ class _ServiceTile extends StatelessWidget {
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: _boxSize,
-              height: _boxSize,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: item.chipBackground,
-                borderRadius: BorderRadius.circular(_boxRadius),
-              ),
-              child: iconWidget,
-            ),
-            const SizedBox(height: 6),
+            iconWidget,
+            const SizedBox(height: 8),
             Text(
               item.label,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTheme.english(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
               ),

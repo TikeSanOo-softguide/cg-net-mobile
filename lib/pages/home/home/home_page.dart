@@ -8,7 +8,7 @@ import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
-// import 'components/home_plan_card.dart'; // temporarily unused (plan card hidden)
+import 'components/home_plan_card.dart';
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
@@ -85,55 +85,74 @@ class _HomePageState extends ConsumerState<HomePage> {
     final showNav = ref.watch(bottomNavVisibleProvider);
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
+    final pinnedH = HomePinnedBar.heightOf(context);
+
     return MediaQuery.removePadding(
       context: context,
       removeBottom: showNav,
       child: ColoredBox(
         color: AppColors.background,
-        child: Column(
+        child: Stack(
           children: [
-            HomePinnedBar(accountNumber: data.accountNumber),
-            Expanded(
-              child: CustomScrollView(
-                key: ValueKey('home-$localeCode'),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            HomeBalanceHeader(
-                              balanceAmount: data.balanceAmount,
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                        const Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: HomeQuickActions(),
-                        ),
-                      ],
-                    ),
+            CustomScrollView(
+              key: ValueKey('home-$localeCode'),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: SizedBox(height: pinnedH - 2),
+                ),
+                SliverToBoxAdapter(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          HomeBalanceHeader(
+                            balanceAmount: data.balanceAmount,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                      const Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: HomeQuickActions(),
+                      ),
+                    ],
                   ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                SliverToBoxAdapter(
+                  child: HomePlanCard(
+                    title: data.planTitle,
+                    expiry: data.planExpiry,
+                    username: data.username,
+                    password: data.password,
                   ),
-                  const SliverToBoxAdapter(child: HomeServicesSection()),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(child: HomeOffersSection()),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(child: HomePromoBanner()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                ],
-              ),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                const SliverToBoxAdapter(child: HomeServicesSection()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                const SliverToBoxAdapter(child: HomeOffersSection()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                const SliverToBoxAdapter(child: HomePromoBanner()),
+                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: HomePinnedBar(accountNumber: data.accountNumber),
             ),
           ],
         ),

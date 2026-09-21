@@ -124,18 +124,12 @@ class _TopUpPageState extends State<TopUpPage> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(
-                          LucideIcons.wallet,
-                          size: 15,
-                          color: AppColors.onPrimary,
-                        ),
+                      Image.asset(
+                        'assets/images/quick_actions/top_up.png',
+                        width: 25,
+                        height: 25,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
