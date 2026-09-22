@@ -52,3 +52,5 @@ flutter:
     - assets/images/flags/
     - assets/images/quick_actions/
     - assets/images/inbox/
+    - assets/images/dialogs/
+    - assets/images/auth/

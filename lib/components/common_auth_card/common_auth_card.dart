@@ -15,37 +15,58 @@ class CommonAuthCard extends StatelessWidget {
     required this.primaryAction,
     this.title,
     this.icon,
+    this.iconAsset,
+    this.titleColor,
     this.child,
     this.secondaryAction,
   });
 
   final IconData? icon;
+  /// Optional PNG (e.g. Flaticon) — preferred over [icon] when set.
+  final String? iconAsset;
   final String? title;
+  final Color? titleColor;
   final String description;
   final Widget? child;
   final Widget primaryAction;
   final Widget? secondaryAction;
 
+  static const double _iconBox = 45;
+  static const double _iconSize = 26;
+  static const double _iconRadius = 10;
+  static const double _letterSpacing = 0;
+
   @override
   Widget build(BuildContext context) {
+    final hasIcon = iconAsset != null || icon != null;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (icon != null) ...[
+        if (hasIcon) ...[
           Center(
             child: Container(
-              width: 56,
-              height: 56,
-              decoration: const BoxDecoration(
+              width: _iconBox,
+              height: _iconBox,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
                 color: AppColors.primaryLight,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(_iconRadius),
               ),
-              child: Icon(
-                icon,
-                size: 26,
-                color: AppColors.primary,
-              ),
+              child: iconAsset != null
+                  ? Image.asset(
+                      iconAsset!,
+                      width: _iconSize,
+                      height: _iconSize,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    )
+                  : Icon(
+                      icon,
+                      size: _iconSize,
+                      color: AppColors.primary,
+                    ),
             ),
           ),
           const SizedBox(height: AppStyle.spaceLg),
@@ -55,9 +76,10 @@ class CommonAuthCard extends StatelessWidget {
             title!,
             textAlign: TextAlign.center,
             style: AppTheme.english(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: titleColor ?? AppColors.textPrimary,
+              letterSpacing: _letterSpacing,
             ),
           ),
           const SizedBox(height: AppStyle.spaceSm),
@@ -65,7 +87,13 @@ class CommonAuthCard extends StatelessWidget {
         Text(
           description,
           textAlign: TextAlign.center,
-          style: AppTheme.bodySecondary(),
+          style: AppTheme.english(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textMuted,
+            letterSpacing: _letterSpacing,
+            height: AppStyle.lineHeightBody,
+          ),
         ),
         if (child != null) ...[
           const SizedBox(height: AppStyle.spaceXl),

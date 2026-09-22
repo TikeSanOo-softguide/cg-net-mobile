@@ -65,8 +65,8 @@ class ActivityListCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? amountColor;
 
-  static const _creditGreen = Color(0xFF15803D);
-  static const _debitRed = Color(0xFFDC2626);
+  static const _creditGreen = Color(0xFF499A13);
+  static const _debitRed = Color(0xFFFF0000);
 
   static const topUpAsset = QuickActionIconChip.topUpAsset;
   static const transferAsset = QuickActionIconChip.transferAsset;
@@ -184,8 +184,8 @@ class ActivityListCard extends StatelessWidget {
                     child: Text(
                       amountText,
                       style: AppTheme.english(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         color: _resolvedAmountColor,
                       ),
                     ),

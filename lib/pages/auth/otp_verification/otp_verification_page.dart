@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -78,8 +77,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
       compactTop: true,
       topBarTitle: 'otp.title'.tr(),
       card: CommonAuthCard(
-        icon: LucideIcons.shield_check,
+        iconAsset: 'assets/images/auth/otp.png',
         title: 'otp.title'.tr(),
+        titleColor: AppColors.primary,
         description: 'otp.subtitle'.tr(namedArgs: {'phone': widget.phone}),
         primaryAction: AppButton(
           label: 'otp.verify'.tr(),

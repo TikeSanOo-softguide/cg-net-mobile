@@ -244,7 +244,7 @@ class AppTheme {
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: AppStyle.borderRadiusMd,
+          borderRadius: AppStyle.borderRadiusSm,
         ),
         margin: EdgeInsets.zero,
       ),

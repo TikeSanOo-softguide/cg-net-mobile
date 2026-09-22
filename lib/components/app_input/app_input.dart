@@ -238,10 +238,9 @@ class _AppInputState extends State<AppInput> {
           minWidth: 36,
           minHeight: 44,
         ),
-        suffixIconConstraints: const BoxConstraints(
-          minWidth: 36,
-          minHeight: 44,
-        ),
+        suffixIconConstraints: widget.suffix != null
+            ? const BoxConstraints(minWidth: 0, minHeight: 44)
+            : const BoxConstraints(minWidth: 36, minHeight: 44),
         border: _border(false),
         enabledBorder: _border(false),
         focusedBorder: _border(true),

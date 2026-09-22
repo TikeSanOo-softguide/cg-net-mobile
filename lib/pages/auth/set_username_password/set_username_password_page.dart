@@ -8,6 +8,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../../../core/theme/app_colors/app_colors.dart';
 import 'set_username_password_controller.dart';
 
 class SetUsernamePasswordPage extends ConsumerStatefulWidget {
@@ -45,8 +46,9 @@ class _SetUsernamePasswordPageState
       compactTop: true,
       topBarTitle: 'set_credentials.title'.tr(),
       card: CommonAuthCard(
-        icon: LucideIcons.user_round_plus,
+        iconAsset: 'assets/images/auth/create_account.png',
         title: 'set_credentials.title'.tr(),
+        titleColor: AppColors.primary,
         description: 'set_credentials.subtitle'.tr(),
         primaryAction: AppButton(
           label: 'set_credentials.create'.tr(),

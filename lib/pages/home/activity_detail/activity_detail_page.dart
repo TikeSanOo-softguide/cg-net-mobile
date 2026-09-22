@@ -16,8 +16,8 @@ class ActivityDetailPage extends StatelessWidget {
 
   final ActivityItem item;
 
-  static const _creditGreen = Color(0xFF15803D);
-  static const _debitRed = Color(0xFFDC2626);
+  static const _creditGreen = Color(0xFF499A13);
+  static const _debitRed = Color(0xFFFF0000);
 
   String get _kindLabel {
     switch (item.kind) {

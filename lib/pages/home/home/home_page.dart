@@ -128,7 +128,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 SliverToBoxAdapter(
                   child: HomePlanCard(
                     packageId: data.packageId,
-                    imagePath: data.packageImagePath,
                     titleKey: data.planTitleKey,
                     expiry: data.planExpiry,
                     username: data.username,

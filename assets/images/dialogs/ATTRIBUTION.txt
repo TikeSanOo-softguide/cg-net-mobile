@@ -1,0 +1,12 @@
+App dialog icons — Flaticon sources, recolored, transparent background.
+
+Sources:
+- success: success_8664713 — https://www.flaticon.com/free-icon/success_8664713
+- confirm: information-button_1176 — https://www.flaticon.com/free-icon/information-button_1176
+- alert: warning_18359770 — https://www.flaticon.com/free-icon/warning_18359770
+
+Icons by Flaticon authors — https://www.flaticon.com
+Recolored: success #499A13, confirm #0100CA, alert #F97A00.
+Chip 36×36 / icon 15 / radius 8.
+Soft chip BGs: success #E8F5DC, confirm primaryLight, alert #FFF0E5.
+Assets 128×128.

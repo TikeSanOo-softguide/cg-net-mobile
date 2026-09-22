@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -12,6 +11,13 @@ Future<void> showOtpSuccessDrawer(
   BuildContext context, {
   required VoidCallback onContinue,
 }) {
+  const letterSpacing = 0.0;
+  const iconBox = 45.0;
+  const iconSize = 26.0;
+  const iconRadius = 10.0;
+  // Soft wash of success #499A13
+  const successChip = Color(0xFFE8F5DC);
+
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -45,16 +51,19 @@ Future<void> showOtpSuccessDrawer(
               const SizedBox(height: AppStyle.spaceXl),
               Center(
                 child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primarySoft,
-                    shape: BoxShape.circle,
+                  width: iconBox,
+                  height: iconBox,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: successChip,
+                    borderRadius: BorderRadius.circular(iconRadius),
                   ),
-                  child: const Icon(
-                    LucideIcons.circle_check,
-                    size: 28,
-                    color: AppColors.primary,
+                  child: const Image(
+                    image: AssetImage('assets/images/dialogs/success.png'),
+                    width: iconSize,
+                    height: iconSize,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
                 ),
               ),
@@ -63,16 +72,23 @@ Future<void> showOtpSuccessDrawer(
                 'otp.success_title'.tr(),
                 textAlign: TextAlign.center,
                 style: AppTheme.english(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.success,
+                  letterSpacing: letterSpacing,
                 ),
               ),
               const SizedBox(height: AppStyle.spaceSm),
               Text(
                 'otp.success_body'.tr(),
                 textAlign: TextAlign.center,
-                style: AppTheme.bodySecondary(),
+                style: AppTheme.english(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textMuted,
+                  letterSpacing: letterSpacing,
+                  height: AppStyle.lineHeightBody,
+                ),
               ),
               const SizedBox(height: AppStyle.spaceXl),
               AppButton(

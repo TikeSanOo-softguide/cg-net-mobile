@@ -283,12 +283,9 @@ class _BoundAccountSheet extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFF44336),
-                  backgroundColor: Color.alphaBlend(
-                    const Color(0xFFF44336).withValues(alpha: 0.12),
-                    Colors.white,
-                  ),
-                  side: const BorderSide(color: Color(0xFFF44336), width: 1),
+                  foregroundColor: const Color(0xFFFF0000),
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFFFF0000), width: 1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppStyle.radiusButton),
                   ),
@@ -298,7 +295,7 @@ class _BoundAccountSheet extends StatelessWidget {
                   style: AppTheme.english(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFFF44336),
+                    color: const Color(0xFFFF0000),
                   ),
                 ),
               ),

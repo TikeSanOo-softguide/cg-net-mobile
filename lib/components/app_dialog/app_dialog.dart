@@ -1,16 +1,50 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
-const _danger = Color(0xFFF44336);
+const _cancelRed = Color(0xFFFF0000);
+const _alert = Color(0xFFF97A00);
+const _successSoft = Color(0xFFE8F5DC); // light of #499A13
+const _alertSoft = Color(0xFFFFF0E5); // light of #F97A00
 const double _dialogRadius = 16;
 const double _modalBtnHeight = 32;
 const double _modalBtnMinWidth = 120;
 const double _modalBtnFontSize = 11;
+const String _successIconAsset = 'assets/images/dialogs/success.png';
+const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
+const String _alertIconAsset = 'assets/images/dialogs/alert.png';
+const double _dialogIconChip = 36;
+const double _dialogIconSize = 23;
+const double _dialogIconRadius = 8;
+const EdgeInsets _dialogPadding = EdgeInsets.fromLTRB(18, 13, 18, 13);
+const double _gapIconTitle = 8;
+const double _gapTitleBody = 6;
+const double _gapBodyButton = 14;
+
+Widget _dialogPngIcon({
+  required String asset,
+  required Color background,
+}) {
+  return Container(
+    width: _dialogIconChip,
+    height: _dialogIconChip,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(_dialogIconRadius),
+    ),
+    child: Image.asset(
+      asset,
+      width: _dialogIconSize,
+      height: _dialogIconSize,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+    ),
+  );
+}
 
 ButtonStyle _primaryModalBtnStyle() => FilledButton.styleFrom(
       backgroundColor: AppColors.primary,
@@ -24,13 +58,14 @@ ButtonStyle _primaryModalBtnStyle() => FilledButton.styleFrom(
       ),
     );
 
-ButtonStyle _dangerModalBtnStyle() => FilledButton.styleFrom(
-      backgroundColor: _danger,
-      foregroundColor: Colors.white,
+ButtonStyle _cancelOutlineModalBtnStyle() => OutlinedButton.styleFrom(
+      foregroundColor: _cancelRed,
+      backgroundColor: Colors.white,
       elevation: 0,
       minimumSize: const Size(_modalBtnMinWidth, _modalBtnHeight),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      side: const BorderSide(color: _cancelRed, width: 1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppStyle.radiusInput),
       ),
@@ -60,24 +95,7 @@ TextStyle _dialogMessageStyle() => AppTheme.english(
       height: 1.45,
     );
 
-Widget _dialogIcon({
-  required IconData icon,
-  required Color background,
-  required Color foreground,
-}) {
-  return Container(
-    width: 32,
-    height: 32,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: background,
-      shape: BoxShape.circle,
-    ),
-    child: Icon(icon, size: 16, color: foreground),
-  );
-}
-
-/// Shared success dialog — primary title + primary icon chip (white glyph).
+/// Shared success dialog — Flaticon success badge + success title.
 Future<void> showAppSuccessModal(
   BuildContext context, {
   required String title,
@@ -95,28 +113,27 @@ Future<void> showAppSuccessModal(
         ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 36),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+          padding: _dialogPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _dialogIcon(
-                icon: LucideIcons.circle_check,
-                background: AppColors.primary,
-                foreground: AppColors.onPrimary,
+              _dialogPngIcon(
+                asset: _successIconAsset,
+                background: _successSoft,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: _gapIconTitle),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: _dialogTitleStyle(AppColors.primary),
+                style: _dialogTitleStyle(AppColors.success),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: _gapTitleBody),
               Text(
                 body,
                 textAlign: TextAlign.center,
                 style: _dialogMessageStyle(),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: _gapBodyButton),
               SizedBox(
                 height: _modalBtnHeight,
                 child: FilledButton(
@@ -136,7 +153,7 @@ Future<void> showAppSuccessModal(
   );
 }
 
-/// Simple alert — primary title + primary icon chip (white glyph).
+/// Simple alert — Flaticon warning badge + alert title.
 Future<void> showAppAlertModal(
   BuildContext context, {
   required String message,
@@ -154,30 +171,30 @@ Future<void> showAppAlertModal(
         ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 36),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+          padding: _dialogPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _dialogIcon(
-                icon: LucideIcons.circle_alert,
-                background: AppColors.primary,
-                foreground: AppColors.onPrimary,
+              _dialogPngIcon(
+                asset: _alertIconAsset,
+                background: _alertSoft,
               ),
               if (title != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: _gapIconTitle),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: _dialogTitleStyle(AppColors.primary),
+                  style: _dialogTitleStyle(_alert),
                 ),
-              ],
-              const SizedBox(height: 10),
+                const SizedBox(height: _gapTitleBody),
+              ] else
+                const SizedBox(height: _gapIconTitle),
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: _dialogMessageStyle(),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: _gapBodyButton),
               SizedBox(
                 height: _modalBtnHeight,
                 child: FilledButton(
@@ -197,7 +214,7 @@ Future<void> showAppAlertModal(
   );
 }
 
-/// Shared confirm / danger dialog — red title + red icon chip (white glyph).
+/// Shared confirm dialog — primary title + Flaticon info badge.
 Future<bool> showAppConfirmModal(
   BuildContext context, {
   required String title,
@@ -216,41 +233,40 @@ Future<bool> showAppConfirmModal(
         ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 36),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+          padding: _dialogPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _dialogIcon(
-                icon: LucideIcons.circle_alert,
-                background: _danger,
-                foreground: Colors.white,
+              _dialogPngIcon(
+                asset: _confirmIconAsset,
+                background: AppColors.primaryLight,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: _gapIconTitle),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: _dialogTitleStyle(_danger),
+                style: _dialogTitleStyle(AppColors.primary),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: _gapTitleBody),
               Text(
                 body,
                 textAlign: TextAlign.center,
                 style: _dialogMessageStyle(),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: _gapBodyButton),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
                     height: _modalBtnHeight,
-                    child: FilledButton(
+                    child: OutlinedButton(
                       onPressed: () =>
                           Navigator.of(dialogContext).pop(false),
-                      style: _dangerModalBtnStyle(),
+                      style: _cancelOutlineModalBtnStyle(),
                       child: Text(
                         cancelLabel ?? 'common.cancel'.tr(),
                         style: _modalBtnText(
-                          color: Colors.white,
+                          color: _cancelRed,
                           weight: FontWeight.w700,
                         ),
                       ),
