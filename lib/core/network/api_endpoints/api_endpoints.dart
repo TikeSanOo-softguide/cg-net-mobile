@@ -7,9 +7,9 @@ class ApiEndpoints {
   );
 
   static const String availablePlans = '/v1/customer/plans/available';
-  static const String sendOtp = '/v1/customer/auth/otp/send';
-  static const String verifyOtp = '/v1/customer/auth/otp/verify';
-  static const String setCredentials = '/v1/customer/auth/credentials';
+  static const String sendOtp = '/api/auth/otp/request';
+  static const String verifyOtp = '/api/auth/otp/verify';
+  static const String resendOtp = '/api/auth/otp/resend';
   static const String profile = '/v1/customer/profile';
   static const String inbox = '/v1/customer/inbox';
   static const String supportChats = '/v1/customer/support/chats';

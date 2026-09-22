@@ -161,11 +161,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ? null
               : () async {
                   if (!_formKey.currentState!.validate()) return;
-                  final phone = await controller.submit(_phoneController.text);
-                  if (phone != null && context.mounted) {
+                  final result = await controller.submit(_phoneController.text);
+                  if (result != null && context.mounted) {
+                    final parts = result.split('|');
                     context.pushNamed(
                       RouteNames.otpVerification,
-                      queryParameters: {'phone': phone},
+                      queryParameters: {
+                        'phone': parts[0],
+                        'challenge_id': parts[1],
+                      },
                     );
                   }
                 },

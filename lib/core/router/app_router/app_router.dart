@@ -104,7 +104,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.otpVerification,
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
-          return OtpVerificationPage(phone: phone);
+          final challengeId = state.uri.queryParameters['challenge_id'] ?? '';
+          return OtpVerificationPage(
+            phone: phone,
+            challengeId: challengeId,
+          );
         },
       ),
       GoRoute(
