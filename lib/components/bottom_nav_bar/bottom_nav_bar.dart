@@ -21,7 +21,7 @@ class BottomNavBar extends ConsumerWidget {
     (Icons.home, 'nav.home'),
     (Icons.widgets, 'nav.package'),
     (Icons.mail, 'nav.inbox'),
-    (Icons.smart_toy, 'nav.support'),
+    (Icons.chat, 'nav.support'),
     (Icons.person, 'nav.profile'),
   ];
 

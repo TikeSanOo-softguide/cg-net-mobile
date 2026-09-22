@@ -4,12 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../components/app_card/app_card.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 
-/// Active plan — clear text layout, no package image.
+/// Active plan — title + In Use row, underline sections, compact WiFi.
 class HomePlanCard extends StatefulWidget {
   const HomePlanCard({
     super.key,
@@ -38,9 +39,6 @@ class _HomePlanCardState extends State<HomePlanCard> {
   bool _wifiOpen = false;
   bool _showUsername = false;
   bool _showPassword = false;
-
-  static const _activeGreen = Color(0xFF499A13);
-  static const _activeSoft = Color(0xFFE8F5DC);
 
   static DateTime? _parseExpiry(String raw) {
     final parts = raw.split(RegExp(r'[.\-/]'));
@@ -77,248 +75,206 @@ class _HomePlanCardState extends State<HomePlanCard> {
     final active = daysLeft == null || daysLeft >= 0;
     final count = daysLeft == null ? 0 : (daysLeft < 0 ? 0 : daysLeft);
 
-    return Padding(
-      padding: AppStyle.pagePaddingH,
-      child: Material(
-        color: AppColors.surface,
-        borderRadius: AppStyle.borderRadiusSm,
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              InkWell(
-                onTap: _openDetail,
-                borderRadius: BorderRadius.circular(8),
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
+    return AppCard(
+      margin: AppStyle.pagePaddingH,
+      elevated: false,
+      bordered: false,
+      borderRadius: AppStyle.borderRadiusSm,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: _openDetail,
+            borderRadius: BorderRadius.circular(8),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.titleKey.tr(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.english(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _StatusPill(active: active),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text.rich(
+                    TextSpan(
+                      style: AppTheme.english(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        height: 1.3,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'home.plan_expires'.tr(
+                            namedArgs: {'date': widget.expiry},
+                          ),
+                        ),
+                        const TextSpan(
+                          text: '  ·  ',
+                          style: TextStyle(
+                            color: AppColors.border,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '$count ${'home.days_unit'.tr()}',
+                          style: TextStyle(
+                            color: active
+                                ? AppColors.primary
+                                : AppColors.textMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 1, thickness: 0.5, color: AppColors.borderLight),
+          InkWell(
+            onTap: () => setState(() => _wifiOpen = !_wifiOpen),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.wifi,
+                    size: 14,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'home.wifi_credential'.tr(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.english(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _wifiOpen ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: const Icon(
+                      LucideIcons.chevron_down,
+                      size: 15,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: _wifiOpen
+                ? Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            widget.titleKey.tr(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.english(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                              letterSpacing: 0.3,
+                          _CredentialRow(
+                            label: 'home.username'.tr(),
+                            value: widget.username,
+                            visible: _showUsername,
+                            onToggleVisibility: () => setState(
+                              () => _showUsername = !_showUsername,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'home.plan_expires'.tr(
-                              namedArgs: {'date': widget.expiry},
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.english(
-                              color: AppColors.textMuted,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
+                          const SizedBox(height: 6),
+                          _CredentialRow(
+                            label: 'home.password'.tr(),
+                            value: widget.password,
+                            visible: _showPassword,
+                            onToggleVisibility: () => setState(
+                              () => _showPassword = !_showPassword,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: active
-                                ? _activeSoft
-                                : AppColors.primarySoft,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 5,
-                                height: 5,
-                                decoration: BoxDecoration(
-                                  color: active
-                                      ? _activeGreen
-                                      : AppColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                active
-                                    ? 'home.in_use'.tr()
-                                    : 'home.expired'.tr(),
-                                style: AppTheme.english(
-                                  color: active
-                                      ? _activeGreen
-                                      : AppColors.primary,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        _DaysCountBadge(count: count, active: active),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // WiFi credential toggle
-              Material(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  onTap: () => setState(() => _wifiOpen = !_wifiOpen),
-                  borderRadius: BorderRadius.circular(8),
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          LucideIcons.wifi,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'home.wifi_credential'.tr(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.english(
-                              color: AppColors.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                        AnimatedRotation(
-                          turns: _wifiOpen ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          child: const Icon(
-                            LucideIcons.chevron_down,
-                            size: 15,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-                alignment: Alignment.topCenter,
-                child: _wifiOpen
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            children: [
-                              _CredentialRow(
-                                label: 'home.username'.tr(),
-                                value: widget.username,
-                                visible: _showUsername,
-                                onToggleVisibility: () => setState(
-                                  () => _showUsername = !_showUsername,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              _CredentialRow(
-                                label: 'home.password'.tr(),
-                                value: widget.password,
-                                visible: _showPassword,
-                                onToggleVisibility: () => setState(
-                                  () => _showPassword = !_showPassword,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : const SizedBox(width: double.infinity),
-              ),
-            ],
+                  )
+                : const SizedBox.shrink(),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _DaysCountBadge extends StatelessWidget {
-  const _DaysCountBadge({
-    required this.count,
-    required this.active,
-  });
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.active});
 
-  final int count;
   final bool active;
+
+  static const _activeGreen = Color(0xFF499A13);
+  static const _activeSoft = Color(0xFFE8F5DC);
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.primary : AppColors.textMuted;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: active ? AppColors.primarySoft : AppColors.background,
-        borderRadius: BorderRadius.circular(8),
+        color: active ? _activeSoft : AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '$count',
-            style: AppTheme.english(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              height: 1,
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: active ? _activeGreen : AppColors.primary,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(height: 1),
+          const SizedBox(width: 4),
           Text(
-            'home.days_unit'.tr(),
-            textAlign: TextAlign.center,
+            active ? 'home.in_use'.tr() : 'home.expired'.tr(),
             style: AppTheme.english(
-              color: color,
-              fontSize: 8,
-              fontWeight: FontWeight.w600,
+              color: active ? _activeGreen : AppColors.primary,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
               height: 1.1,
             ),
           ),
@@ -367,7 +323,7 @@ class _CredentialRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTheme.english(
-              color: AppColors.textMuted,
+              color: AppColors.primary.withValues(alpha: 0.65),
               fontSize: 11,
               fontWeight: FontWeight.w500,
               height: 1.2,
@@ -380,7 +336,7 @@ class _CredentialRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTheme.english(
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               height: 1.2,
@@ -393,7 +349,7 @@ class _CredentialRow extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(4),
             child: Icon(
-              visible ? LucideIcons.eye_off : LucideIcons.eye,
+              visible ? LucideIcons.eye : LucideIcons.eye_off,
               size: 15,
               color: AppColors.primary,
             ),
