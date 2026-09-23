@@ -24,7 +24,7 @@ class TopUpFailurePage extends StatelessWidget {
             context.goNamed(RouteNames.topUp);
           }
         },
-        primaryLabel: 'topup.try_again'.tr(),
+        primaryLabel: 'common.done'.tr(),
         onPrimary: () {
           if (context.canPop()) {
             context.pop();
@@ -32,8 +32,6 @@ class TopUpFailurePage extends StatelessWidget {
             context.goNamed(RouteNames.topUp);
           }
         },
-        secondaryLabel: 'topup.back_home'.tr(),
-        onSecondary: () => context.goNamed(RouteNames.home),
       ),
     );
   }

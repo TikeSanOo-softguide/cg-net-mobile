@@ -95,12 +95,12 @@ class ActivityListCard extends StatelessWidget {
     }
   }
 
-  /// Soft chip + PNG — list size 38 / icon 22, radius [AppStyle.radiusSm].
-  static Widget kindIcon(ActivityKind kind, {double iconSize = 22}) {
+  /// Same chip style as home quick-action card (32 / 18).
+  static Widget kindIcon(ActivityKind kind, {double iconSize = 18}) {
     return QuickActionIconChip(
       asset: assetFor(kind),
       background: softFor(kind),
-      size: 38,
+      size: 32,
       iconSize: iconSize,
     );
   }

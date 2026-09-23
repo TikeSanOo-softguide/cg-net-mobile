@@ -10,7 +10,7 @@ class QuickActionIconChip extends StatelessWidget {
     required this.asset,
     required this.background,
     this.size = 32,
-    this.iconSize = 22,
+    this.iconSize = 18,
   });
 
   final String asset;

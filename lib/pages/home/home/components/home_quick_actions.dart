@@ -83,7 +83,6 @@ class HomeQuickActions extends StatelessWidget {
                             QuickActionIconChip(
                               asset: actions[i].$1,
                               background: actions[i].$4,
-                              iconSize: 18,
                             ),
                             const SizedBox(width: 8),
                             Flexible(

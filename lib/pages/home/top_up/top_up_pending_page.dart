@@ -17,10 +17,8 @@ class TopUpPendingPage extends StatelessWidget {
     return TopUpResultShell(
       result: result,
       onBack: () => context.goNamed(RouteNames.home),
-      primaryLabel: 'topup.back_home'.tr(),
+      primaryLabel: 'common.done'.tr(),
       onPrimary: () => context.goNamed(RouteNames.home),
-      secondaryLabel: 'topup.view_history'.tr(),
-      onSecondary: () => context.pushNamed(RouteNames.history),
     );
   }
 }

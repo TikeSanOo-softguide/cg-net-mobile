@@ -18,6 +18,8 @@ class RouteNames {
   static const topUpFailure = 'topUpFailure';
   static const topUpPending = 'topUpPending';
   static const transfer = 'transfer';
+  static const transferSuccess = 'transferSuccess';
+  static const transferFailure = 'transferFailure';
   static const history = 'history';
   static const activityDetail = 'activityDetail';
   static const servicePlaceholder = 'servicePlaceholder';
@@ -60,6 +62,8 @@ class RoutePaths {
   static const topUpFailure = '/top-up/failure';
   static const topUpPending = '/top-up/pending';
   static const transfer = '/transfer';
+  static const transferSuccess = '/transfer/success';
+  static const transferFailure = '/transfer/failure';
   static const history = '/history';
   static const activityDetail = '/activity-detail';
   static const servicePlaceholder = '/service/:id';

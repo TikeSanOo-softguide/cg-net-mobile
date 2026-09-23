@@ -12,6 +12,7 @@ class TopUpResult {
     this.errorBodyKey,
     this.errorTitle,
     this.errorBody,
+    this.browseMode = false,
   });
 
   final TopUpTxnStatus status;
@@ -27,6 +28,9 @@ class TopUpResult {
   /// Server-safe plain strings when keys are not used.
   final String? errorTitle;
   final String? errorBody;
+
+  /// Opened from Top Up / History list (detail browse, not post-submit).
+  final bool browseMode;
 
   static String maskSerial(String serial) {
     final s = serial.trim();
@@ -84,6 +88,23 @@ class TopUpResult {
       serialMasked: maskSerial(serialRaw),
       transactionId: transactionId,
       occurredAt: occurredAt ?? DateTime.now(),
+    );
+  }
+
+  /// Browse an activity list top-up row on the Top Up Detail page.
+  factory TopUpResult.fromActivityAmount({
+    required int amountPoints,
+    required String transactionId,
+    required DateTime occurredAt,
+    String serialRaw = '1234567890123456',
+  }) {
+    return TopUpResult(
+      status: TopUpTxnStatus.success,
+      amountPoints: amountPoints,
+      serialMasked: maskSerial(serialRaw),
+      transactionId: transactionId,
+      occurredAt: occurredAt,
+      browseMode: true,
     );
   }
 }

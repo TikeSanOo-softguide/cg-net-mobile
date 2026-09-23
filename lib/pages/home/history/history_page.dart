@@ -11,6 +11,8 @@ import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../top_up/top_up_result.dart';
+import '../transfer/transfer_result.dart';
 
 /// History — tabs: All / Top-Up / Transfer / Bill.
 class HistoryPage extends ConsumerStatefulWidget {
@@ -180,13 +182,39 @@ class _HistoryList extends StatelessWidget {
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 5),
       itemBuilder: (context, index) {
+        final item = items[index];
         return ActivityListCard(
-          item: items[index],
+          item: item,
           index: index,
-          onTap: () => context.pushNamed(
-            RouteNames.activityDetail,
-            extra: items[index],
-          ),
+          onTap: () {
+            if (item.kind == ActivityKind.topUp) {
+              context.pushNamed(
+                RouteNames.topUpSuccess,
+                extra: TopUpResult.fromActivityAmount(
+                  amountPoints: item.amount,
+                  transactionId: 'TXN-${item.id.toUpperCase()}',
+                  occurredAt: item.createdAt,
+                ),
+              );
+              return;
+            }
+            if (item.kind == ActivityKind.transfer) {
+              context.pushNamed(
+                RouteNames.transferSuccess,
+                extra: TransferResult.fromActivity(
+                  amountPoints: item.amount,
+                  recipientAccount: item.title ?? item.displayTitle(context),
+                  transactionId: 'TRF-${item.id.toUpperCase()}',
+                  occurredAt: item.createdAt,
+                ),
+              );
+              return;
+            }
+            context.pushNamed(
+              RouteNames.activityDetail,
+              extra: item,
+            );
+          },
         );
       },
     );

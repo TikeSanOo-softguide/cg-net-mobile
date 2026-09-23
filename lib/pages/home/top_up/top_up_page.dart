@@ -157,19 +157,21 @@ class _TopUpPageState extends State<TopUpPage> {
       if (!mounted) return;
 
       final serial = _serial.text.trim();
+      final pin = _pin.text.trim();
       final txnId =
           'TXN-${DateFormat('yyyyMMdd').format(DateTime.now())}-${DateTime.now().millisecond.toString().padLeft(3, '0')}';
       final now = DateTime.now();
 
       late final TopUpResult result;
-      if (serial.length == _serialLength && serial != _validSerial) {
+      // Demo: incomplete PIN (not 12 digits) → failure page.
+      if (pin.length != 12) {
         result = TopUpResult.failure(
           amountPoints: _mockAmount,
-          serialRaw: serial,
+          serialRaw: serial.isEmpty ? '0000000000000000' : serial,
           transactionId: txnId,
           occurredAt: now,
-          errorTitleKey: 'topup.verify_fail_title',
-          errorBodyKey: 'topup.verify_fail_body',
+          errorTitleKey: 'topup.result_failure_title',
+          errorBodyKey: 'topup.pin_invalid',
         );
       } else {
         result = TopUpResult.success(
@@ -185,11 +187,11 @@ class _TopUpPageState extends State<TopUpPage> {
 
       switch (result.status) {
         case TopUpTxnStatus.success:
-          context.pushNamed(RouteNames.topUpSuccess, extra: result);
+          context.pushReplacementNamed(RouteNames.topUpSuccess, extra: result);
         case TopUpTxnStatus.failure:
-          context.pushNamed(RouteNames.topUpFailure, extra: result);
+          context.pushReplacementNamed(RouteNames.topUpFailure, extra: result);
         case TopUpTxnStatus.pending:
-          context.pushNamed(RouteNames.topUpPending, extra: result);
+          context.pushReplacementNamed(RouteNames.topUpPending, extra: result);
       }
     } catch (_) {
       if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
@@ -297,9 +299,6 @@ class _TopUpPageState extends State<TopUpPage> {
                       if (v == null || v.trim().isEmpty) {
                         return 'topup.pin_required'.tr();
                       }
-                      if (v.trim().length != 12) {
-                        return 'topup.pin_invalid'.tr();
-                      }
                       return null;
                     },
                   ),
@@ -308,28 +307,8 @@ class _TopUpPageState extends State<TopUpPage> {
                     alignment: Alignment.centerRight,
                     child: SizedBox(
                       height: 36,
-                      child: FilledButton.icon(
+                      child: FilledButton(
                         onPressed: _submitting ? null : _submit,
-                        icon: ColorFiltered(
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.onPrimary,
-                            BlendMode.srcIn,
-                          ),
-                          child: Image.asset(
-                            QuickActionIconChip.topUpAsset,
-                            width: 14,
-                            height: 14,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        label: Text(
-                          'topup.submit'.tr(),
-                          style: AppTheme.english(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onPrimary,
-                          ),
-                        ),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.onPrimary,
@@ -337,6 +316,14 @@ class _TopUpPageState extends State<TopUpPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: Text(
+                          'topup.submit'.tr(),
+                          style: AppTheme.english(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onPrimary,
                           ),
                         ),
                       ),
@@ -357,8 +344,12 @@ class _TopUpPageState extends State<TopUpPage> {
                 item: _recent[i],
                 index: i,
                 onTap: () => context.pushNamed(
-                  RouteNames.activityDetail,
-                  extra: _recent[i],
+                  RouteNames.topUpSuccess,
+                  extra: TopUpResult.fromActivityAmount(
+                    amountPoints: _recent[i].amount,
+                    transactionId: 'TXN-${_recent[i].id.toUpperCase()}',
+                    occurredAt: _recent[i].createdAt,
+                  ),
                 ),
               ),
             ],

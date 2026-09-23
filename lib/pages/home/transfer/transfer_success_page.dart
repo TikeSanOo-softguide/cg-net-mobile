@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/route_names/route_names.dart';
-import 'top_up_result.dart';
-import 'top_up_result_shell.dart';
+import 'transfer_result.dart';
+import 'transfer_result_shell.dart';
 
-class TopUpSuccessPage extends StatelessWidget {
-  const TopUpSuccessPage({super.key, required this.result});
+class TransferSuccessPage extends StatelessWidget {
+  const TransferSuccessPage({super.key, required this.result});
 
-  final TopUpResult result;
+  final TransferResult result;
 
   void _leave(BuildContext context) {
     if (context.canPop()) {
@@ -27,7 +27,7 @@ class TopUpSuccessPage extends StatelessWidget {
         if (didPop) return;
         context.goNamed(RouteNames.home);
       },
-      child: TopUpResultShell(
+      child: TransferResultShell(
         result: result,
         onBack: () => _leave(context),
         primaryLabel: 'common.done'.tr(),
