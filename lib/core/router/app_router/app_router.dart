@@ -16,7 +16,11 @@ import '../../../pages/home/activity_detail/activity_detail_page.dart';
 import '../../../pages/home/history/history_page.dart';
 import '../../../pages/home/home/home_page.dart';
 import '../../../pages/home/service_placeholder/service_placeholder_page.dart';
+import '../../../pages/home/top_up/top_up_failure_page.dart';
 import '../../../pages/home/top_up/top_up_page.dart';
+import '../../../pages/home/top_up/top_up_pending_page.dart';
+import '../../../pages/home/top_up/top_up_result.dart';
+import '../../../pages/home/top_up/top_up_success_page.dart';
 import '../../../pages/home/transfer/transfer_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
@@ -156,6 +160,45 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.topUp,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const TopUpPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.topUpSuccess,
+        name: RouteNames.topUpSuccess,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final result = state.extra;
+          if (result is! TopUpResult ||
+              result.status != TopUpTxnStatus.success) {
+            return const NotFoundPage();
+          }
+          return TopUpSuccessPage(result: result);
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.topUpFailure,
+        name: RouteNames.topUpFailure,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final result = state.extra;
+          if (result is! TopUpResult ||
+              result.status != TopUpTxnStatus.failure) {
+            return const NotFoundPage();
+          }
+          return TopUpFailurePage(result: result);
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.topUpPending,
+        name: RouteNames.topUpPending,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final result = state.extra;
+          if (result is! TopUpResult ||
+              result.status != TopUpTxnStatus.pending) {
+            return const NotFoundPage();
+          }
+          return TopUpPendingPage(result: result);
+        },
       ),
       GoRoute(
         path: RoutePaths.transfer,

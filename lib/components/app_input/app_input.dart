@@ -9,6 +9,7 @@ import '../../core/theme/app_theme/app_theme.dart';
 class AppInput extends StatefulWidget {
   const AppInput({
     super.key,
+    this.formFieldKey,
     this.controller,
     this.label,
     this.hint,
@@ -31,6 +32,8 @@ class AppInput extends StatefulWidget {
     this.focusNode,
   });
 
+  /// Key for the inner [TextFormField] (e.g. call `validate()`).
+  final Key? formFieldKey;
   final TextEditingController? controller;
   final String? label;
   final String? hint;
@@ -198,6 +201,7 @@ class _AppInputState extends State<AppInput> {
             : _idleFill;
 
     return TextFormField(
+      key: widget.formFieldKey,
       controller: widget.controller,
       focusNode: _effectiveFocus,
       obscureText: widget.obscureText,

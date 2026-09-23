@@ -14,6 +14,9 @@ class RouteNames {
 
   static const home = 'home';
   static const topUp = 'topUp';
+  static const topUpSuccess = 'topUpSuccess';
+  static const topUpFailure = 'topUpFailure';
+  static const topUpPending = 'topUpPending';
   static const transfer = 'transfer';
   static const history = 'history';
   static const activityDetail = 'activityDetail';
@@ -53,6 +56,9 @@ class RoutePaths {
 
   static const home = '/home';
   static const topUp = '/top-up';
+  static const topUpSuccess = '/top-up/success';
+  static const topUpFailure = '/top-up/failure';
+  static const topUpPending = '/top-up/pending';
   static const transfer = '/transfer';
   static const history = '/history';
   static const activityDetail = '/activity-detail';

@@ -43,6 +43,9 @@ class AppColors {
   /// Cool hairline for crisp white cards.
   static const Color paperBorder = Color(0xFFE8EAED);
 
+  /// Thin translucent cool rim for a glass edge.
+  static const Color glassBorder = Color(0x73DDE3EA);
+
   static const Color error = Color(0xFFB3261E);
   static const Color success = Color(0xFF1B7A4E);
 }

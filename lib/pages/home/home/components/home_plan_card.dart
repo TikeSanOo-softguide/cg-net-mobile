@@ -73,7 +73,6 @@ class _HomePlanCardState extends State<HomePlanCard> {
     final expiryDate = _parseExpiry(widget.expiry);
     final daysLeft = expiryDate == null ? null : _daysLeft(expiryDate);
     final active = daysLeft == null || daysLeft >= 0;
-    final count = daysLeft == null ? 0 : (daysLeft < 0 ? 0 : daysLeft);
 
     return AppCard(
       margin: AppStyle.pagePaddingH,
@@ -116,40 +115,18 @@ class _HomePlanCardState extends State<HomePlanCard> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text.rich(
-                    TextSpan(
-                      style: AppTheme.english(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        height: 1.3,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'home.plan_expires'.tr(
-                            namedArgs: {'date': widget.expiry},
-                          ),
-                        ),
-                        const TextSpan(
-                          text: '  ·  ',
-                          style: TextStyle(
-                            color: AppColors.border,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '$count ${'home.days_unit'.tr()}',
-                          style: TextStyle(
-                            color: active
-                                ? AppColors.primary
-                                : AppColors.textMuted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    'home.plan_expires'.tr(
+                      namedArgs: {'date': widget.expiry},
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -323,7 +300,7 @@ class _CredentialRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTheme.english(
-              color: AppColors.primary.withValues(alpha: 0.65),
+              color: AppColors.textMuted,
               fontSize: 11,
               fontWeight: FontWeight.w500,
               height: 1.2,
@@ -336,7 +313,7 @@ class _CredentialRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTheme.english(
-              color: AppColors.primary,
+              color: AppColors.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               height: 1.2,

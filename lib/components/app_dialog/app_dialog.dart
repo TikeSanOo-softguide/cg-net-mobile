@@ -16,6 +16,9 @@ const double _modalBtnFontSize = 11;
 const String _successIconAsset = 'assets/images/dialogs/success.png';
 const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
 const String _alertIconAsset = 'assets/images/dialogs/alert.png';
+const String _failureIconAsset = 'assets/images/dialogs/failure.png';
+const Color _failure = Color(0xFFD90000);
+const Color _failureSoft = Color(0xFFFCE6E6); // light of #D90000
 const double _dialogIconChip = 36;
 const double _dialogIconSize = 23;
 const double _dialogIconRadius = 8;
@@ -141,6 +144,64 @@ Future<void> showAppSuccessModal(
                   style: _primaryModalBtnStyle(),
                   child: Text(
                     buttonLabel ?? 'common.done'.tr(),
+                    style: _modalBtnText(color: AppColors.onPrimary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Shared failure dialog — Flaticon error badge + error title.
+Future<void> showAppFailureModal(
+  BuildContext context, {
+  required String title,
+  required String body,
+  String? buttonLabel,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(_dialogRadius),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Padding(
+          padding: _dialogPadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _dialogPngIcon(
+                asset: _failureIconAsset,
+                background: _failureSoft,
+              ),
+              const SizedBox(height: _gapIconTitle),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: _dialogTitleStyle(_failure),
+              ),
+              const SizedBox(height: _gapTitleBody),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: _dialogMessageStyle(),
+              ),
+              const SizedBox(height: _gapBodyButton),
+              SizedBox(
+                height: _modalBtnHeight,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  style: _primaryModalBtnStyle(),
+                  child: Text(
+                    buttonLabel ?? 'common.ok'.tr(),
                     style: _modalBtnText(color: AppColors.onPrimary),
                   ),
                 ),

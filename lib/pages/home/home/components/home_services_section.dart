@@ -230,7 +230,7 @@ class HomeServicesSection extends ConsumerWidget {
           AppCard(
             elevated: false,
             bordered: false,
-            borderRadius: AppStyle.borderRadiusMd,
+            borderRadius: AppStyle.borderRadiusSm,
             padding: const EdgeInsets.symmetric(
               horizontal: AppStyle.spaceSm,
               vertical: 16,
