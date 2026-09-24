@@ -58,6 +58,7 @@ class AppTheme {
         fontWeight: FontWeight.w700,
         color: color ?? AppColors.textPrimary,
         height: AppStyle.lineHeightTitle,
+        letterSpacing: -0.4,
       );
 
   static TextStyle amount({Color? color}) => english(
@@ -65,6 +66,7 @@ class AppTheme {
         fontWeight: FontWeight.w700,
         color: color ?? AppColors.textPrimary,
         height: AppStyle.lineHeightTitle,
+        letterSpacing: -0.3,
       );
 
   static TextStyle pageTitle({Color? color}) => english(
@@ -72,13 +74,14 @@ class AppTheme {
         fontWeight: FontWeight.w700,
         color: color ?? AppColors.textPrimary,
         height: AppStyle.lineHeightTitle,
+        letterSpacing: -0.3,
       );
 
   static TextStyle topBarTitle({Color? color}) => english(
         fontSize: AppStyle.fontTopBarTitle,
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.onPrimary,
-        letterSpacing: 0.8,
+        letterSpacing: 0.15,
         height: 1.15,
       );
 
@@ -87,6 +90,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.textPrimary,
         height: AppStyle.lineHeightTitle,
+        letterSpacing: -0.2,
       );
 
   static TextStyle cardTitle({Color? color}) => english(
@@ -94,6 +98,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.textPrimary,
         height: AppStyle.lineHeightTitle,
+        letterSpacing: -0.15,
       );
 
   static TextStyle body({Color? color, FontWeight weight = FontWeight.w400}) =>

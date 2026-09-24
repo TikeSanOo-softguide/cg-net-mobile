@@ -78,7 +78,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
         ? AppColors.error
         : focused
             ? AppColors.primary
-            : AppColors.border;
+            : AppColors.paperBorder;
     return OutlineInputBorder(
       borderRadius: _fieldRadius,
       borderSide: BorderSide(
@@ -187,7 +187,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                                   ? AppColors.primary
                                   : (focused
                                       ? AppColors.primary
-                                      : AppColors.border),
+                                      : AppColors.paperBorder),
                           width: focused || hasError || widget.actionActive
                               ? 1.4
                               : 1,

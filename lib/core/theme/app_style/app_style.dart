@@ -50,7 +50,7 @@ class AppStyle {
   static const double iconSizeSm = 18;
   static const double iconSizeLg = 22;
   static const double iconBox = 40;
-  static const double circleButtonSize = 36;
+  static const double circleButtonSize = 30;
   static const double topBarHeight = 40;
   static const double bottomNavHeight = 64;
   static const double bottomNavIconSize = 20;
@@ -85,7 +85,7 @@ class AppStyle {
 
   // —— Borders ——
   static BorderSide get borderSide =>
-      const BorderSide(color: AppColors.border, width: 1);
+      const BorderSide(color: AppColors.paperBorder, width: 1);
 
   static BorderSide get borderSideLight =>
       const BorderSide(color: AppColors.borderLight, width: 0.5);

@@ -14,10 +14,28 @@ const _pinLength = 6;
 
 /// Modern 6-digit transfer password modal. Returns the PIN or null if cancelled.
 Future<String?> showTransferPasswordModal(BuildContext context) {
-  return showDialog<String>(
+  return showGeneralDialog<String>(
     context: context,
     barrierDismissible: false,
-    builder: (dialogContext) => const _TransferPasswordDialog(),
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: const Color(0x6B000000),
+    transitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (ctx, animation, secondaryAnimation) =>
+        const _TransferPasswordDialog(),
+    transitionBuilder: (ctx, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+          child: child,
+        ),
+      );
+    },
   );
 }
 

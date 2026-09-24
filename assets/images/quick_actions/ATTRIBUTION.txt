@@ -1,7 +1,7 @@
 Home quick-action icons — Flaticon sources, secondary accent colors.
 
 Sources:
-- top_up: top-up_10440274 — https://www.flaticon.com/free-icon/top-up_10440274
+- top_up: plus_10024212 — https://www.flaticon.com/free-icon/plus_10024212
 - payment: cashback_7412808 — https://www.flaticon.com/free-icon/cashback_7412808
 - transfer: paper-plane_1933005 — https://www.flaticon.com/free-icon/paper-plane_1933005
 - history: medical-record_9450510 — https://www.flaticon.com/free-icon/medical-record_9450510

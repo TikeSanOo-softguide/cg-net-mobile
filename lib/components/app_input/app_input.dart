@@ -178,7 +178,7 @@ class _AppInputState extends State<AppInput> {
     if (mounted) setState(() {});
   }
 
-  static const Color _idleBorder = AppColors.border;
+  static const Color _idleBorder = AppColors.paperBorder;
   static const Color _idleFill = AppColors.surface;
 
   TextStyle _labelStyle(Set<WidgetState> states) {
