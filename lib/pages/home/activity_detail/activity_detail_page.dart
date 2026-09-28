@@ -23,8 +23,6 @@ class ActivityDetailPage extends StatelessWidget {
     switch (item.kind) {
       case ActivityKind.topUp:
         return 'history.tab_topup'.tr();
-      case ActivityKind.transfer:
-        return 'history.tab_transfer'.tr();
       case ActivityKind.bill:
         return 'history.tab_bill'.tr();
     }

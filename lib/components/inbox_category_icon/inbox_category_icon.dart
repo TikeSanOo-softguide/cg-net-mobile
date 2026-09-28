@@ -10,8 +10,8 @@ class InboxCategoryIcon extends StatelessWidget {
   const InboxCategoryIcon({
     super.key,
     required this.category,
-    this.size = 38,
-    this.iconSize = 22,
+    this.size = 30,
+    this.iconSize = 16,
   });
 
   final InboxCategory category;

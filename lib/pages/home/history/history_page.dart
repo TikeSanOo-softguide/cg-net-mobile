@@ -12,9 +12,8 @@ import '../../../components/empty_state/empty_state.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../top_up/top_up_result.dart';
-import '../transfer/transfer_result.dart';
 
-/// History — tabs: All / Top-Up / Transfer / Bill.
+/// History — tabs: All / Top-Up / Bill.
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
 
@@ -30,7 +29,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   static const _tabLabels = [
     'history.tab_all',
     'history.tab_topup',
-    'history.tab_transfer',
     'history.tab_bill',
   ];
 
@@ -43,14 +41,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
           amount: 2500,
           createdAt: DateTime.now().subtract(const Duration(hours: 2)),
           isCredit: true,
-        ),
-        ActivityItem(
-          id: 'h2',
-          kind: ActivityKind.transfer,
-          title: '09970071489',
-          subtitleKey: 'history.item_transfer_body',
-          amount: 500,
-          createdAt: DateTime.now().subtract(const Duration(hours: 8)),
         ),
         ActivityItem(
           id: 'h3',
@@ -70,14 +60,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
           isCredit: true,
         ),
         ActivityItem(
-          id: 'h5',
-          kind: ActivityKind.transfer,
-          title: '09791234567',
-          subtitleKey: 'history.item_transfer_body',
-          amount: 50,
-          createdAt: DateTime.now().subtract(const Duration(days: 4)),
-        ),
-        ActivityItem(
           id: 'h6',
           kind: ActivityKind.bill,
           titleKey: 'history.item_bill_title',
@@ -90,7 +72,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _filter = ActivityDateFilter.defaults();
   }
 
@@ -116,8 +98,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
       case 1:
         filtered = _allItems.where((e) => e.kind == ActivityKind.topUp);
       case 2:
-        filtered = _allItems.where((e) => e.kind == ActivityKind.transfer);
-      case 3:
         filtered = _allItems.where((e) => e.kind == ActivityKind.bill);
     }
     return filtered.where((e) => _filter.matches(e.createdAt)).toList();
@@ -147,7 +127,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                for (var t = 0; t < 4; t++)
+                for (var t = 0; t < 3; t++)
                   _HistoryList(
                     key: ValueKey(
                       'history-list-$locale-$t-${_filter.period}-${_filter.start}-${_filter.end}',
@@ -193,18 +173,6 @@ class _HistoryList extends StatelessWidget {
                 extra: TopUpResult.fromActivityAmount(
                   amountPoints: item.amount,
                   transactionId: 'TXN-${item.id.toUpperCase()}',
-                  occurredAt: item.createdAt,
-                ),
-              );
-              return;
-            }
-            if (item.kind == ActivityKind.transfer) {
-              context.pushNamed(
-                RouteNames.transferSuccess,
-                extra: TransferResult.fromActivity(
-                  amountPoints: item.amount,
-                  recipientAccount: item.title ?? item.displayTitle(context),
-                  transactionId: 'TRF-${item.id.toUpperCase()}',
                   occurredAt: item.createdAt,
                 ),
               );

@@ -7,7 +7,7 @@ import '../../core/theme/app_theme/app_theme.dart';
 import '../app_card/app_card.dart';
 import '../quick_action_icon_chip/quick_action_icon_chip.dart';
 
-enum ActivityKind { topUp, transfer, bill }
+enum ActivityKind { topUp, bill }
 
 class ActivityItem {
   const ActivityItem({
@@ -69,7 +69,6 @@ class ActivityListCard extends StatelessWidget {
   static const _debitRed = Color(0xFFFF0000);
 
   static const topUpAsset = QuickActionIconChip.topUpAsset;
-  static const transferAsset = QuickActionIconChip.transferAsset;
   static const historyAsset = QuickActionIconChip.historyAsset;
   static const paymentAsset = QuickActionIconChip.paymentAsset;
 
@@ -77,8 +76,6 @@ class ActivityListCard extends StatelessWidget {
     switch (kind) {
       case ActivityKind.topUp:
         return topUpAsset;
-      case ActivityKind.transfer:
-        return transferAsset;
       case ActivityKind.bill:
         return paymentAsset;
     }
@@ -88,8 +85,6 @@ class ActivityListCard extends StatelessWidget {
     switch (kind) {
       case ActivityKind.topUp:
         return QuickActionIconChip.topUpSoft;
-      case ActivityKind.transfer:
-        return QuickActionIconChip.transferSoft;
       case ActivityKind.bill:
         return QuickActionIconChip.paymentSoft;
     }

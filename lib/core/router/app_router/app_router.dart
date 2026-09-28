@@ -21,10 +21,6 @@ import '../../../pages/home/top_up/top_up_page.dart';
 import '../../../pages/home/top_up/top_up_pending_page.dart';
 import '../../../pages/home/top_up/top_up_result.dart';
 import '../../../pages/home/top_up/top_up_success_page.dart';
-import '../../../pages/home/transfer/transfer_failure_page.dart';
-import '../../../pages/home/transfer/transfer_page.dart';
-import '../../../pages/home/transfer/transfer_result.dart';
-import '../../../pages/home/transfer/transfer_success_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
 import '../../../pages/launch/advertisement/advertisement_page.dart';
@@ -226,61 +222,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             return const NotFoundPage();
           }
           return TopUpPendingPage(result: result);
-        },
-      ),
-      GoRoute(
-        path: RoutePaths.transfer,
-        name: RouteNames.transfer,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const TransferPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.transferSuccess,
-        name: RouteNames.transferSuccess,
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) {
-          final result = state.extra;
-          final Widget child;
-          if (result is! TransferResult ||
-              result.status != TransferTxnStatus.success) {
-            child = const NotFoundPage();
-          } else {
-            child = TransferSuccessPage(result: result);
-          }
-          return CustomTransitionPage<void>(
-            key: state.pageKey,
-            child: child,
-            transitionDuration: const Duration(milliseconds: 320),
-            reverseTransitionDuration: const Duration(milliseconds: 280),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              );
-            },
-          );
-        },
-      ),
-      GoRoute(
-        path: RoutePaths.transferFailure,
-        name: RouteNames.transferFailure,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final result = state.extra;
-          if (result is! TransferResult ||
-              result.status != TransferTxnStatus.failure) {
-            return const NotFoundPage();
-          }
-          return TransferFailurePage(result: result);
         },
       ),
       GoRoute(

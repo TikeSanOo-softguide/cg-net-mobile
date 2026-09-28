@@ -110,7 +110,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           HomeBalanceHeader(
                             balanceAmount: data.balanceAmount,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: HomeQuickActions.hangBelow),
                         ],
                       ),
                       const Positioned(

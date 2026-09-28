@@ -32,8 +32,8 @@ class HomeController extends StateNotifier<HomeDashboardData> {
       : super(
           const HomeDashboardData(
             accountNumber: '09970071489',
-            balanceLabel: '25000',
-            balanceAmount: '25000',
+            balanceLabel: '1250',
+            balanceAmount: '1250',
             packageId: '1m',
             packageImagePath: 'assets/images/packages/package_1m.png',
             planTitleKey: 'package.item_1m_title',

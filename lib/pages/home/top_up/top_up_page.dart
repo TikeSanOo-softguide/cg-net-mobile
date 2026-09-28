@@ -460,27 +460,12 @@ class _LuxuryBanner extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.26),
-                        width: 0.9,
-                      ),
-                    ),
-                    child: Image.asset(
-                      QuickActionIconChip.topUpAsset,
-                      width: 24,
-                      height: 24,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                      color: Colors.white,
-                      colorBlendMode: BlendMode.srcIn,
-                    ),
+                  QuickActionIconChip(
+                    asset: QuickActionIconChip.topUpAsset,
+                    background: QuickActionIconChip.topUpSoft,
+                    tint: AppColors.primary,
+                    size: 44,
+                    iconSize: 24,
                   ),
                   const SizedBox(width: 14),
                   Expanded(

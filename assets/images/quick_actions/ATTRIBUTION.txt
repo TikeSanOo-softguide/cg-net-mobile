@@ -3,9 +3,9 @@ Home quick-action icons — Flaticon sources, secondary accent colors.
 Sources:
 - top_up: plus_10024212 — https://www.flaticon.com/free-icon/plus_10024212
 - payment: cashback_7412808 — https://www.flaticon.com/free-icon/cashback_7412808
-- transfer: paper-plane_1933005 — https://www.flaticon.com/free-icon/paper-plane_1933005
 - history: medical-record_9450510 — https://www.flaticon.com/free-icon/medical-record_9450510
+- bind: wifi-router_2876838 — https://www.flaticon.com/free-icon/wifi-router_2876838
 
 Icons by Flaticon authors — https://www.flaticon.com
-Recolored: top up #0100CA, payment #FFD51E, transfer #0D9488, history #7C3AED.
+Recolored: top up #0100CA, payment #FFD51E, history #7C3AED.
 Soft chips behind icons match each accent.
