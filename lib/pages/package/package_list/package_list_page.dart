@@ -7,19 +7,96 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
-import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
-import '../package_catalog.dart';
 
-/// Packages tab — 3×2 grid; image/button style matches home offers.
+/// Packages tab — compact horizontal list cards (reference design).
 class PackageListPage extends StatelessWidget {
   const PackageListPage({super.key});
 
-  static const _hGap = 8.0;
-  static const _vGap = 12.0;
+  static const _cards = <_PackageListData>[
+    _PackageListData(
+      id: '1m',
+      imagePath: 'assets/images/packages/package_1m.png',
+      titleKey: 'package.item_1m_title',
+      badgeKey: 'package.badge_popular',
+      badgeTone: _BadgeTone.popular,
+      speedMbps: '20',
+      pricePoints: 15000,
+      durationKey: 'package.duration_1m',
+      featureKeys: [
+        'package.feature_router',
+        'package.feature_unlimited',
+        'package.feature_anywhere',
+      ],
+    ),
+    _PackageListData(
+      id: '3m',
+      imagePath: 'assets/images/packages/package_3m.png',
+      titleKey: 'package.item_3m_title',
+      badgeKey: null,
+      badgeTone: _BadgeTone.none,
+      speedMbps: '20',
+      pricePoints: 40000,
+      durationKey: 'package.duration_3m',
+      featureKeys: [
+        'package.feature_speed',
+        'package.feature_unlimited',
+        'package.feature_term',
+      ],
+    ),
+    _PackageListData(
+      id: '6m',
+      imagePath: 'assets/images/packages/package_6m.png',
+      titleKey: 'package.item_6m_title',
+      badgeKey: 'package.badge_trending',
+      badgeTone: _BadgeTone.trending,
+      speedMbps: '30',
+      pricePoints: 75000,
+      durationKey: 'package.duration_6m',
+      featureKeys: [
+        'package.feature_speed',
+        'package.feature_term',
+        'package.feature_router',
+      ],
+    ),
+    _PackageListData(
+      id: '1y',
+      imagePath: 'assets/images/packages/package_1y.png',
+      titleKey: 'package.item_1y_title',
+      badgeKey: null,
+      badgeTone: _BadgeTone.none,
+      speedMbps: '30',
+      pricePoints: 140000,
+      durationKey: 'package.duration_12m',
+      featureKeys: [
+        'package.feature_unlimited',
+        'package.feature_anywhere',
+        'package.feature_term',
+      ],
+    ),
+    _PackageListData(
+      id: '1m_b',
+      imagePath: 'assets/images/packages/package_1m.png',
+      titleKey: 'package.item_1m_title',
+      badgeKey: null,
+      badgeTone: _BadgeTone.none,
+      speedMbps: '20',
+      pricePoints: 15000,
+      durationKey: 'package.duration_1m',
+      featureKeys: [
+        'package.feature_router',
+        'package.feature_unlimited',
+        'package.feature_anywhere',
+      ],
+    ),
+  ];
 
-  static final _packages =
-      PackageCatalog.items.where((e) => e.id != '1m_extra').toList();
+  void _openDetail(BuildContext context, String id) {
+    context.pushNamed(
+      RouteNames.packageDetail,
+      pathParameters: {'id': id},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,28 +105,16 @@ class PackageListPage extends StatelessWidget {
     return AppCurvedScaffold(
       title: Text('package.title'.tr()),
       showBack: false,
-      body: GridView.builder(
-        key: ValueKey('package-grid-$locale'),
-        padding: const EdgeInsets.fromLTRB(
-          AppStyle.spaceLg,
-          14,
-          AppStyle.spaceLg,
-          AppStyle.spaceXxl,
-        ),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: _hGap,
-          mainAxisSpacing: _vGap,
-          childAspectRatio: 0.68,
-        ),
-        itemCount: _packages.length,
+      body: ListView.separated(
+        key: ValueKey('package-list-$locale'),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
+        itemCount: _cards.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
-          final package = _packages[index];
-          return _PackageGridCard(
-            id: package.id,
-            imagePath: package.imagePath,
-            popular: package.popular,
-            locale: locale,
+          final data = _cards[index];
+          return _PackageListCard(
+            data: data,
+            onOpenDetail: () => _openDetail(context, data.id),
           );
         },
       ),
@@ -57,71 +122,295 @@ class PackageListPage extends StatelessWidget {
   }
 }
 
-/// Same look as home offer cards: full-bleed image + primary Buy now.
-class _PackageGridCard extends StatelessWidget {
-  const _PackageGridCard({
+enum _BadgeTone { none, popular, trending }
+
+class _PackageListData {
+  const _PackageListData({
     required this.id,
     required this.imagePath,
-    required this.popular,
-    required this.locale,
+    required this.titleKey,
+    required this.badgeKey,
+    required this.badgeTone,
+    required this.speedMbps,
+    required this.pricePoints,
+    required this.durationKey,
+    required this.featureKeys,
   });
 
   final String id;
   final String imagePath;
-  final bool popular;
-  final String locale;
+  final String titleKey;
+  final String? badgeKey;
+  final _BadgeTone badgeTone;
+  final String speedMbps;
+  final int pricePoints;
+  final String durationKey;
+  final List<String> featureKeys;
+}
+
+class _PackageListCard extends StatelessWidget {
+  const _PackageListCard({
+    required this.data,
+    required this.onOpenDetail,
+  });
+
+  final _PackageListData data;
+  final VoidCallback onOpenDetail;
+
+  static const _featureIcon = 'assets/images/packages/feature_check.png';
+  static const _badgeYellow = Color(0xFFFFCC29);
+  static const _badgeOrange = Color(0xFFFFB020);
+  static const _optionFill = Color(0xFFF3F4F6);
 
   @override
   Widget build(BuildContext context) {
+    final hasBadge = data.badgeKey != null;
+
     return AppCard(
-      key: ValueKey('package-grid-$id-$locale'),
       elevated: false,
       bordered: false,
+      borderRadius: BorderRadius.circular(10),
       padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      onTap: onOpenDetail,
+      child: Stack(
         children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(AppStyle.radiusSm),
-              ),
-              child: Stack(
-                fit: StackFit.expand,
+          Padding(
+            padding: EdgeInsets.fromLTRB(10, 10, hasBadge ? 14 : 10, 10),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const ColoredBox(color: AppColors.primarySoft),
-                  Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                    alignment: Alignment.center,
-                    filterQuality: FilterQuality.high,
-                    gaplessPlayback: true,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: AppColors.primaryLight,
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        LucideIcons.image_off,
-                        color: AppColors.primary,
+                  SizedBox(
+                    width: 88,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        data.imagePath,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        filterQuality: FilterQuality.high,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, __, ___) => const ColoredBox(
+                          color: AppColors.primaryLight,
+                          child: Center(
+                            child: Icon(
+                              LucideIcons.image_off,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  if (popular)
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      child: _PopularCornerBadge(),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(right: hasBadge ? 72 : 0),
+                          child: Text(
+                            data.titleKey.tr(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.english(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              height: 1.25,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _InfoChip(
+                                value: data.speedMbps,
+                                unit: 'Mbps',
+                                label: 'package.internet_speed'.tr(),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: _InfoChip(
+                                value: NumberFormat('#,##0')
+                                    .format(data.pricePoints),
+                                unit: 'topup.pts'.tr(),
+                                label:
+                                    '${'package.price'.tr()} (${data.durationKey.tr()})',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  for (var i = 0;
+                                      i < data.featureKeys.length;
+                                      i++) ...[
+                                    if (i > 0) const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Image.asset(
+                                          _featureIcon,
+                                          width: 12,
+                                          height: 12,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (_, __, ___) =>
+                                              const Icon(
+                                            LucideIcons.circle_check,
+                                            size: 12,
+                                            color: Color(0xFF499A13),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                          child: Text(
+                                            data.featureKeys[i].tr(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppTheme.english(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textMuted,
+                                              height: 1.2,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _RegisterButton(onTap: onOpenDetail),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-            child: _BuyNowButton(
-              onTap: () => context.pushNamed(
-                RouteNames.packageDetail,
-                pathParameters: {'id': id},
+          if (hasBadge)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: _CornerBadge(
+                label: data.badgeKey!.tr(),
+                background: data.badgeTone == _BadgeTone.trending
+                    ? _badgeOrange
+                    : _badgeYellow,
               ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CornerBadge extends StatelessWidget {
+  const _CornerBadge({
+    required this.label,
+    required this.background,
+  });
+
+  final String label;
+  final Color background;
+
+  static const _text = Color(0xFF3D2E00);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(10),
+          bottomLeft: Radius.circular(8),
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppTheme.english(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: _text,
+          height: 1,
+          letterSpacing: 0.1,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({
+    required this.value,
+    required this.unit,
+    required this.label,
+  });
+
+  final String value;
+  final String unit;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(7, 6, 7, 6),
+      decoration: BoxDecoration(
+        color: _PackageListCard._optionFill,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: AppTheme.english(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                    height: 1,
+                  ),
+                ),
+                TextSpan(
+                  text: ' $unit',
+                  style: AppTheme.english(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.english(
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+              height: 1.15,
             ),
           ),
         ],
@@ -130,42 +419,8 @@ class _PackageGridCard extends StatelessWidget {
   }
 }
 
-class _PopularCornerBadge extends StatelessWidget {
-  const _PopularCornerBadge();
-
-  static const _coral = Color(0xFFFF4D6D);
-  static const _coralDeep = Color(0xFFE11D48);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_coral, _coralDeep],
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(AppStyle.radiusSm),
-          bottomRight: Radius.circular(8),
-        ),
-      ),
-      child: Text(
-        context.tr('home.popular'),
-        style: AppTheme.captionSm(color: Colors.white).copyWith(
-          fontWeight: FontWeight.w800,
-          fontSize: 8,
-          letterSpacing: 0.5,
-          height: 1.1,
-        ),
-      ),
-    );
-  }
-}
-
-class _BuyNowButton extends StatelessWidget {
-  const _BuyNowButton({required this.onTap});
+class _RegisterButton extends StatelessWidget {
+  const _RegisterButton({required this.onTap});
 
   final VoidCallback onTap;
 
@@ -180,18 +435,27 @@ class _BuyNowButton extends StatelessWidget {
         borderRadius: radius,
         splashColor: Colors.white.withValues(alpha: 0.18),
         highlightColor: Colors.white.withValues(alpha: 0.08),
-        child: SizedBox(
-          height: 28,
-          width: double.infinity,
-          child: Center(
-            child: Text(
-              context.tr('home.buy_now'),
-              style: AppTheme.captionSm(color: AppColors.onPrimary).copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-                height: 1,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'home.buy_now'.tr(),
+                style: AppTheme.english(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onPrimary,
+                  height: 1,
+                ),
               ),
-            ),
+              const SizedBox(width: 2),
+              const Icon(
+                LucideIcons.chevron_right,
+                size: 12,
+                color: AppColors.onPrimary,
+              ),
+            ],
           ),
         ),
       ),

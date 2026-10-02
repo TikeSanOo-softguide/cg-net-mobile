@@ -7,7 +7,7 @@ import '../../core/theme/app_theme/app_theme.dart';
 import '../app_card/app_card.dart';
 import '../quick_action_icon_chip/quick_action_icon_chip.dart';
 
-enum ActivityKind { topUp, bill }
+enum ActivityKind { topUp, bill, package }
 
 class ActivityItem {
   const ActivityItem({
@@ -20,6 +20,7 @@ class ActivityItem {
     this.subtitle,
     this.subtitleKey,
     this.isCredit = false,
+    this.isSuccess = true,
   }) : assert(
           title != null || titleKey != null,
           'Provide title or titleKey',
@@ -38,6 +39,7 @@ class ActivityItem {
   final int amount;
   final DateTime createdAt;
   final bool isCredit;
+  final bool isSuccess;
 
   String displayTitle(BuildContext context) {
     if (titleKey != null) return context.tr(titleKey!);
@@ -50,7 +52,7 @@ class ActivityItem {
   }
 }
 
-/// Activity row — 2-line detail with … ; amount bottom-right; tap opens detail.
+/// Activity row — 1-line detail with … ; amount bottom-right; tap opens detail.
 class ActivityListCard extends StatelessWidget {
   const ActivityListCard({
     super.key,
@@ -71,13 +73,18 @@ class ActivityListCard extends StatelessWidget {
   static const topUpAsset = QuickActionIconChip.topUpAsset;
   static const historyAsset = QuickActionIconChip.historyAsset;
   static const paymentAsset = QuickActionIconChip.paymentAsset;
+  static const bindAsset = QuickActionIconChip.bindAsset;
+  static const packageAsset = QuickActionIconChip.packageAsset;
+  static const billAsset = QuickActionIconChip.billAsset;
 
   static String assetFor(ActivityKind kind) {
     switch (kind) {
       case ActivityKind.topUp:
         return topUpAsset;
       case ActivityKind.bill:
-        return paymentAsset;
+        return billAsset;
+      case ActivityKind.package:
+        return packageAsset;
     }
   }
 
@@ -86,22 +93,25 @@ class ActivityListCard extends StatelessWidget {
       case ActivityKind.topUp:
         return QuickActionIconChip.topUpSoft;
       case ActivityKind.bill:
-        return QuickActionIconChip.paymentSoft;
+        return QuickActionIconChip.billSoft;
+      case ActivityKind.package:
+        return QuickActionIconChip.packageSoft;
     }
   }
 
-  /// Same chip style as home quick-action card (32 / 18).
-  static Widget kindIcon(ActivityKind kind, {double iconSize = 18}) {
+  /// Same chip size as inbox cards (38 / 22).
+  static Widget kindIcon(ActivityKind kind, {double iconSize = 22}) {
     return QuickActionIconChip(
       asset: assetFor(kind),
       background: softFor(kind),
-      size: 32,
+      size: 38,
       iconSize: iconSize,
     );
   }
 
   Color get _resolvedAmountColor {
     if (amountColor != null) return amountColor!;
+    if (!item.isSuccess) return _debitRed;
     if (item.kind == ActivityKind.topUp || item.isCredit) {
       return _creditGreen;
     }
@@ -164,7 +174,7 @@ class ActivityListCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     item.displaySubtitle(context),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.english(
                       fontSize: 12,

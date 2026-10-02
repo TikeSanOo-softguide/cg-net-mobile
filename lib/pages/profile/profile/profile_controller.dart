@@ -10,6 +10,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
             id: 'u1',
             fullName: 'CG Net Customer',
             phone: '+959123456789',
+            accountNumber: '09970071489',
             email: 'customer@example.com',
             username: 'cguser',
           ),

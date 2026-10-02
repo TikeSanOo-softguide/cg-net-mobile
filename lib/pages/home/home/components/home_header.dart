@@ -36,8 +36,11 @@ class HomePinnedBar extends StatelessWidget {
 
   static const double _padTop = 14;
   static const double _padBottom = 8;
-  /// Glass chips stay this size (logo + notify).
+  /// Logo glass chip.
   static const double _chipSize = 40;
+  /// Notification glass chip and bell.
+  static const double _notifyChipSize = 35;
+  static const double _notifyIconSize = 20;
   /// Row tall enough for larger account / phone text.
   static const double _rowH = 44;
 
@@ -119,10 +122,11 @@ class HomePinnedBar extends StatelessWidget {
                           Colors.white.withValues(alpha: 0.10),
                         ),
                         child: const _LiquidGlassChip(
+                          size: HomePinnedBar._notifyChipSize,
                           child: Icon(
                             LucideIcons.bell,
                             color: AppColors.onPrimary,
-                            size: 24,
+                            size: HomePinnedBar._notifyIconSize,
                           ),
                         ),
                       ),
@@ -140,15 +144,19 @@ class HomePinnedBar extends StatelessWidget {
 
 /// Soft chip — same wash as Balance label chip (clear glass fill + light rim).
 class _LiquidGlassChip extends StatelessWidget {
-  const _LiquidGlassChip({required this.child});
+  const _LiquidGlassChip({
+    required this.child,
+    this.size = HomePinnedBar._chipSize,
+  });
 
   final Widget child;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: HomePinnedBar._chipSize,
-      height: HomePinnedBar._chipSize,
+      width: size,
+      height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.10),
@@ -182,7 +190,7 @@ class HomeBalanceHeader extends ConsumerStatefulWidget {
 class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
   bool _balanceVisible = false;
 
-  String get _maskedAmount => '******';
+  static const int _maskCount = 6;
 
   String get _visibleAmount {
     final raw = widget.balanceAmount.replaceAll(',', '');
@@ -201,130 +209,155 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(10),
+                bottom: Radius.circular(AppStyle.radiusCurve),
               ),
               clipBehavior: Clip.hardEdge,
               child: const ColoredBox(color: AppColors.primary),
             ),
           ),
-          // Balance + amount — nudged slightly below vertical center.
+          // Balance + amount — a little more top inset.
           Positioned(
             left: AppStyle.pageMarginH,
             right: AppStyle.pageMarginH,
-            top: 14,
+            top: 22,
             bottom: HomeBalanceHeader.cardClearance,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _balanceVisible = !_balanceVisible);
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      overlayColor: WidgetStateProperty.all(
-                        Colors.white.withValues(alpha: 0.08),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            width: 0.7,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              LucideIcons.wallet,
-                              color: AppColors.onPrimary,
-                              size: 11,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'home.balance_label'.tr(),
-                              style: AppTheme.english(
-                                color: AppColors.onPrimary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                height: 1.1,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              _balanceVisible
-                                  ? LucideIcons.eye
-                                  : LucideIcons.eye_off,
-                              color: AppColors.onPrimary,
-                              size: 11,
-                            ),
-                          ],
-                        ),
-                      ),
+            child: Center(child: _balanceBlock()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _balanceBlock() {
+    if (_balanceVisible) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _balanceChip(),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: Center(child: _amountRow()),
+          ),
+        ],
+      );
+    }
+
+    // Column width = Balance chip; stars share that width evenly.
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _balanceChip(),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < _maskCount; i++)
+                  Text(
+                    '*',
+                    style: AppTheme.english(
+                      color: AppColors.onPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      height: 1,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 32,
-                    child: Center(
-                      child: _balanceVisible
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  _visibleAmount,
-                                  textAlign: TextAlign.center,
-                                  style: AppTheme.english(
-                                    color: AppColors.onPrimary,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.4,
-                                    height: 1,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  'Pts',
-                                  style: AppTheme.english(
-                                    color: AppColors.onPrimary.withValues(
-                                      alpha: 0.92,
-                                    ),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              _maskedAmount,
-                              textAlign: TextAlign.center,
-                              style: AppTheme.english(
-                                color: AppColors.onPrimary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 5,
-                                height: 1,
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _balanceChip() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() => _balanceVisible = !_balanceVisible);
+        },
+        borderRadius: BorderRadius.circular(20),
+        overlayColor: WidgetStateProperty.all(
+          Colors.white.withValues(alpha: 0.08),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 5,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.18),
+              width: 0.7,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                LucideIcons.wallet,
+                color: AppColors.onPrimary,
+                size: 11,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'home.balance_label'.tr(),
+                style: AppTheme.english(
+                  color: AppColors.onPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                _balanceVisible ? LucideIcons.eye : LucideIcons.eye_off,
+                color: AppColors.onPrimary,
+                size: 11,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _amountRow() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          _visibleAmount,
+          textAlign: TextAlign.center,
+          style: AppTheme.english(
+            color: AppColors.onPrimary,
+            fontSize: 35,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+            height: 1,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          'Pts',
+          style: AppTheme.english(
+            color: AppColors.onPrimary.withValues(alpha: 0.92),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1,
+          ),
+        ),
+      ],
     );
   }
 }

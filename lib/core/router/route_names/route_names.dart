@@ -22,6 +22,8 @@ class RouteNames {
   static const servicePlaceholder = 'servicePlaceholder';
   static const packageList = 'packageList';
   static const packageDetail = 'packageDetail';
+  static const packageBuySuccess = 'packageBuySuccess';
+  static const packageBuyFailure = 'packageBuyFailure';
   static const inboxList = 'inboxList';
   static const inboxDetail = 'inboxDetail';
   static const supportChat = 'supportChat';
@@ -63,6 +65,8 @@ class RoutePaths {
   static const servicePlaceholder = '/service/:id';
   static const packageList = '/package';
   static const packageDetail = '/package-detail/:id';
+  static const packageBuySuccess = '/package/buy/success';
+  static const packageBuyFailure = '/package/buy/failure';
   static const inboxList = '/inbox';
   static const inboxDetail = '/inbox/:id';
   static const supportChat = '/support';

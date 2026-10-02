@@ -2,9 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -22,12 +24,22 @@ class SupportChatPage extends ConsumerStatefulWidget {
 class _SupportChatPageState extends ConsumerState<SupportChatPage> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
+  final _inputFocus = FocusNode();
   String? _pendingFileName;
+
+  @override
+  void initState() {
+    super.initState();
+    _inputFocus.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
     _input.dispose();
     _scroll.dispose();
+    _inputFocus.dispose();
     super.dispose();
   }
 
@@ -80,10 +92,12 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(supportChatControllerProvider);
+    final inputFocused = _inputFocus.hasFocus;
 
     return AppCurvedScaffold(
       title: Text('support.chat_title'.tr()),
-      showBack: false,
+      showBack: true,
+      onBack: () => context.goNamed(RouteNames.home),
       body: ColoredBox(
         color: AppColors.background,
         child: Column(
@@ -173,42 +187,55 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Expanded(
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 40),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            curve: Curves.easeOut,
+                            constraints: const BoxConstraints(minHeight: 44),
                             decoration: BoxDecoration(
                               color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
+                              borderRadius: AppStyle.borderRadiusInput,
+                              border: Border.all(
+                                color: inputFocused
+                                    ? AppColors.primary
+                                    : AppColors.paperBorder,
+                                width: inputFocused ? 1.4 : 1,
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 8,
+                                  color: inputFocused
+                                      ? AppColors.primary
+                                          .withValues(alpha: 0.10)
+                                      : Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: inputFocused ? 10 : 6,
                                   offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
-                            padding: const EdgeInsets.only(left: 4, right: 8),
+                            padding: const EdgeInsets.only(left: 4, right: 10),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 4,
+                                    vertical: 6,
                                   ),
                                   child: AppInput.iconChip(
                                     icon: LucideIcons.paperclip,
                                     size: 32,
                                     iconSize: 15,
+                                    focused: inputFocused,
                                     onTap: _pickFile,
                                   ),
                                 ),
                                 Expanded(
                                   child: TextField(
                                     controller: _input,
+                                    focusNode: _inputFocus,
                                     minLines: 1,
                                     maxLines: 4,
                                     textInputAction: TextInputAction.send,
                                     onSubmitted: (_) => _send(),
+                                    cursorColor: AppColors.primary,
                                     style: AppTheme.body(),
                                     decoration: InputDecoration(
                                       hintText: 'support.type_message'.tr(),
@@ -219,7 +246,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                                       focusedBorder: InputBorder.none,
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                        vertical: 10,
+                                        vertical: 12,
                                       ),
                                     ),
                                   ),
@@ -231,12 +258,22 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                         const SizedBox(width: 10),
                         GestureDetector(
                           onTap: _send,
-                          child: Container(
-                            width: 40,
-                            height: 40,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            curve: Curves.easeOut,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: AppStyle.borderRadiusInput,
                               color: AppColors.primary,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary
+                                      .withValues(alpha: 0.22),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             alignment: Alignment.center,
                             child: const Icon(
@@ -259,24 +296,45 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
   }
 }
 
+class _SupportRobotIcon extends StatelessWidget {
+  const _SupportRobotIcon({this.size = 26});
+
+  static const asset = 'assets/images/support/robot.png';
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      asset,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, __, ___) => Icon(
+        LucideIcons.bot,
+        size: size * 0.85,
+        color: AppColors.primary,
+      ),
+    );
+  }
+}
+
+/// Message-row avatar — Flaticon robot on a soft chip (radius 6).
 class _BotAvatar extends StatelessWidget {
   const _BotAvatar();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
-      height: 36,
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        shape: BoxShape.circle,
-      ),
+      width: 32,
+      height: 32,
       alignment: Alignment.center,
-      child: const Icon(
-        LucideIcons.bot,
-        size: 18,
-        color: AppColors.onPrimary,
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(6),
       ),
+      child: const _SupportRobotIcon(size: 22),
     );
   }
 }

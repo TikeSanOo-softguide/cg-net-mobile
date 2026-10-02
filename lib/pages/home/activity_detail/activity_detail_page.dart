@@ -25,10 +25,13 @@ class ActivityDetailPage extends StatelessWidget {
         return 'history.tab_topup'.tr();
       case ActivityKind.bill:
         return 'history.tab_bill'.tr();
+      case ActivityKind.package:
+        return 'history.tab_package'.tr();
     }
   }
 
   Color get _amountColor {
+    if (!item.isSuccess) return _debitRed;
     if (item.kind == ActivityKind.topUp || item.isCredit) {
       return _creditGreen;
     }

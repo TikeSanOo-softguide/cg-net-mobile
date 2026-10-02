@@ -134,9 +134,10 @@ class AppTheme {
 
   static TextStyle button({Color? color}) => english(
         fontSize: AppStyle.fontButton,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         color: color,
         height: 1.2,
+        letterSpacing: 0.4,
       );
 
   static TextStyle navLabel({

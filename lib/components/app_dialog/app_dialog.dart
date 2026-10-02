@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
@@ -16,6 +17,7 @@ const String _successIconAsset = 'assets/images/dialogs/success.png';
 const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
 const String _alertIconAsset = 'assets/images/dialogs/alert.png';
 const String _failureIconAsset = 'assets/images/dialogs/failure.png';
+const String _passwordIconAsset = 'assets/images/dialogs/password.png';
 const Color _failure = Color(0xFFD90000);
 const Color _failureSoft = Color(0xFFFCE6E6); // light of #D90000
 const double _dialogIconChip = 36;
@@ -393,4 +395,323 @@ Future<bool> showAppConfirmModal(
     },
   );
   return result == true;
+}
+
+/// Shared password dialog — icon + amount + close + 6-digit boxes.
+Future<String?> showAppPasswordModal(
+  BuildContext context, {
+  required String title,
+  required String body,
+  int? amountPoints,
+}) {
+  return _showAppDialog<String>(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) {
+      return _AppPasswordDialog(
+        title: title,
+        body: body,
+        amountPoints: amountPoints,
+      );
+    },
+  );
+}
+
+class _AppPasswordDialog extends StatefulWidget {
+  const _AppPasswordDialog({
+    required this.title,
+    required this.body,
+    this.amountPoints,
+  });
+
+  final String title;
+  final String body;
+  final int? amountPoints;
+
+  @override
+  State<_AppPasswordDialog> createState() => _AppPasswordDialogState();
+}
+
+class _AppPasswordDialogState extends State<_AppPasswordDialog> {
+  static const _pinLength = 6;
+
+  late final List<TextEditingController> _controllers;
+  late final List<FocusNode> _focusNodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List.generate(_pinLength, (_) => TextEditingController());
+    _focusNodes = List.generate(_pinLength, (_) => FocusNode());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNodes.first.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
+    super.dispose();
+  }
+
+  String get _pin => _controllers.map((c) => c.text).join();
+
+  void _onDigitChanged(int index, String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 1) {
+      for (var i = 0; i < _pinLength; i++) {
+        _controllers[i].text = i < digits.length ? digits[i] : '';
+      }
+      final focusIndex = digits.length.clamp(0, _pinLength) - 1;
+      if (focusIndex >= 0) {
+        _focusNodes[focusIndex.clamp(0, _pinLength - 1)].requestFocus();
+      }
+      if (digits.length >= _pinLength) _submit();
+      return;
+    }
+
+    if (digits.isNotEmpty && index < _pinLength - 1) {
+      _focusNodes[index + 1].requestFocus();
+    }
+    if (digits.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+    if (_pin.length == _pinLength) _submit();
+  }
+
+  void _submit() {
+    final pin = _pin;
+    if (pin.length != _pinLength) return;
+    Navigator.of(context).pop(pin);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = widget.amountPoints;
+
+    return _appDialogShell(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _dialogPngIcon(
+                asset: _passwordIconAsset,
+                background: AppColors.primaryLight,
+              ),
+              const SizedBox(height: _gapIconTitle),
+              Text(
+                widget.title,
+                textAlign: TextAlign.center,
+                style: AppTheme.english(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.primary,
+                  height: 1.3,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              if (amount != null) ...[
+                const SizedBox(height: 8),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: NumberFormat('#,##0').format(amount),
+                        style: AppTheme.english(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          height: 1.15,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' ${'topup.pts'.tr()}',
+                        style: AppTheme.english(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                          height: 1.15,
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: _gapTitleBody),
+              Text(
+                widget.body,
+                textAlign: TextAlign.center,
+                style: AppTheme.english(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textMuted,
+                  height: 1.45,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 14),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 6.0;
+                  final box =
+                      ((constraints.maxWidth - gap * (_pinLength - 1)) /
+                              _pinLength)
+                          .clamp(32.0, 40.0);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        for (var i = 0; i < _pinLength; i++)
+                          _AppPinBox(
+                            size: box,
+                            controller: _controllers[i],
+                            focusNode: _focusNodes[i],
+                            onChanged: (v) => _onDigitChanged(i, v),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          Positioned(
+            top: -4,
+            right: -4,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.primaryLight),
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppPinBox extends StatefulWidget {
+  const _AppPinBox({
+    required this.size,
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
+  });
+
+  final double size;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_AppPinBox> createState() => _AppPinBoxState();
+}
+
+class _AppPinBoxState extends State<_AppPinBox> {
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_onFocus);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_onFocus);
+    super.dispose();
+  }
+
+  void _onFocus() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final focused = widget.focusNode.hasFocus;
+    final fontSize = widget.size >= 38 ? 17.0 : 15.0;
+
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppStyle.radiusInput),
+          border: Border.all(
+            color: focused ? AppColors.primary : AppColors.border,
+            width: focused ? 1.6 : 1.2,
+          ),
+        ),
+        child: TextField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          textAlign: TextAlign.center,
+          textAlignVertical: TextAlignVertical.center,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          obscureText: true,
+          obscuringCharacter: '•',
+          maxLength: 1,
+          showCursor: true,
+          cursorColor: AppColors.primary,
+          cursorWidth: 2,
+          cursorHeight: fontSize,
+          style: AppTheme.english(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            height: 1.2,
+          ),
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            isCollapsed: true,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            counterText: '',
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: (value) {
+            final digits = value.replaceAll(RegExp(r'\D'), '');
+            final digit = digits.isEmpty ? '' : digits[digits.length - 1];
+            if (widget.controller.text != digit) {
+              widget.controller.value = TextEditingValue(
+                text: digit,
+                selection: TextSelection.collapsed(offset: digit.length),
+              );
+            }
+            widget.onChanged(digit);
+          },
+        ),
+      ),
+    );
+  }
 }

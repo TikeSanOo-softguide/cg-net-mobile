@@ -11,9 +11,10 @@ import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../../package/package_detail/package_buy_result.dart';
 import '../top_up/top_up_result.dart';
 
-/// History — tabs: All / Top-Up / Bill.
+/// History — tabs: All / Top-Up / Package / Bill.
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
 
@@ -29,6 +30,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   static const _tabLabels = [
     'history.tab_all',
     'history.tab_topup',
+    'history.tab_package',
     'history.tab_bill',
   ];
 
@@ -43,12 +45,30 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
           isCredit: true,
         ),
         ActivityItem(
+          id: 'h-pkg-ok',
+          kind: ActivityKind.package,
+          titleKey: 'history.item_package_success_title',
+          subtitleKey: 'history.item_package_success_body',
+          amount: 15000,
+          createdAt: DateTime.now().subtract(const Duration(hours: 4)),
+          isSuccess: true,
+        ),
+        ActivityItem(
           id: 'h3',
           kind: ActivityKind.bill,
           titleKey: 'history.item_bill_title',
           subtitleKey: 'history.item_bill_body',
           amount: 18000,
           createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        ),
+        ActivityItem(
+          id: 'h-pkg-fail',
+          kind: ActivityKind.package,
+          titleKey: 'history.item_package_fail_title',
+          subtitleKey: 'history.item_package_fail_body',
+          amount: 40000,
+          createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
+          isSuccess: false,
         ),
         ActivityItem(
           id: 'h4',
@@ -72,7 +92,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _filter = ActivityDateFilter.defaults();
   }
 
@@ -98,6 +118,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
       case 1:
         filtered = _allItems.where((e) => e.kind == ActivityKind.topUp);
       case 2:
+        filtered = _allItems.where((e) => e.kind == ActivityKind.package);
+      case 3:
         filtered = _allItems.where((e) => e.kind == ActivityKind.bill);
     }
     return filtered.where((e) => _filter.matches(e.createdAt)).toList();
@@ -127,7 +149,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                for (var t = 0; t < 3; t++)
+                for (var t = 0; t < 4; t++)
                   _HistoryList(
                     key: ValueKey(
                       'history-list-$locale-$t-${_filter.period}-${_filter.start}-${_filter.end}',
@@ -175,6 +197,23 @@ class _HistoryList extends StatelessWidget {
                   transactionId: 'TXN-${item.id.toUpperCase()}',
                   occurredAt: item.createdAt,
                 ),
+              );
+              return;
+            }
+            if (item.kind == ActivityKind.package) {
+              final result = PackageBuyResult.fromActivity(
+                packageId: '1m',
+                packageTitle: 'package.item_1m_title'.tr(),
+                pricePoints: item.amount,
+                transactionId: 'PKG-${item.id.toUpperCase()}',
+                occurredAt: item.createdAt,
+                success: item.isSuccess,
+              );
+              context.pushNamed(
+                item.isSuccess
+                    ? RouteNames.packageBuySuccess
+                    : RouteNames.packageBuyFailure,
+                extra: result,
               );
               return;
             }

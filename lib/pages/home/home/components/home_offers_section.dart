@@ -37,19 +37,19 @@ class HomeOffersSection extends StatelessWidget {
     ),
   ];
 
-  static const _gap = 8.0;
+  static const _gap = 6.0;
   static const _buttonHeight = 26.0;
-  static const _buttonPadH = 6.0;
-  static const _buttonPadV = 6.0;
+  static const _buttonPadH = 4.0;
+  static const _buttonPadV = 4.0;
 
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final contentWidth = screenWidth - (AppStyle.pageMarginH * 2);
-    // Slightly smaller cards — ~3.1 visible, shorter image.
-    final cardWidth = ((contentWidth - _gap) / 3.1).clamp(82.0, 100.0);
-    final imageHeight = cardWidth * 1.15;
+    // Wider cards — ~2.85 visible, slightly taller image.
+    final cardWidth = ((contentWidth - _gap) / 2.85).clamp(90.0, 112.0);
+    final imageHeight = cardWidth * 1.22;
     // Image + top button pad + button + bottom button pad.
     final slideHeight =
         imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;

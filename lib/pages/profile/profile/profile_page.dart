@@ -67,11 +67,13 @@ class ProfilePage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        profile.fullName,
+                        profile.accountNumber,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTheme.cardTitle().copyWith(
-                          fontSize: AppStyle.fontCardTitle - 1,
+                        style: AppTheme.english(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -79,8 +81,11 @@ class ProfilePage extends ConsumerWidget {
                         profile.phone,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTheme.bodySecondary().copyWith(
-                          fontSize: AppStyle.fontSecondary - 1,
+                        style: AppTheme.english(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -88,20 +93,24 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppStyle.spaceSm),
                 Material(
-                  color: AppColors.primary,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(8),
                   child: InkWell(
                     onTap: () => context.pushNamed(RouteNames.editProfile),
                     borderRadius: BorderRadius.circular(8),
-                    splashColor: Colors.white.withValues(alpha: 0.18),
-                    highlightColor: Colors.white.withValues(alpha: 0.08),
-                    child: const SizedBox(
-                      width: 28,
-                      height: 28,
-                      child: Icon(
-                        LucideIcons.square_pen,
-                        size: 14,
-                        color: AppColors.onPrimary,
+                    splashColor: AppColors.primary.withValues(alpha: 0.08),
+                    highlightColor: AppColors.primary.withValues(alpha: 0.04),
+                    child: SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/profile/edit.png',
+                          width: 16,
+                          height: 16,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
                       ),
                     ),
                   ),
@@ -117,7 +126,7 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: AppStyle.spaceMd),
           _SettingsCard(
-            icon: LucideIcons.languages,
+            asset: 'assets/images/profile/language.png',
             title: 'profile.language'.tr(),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -125,7 +134,7 @@ class ProfilePage extends ConsumerWidget {
                 Text(
                   _languageLabel(context),
                   style: AppTheme.caption(color: AppColors.textMuted).copyWith(
-                    fontSize: AppStyle.fontCaption - 1,
+                    fontSize: AppStyle.fontCaption,
                   ),
                 ),
                 const SizedBox(width: 2),
@@ -140,46 +149,39 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: 5),
           _SettingsCard(
-            icon: LucideIcons.smartphone,
-            title: 'profile.edit'.tr(),
+            asset: 'assets/images/profile/account_settings.png',
+            title: 'profile.account_settings'.tr(),
             onTap: () => context.pushNamed(RouteNames.editProfile),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
-            icon: LucideIcons.lock_keyhole,
+            asset: 'assets/images/profile/change_password.png',
             title: 'profile.change_password'.tr(),
             onTap: () => context.pushNamed(RouteNames.changePassword),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
-            icon: LucideIcons.monitor,
+            asset: 'assets/images/profile/device.png',
             title: 'profile.devices'.tr(),
             onTap: () => context.pushNamed(RouteNames.deviceSession),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
-            icon: LucideIcons.bell,
+            asset: 'assets/images/profile/notification.png',
             title: 'profile.notifications'.tr(),
             onTap: () =>
                 context.pushNamed(RouteNames.notificationPreferences),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
-            icon: LucideIcons.rotate_ccw_clock,
+            asset: 'assets/images/profile/version.png',
             title: 'profile.version'.tr(),
             trailingText: versionText,
             onTap: () => context.pushNamed(RouteNames.aboutApp),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
-            icon: LucideIcons.info,
-            title: 'profile.about'.tr(),
-            onTap: () => context.pushNamed(RouteNames.aboutApp),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            icon: LucideIcons.log_out,
-            iconColor: AppColors.error,
+            asset: 'assets/images/profile/logout.png',
             tint: const Color(0xFFFFEBEE),
             title: 'common.logout'.tr(),
             titleColor: AppColors.error,
@@ -214,10 +216,9 @@ class _AccountAvatar extends StatelessWidget {
 
 class _SettingsCard extends StatelessWidget {
   const _SettingsCard({
-    required this.icon,
+    required this.asset,
     required this.title,
     required this.onTap,
-    this.iconColor = AppColors.onPrimary,
     this.tint = AppColors.primary,
     this.trailing,
     this.trailingText,
@@ -225,8 +226,7 @@ class _SettingsCard extends StatelessWidget {
     this.chevronColor,
   });
 
-  final IconData icon;
-  final Color iconColor;
+  final String asset;
   final Color tint;
   final String title;
   final VoidCallback onTap;
@@ -248,8 +248,8 @@ class _SettingsCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 30,
-              height: 30,
+              width: 35,
+              height: 35,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: tint == AppColors.primary
@@ -257,12 +257,12 @@ class _SettingsCard extends StatelessWidget {
                     : tint,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                size: 15,
-                color: iconColor == AppColors.onPrimary
-                    ? AppColors.primary
-                    : iconColor,
+              child: Image.asset(
+                asset,
+                width: 18,
+                height: 18,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
               ),
             ),
             const SizedBox(width: 12),
@@ -272,7 +272,7 @@ class _SettingsCard extends StatelessWidget {
                 style: AppTheme.body(
                   color: titleColor ?? AppColors.textPrimary,
                   weight: FontWeight.w500,
-                ).copyWith(fontSize: AppStyle.fontBody - 1),
+                ).copyWith(fontSize: AppStyle.fontBody),
               ),
             ),
             if (trailing != null) ...[

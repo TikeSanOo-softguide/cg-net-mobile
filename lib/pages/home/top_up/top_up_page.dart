@@ -5,6 +5,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
@@ -17,7 +18,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import 'top_up_result.dart';
 
-/// Top-up — luxury banner (no top nav) + steps + two cards. Logic unchanged.
+/// Top-up — clear header + two step cards. Logic unchanged.
 class TopUpPage extends StatefulWidget {
   const TopUpPage({super.key});
 
@@ -201,7 +202,11 @@ class _TopUpPageState extends State<TopUpPage> {
     }
   }
 
-  Widget _cardHeader({required String index, required String title, required String body}) {
+  Widget _cardHeader({
+    required String index,
+    required String title,
+    required String body,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -210,19 +215,19 @@ class _TopUpPageState extends State<TopUpPage> {
           height: 28,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.primarySoft,
+            color: AppColors.primaryLight,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             index,
             style: AppTheme.english(
               fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: AppColors.primary,
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,9 +236,10 @@ class _TopUpPageState extends State<TopUpPage> {
                 title,
                 style: AppTheme.english(
                   fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
-                  letterSpacing: -0.25,
+                  letterSpacing: 0.2,
+                  height: 1.25,
                 ),
               ),
               const SizedBox(height: 4),
@@ -241,7 +247,7 @@ class _TopUpPageState extends State<TopUpPage> {
                 body,
                 style: AppTheme.english(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                   color: AppColors.textMuted,
                   height: 1.4,
                 ),
@@ -262,7 +268,7 @@ class _TopUpPageState extends State<TopUpPage> {
         resizeToAvoidBottomInset: true,
         body: Column(
           children: [
-            _LuxuryBanner(onBack: () => context.pop()),
+            _TopUpHeader(onBack: () => context.pop()),
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -276,15 +282,13 @@ class _TopUpPageState extends State<TopUpPage> {
                 child: Form(
                   key: _formKey,
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
                     children: [
-                      const _PrimaryStepRail(),
-                      const SizedBox(height: 16),
                       AppCard(
                         elevated: false,
                         bordered: false,
                         borderRadius: AppStyle.borderRadiusLg,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -293,7 +297,7 @@ class _TopUpPageState extends State<TopUpPage> {
                               title: 'topup.step_verify_title'.tr(),
                               body: 'topup.step_verify_body'.tr(),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 16),
                             AppPillActionInput(
                               fieldKey: _serialFieldKey,
                               controller: _serial,
@@ -314,12 +318,12 @@ class _TopUpPageState extends State<TopUpPage> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       AppCard(
                         elevated: false,
                         bordered: false,
                         borderRadius: AppStyle.borderRadiusLg,
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -328,7 +332,7 @@ class _TopUpPageState extends State<TopUpPage> {
                               title: 'topup.step_details_title'.tr(),
                               body: 'topup.step_details_body'.tr(),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 16),
                             AppInput(
                               controller: _account,
                               label: 'topup.account_label'.tr(),
@@ -363,41 +367,19 @@ class _TopUpPageState extends State<TopUpPage> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 16),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: SizedBox(
-                              height: 36,
-                              child: FilledButton(
-                                onPressed: _submitting ? null : _submit,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: AppColors.onPrimary,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                                child: Text(
-                                  'topup.submit'.tr(),
-                                  style: AppTheme.english(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.onPrimary,
-                                  ),
-                                ),
-                              ),
+                            const SizedBox(height: 20),
+                            AppButton(
+                              label: 'topup.submit'.tr(),
+                              onPressed: _submitting ? null : _submit,
+                              isLoading: _submitting,
+                              height: 42,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               ),
             ),
           ],
@@ -407,32 +389,20 @@ class _TopUpPageState extends State<TopUpPage> {
   }
 }
 
-/// Luxury full-bleed banner — refined icon + title scale for iOS/Android.
-class _LuxuryBanner extends StatelessWidget {
-  const _LuxuryBanner({required this.onBack});
+/// Clear primary header — flat brand wash, compact title block.
+class _TopUpHeader extends StatelessWidget {
+  const _TopUpHeader({required this.onBack});
 
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            Color(0xFF1A18D4),
-            Color(0xFF3D3BE8),
-          ],
-          stops: [0.0, 0.5, 1.0],
-        ),
-      ),
+    return ColoredBox(
+      color: AppColors.primary,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 18, 22),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -440,68 +410,60 @@ class _LuxuryBanner extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: onBack,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                   child: Ink(
-                    width: 30,
-                    height: 30,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        width: 0.7,
+                      ),
                     ),
                     child: const Icon(
                       LucideIcons.chevron_left,
-                      size: 16,
+                      size: 18,
                       color: AppColors.onPrimary,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   QuickActionIconChip(
                     asset: QuickActionIconChip.topUpAsset,
-                    background: QuickActionIconChip.topUpSoft,
-                    tint: AppColors.primary,
-                    size: 44,
-                    iconSize: 24,
+                    background: Colors.white.withValues(alpha: 0.14),
+                    tint: AppColors.onPrimary,
+                    size: 40,
+                    iconSize: 22,
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'topup.hero_eyebrow'.tr().toUpperCase(),
-                          style: AppTheme.english(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.72),
-                            letterSpacing: 1.2,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
                           'topup.hero_title'.tr(),
                           style: AppTheme.english(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.6,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onPrimary,
+                            letterSpacing: 0.3,
                             height: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           'topup.hero_body'.tr(),
                           style: AppTheme.english(
                             fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.88),
-                            height: 1.4,
-                            letterSpacing: -0.1,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.onPrimary.withValues(alpha: 0.82),
+                            height: 1.35,
                           ),
                         ),
                       ],
@@ -513,85 +475,6 @@ class _LuxuryBanner extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PrimaryStepRail extends StatelessWidget {
-  const _PrimaryStepRail();
-
-  static const _circle = 28.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = [
-      'topup.step_rail_verify'.tr(),
-      'topup.step_rail_details'.tr(),
-      'topup.step_rail_done'.tr(),
-    ];
-
-    return Column(
-      children: [
-        SizedBox(
-          height: _circle,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned(
-                left: _circle / 2,
-                right: _circle / 2,
-                child: Container(
-                  height: 2.5,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  for (var i = 0; i < 3; i++)
-                    Container(
-                      width: _circle,
-                      height: _circle,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${i + 1}',
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onPrimary,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            for (final label in labels)
-              Expanded(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: AppTheme.english(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
     );
   }
 }

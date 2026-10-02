@@ -64,6 +64,23 @@ class InboxListController
         category: InboxCategory.promotion,
         isRead: true,
       ),
+      InboxMessageModel(
+        id: '7',
+        titleKey: 'inbox.msg7_title',
+        bodyKey: 'inbox.msg7_body',
+        detailKey: 'inbox.msg7_detail',
+        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+        category: InboxCategory.system,
+      ),
+      InboxMessageModel(
+        id: '8',
+        titleKey: 'inbox.msg8_title',
+        bodyKey: 'inbox.msg8_body',
+        detailKey: 'inbox.msg8_detail',
+        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+        category: InboxCategory.system,
+        isFailure: true,
+      ),
     ]);
   }
 }

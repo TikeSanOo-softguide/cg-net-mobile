@@ -9,6 +9,7 @@ class InboxMessageModel {
     required this.category,
     this.detailKey,
     this.isRead = false,
+    this.isFailure = false,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class InboxMessageModel {
   final DateTime createdAt;
   final InboxCategory category;
   final bool isRead;
+  final bool isFailure;
 }
 
 class UserProfileModel {
@@ -25,6 +27,7 @@ class UserProfileModel {
     required this.id,
     required this.fullName,
     required this.phone,
+    required this.accountNumber,
     this.email,
     this.username,
   });
@@ -32,6 +35,7 @@ class UserProfileModel {
   final String id;
   final String fullName;
   final String phone;
+  final String accountNumber;
   final String? email;
   final String? username;
 }

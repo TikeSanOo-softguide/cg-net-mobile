@@ -17,6 +17,7 @@ class EditProfileController extends StateNotifier<bool> {
             id: current.id,
             fullName: fullName,
             phone: current.phone,
+            accountNumber: current.accountNumber,
             email: email,
             username: current.username,
           ),

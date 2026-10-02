@@ -7,7 +7,6 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
-import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/user_model/user_model.dart';
 import 'inbox_detail_controller.dart';
@@ -55,7 +54,10 @@ class InboxDetailPage extends ConsumerWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        InboxCategoryIcon(category: item.category),
+                        InboxCategoryIcon(
+                          category: item.category,
+                          isFailure: item.isFailure,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -66,7 +68,9 @@ class InboxDetailPage extends ConsumerWidget {
                                 style: AppTheme.english(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  color: item.isFailure
+                                      ? InboxCategoryIcon.failureColor
+                                      : AppColors.textPrimary,
                                   height: 1.3,
                                 ),
                               ),
@@ -82,7 +86,9 @@ class InboxDetailPage extends ConsumerWidget {
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primarySoft,
+                                      color: item.isFailure
+                                          ? InboxCategoryIcon.failureSoft
+                                          : AppColors.primarySoft,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -90,7 +96,9 @@ class InboxDetailPage extends ConsumerWidget {
                                       style: AppTheme.english(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.primary,
+                                        color: item.isFailure
+                                            ? InboxCategoryIcon.failureColor
+                                            : AppColors.primary,
                                       ),
                                     ),
                                   ),

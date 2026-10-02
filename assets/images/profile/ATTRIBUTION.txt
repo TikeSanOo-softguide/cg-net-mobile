@@ -1,0 +1,14 @@
+Account settings icons — Flaticon sources, recolored for the account list chips.
+
+Sources:
+- language: translate_8030253 — https://www.flaticon.com/free-icon/translate_8030253
+- account_settings: account-settings_13097735 — https://www.flaticon.com/free-icon/account-settings_13097735
+- change_password: password_18000690 — https://www.flaticon.com/free-icon/password_18000690
+- device: computer-setting_18731883 — https://www.flaticon.com/free-icon/computer-setting_18731883
+- notification: ringing_3602136 — https://www.flaticon.com/free-icon/ringing_3602136
+- version: sync_18469875 — https://www.flaticon.com/free-icon/sync_18469875
+- logout: logout_5509651 — https://www.flaticon.com/free-icon/logout_5509651
+- edit: compose_10747217 — https://www.flaticon.com/free-icon/compose_10747217
+
+Icons by Flaticon authors — https://www.flaticon.com
+Recolored: language, account setting, change password, device, notification, version, and edit #0100CA. Logout #B3261E.

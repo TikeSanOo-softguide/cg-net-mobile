@@ -184,7 +184,10 @@ class _InboxCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    InboxCategoryIcon(category: item.category),
+                    InboxCategoryIcon(
+                      category: item.category,
+                      isFailure: item.isFailure,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -201,7 +204,9 @@ class _InboxCard extends StatelessWidget {
                                   style: AppTheme.english(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: AppColors.primary,
+                                    color: item.isFailure
+                                        ? InboxCategoryIcon.failureColor
+                                        : AppColors.primary,
                                     height: 1.25,
                                   ),
                                 ),

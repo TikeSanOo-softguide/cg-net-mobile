@@ -13,8 +13,8 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.isExpanded = true,
     this.icon,
-    this.height = 42,
-    this.fontSize = 13,
+    this.height = 45,
+    this.fontSize = 14,
   });
 
   final String label;
@@ -56,7 +56,9 @@ class AppButton extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.button(color: AppColors.onPrimary).copyWith(
                     fontSize: fontSize,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.4,
+                    height: 1.2,
                   ),
                 ),
               ),

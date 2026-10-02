@@ -41,7 +41,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final saving = ref.watch(editProfileControllerProvider);
 
     return AppCurvedScaffold(
-      title: Text('profile.edit_title'.tr()),
+      title: Text('profile.account_settings'.tr()),
       showBack: true,
       body: Padding(
         padding: const EdgeInsets.all(24),
