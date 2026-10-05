@@ -36,20 +36,20 @@ class HomePinnedBar extends StatelessWidget {
 
   static const double _padTop = 14;
   static const double _padBottom = 8;
+
   /// Logo glass chip.
   static const double _chipSize = 40;
+
   /// Notification glass chip and bell.
   static const double _notifyChipSize = 35;
   static const double _notifyIconSize = 20;
+
   /// Row tall enough for larger account / phone text.
   static const double _rowH = 44;
 
   /// Status inset + vertical padding + content row.
   static double heightOf(BuildContext context) {
-    return MediaQuery.paddingOf(context).top +
-        _padTop +
-        _rowH +
-        _padBottom;
+    return MediaQuery.paddingOf(context).top + _padTop + _rowH + _padBottom;
   }
 
   @override
@@ -206,13 +206,13 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fill(
+          const Positioned.fill(
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
+              borderRadius: BorderRadius.vertical(
                 bottom: Radius.circular(AppStyle.radiusCurve),
               ),
               clipBehavior: Clip.hardEdge,
-              child: const ColoredBox(color: AppColors.primary),
+              child: ColoredBox(color: AppColors.primary),
             ),
           ),
           // Balance + amount — a little more top inset.

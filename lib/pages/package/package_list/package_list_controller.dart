@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../models/package_model/package_model.dart';
 import 'package_list_repository.dart';
 
@@ -39,9 +40,7 @@ class PackageListController extends StateNotifier<PackageListState> {
   Future<void> load() async {
     state = state.copyWith(status: PackageListStatus.loading);
     try {
-      final packages = await _repository.fetchPackagesMock();
-      // To use live API later:
-      // final packages = await _repository.fetchPackages();
+      final packages = await _repository.fetchPackages();
       if (packages.isEmpty) {
         state = state.copyWith(
           status: PackageListStatus.empty,
@@ -53,11 +52,27 @@ class PackageListController extends StateNotifier<PackageListState> {
           packages: packages,
         );
       }
-    } catch (e) {
+    } on ApiException catch (e) {
       state = state.copyWith(
         status: PackageListStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: e.messageKey,
       );
+    } catch (e) {
+      try {
+        final fallback = await _repository.fetchPackagesMock();
+        state = state.copyWith(
+          status: fallback.isEmpty
+              ? PackageListStatus.empty
+              : PackageListStatus.data,
+          packages: fallback,
+          errorMessage: null,
+        );
+      } catch (_) {
+        state = state.copyWith(
+          status: PackageListStatus.error,
+          errorMessage: e.toString(),
+        );
+      }
     }
   }
 }

@@ -51,8 +51,7 @@ class HomeOffersSection extends StatelessWidget {
     final cardWidth = ((contentWidth - _gap) / 2.85).clamp(90.0, 112.0);
     final imageHeight = cardWidth * 1.22;
     // Image + top button pad + button + bottom button pad.
-    final slideHeight =
-        imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
+    final slideHeight = imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
 
     return Padding(
       key: ValueKey('offers-$locale'),

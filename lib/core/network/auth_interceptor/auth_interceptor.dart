@@ -29,8 +29,11 @@ class AuthInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     if (err.response?.statusCode == 401) {
-      await _secureStorage.clearToken();
-      _onUnauthorized();
+      // Only trigger once per real session to avoid duplicate redirects.
+      if (await _secureStorage.hasToken()) {
+        await _secureStorage.clearToken();
+        _onUnauthorized();
+      }
     }
     handler.next(err);
   }

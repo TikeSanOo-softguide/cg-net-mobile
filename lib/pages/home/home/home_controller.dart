@@ -17,6 +17,7 @@ class HomeDashboardData {
   final String accountNumber;
   final String balanceLabel;
   final String balanceAmount;
+
   /// Purchased package id (same as home offers / catalog).
   final String packageId;
   final String packageImagePath;

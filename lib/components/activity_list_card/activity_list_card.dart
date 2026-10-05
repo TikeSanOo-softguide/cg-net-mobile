@@ -21,7 +21,7 @@ class ActivityItem {
     this.subtitleKey,
     this.isCredit = false,
     this.isSuccess = true,
-  }) : assert(
+  })  : assert(
           title != null || titleKey != null,
           'Provide title or titleKey',
         ),

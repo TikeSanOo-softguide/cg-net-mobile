@@ -107,9 +107,12 @@
   },
   "set_credentials": {
     "title": "Create account",
-    "subtitle": "Choose a username and password to secure your account.",
+    "subtitle": "Choose a username and a 6-digit password to secure your account.",
     "username": "Username",
     "password": "Password",
+    "password_hint": "6-digit password",
+    "password_required": "Enter all 6 digits",
+    "password_mismatch": "Passwords do not match",
     "confirm_password": "Confirm password",
     "create": "Create account"
   },

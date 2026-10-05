@@ -2,36 +2,41 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/network/idempotency_key.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/package/package_buy_repository.dart';
+import '../../../models/package_model/package_model.dart';
 import '../package_catalog.dart';
+import '../package_list/package_list_controller.dart';
 import 'package_buy_confirm_drawer.dart';
 import 'package_buy_result.dart';
 
 /// Package detail — left image / right features, then description → renew → buy.
-class PackageDetailPage extends StatefulWidget {
+class PackageDetailPage extends ConsumerStatefulWidget {
   const PackageDetailPage({super.key, required this.packageId});
 
   final String packageId;
 
   @override
-  State<PackageDetailPage> createState() => _PackageDetailPageState();
+  ConsumerState<PackageDetailPage> createState() => _PackageDetailPageState();
 }
 
-class _PackageDetailPageState extends State<PackageDetailPage> {
+class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
   bool _autoRenew = true;
   bool _submitting = false;
-
-  /// Demo password — success when matched, otherwise failure page.
-  static const _validPassword = '123456';
 
   static const _features = <String>[
     'package.feature_speed',
@@ -96,19 +101,110 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
     );
   }
 
+  _PackageDetailViewData _resolveViewData(
+    String localeCode,
+    PackageListState state,
+  ) {
+    PackageModel? model;
+    for (final item in state.packages) {
+      if (item.id == widget.packageId) {
+        model = item;
+        break;
+      }
+    }
+
+    final catalog = PackageCatalog.byId(widget.packageId);
+    final speedDigits = model?.speed.replaceAll(RegExp(r'[^0-9]'), '');
+    final speedFromModel =
+        speedDigits == null || speedDigits.isEmpty ? null : speedDigits;
+
+    return _PackageDetailViewData(
+      id: widget.packageId,
+      title: model?.localizedName?[localeCode] ??
+          model?.localizedName?['en'] ??
+          model?.name ??
+          (catalog?.titleKey ?? 'package.title').tr(),
+      body: (catalog?.descriptionKey ?? 'package.empty_body').tr(),
+      pricePoints: model?.price.toInt() ?? catalog?.pricePoints ?? 15000,
+      speedMbps: speedFromModel ?? catalog?.speedMbps ?? '20',
+      imagePath: model?.imageUrl?.trim().isNotEmpty == true
+          ? model!.imageUrl!.trim()
+          : _fallbackImageByTermMonths(model?.termMonths) ?? catalog?.imagePath,
+      popular: model?.recommended ?? catalog?.popular ?? false,
+    );
+  }
+
+  static String? _fallbackImageByTermMonths(int? months) {
+    return switch (months) {
+      3 => 'assets/images/packages/package_3m.png',
+      6 => 'assets/images/packages/package_6m.png',
+      12 => 'assets/images/packages/package_1y.png',
+      1 => 'assets/images/packages/package_1m.png',
+      _ => null,
+    };
+  }
+
+  void _closeProcessingDialog() {
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
+  Widget _buildCardImage(String imagePath) {
+    const fallback = ColoredBox(
+      color: AppColors.primaryLight,
+      child: Center(
+        child: Icon(
+          LucideIcons.image_off,
+          color: AppColors.primary,
+          size: 18,
+        ),
+      ),
+    );
+
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        errorBuilder: (_, __, ___) => fallback,
+      );
+    }
+
+    return Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.high,
+      gaplessPlayback: true,
+      errorBuilder: (_, __, ___) => fallback,
+    );
+  }
+
   Future<void> _buyNow() async {
     if (_submitting) return;
 
-    final item = PackageCatalog.byId(widget.packageId);
-    final title = (item?.titleKey ?? 'package.title').tr();
-    final pricePoints = item?.pricePoints ?? 15000;
-    final speedMbps = item?.speedMbps ?? '20';
+    final locale = context.locale.languageCode;
+    final info = _resolveViewData(
+      locale,
+      ref.read(packageListControllerProvider),
+    );
+    final packageId = int.tryParse(widget.packageId);
+    if (packageId == null) {
+      await showAppFailureModal(
+        context,
+        title: 'package.result_failure_title'.tr(),
+        body: 'package.result_failure_body'.tr(),
+      );
+      return;
+    }
 
     final confirmed = await showPackageBuyConfirmDrawer(
       context,
-      packageTitle: title,
-      pricePoints: pricePoints,
-      speedMbps: speedMbps,
+      packageTitle: info.title,
+      pricePoints: info.pricePoints,
+      speedMbps: info.speedMbps,
       autoRenew: _autoRenew,
     );
     if (!mounted || !confirmed) return;
@@ -117,7 +213,7 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
       context,
       title: 'package.password_title'.tr(),
       body: 'package.password_body'.tr(),
-      amountPoints: pricePoints,
+      amountPoints: info.pricePoints,
     );
     if (!mounted || password == null) return;
 
@@ -125,39 +221,39 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
     _showProcessing();
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 1000));
-      if (!mounted) return;
-
-      final txnId =
-          'PKG-${DateFormat('yyyyMMdd').format(DateTime.now())}-${DateTime.now().millisecond.toString().padLeft(3, '0')}';
       final now = DateTime.now();
+      final response = await ref.read(packageBuyRepositoryProvider).buyPackage(
+            packageId: packageId,
+            idempotencyKey:
+                IdempotencyKey.forPackageBuy(packageId: widget.packageId),
+          );
 
       late final PackageBuyResult result;
-      if (password == _validPassword) {
+      if (response.isSuccess) {
         result = PackageBuyResult.success(
-          packageId: widget.packageId,
-          packageTitle: title,
-          pricePoints: pricePoints,
-          speedMbps: speedMbps,
+          packageId: info.id,
+          packageTitle: info.title,
+          pricePoints: info.pricePoints,
+          speedMbps: info.speedMbps,
           autoRenew: _autoRenew,
-          transactionId: txnId,
+          transactionId: response.transactionNo ?? 'PKG-UNKNOWN',
           occurredAt: now,
         );
       } else {
         result = PackageBuyResult.failure(
-          packageId: widget.packageId,
-          packageTitle: title,
-          pricePoints: pricePoints,
-          speedMbps: speedMbps,
+          packageId: info.id,
+          packageTitle: info.title,
+          pricePoints: info.pricePoints,
+          speedMbps: info.speedMbps,
           autoRenew: _autoRenew,
-          transactionId: txnId,
+          transactionId: response.transactionNo ?? 'PKG-UNKNOWN',
           occurredAt: now,
           errorTitleKey: 'package.result_failure_title',
-          errorBodyKey: 'package.password_invalid',
+          errorBody: response.message,
         );
       }
 
-      Navigator.of(context, rootNavigator: true).pop();
+      _closeProcessingDialog();
       if (!mounted) return;
 
       switch (result.status) {
@@ -166,24 +262,44 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
             RouteNames.packageBuySuccess,
             extra: result,
           );
+          return;
         case PackageBuyTxnStatus.failure:
           context.pushReplacementNamed(
             RouteNames.packageBuyFailure,
             extra: result,
           );
+          return;
       }
+    } on ApiException catch (error) {
+      _closeProcessingDialog();
+      if (!mounted) return;
+      if (isOfflineError(error)) {
+        await openNoInternetPage(context);
+        return;
+      }
+      context.pushNamed(
+        RouteNames.packageBuyFailure,
+        extra: PackageBuyResult.failure(
+          packageId: info.id,
+          packageTitle: info.title,
+          pricePoints: info.pricePoints,
+          speedMbps: info.speedMbps,
+          autoRenew: _autoRenew,
+          transactionId: 'PKG-UNKNOWN',
+          errorTitleKey: 'package.result_failure_title',
+          errorBody: apiErrorText(error),
+        ),
+      );
     } catch (_) {
-      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
+      _closeProcessingDialog();
       if (!mounted) return;
       context.pushNamed(
         RouteNames.packageBuyFailure,
         extra: PackageBuyResult.failure(
-          packageId: widget.packageId,
-          packageTitle: title,
-          pricePoints: pricePoints,
-          speedMbps: speedMbps,
+          packageId: info.id,
+          packageTitle: info.title,
+          pricePoints: info.pricePoints,
+          speedMbps: info.speedMbps,
           autoRenew: _autoRenew,
           transactionId: 'PKG-UNKNOWN',
           errorTitleKey: 'package.result_failure_title',
@@ -198,13 +314,13 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
-    final item = PackageCatalog.byId(widget.packageId);
-    final imagePath =
-        item?.imagePath ?? 'assets/images/packages/package_1m.png';
-    final title = (item?.titleKey ?? 'package.title').tr();
-    final body = (item?.descriptionKey ?? 'package.empty_body').tr();
-    final popular = item?.popular ?? false;
-    final speedMbps = item?.speedMbps ?? '20';
+    final packageState = ref.watch(packageListControllerProvider);
+    final info = _resolveViewData(locale, packageState);
+    final imagePath = info.imagePath ?? 'assets/images/packages/package_1m.png';
+    final title = info.title;
+    final body = info.body;
+    final popular = info.popular;
+    final speedMbps = info.speedMbps;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppTheme.systemOverlayPrimary,
@@ -238,24 +354,7 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  Image.asset(
-                                    imagePath,
-                                    fit: BoxFit.cover,
-                                    alignment: Alignment.center,
-                                    filterQuality: FilterQuality.high,
-                                    gaplessPlayback: true,
-                                    errorBuilder: (_, __, ___) =>
-                                        const ColoredBox(
-                                      color: AppColors.primaryLight,
-                                      child: Center(
-                                        child: Icon(
-                                          LucideIcons.image_off,
-                                          color: AppColors.primary,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  _buildCardImage(imagePath),
                                   if (popular)
                                     Positioned(
                                       top: 5,
@@ -407,6 +506,26 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
       ),
     );
   }
+}
+
+class _PackageDetailViewData {
+  const _PackageDetailViewData({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.pricePoints,
+    required this.speedMbps,
+    required this.imagePath,
+    required this.popular,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final int pricePoints;
+  final String speedMbps;
+  final String? imagePath;
+  final bool popular;
 }
 
 class _SpeedTitle extends StatelessWidget {

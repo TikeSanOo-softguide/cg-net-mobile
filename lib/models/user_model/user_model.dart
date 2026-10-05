@@ -59,7 +59,8 @@ class InboxMessageModel {
     );
   }
 
-  static String _pick(Map<String, String>? values, String fallback, String locale) {
+  static String _pick(
+      Map<String, String>? values, String fallback, String locale) {
     if (values == null || values.isEmpty) return fallback;
     final picked = values[locale] ?? values['en'] ?? '';
     return picked.isEmpty ? fallback : picked;

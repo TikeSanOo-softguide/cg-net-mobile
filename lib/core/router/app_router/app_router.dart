@@ -45,12 +45,13 @@ import '../../../pages/support/support_chat/support_chat_page.dart';
 import '../../network/session_clock.dart';
 import '../../storage/secure_storage/secure_storage.dart';
 import '../route_names/route_names.dart';
+import '../route_policy.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final secureStorage = ref.watch(secureStorageProvider);
-  final session = ref.read(sessionClockProvider);
+  final session = ref.watch(sessionClockProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -61,24 +62,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       final hasToken = await secureStorage.hasToken();
 
-      final isPublic = loc == RoutePaths.splash ||
-          loc == RoutePaths.onboarding ||
-          loc == RoutePaths.login ||
-          loc == RoutePaths.loginQa ||
-          loc == RoutePaths.terms ||
-          loc.startsWith('/otp') ||
-          loc.startsWith('/set-username') ||
-          loc.startsWith('/error') ||
-          loc == RoutePaths.notFound;
+      final isPublic = isPublicRouteLocation(loc);
 
       if (!hasToken && !isPublic) {
+        if (session.expiredByUnauthorized) {
+          final consumed = session.consumeUnauthorizedExpiration();
+          if (consumed) {
+            return loginWithSessionExpiredReason();
+          }
+        }
         return RoutePaths.login;
       }
 
-      final isAuthOnly = loc == RoutePaths.login ||
-          loc == RoutePaths.onboarding ||
-          loc.startsWith('/otp') ||
-          loc.startsWith('/set-username');
+      final isAuthOnly = isAuthOnlyRouteLocation(loc);
       if (hasToken && isAuthOnly) {
         return RoutePaths.home;
       }
@@ -154,7 +150,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.errorNoInternet,
         name: RouteNames.errorNoInternet,
-        builder: (context, state) => const ErrorNoInternetPage(),
+        builder: (context, state) {
+          final returnTo = state.uri.queryParameters['return_to'];
+          return ErrorNoInternetPage(returnToPath: returnTo);
+        },
       ),
       GoRoute(
         path: RoutePaths.forceUpdate,

@@ -24,7 +24,8 @@ class OtpVerificationState {
 }
 
 class OtpVerificationController extends StateNotifier<OtpVerificationState> {
-  OtpVerificationController(this._authApi) : super(const OtpVerificationState());
+  OtpVerificationController(this._authApi)
+      : super(const OtpVerificationState());
 
   final AuthApi _authApi;
 

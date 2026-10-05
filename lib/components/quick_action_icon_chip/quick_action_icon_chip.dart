@@ -30,11 +30,14 @@ class QuickActionIconChip extends StatelessWidget {
   static const topUpSoft = AppColors.primaryLight;
   static const historySoft = Color(0xFFF3E8FF);
   static const paymentSoft = Color(0xFFFFF8DB);
+
   /// Light wash of [AppColors.success].
   static const bindSoft = Color(0xFFE3F2EA);
+
   /// Soft wash of package accent `#DA3D20`.
   static const packageSoft = Color(0xFFFBECE9);
   static const packageAccent = Color(0xFFDA3D20);
+
   /// Bill activity equity icon `#0E9F8A` on a light teal chip.
   static const billSoft = Color(0xFFE6F5F2);
 

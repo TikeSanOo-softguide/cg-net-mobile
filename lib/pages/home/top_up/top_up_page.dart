@@ -2,8 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
@@ -12,21 +12,26 @@ import '../../../components/app_input/app_input.dart';
 import '../../../components/app_pill_action_input/app_pill_action_input.dart';
 import '../../../components/app_scan_input/app_scan_input.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/network/idempotency_key.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/top_up/top_up_repository.dart';
 import 'top_up_result.dart';
 
-/// Top-up — clear header + two step cards. Logic unchanged.
-class TopUpPage extends StatefulWidget {
+/// Top-up screen with serial verification and backend submission flow.
+class TopUpPage extends ConsumerStatefulWidget {
   const TopUpPage({super.key});
 
   @override
-  State<TopUpPage> createState() => _TopUpPageState();
+  ConsumerState<TopUpPage> createState() => _TopUpPageState();
 }
 
-class _TopUpPageState extends State<TopUpPage> {
+class _TopUpPageState extends ConsumerState<TopUpPage> {
   final _serial = TextEditingController();
   final _account = TextEditingController();
   final _pin = TextEditingController();
@@ -34,10 +39,10 @@ class _TopUpPageState extends State<TopUpPage> {
   final _serialFieldKey = GlobalKey<FormFieldState<String>>();
   String? _serialErrorKey;
   bool _submitting = false;
+  bool _serialChecked = false;
 
   static const _serialLength = 16;
-  static const _validSerial = '1234567890123456';
-  static const _mockAmount = 500;
+  static const _fallbackAmount = 0;
 
   int get _serialLen => _serial.text.trim().length;
 
@@ -60,17 +65,60 @@ class _TopUpPageState extends State<TopUpPage> {
       _serialFieldKey.currentState?.validate();
       return;
     }
-    setState(() => _serialErrorKey = null);
-    _serialFieldKey.currentState?.validate();
-    if (len == _serialLength && value == _validSerial) {
-      await showAppSuccessModal(
-        context,
-        title: 'topup.verified'.tr(),
-        body: 'topup.verify_amount'.tr(),
-      );
+    if (len != _serialLength) {
+      setState(() {
+        _serialChecked = false;
+        _serialErrorKey = 'topup.serial_required';
+      });
+      _serialFieldKey.currentState?.validate();
       return;
     }
-    if (len == _serialLength) {
+
+    setState(() => _serialErrorKey = null);
+    _serialFieldKey.currentState?.validate();
+
+    try {
+      final result =
+          await ref.read(topUpRepositoryProvider).checkSerialNo(value);
+      if (!mounted) return;
+
+      if (result.isValid) {
+        setState(() => _serialChecked = true);
+        await showAppSuccessModal(
+          context,
+          title: 'topup.verified'.tr(),
+          body: result.message?.trim().isNotEmpty == true
+              ? result.message!
+              : 'topup.verify_amount'.tr(),
+        );
+      } else {
+        setState(() => _serialChecked = false);
+        await showAppFailureModal(
+          context,
+          title: 'topup.verify_fail_title'.tr(),
+          body: result.message?.trim().isNotEmpty == true
+              ? result.message!
+              : 'topup.verify_fail_body'.tr(),
+        );
+      }
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _serialChecked = false);
+      if (isOfflineError(error)) {
+        final shouldRetry = await openNoInternetPage(context);
+        if (shouldRetry == true && mounted) {
+          await _checkSerial();
+        }
+        return;
+      }
+      await showAppFailureModal(
+        context,
+        title: 'topup.verify_fail_title'.tr(),
+        body: apiErrorText(error),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _serialChecked = false);
       await showAppFailureModal(
         context,
         title: 'topup.verify_fail_title'.tr(),
@@ -137,60 +185,87 @@ class _TopUpPageState extends State<TopUpPage> {
   Future<void> _submit() async {
     if (_submitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_serialChecked) {
+      setState(() => _serialErrorKey = 'topup.check_serial_first');
+      _serialFieldKey.currentState?.validate();
+      return;
+    }
 
     setState(() => _submitting = true);
     _showProcessing();
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      final serial = _serial.text.trim();
+      final account = _account.text.trim();
+      final pin = _pin.text.trim();
+      final now = DateTime.now();
+      final idempotencyKey = IdempotencyKey.forTopUp(phone: account);
+      final response = await ref.read(topUpRepositoryProvider).topUpAccount(
+            phone: account,
+            pin: pin,
+            idempotencyKey: idempotencyKey,
+          );
       if (!mounted) return;
 
-      final serial = _serial.text.trim();
-      final pin = _pin.text.trim();
-      final txnId =
-          'TXN-${DateFormat('yyyyMMdd').format(DateTime.now())}-${DateTime.now().millisecond.toString().padLeft(3, '0')}';
-      final now = DateTime.now();
-
       late final TopUpResult result;
-      if (pin.length != 12) {
+      if (!response.isSuccess) {
         result = TopUpResult.failure(
-          amountPoints: _mockAmount,
+          amountPoints: response.amountPoints ?? _fallbackAmount,
           serialRaw: serial.isEmpty ? '0000000000000000' : serial,
-          transactionId: txnId,
+          transactionId: response.transactionNo ?? 'TXN-UNKNOWN',
           occurredAt: now,
           errorTitleKey: 'topup.result_failure_title',
-          errorBodyKey: 'topup.pin_invalid',
+          errorBody: response.message,
         );
       } else {
         result = TopUpResult.success(
-          amountPoints: _mockAmount,
+          amountPoints: response.amountPoints ?? _fallbackAmount,
           serialRaw: serial.isEmpty ? '0000000000000000' : serial,
-          transactionId: txnId,
+          transactionId: response.transactionNo ?? 'TXN-UNKNOWN',
           occurredAt: now,
         );
       }
 
-      Navigator.of(context, rootNavigator: true).pop();
+      _closeProcessingDialog();
       if (!mounted) return;
 
       switch (result.status) {
         case TopUpTxnStatus.success:
           context.pushReplacementNamed(RouteNames.topUpSuccess, extra: result);
+          return;
         case TopUpTxnStatus.failure:
           context.pushReplacementNamed(RouteNames.topUpFailure, extra: result);
+          return;
         case TopUpTxnStatus.pending:
           context.pushReplacementNamed(RouteNames.topUpPending, extra: result);
+          return;
       }
+    } on ApiException catch (error) {
+      _closeProcessingDialog();
+      if (!mounted) return;
+      if (isOfflineError(error)) {
+        await openNoInternetPage(context);
+        return;
+      }
+      final serial = _serial.text.trim();
+      context.pushNamed(
+        RouteNames.topUpFailure,
+        extra: TopUpResult.failure(
+          amountPoints: _fallbackAmount,
+          serialRaw: serial.isEmpty ? '0000000000000000' : serial,
+          transactionId: 'TXN-UNKNOWN',
+          errorTitleKey: 'topup.result_failure_title',
+          errorBody: apiErrorText(error),
+        ),
+      );
     } catch (_) {
-      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
+      _closeProcessingDialog();
       if (!mounted) return;
       final serial = _serial.text.trim();
       context.pushNamed(
         RouteNames.topUpFailure,
         extra: TopUpResult.failure(
-          amountPoints: _mockAmount,
+          amountPoints: _fallbackAmount,
           serialRaw: serial.isEmpty ? '0000000000000000' : serial,
           transactionId: 'TXN-UNKNOWN',
           errorTitleKey: 'topup.result_failure_title',
@@ -199,6 +274,12 @@ class _TopUpPageState extends State<TopUpPage> {
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _closeProcessingDialog() {
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
     }
   }
 
@@ -310,7 +391,10 @@ class _TopUpPageState extends State<TopUpPage> {
                               maxLength: _serialLength,
                               textInputAction: TextInputAction.next,
                               onChanged: (_) {
-                                setState(() => _serialErrorKey = null);
+                                setState(() {
+                                  _serialChecked = false;
+                                  _serialErrorKey = null;
+                                });
                                 _serialFieldKey.currentState?.validate();
                               },
                               validator: (_) => _serialErrorKey?.tr(),

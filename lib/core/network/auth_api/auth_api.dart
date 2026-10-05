@@ -61,13 +61,20 @@ class AuthApi {
           'name': name,
           'password': password,
           'password_confirmation': password,
-          'platform': defaultTargetPlatform == TargetPlatform.iOS
-              ? 'ios'
-              : 'android',
+          'platform':
+              defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
         },
       ),
     );
     return response.data['token'] as String;
+  }
+
+  Future<void> logout() async {
+    await _send(
+      () => _dio.post(
+        ApiEndpoints.logout,
+      ),
+    );
   }
 
   /// Throws [ApiException]; `unauthorized` means the stored token is no

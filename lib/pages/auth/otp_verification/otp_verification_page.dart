@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -110,11 +112,15 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                   if (token == null) {
                     final error =
                         ref.read(otpVerificationControllerProvider).error;
-                    if (error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(apiErrorText(error))),
-                      );
+                    if (isOfflineError(error)) {
+                      await openNoInternetPage(context);
+                      return;
                     }
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        SnackBar(content: Text(apiErrorOrFallback(error))),
+                      );
                     return;
                   }
                   await showOtpSuccessDrawer(
@@ -140,19 +146,25 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                   if (!context.mounted) return;
                   if (next != null) {
                     setState(() => _challengeId = next.challengeId);
-                    if (next.debugOtp != null) {
+                    if (kDebugMode && next.debugOtp != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('OTP ${next.debugOtp}')),
                       );
                     }
                     return;
                   }
-                  final error = ref.read(otpVerificationControllerProvider).error;
-                  if (error != null && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(apiErrorText(error))),
-                    );
+                  final error =
+                      ref.read(otpVerificationControllerProvider).error;
+                  if (!context.mounted) return;
+                  if (isOfflineError(error)) {
+                    await openNoInternetPage(context);
+                    return;
                   }
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(content: Text(apiErrorOrFallback(error))),
+                    );
                 },
           child: Text(
             'otp.resend'.tr(),
@@ -165,8 +177,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final available =
-                constraints.maxWidth - (_gap * (_length - 1));
+            final available = constraints.maxWidth - (_gap * (_length - 1));
             // Keep true squares that fit the row (no overflow from min clamp).
             final size = (available / _length).clamp(40.0, 52.0);
             return Row(

@@ -76,10 +76,8 @@ class BottomNavBar extends ConsumerWidget {
                     height: AppStyle.bottomNavHeight,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final itemWidth =
-                            constraints.maxWidth / _items.length;
-                        final pillLeft =
-                            (itemWidth * index) +
+                        final itemWidth = constraints.maxWidth / _items.length;
+                        final pillLeft = (itemWidth * index) +
                             ((itemWidth - _pillWidth) / 2);
 
                         return Stack(
@@ -212,4 +210,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-

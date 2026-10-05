@@ -12,6 +12,8 @@ import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -61,9 +63,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
       case 2:
         return all.where((e) => e.category == InboxCategory.system).toList();
       case 3:
-        return all
-            .where((e) => e.category == InboxCategory.promotion)
-            .toList();
+        return all.where((e) => e.category == InboxCategory.promotion).toList();
       default:
         return all;
     }
@@ -89,13 +89,34 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
           ),
           Expanded(
             child: state.when(
-              loading: () =>
-                  const ShimmerLoading(itemCount: 5, itemHeight: 88),
+              loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
               error: (e, _) => EmptyState(
-                title: 'common.error'.tr(),
-                message: apiErrorText(e),
+                title: isOfflineError(e)
+                    ? 'shared.no_internet_title'.tr()
+                    : 'common.error'.tr(),
+                message: isOfflineError(e)
+                    ? 'shared.no_internet_body'.tr()
+                    : apiErrorText(e),
                 actionLabel: 'common.retry'.tr(),
-                onAction: () => ref.invalidate(inboxListControllerProvider),
+                onAction: () async {
+                  const recoveryKey = 'inbox-list-reload';
+                  if (isOfflineError(e)) {
+                    ref.read(networkRecoveryControllerProvider).enqueue(
+                          recoveryKey,
+                          () async =>
+                              ref.invalidate(inboxListControllerProvider),
+                        );
+                    final shouldRetry = await openNoInternetPage(context);
+                    if (shouldRetry == true && context.mounted) {
+                      ref
+                          .read(networkRecoveryControllerProvider)
+                          .clear(recoveryKey);
+                      ref.invalidate(inboxListControllerProvider);
+                    }
+                    return;
+                  }
+                  ref.invalidate(inboxListControllerProvider);
+                },
               ),
               data: (messages) {
                 return TabBarView(

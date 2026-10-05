@@ -132,7 +132,8 @@ class _HomePlanCardState extends State<HomePlanCard> {
               ),
             ),
           ),
-          const Divider(height: 1, thickness: 0.5, color: AppColors.borderLight),
+          const Divider(
+              height: 1, thickness: 0.5, color: AppColors.borderLight),
           InkWell(
             onTap: () => setState(() => _wifiOpen = !_wifiOpen),
             splashColor: Colors.transparent,

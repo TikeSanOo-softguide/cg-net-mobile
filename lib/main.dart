@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'components/glass_notification_banner/glass_notification_banner.dart';
+import 'core/network/network_recovery_controller.dart';
 import 'core/push/push_notification_service.dart';
 import 'core/router/app_router/app_router.dart';
 import 'core/storage/local_prefs/local_prefs.dart';
@@ -52,6 +53,8 @@ class _CgNetAppState extends ConsumerState<CgNetApp> {
   void initState() {
     super.initState();
     ref.read(pushNotificationServiceProvider).start();
+    // Keep lightweight reconnect polling ready for queued retry actions.
+    ref.read(networkRecoveryControllerProvider);
   }
 
   @override

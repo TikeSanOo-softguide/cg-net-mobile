@@ -13,6 +13,8 @@ class PackageBuyResult {
     this.speedMbps,
     this.errorTitleKey,
     this.errorBodyKey,
+    this.errorTitle,
+    this.errorBody,
   });
 
   final PackageBuyTxnStatus status;
@@ -25,6 +27,8 @@ class PackageBuyResult {
   final String? speedMbps;
   final String? errorTitleKey;
   final String? errorBodyKey;
+  final String? errorTitle;
+  final String? errorBody;
 
   factory PackageBuyResult.success({
     required String packageId,
@@ -57,6 +61,8 @@ class PackageBuyResult {
     DateTime? occurredAt,
     String? errorTitleKey,
     String? errorBodyKey,
+    String? errorTitle,
+    String? errorBody,
   }) {
     return PackageBuyResult(
       status: PackageBuyTxnStatus.failure,
@@ -69,6 +75,8 @@ class PackageBuyResult {
       occurredAt: occurredAt ?? DateTime.now(),
       errorTitleKey: errorTitleKey,
       errorBodyKey: errorBodyKey,
+      errorTitle: errorTitle,
+      errorBody: errorBody,
     );
   }
 

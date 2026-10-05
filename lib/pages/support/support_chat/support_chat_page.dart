@@ -268,8 +268,8 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage> {
                               color: AppColors.primary,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary
-                                      .withValues(alpha: 0.22),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.22),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),

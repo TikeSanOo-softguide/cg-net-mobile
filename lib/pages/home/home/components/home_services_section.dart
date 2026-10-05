@@ -295,7 +295,6 @@ class _ServiceItem {
     required this.color,
     this.asset,
     this.icon,
-    this.softBackground,
   }) : assert(asset != null || icon != null);
 
   final String id;
@@ -303,7 +302,6 @@ class _ServiceItem {
   final IconData? icon;
   final String label;
   final Color color;
-  final Color? softBackground;
 }
 
 /// Flat service tile inside the main [AppCard] (no per-item card).
@@ -317,14 +315,11 @@ class _ServiceTile extends StatelessWidget {
   final VoidCallback onTap;
 
   static const double _iconSize = 32;
-  static const double _chipSize = 48;
-  static const double _chipIconSize = 28;
 
   @override
   Widget build(BuildContext context) {
     final color = item.color;
-    final soft = item.softBackground;
-    final drawnSize = soft != null ? _chipIconSize : _iconSize;
+    final drawnSize = _iconSize;
     final iconWidget = item.asset != null
         ? ColorFiltered(
             colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
@@ -347,19 +342,6 @@ class _ServiceTile extends StatelessWidget {
             color: color,
           );
 
-    final leading = soft != null
-        ? Container(
-            width: _chipSize,
-            height: _chipSize,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: soft,
-              borderRadius: AppStyle.borderRadiusSm,
-            ),
-            child: iconWidget,
-          )
-        : iconWidget;
-
     return InkWell(
       onTap: onTap,
       borderRadius: AppStyle.borderRadiusSm,
@@ -371,7 +353,7 @@ class _ServiceTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            leading,
+            iconWidget,
             const SizedBox(height: 8),
             Text(
               item.label,

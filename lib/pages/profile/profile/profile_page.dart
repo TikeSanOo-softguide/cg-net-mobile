@@ -169,8 +169,7 @@ class ProfilePage extends ConsumerWidget {
           _SettingsCard(
             asset: 'assets/images/profile/notification.png',
             title: 'profile.notifications'.tr(),
-            onTap: () =>
-                context.pushNamed(RouteNames.notificationPreferences),
+            onTap: () => context.pushNamed(RouteNames.notificationPreferences),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
@@ -252,9 +251,8 @@ class _SettingsCard extends StatelessWidget {
               height: 35,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: tint == AppColors.primary
-                    ? AppColors.primaryLight
-                    : tint,
+                color:
+                    tint == AppColors.primary ? AppColors.primaryLight : tint,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Image.asset(

@@ -7,7 +7,6 @@ import '../../../components/activity_list_card/activity_list_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
-import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 
 /// Full activity detail — same card language as inbox detail.
@@ -41,8 +40,7 @@ class ActivityDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.locale.toString();
-    final dateText =
-        DateFormat.yMMMd(locale).add_jm().format(item.createdAt);
+    final dateText = DateFormat.yMMMd(locale).add_jm().format(item.createdAt);
     final amountText =
         '${item.isCredit ? '+' : '-'}${NumberFormat('#,##0').format(item.amount)} Pts';
 

@@ -22,6 +22,7 @@ class CommonAuthCard extends StatelessWidget {
   });
 
   final IconData? icon;
+
   /// Optional PNG (e.g. Flaticon) — preferred over [icon] when set.
   final String? iconAsset;
   final String? title;

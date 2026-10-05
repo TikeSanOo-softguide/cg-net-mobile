@@ -352,8 +352,7 @@ Future<bool> showAppConfirmModal(
                   child: SizedBox(
                     height: _modalBtnHeight,
                     child: OutlinedButton(
-                      onPressed: () =>
-                          Navigator.of(dialogContext).pop(false),
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
                       style: _cancelOutlineModalBtnStyle(),
                       child: Text(
                         cancelLabel ?? 'common.cancel'.tr(),
@@ -372,8 +371,7 @@ Future<bool> showAppConfirmModal(
                   child: SizedBox(
                     height: _modalBtnHeight,
                     child: FilledButton(
-                      onPressed: () =>
-                          Navigator.of(dialogContext).pop(true),
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
                       style: _primaryModalBtnStyle(),
                       child: Text(
                         confirmLabel ?? 'common.confirm'.tr(),
@@ -562,10 +560,9 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   const gap = 6.0;
-                  final box =
-                      ((constraints.maxWidth - gap * (_pinLength - 1)) /
-                              _pinLength)
-                          .clamp(32.0, 40.0);
+                  final box = ((constraints.maxWidth - gap * (_pinLength - 1)) /
+                          _pinLength)
+                      .clamp(32.0, 40.0);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 14),
                     child: Row(

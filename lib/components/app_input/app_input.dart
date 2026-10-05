@@ -75,7 +75,9 @@ class AppInput extends StatefulWidget {
     VoidCallback? onTap,
   }) {
     final fg = iconColor ??
-        (focused ? AppColors.primary : AppColors.primary.withValues(alpha: 0.72));
+        (focused
+            ? AppColors.primary
+            : AppColors.primary.withValues(alpha: 0.72));
 
     final iconWidget = SizedBox(
       width: size,

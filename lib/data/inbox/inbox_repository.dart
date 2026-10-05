@@ -18,9 +18,8 @@ class InboxRepository {
         cancelToken: cancelToken,
       );
       final data = response.data;
-      final list = data is Map && data['data'] is List
-          ? data['data'] as List
-          : const [];
+      final list =
+          data is Map && data['data'] is List ? data['data'] as List : const [];
       return list
           .map(
             (item) => InboxMessageModel.fromJson(

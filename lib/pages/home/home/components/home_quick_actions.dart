@@ -41,9 +41,7 @@ class HomeQuickActions extends ConsumerWidget {
       ),
       (
         QuickActionIconChip.bindAsset,
-        bound == null
-            ? context.tr('home.action_account')
-            : bound.account,
+        bound == null ? context.tr('home.action_account') : bound.account,
         '',
         QuickActionIconChip.bindSoft,
         AppColors.success,

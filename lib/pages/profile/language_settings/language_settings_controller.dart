@@ -17,6 +17,7 @@ class LanguageSettingsController extends StateNotifier<String> {
 
     state = code;
     await _localPrefs.setLanguageCode(code);
+    if (!context.mounted) return;
 
     final locale = switch (code) {
       'my' => const Locale('my'),
@@ -26,9 +27,7 @@ class LanguageSettingsController extends StateNotifier<String> {
 
     await context.setLocale(locale);
     _ref.read(appLocaleProvider.notifier).state = code;
-
-    if (!context.mounted) return;
-    state = context.locale.languageCode;
+    state = code;
   }
 }
 

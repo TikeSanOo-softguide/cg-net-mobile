@@ -12,9 +12,12 @@ class DioClient {
     required AuthInterceptor authInterceptor,
     required String Function() languageCode,
   }) {
+    final baseUrl = ApiEndpoints.baseUrl;
+    // Helps confirm real-phone builds are not still pointing at 127.0.0.1.
+    debugPrint('[api] baseUrl=$baseUrl');
     _dio = Dio(
       BaseOptions(
-        baseUrl: ApiEndpoints.baseUrl,
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 20),
         sendTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),

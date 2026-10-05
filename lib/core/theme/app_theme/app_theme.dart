@@ -10,8 +10,7 @@ class AppTheme {
 
   /// Canonical system bars for primary-header screens (Home shell, curved pages).
   /// Opaque status + light nav bar; content uses SafeArea / shell bottom nav.
-  static const SystemUiOverlayStyle systemOverlayPrimary =
-      SystemUiOverlayStyle(
+  static const SystemUiOverlayStyle systemOverlayPrimary = SystemUiOverlayStyle(
     statusBarColor: AppColors.primary,
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,

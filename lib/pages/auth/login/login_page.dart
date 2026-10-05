@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -32,6 +34,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   late final TapGestureRecognizer _termsTap;
+  bool _sessionExpiredNoticeShown = false;
 
   @override
   void initState() {
@@ -123,6 +126,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final reason = GoRouterState.of(context).uri.queryParameters['reason'];
+    if (!_sessionExpiredNoticeShown && reason == 'session_expired') {
+      _sessionExpiredNoticeShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text('api.unauthorized'.tr())),
+          );
+      });
+    }
+
     final state = ref.watch(loginControllerProvider);
     final controller = ref.read(loginControllerProvider.notifier);
     final localeCode = ref.watch(appLocaleProvider);
@@ -167,7 +183,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   final challengeId = controller.challengeId;
                   if (phone != null && challengeId != null) {
                     final debugOtp = controller.debugOtp;
-                    if (debugOtp != null) {
+                    if (kDebugMode && debugOtp != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('OTP $debugOtp')),
                       );
@@ -182,11 +198,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     return;
                   }
                   final error = ref.read(loginControllerProvider).error;
-                  if (error != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(apiErrorText(error))),
-                    );
+                  if (isOfflineError(error)) {
+                    await openNoInternetPage(context);
+                    return;
                   }
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(content: Text(apiErrorOrFallback(error))),
+                    );
                 },
         ),
         secondaryAction: LoginHelpFooter(

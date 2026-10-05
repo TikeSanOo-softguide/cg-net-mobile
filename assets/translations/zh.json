@@ -107,9 +107,12 @@
   },
   "set_credentials": {
     "title": "创建账户",
-    "subtitle": "设置用户名和密码以保护您的账户。",
+    "subtitle": "设置用户名和6位数字密码以保护您的账户。",
     "username": "用户名",
     "password": "密码",
+    "password_hint": "6位数字密码",
+    "password_required": "请输入全部6位数字",
+    "password_mismatch": "两次密码不一致",
     "confirm_password": "确认密码",
     "create": "创建账户"
   },

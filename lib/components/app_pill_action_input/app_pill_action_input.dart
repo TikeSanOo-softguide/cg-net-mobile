@@ -92,8 +92,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
   Widget build(BuildContext context) {
     final canTap = widget.actionEnabled && widget.onAction != null;
     final fg = widget.actionActive ? AppColors.onPrimary : AppColors.primary;
-    final bg =
-        widget.actionActive ? AppColors.primary : AppColors.primaryLight;
+    final bg = widget.actionActive ? AppColors.primary : AppColors.primaryLight;
     final focused = _focus.hasFocus;
 
     return FormField<String>(
@@ -162,8 +161,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                             _fieldBorder(focused: false, error: hasError),
                         focusedBorder:
                             _fieldBorder(focused: true, error: hasError),
-                        errorBorder:
-                            _fieldBorder(focused: false, error: true),
+                        errorBorder: _fieldBorder(focused: false, error: true),
                         focusedErrorBorder:
                             _fieldBorder(focused: true, error: true),
                         errorText: null,

@@ -83,8 +83,7 @@ class PromotionAdsModal extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.paddingOf(context);
     final maxWidth = (size.width - 40).clamp(260.0, 400.0);
-    final maxHeight =
-        (size.height - padding.vertical - 48).clamp(280.0, 560.0);
+    final maxHeight = (size.height - padding.vertical - 48).clamp(280.0, 560.0);
 
     return Material(
       type: MaterialType.transparency,

@@ -4,10 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_button/app_button.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 
 class ErrorNoInternetPage extends StatelessWidget {
-  const ErrorNoInternetPage({super.key});
+  const ErrorNoInternetPage({
+    super.key,
+    this.returnToPath,
+  });
+
+  final String? returnToPath;
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +46,14 @@ class ErrorNoInternetPage extends StatelessWidget {
                 label: 'common.retry'.tr(),
                 onPressed: () {
                   if (context.canPop()) {
-                    context.pop();
+                    context.pop(true);
                   } else {
-                    context.go('/home');
+                    final target = returnToPath?.trim();
+                    if (target != null && target.isNotEmpty) {
+                      context.go(target);
+                    } else {
+                      context.go(RoutePaths.home);
+                    }
                   }
                 },
               ),

@@ -1,95 +1,25 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/empty_state/empty_state.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../models/package_model/package_model.dart';
+import 'package_list_controller.dart';
 
 /// Packages tab — compact horizontal list cards (reference design).
-class PackageListPage extends StatelessWidget {
+class PackageListPage extends ConsumerWidget {
   const PackageListPage({super.key});
-
-  static const _cards = <_PackageListData>[
-    _PackageListData(
-      id: '1m',
-      imagePath: 'assets/images/packages/package_1m.png',
-      titleKey: 'package.item_1m_title',
-      badgeKey: 'package.badge_popular',
-      badgeTone: _BadgeTone.popular,
-      speedMbps: '20',
-      pricePoints: 15000,
-      durationKey: 'package.duration_1m',
-      featureKeys: [
-        'package.feature_router',
-        'package.feature_unlimited',
-        'package.feature_anywhere',
-      ],
-    ),
-    _PackageListData(
-      id: '3m',
-      imagePath: 'assets/images/packages/package_3m.png',
-      titleKey: 'package.item_3m_title',
-      badgeKey: null,
-      badgeTone: _BadgeTone.none,
-      speedMbps: '20',
-      pricePoints: 40000,
-      durationKey: 'package.duration_3m',
-      featureKeys: [
-        'package.feature_speed',
-        'package.feature_unlimited',
-        'package.feature_term',
-      ],
-    ),
-    _PackageListData(
-      id: '6m',
-      imagePath: 'assets/images/packages/package_6m.png',
-      titleKey: 'package.item_6m_title',
-      badgeKey: 'package.badge_trending',
-      badgeTone: _BadgeTone.trending,
-      speedMbps: '30',
-      pricePoints: 75000,
-      durationKey: 'package.duration_6m',
-      featureKeys: [
-        'package.feature_speed',
-        'package.feature_term',
-        'package.feature_router',
-      ],
-    ),
-    _PackageListData(
-      id: '1y',
-      imagePath: 'assets/images/packages/package_1y.png',
-      titleKey: 'package.item_1y_title',
-      badgeKey: null,
-      badgeTone: _BadgeTone.none,
-      speedMbps: '30',
-      pricePoints: 140000,
-      durationKey: 'package.duration_12m',
-      featureKeys: [
-        'package.feature_unlimited',
-        'package.feature_anywhere',
-        'package.feature_term',
-      ],
-    ),
-    _PackageListData(
-      id: '1m_b',
-      imagePath: 'assets/images/packages/package_1m.png',
-      titleKey: 'package.item_1m_title',
-      badgeKey: null,
-      badgeTone: _BadgeTone.none,
-      speedMbps: '20',
-      pricePoints: 15000,
-      durationKey: 'package.duration_1m',
-      featureKeys: [
-        'package.feature_router',
-        'package.feature_unlimited',
-        'package.feature_anywhere',
-      ],
-    ),
-  ];
 
   void _openDetail(BuildContext context, String id) {
     context.pushNamed(
@@ -99,25 +29,67 @@ class PackageListPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final locale = context.locale.languageCode;
+    final state = ref.watch(packageListControllerProvider);
 
     return AppCurvedScaffold(
       title: Text('package.title'.tr()),
       showBack: false,
-      body: ListView.separated(
-        key: ValueKey('package-list-$locale'),
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
-        itemCount: _cards.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final data = _cards[index];
-          return _PackageListCard(
-            data: data,
-            onOpenDetail: () => _openDetail(context, data.id),
-          );
-        },
-      ),
+      body: switch (state.status) {
+        PackageListStatus.loading => const ShimmerLoading(
+            itemCount: 6,
+            itemHeight: 168,
+          ),
+        PackageListStatus.empty => EmptyState(
+            title: 'package.empty_title'.tr(),
+            message: 'package.empty_body'.tr(),
+            actionLabel: 'common.retry'.tr(),
+            onAction: () =>
+                ref.read(packageListControllerProvider.notifier).load(),
+          ),
+        PackageListStatus.error => EmptyState(
+            title: 'common.error'.tr(),
+            message: apiMessageText(state.errorMessage),
+            actionLabel: 'common.retry'.tr(),
+            onAction: () async {
+              const recoveryKey = 'package-list-load';
+              if (state.errorMessage == 'api.offline') {
+                ref.read(networkRecoveryControllerProvider).enqueue(
+                      recoveryKey,
+                      () async => ref
+                          .read(packageListControllerProvider.notifier)
+                          .load(),
+                    );
+                final shouldRetry = await openNoInternetPage(context);
+                if (shouldRetry == true && context.mounted) {
+                  ref
+                      .read(networkRecoveryControllerProvider)
+                      .clear(recoveryKey);
+                  ref.read(packageListControllerProvider.notifier).load();
+                }
+                return;
+              }
+              ref.read(packageListControllerProvider.notifier).load();
+            },
+          ),
+        PackageListStatus.data => ListView.separated(
+            key: ValueKey('package-list-$locale'),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
+            itemCount: state.packages.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final data = _PackageListData.fromModel(
+                state.packages[index],
+                localeCode: locale,
+              );
+              return _PackageListCard(
+                data: data,
+                onOpenDetail: () => _openDetail(context, data.id),
+              );
+            },
+          ),
+      },
     );
   }
 }
@@ -129,6 +101,7 @@ class _PackageListData {
     required this.id,
     required this.imagePath,
     required this.titleKey,
+    this.title,
     required this.badgeKey,
     required this.badgeTone,
     required this.speedMbps,
@@ -140,12 +113,60 @@ class _PackageListData {
   final String id;
   final String imagePath;
   final String titleKey;
+  final String? title;
   final String? badgeKey;
   final _BadgeTone badgeTone;
   final String speedMbps;
   final int pricePoints;
   final String durationKey;
   final List<String> featureKeys;
+
+  factory _PackageListData.fromModel(
+    PackageModel model, {
+    required String localeCode,
+  }) {
+    final months = model.termMonths;
+    final speed = model.speed.replaceAll(RegExp(r'[^0-9]'), '');
+    final durationKey = switch (months) {
+      1 => 'package.duration_1m',
+      3 => 'package.duration_3m',
+      6 => 'package.duration_6m',
+      12 => 'package.duration_12m',
+      _ => 'package.duration_1m',
+    };
+    return _PackageListData(
+      id: model.id,
+      imagePath: _imageFor(model),
+      titleKey: '',
+      badgeKey: model.recommended ? 'package.badge_popular' : null,
+      badgeTone: model.recommended ? _BadgeTone.popular : _BadgeTone.none,
+      speedMbps: speed.isEmpty ? '0' : speed,
+      pricePoints: model.price.toInt(),
+      durationKey: durationKey,
+      featureKeys: const [
+        'package.feature_speed',
+        'package.feature_unlimited',
+        'package.feature_term',
+      ],
+      title: model.localizedName?[localeCode] ??
+          model.localizedName?['en'] ??
+          model.name,
+    );
+  }
+
+  static String _imageFor(PackageModel model) {
+    final fromApi = model.imageUrl;
+    if (fromApi != null && fromApi.trim().isNotEmpty) {
+      return fromApi;
+    }
+    final months = model.termMonths;
+    return switch (months) {
+      3 => 'assets/images/packages/package_3m.png',
+      6 => 'assets/images/packages/package_6m.png',
+      12 => 'assets/images/packages/package_1y.png',
+      _ => 'assets/images/packages/package_1m.png',
+    };
+  }
 }
 
 class _PackageListCard extends StatelessWidget {
@@ -161,6 +182,38 @@ class _PackageListCard extends StatelessWidget {
   static const _badgeYellow = Color(0xFFFFCC29);
   static const _badgeOrange = Color(0xFFFFB020);
   static const _optionFill = Color(0xFFF3F4F6);
+
+  Widget _buildCardImage(String imagePath) {
+    const fallback = ColoredBox(
+      color: AppColors.primaryLight,
+      child: Center(
+        child: Icon(
+          LucideIcons.image_off,
+          color: AppColors.primary,
+          size: 20,
+        ),
+      ),
+    );
+
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        errorBuilder: (_, __, ___) => fallback,
+      );
+    }
+
+    return Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.high,
+      gaplessPlayback: true,
+      errorBuilder: (_, __, ___) => fallback,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,23 +237,7 @@ class _PackageListCard extends StatelessWidget {
                     width: 88,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        data.imagePath,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                        filterQuality: FilterQuality.high,
-                        gaplessPlayback: true,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
-                          color: AppColors.primaryLight,
-                          child: Center(
-                            child: Icon(
-                              LucideIcons.image_off,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
+                      child: _buildCardImage(data.imagePath),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -211,7 +248,7 @@ class _PackageListCard extends StatelessWidget {
                         Padding(
                           padding: EdgeInsets.only(right: hasBadge ? 72 : 0),
                           child: Text(
-                            data.titleKey.tr(),
+                            data.title ?? data.titleKey.tr(),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.english(

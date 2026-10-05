@@ -22,9 +22,9 @@ void main() {
   test('validation errors keep the first field message', () {
     final error = ApiException.fromDio(
       DioException(
-        requestOptions: RequestOptions(path: '/auth/register/request-otp'),
+        requestOptions: RequestOptions(path: '/auth/otp/request'),
         response: Response(
-          requestOptions: RequestOptions(path: '/auth/register/request-otp'),
+          requestOptions: RequestOptions(path: '/auth/otp/request'),
           statusCode: 422,
           data: {
             'message': 'The phone field is invalid.',

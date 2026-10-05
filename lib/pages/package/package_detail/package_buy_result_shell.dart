@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../core/network/api_error_text.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -42,6 +43,14 @@ class PackageBuyResultShell extends StatelessWidget {
         ? 'package.result_success_body'
         : (result.errorBodyKey ?? 'package.result_failure_body');
     final titleColor = _isSuccess ? _successGreen : _failureRed;
+    final titleText = _isSuccess
+        ? titleKey.tr()
+        : result.errorTitleKey?.tr() ??
+            apiMessageText(result.errorTitle, fallbackKey: titleKey);
+    final bodyText = _isSuccess
+        ? bodyKey.tr()
+        : result.errorBodyKey?.tr() ??
+            apiMessageText(result.errorBody, fallbackKey: bodyKey);
     final statusLabel = _isSuccess
         ? 'package.status_completed'.tr()
         : 'package.status_failed'.tr();
@@ -61,9 +70,7 @@ class PackageBuyResultShell extends StatelessWidget {
       ('package.price'.tr(), priceLabel),
       (
         'package.renew'.tr(),
-        result.autoRenew
-            ? 'package.renew_on'.tr()
-            : 'package.renew_off'.tr(),
+        result.autoRenew ? 'package.renew_on'.tr() : 'package.renew_off'.tr(),
       ),
       ('package.detail_txn'.tr(), result.transactionId),
       ('package.detail_datetime'.tr(), when),
@@ -100,7 +107,7 @@ class PackageBuyResultShell extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                titleKey.tr(),
+                titleText,
                 textAlign: TextAlign.center,
                 style: AppTheme.english(
                   fontSize: 16,
@@ -143,7 +150,7 @@ class PackageBuyResultShell extends StatelessWidget {
               ] else ...[
                 const SizedBox(height: 6),
                 Text(
-                  bodyKey.tr(),
+                  bodyText,
                   textAlign: TextAlign.center,
                   style: AppTheme.english(
                     fontSize: 11,
@@ -197,7 +204,8 @@ class _DetailRows extends StatelessWidget {
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0) ...[
             const SizedBox(height: 11),
-            const Divider(height: 0.5, thickness: 0.5, color: AppColors.paperBorder),
+            const Divider(
+                height: 0.5, thickness: 0.5, color: AppColors.paperBorder),
             const SizedBox(height: 11),
           ],
           Row(

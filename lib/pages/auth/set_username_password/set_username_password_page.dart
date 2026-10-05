@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import 'set_username_password_controller.dart';
@@ -74,11 +76,15 @@ class _SetUsernamePasswordPageState
               return;
             }
             final error = ref.read(setUsernamePasswordControllerProvider).error;
-            if (error != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(apiErrorText(error))),
-              );
+            if (isOfflineError(error)) {
+              await openNoInternetPage(context);
+              return;
             }
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(apiErrorOrFallback(error))),
+              );
           },
         ),
         child: Form(
@@ -99,23 +105,37 @@ class _SetUsernamePasswordPageState
               AppInput(
                 controller: _password,
                 label: 'set_credentials.password'.tr(),
-                hint: 'set_credentials.password'.tr(),
+                hint: 'set_credentials.password_hint'.tr(),
                 suffixIcon: LucideIcons.lock,
                 obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textInputAction: TextInputAction.next,
-                validator: (v) =>
-                    (v == null || v.length < 8) ? 'Password' : null,
+                validator: (v) {
+                  if (v == null || !RegExp(r'^\d{6}$').hasMatch(v)) {
+                    return 'set_credentials.password_required'.tr();
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               AppInput(
                 controller: _confirm,
                 label: 'set_credentials.confirm_password'.tr(),
-                hint: 'set_credentials.confirm_password'.tr(),
+                hint: 'set_credentials.password_hint'.tr(),
                 suffixIcon: LucideIcons.lock,
                 obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textInputAction: TextInputAction.done,
-                validator: (v) =>
-                    v != _password.text ? 'Password mismatch' : null,
+                validator: (v) {
+                  if (v != _password.text) {
+                    return 'set_credentials.password_mismatch'.tr();
+                  }
+                  return null;
+                },
               ),
             ],
           ),
