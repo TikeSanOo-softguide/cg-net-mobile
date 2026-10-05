@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'components/glass_notification_banner/glass_notification_banner.dart';
+import 'core/push/push_notification_service.dart';
 import 'core/router/app_router/app_router.dart';
 import 'core/storage/local_prefs/local_prefs.dart';
 import 'core/theme/app_theme/app_theme.dart';
@@ -12,6 +14,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(AppTheme.systemOverlayPrimary);
   await EasyLocalization.ensureInitialized();
+  await PushNotificationService.initializeFirebase();
 
   final prefs = await SharedPreferences.getInstance();
   final savedLanguageRaw = prefs.getString(LocalPrefs.languageKey) ?? 'en';
@@ -37,11 +40,22 @@ Future<void> main() async {
   );
 }
 
-class CgNetApp extends ConsumerWidget {
+class CgNetApp extends ConsumerStatefulWidget {
   const CgNetApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CgNetApp> createState() => _CgNetAppState();
+}
+
+class _CgNetAppState extends ConsumerState<CgNetApp> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(pushNotificationServiceProvider).start();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
@@ -52,6 +66,10 @@ class CgNetApp extends ConsumerWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+      builder: (context, child) => GlassNotificationHost(
+        onTap: ref.read(pushNotificationServiceProvider).openInbox,
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

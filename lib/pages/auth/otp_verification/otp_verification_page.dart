@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../core/network/api_error_text.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -13,9 +14,14 @@ import 'otp_success_drawer.dart';
 import 'otp_verification_controller.dart';
 
 class OtpVerificationPage extends ConsumerStatefulWidget {
-  const OtpVerificationPage({super.key, required this.phone});
+  const OtpVerificationPage({
+    super.key,
+    required this.phone,
+    required this.challengeId,
+  });
 
   final String phone;
+  final String challengeId;
 
   @override
   ConsumerState<OtpVerificationPage> createState() =>
@@ -25,6 +31,13 @@ class OtpVerificationPage extends ConsumerStatefulWidget {
 class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   static const _length = 6;
   static const _gap = 12.0;
+  late String _challengeId;
+
+  @override
+  void initState() {
+    super.initState();
+    _challengeId = widget.challengeId;
+  }
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _focusNodes = List.generate(_length, (_) => FocusNode());
@@ -89,22 +102,58 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
           onPressed: !_isComplete
               ? null
               : () async {
-                  final ok = await controller.verify(_code);
-                  if (!ok || !context.mounted) return;
+                  final token = await controller.verify(
+                    challengeId: _challengeId,
+                    code: _code,
+                  );
+                  if (!context.mounted) return;
+                  if (token == null) {
+                    final error =
+                        ref.read(otpVerificationControllerProvider).error;
+                    if (error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(apiErrorText(error))),
+                      );
+                    }
+                    return;
+                  }
                   await showOtpSuccessDrawer(
                     context,
                     onContinue: () {
                       if (!context.mounted) return;
                       context.pushNamed(
                         RouteNames.setUsernamePassword,
-                        queryParameters: {'phone': widget.phone},
+                        queryParameters: {
+                          'phone': widget.phone,
+                          'verification_token': token,
+                        },
                       );
                     },
                   );
                 },
         ),
         secondaryAction: TextButton(
-          onPressed: state.isLoading ? null : () => controller.resend(),
+          onPressed: state.isLoading
+              ? null
+              : () async {
+                  final next = await controller.resend(widget.phone);
+                  if (!context.mounted) return;
+                  if (next != null) {
+                    setState(() => _challengeId = next.challengeId);
+                    if (next.debugOtp != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('OTP ${next.debugOtp}')),
+                      );
+                    }
+                    return;
+                  }
+                  final error = ref.read(otpVerificationControllerProvider).error;
+                  if (error != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(apiErrorText(error))),
+                    );
+                  }
+                },
           child: Text(
             'otp.resend'.tr(),
             style: AppTheme.english(

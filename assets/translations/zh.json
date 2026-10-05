@@ -26,6 +26,16 @@
     "filter_month": "30天",
     "filter_date": "日期"
   },
+  "api": {
+    "offline": "没有网络连接",
+    "timeout": "请求超时，请重试。",
+    "unauthorized": "登录已过期，请重新登录。",
+    "validation": "请检查资料后再试。",
+    "too_many_requests": "尝试次数过多，请稍后再试。",
+    "server": "服务器暂不可用，请稍后再试。",
+    "cancelled": "请求已取消。",
+    "unknown": "出现问题，请重试。"
+  },
   "nav": {
     "home": "首页",
     "package": "套餐",

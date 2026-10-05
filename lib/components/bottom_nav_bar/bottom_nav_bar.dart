@@ -10,6 +10,7 @@ import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 import '../../core/ui/bottom_nav_visibility_provider.dart';
+import '../../pages/inbox/inbox_list/inbox_list_controller.dart';
 
 /// Common bottom navigation — light surface + soft glass selected pill.
 class BottomNavBar extends ConsumerWidget {
@@ -128,7 +129,7 @@ class BottomNavBar extends ConsumerWidget {
                                     icon: _items[i].$1,
                                     label: context.tr(_items[i].$2),
                                     selected: index == i,
-                                    onTap: () => _go(i),
+                                    onTap: () => _go(ref, i),
                                   ),
                               ],
                             ),
@@ -144,7 +145,13 @@ class BottomNavBar extends ConsumerWidget {
     );
   }
 
-  void _go(int index) {
+  static const _inboxIndex = 2;
+
+  void _go(WidgetRef ref, int index) {
+    // Branches stay mounted, so the inbox would otherwise never refetch.
+    if (index == _inboxIndex) {
+      ref.read(inboxListControllerProvider.notifier).load(silent: true);
+    }
     navigationShell.goBranch(
       index,
       initialLocation: index == navigationShell.currentIndex,

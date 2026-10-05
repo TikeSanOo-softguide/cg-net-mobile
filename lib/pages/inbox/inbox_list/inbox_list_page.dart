@@ -11,6 +11,7 @@ import '../../../components/empty_state/empty_state.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_error_text.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -92,7 +93,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                   const ShimmerLoading(itemCount: 5, itemHeight: 88),
               error: (e, _) => EmptyState(
                 title: 'common.error'.tr(),
-                message: e.toString(),
+                message: apiErrorText(e),
                 actionLabel: 'common.retry'.tr(),
                 onAction: () => ref.invalidate(inboxListControllerProvider),
               ),
@@ -104,6 +105,9 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                       _InboxList(
                         key: ValueKey('inbox-list-$locale-$t'),
                         items: _itemsForTab(messages, t),
+                        onRefresh: () => ref
+                            .read(inboxListControllerProvider.notifier)
+                            .load(silent: true),
                       ),
                   ],
                 );
@@ -117,34 +121,54 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
 }
 
 class _InboxList extends StatelessWidget {
-  const _InboxList({super.key, required this.items});
+  const _InboxList({
+    super.key,
+    required this.items,
+    required this.onRefresh,
+  });
 
   final List<InboxMessageModel> items;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return EmptyState(
-        title: 'inbox.empty_title'.tr(),
-        message: 'inbox.empty_body'.tr(),
-        icon: LucideIcons.mail_open,
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: EmptyState(
+                title: 'inbox.empty_title'.tr(),
+                message: 'inbox.empty_body'.tr(),
+                icon: LucideIcons.mail_open,
+              ),
+            ),
+          ),
+        ),
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 5),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return _InboxCard(
-          item: item,
-          onTap: () => context.pushNamed(
-            RouteNames.inboxDetail,
-            pathParameters: {'id': item.id},
-          ),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 5),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return _InboxCard(
+            item: item,
+            onTap: () => context.pushNamed(
+              RouteNames.inboxDetail,
+              pathParameters: {'id': item.id},
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -198,7 +222,9 @@ class _InboxCard extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  item.titleKey.tr(),
+                                  item.titles == null
+                                      ? item.titleKey.tr()
+                                      : item.titleFor(locale.languageCode),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTheme.english(
@@ -227,7 +253,9 @@ class _InboxCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            item.bodyKey.tr(),
+                            item.bodies == null
+                                ? item.bodyKey.tr()
+                                : item.bodyFor(locale.languageCode),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.english(

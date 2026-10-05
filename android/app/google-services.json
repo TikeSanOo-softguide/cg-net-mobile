@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "863409360988",
+    "project_id": "young-ni-oo",
+    "storage_bucket": "young-ni-oo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:863409360988:android:5797b36b3d6f96c3bed699",
+        "android_client_info": {
+          "package_name": "com.cgnet.cg_net_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRdU6hWx8ifTZ8MbnAYzr-evXFUqyb1Z0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

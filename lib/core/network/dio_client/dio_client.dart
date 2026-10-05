@@ -1,36 +1,65 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api_endpoints/api_endpoints.dart';
 import '../auth_interceptor/auth_interceptor.dart';
+import '../get_retry_interceptor.dart';
+import '../locale_interceptor.dart';
 
 class DioClient {
-  DioClient(this._authInterceptor) {
+  DioClient({
+    required AuthInterceptor authInterceptor,
+    required String Function() languageCode,
+  }) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
         connectTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
-        headers: {
+        headers: const {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       ),
     );
     _dio.interceptors.addAll([
-      _authInterceptor,
-      LogInterceptor(requestBody: true, responseBody: true),
+      LocaleInterceptor(languageCode),
+      authInterceptor,
+      GetRetryInterceptor(_dio),
+      if (kDebugMode)
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            debugPrint('[api] ${options.method} ${options.uri}');
+            handler.next(options);
+          },
+          onResponse: (response, handler) {
+            debugPrint(
+              '[api] ${response.statusCode} ${response.requestOptions.uri}',
+            );
+            handler.next(response);
+          },
+          onError: (error, handler) {
+            debugPrint(
+              '[api] ${error.response?.statusCode ?? error.type} ${error.requestOptions.uri}',
+            );
+            handler.next(error);
+          },
+        ),
     ]);
   }
 
   late final Dio _dio;
-  final AuthInterceptor _authInterceptor;
 
   Dio get dio => _dio;
 }
 
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient(ref.watch(authInterceptorProvider));
+  return DioClient(
+    authInterceptor: ref.watch(authInterceptorProvider),
+    languageCode: ref.watch(languageCodeProvider),
+  );
 });
 
 final dioProvider = Provider<Dio>((ref) {

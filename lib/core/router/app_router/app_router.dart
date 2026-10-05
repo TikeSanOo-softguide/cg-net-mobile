@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -41,6 +42,7 @@ import '../../../pages/shared_pages/error_no_internet/error_no_internet_page.dar
 import '../../../pages/shared_pages/force_update/force_update_page.dart';
 import '../../../pages/shared_pages/not_found/not_found_page.dart';
 import '../../../pages/support/support_chat/support_chat_page.dart';
+import '../../network/session_clock.dart';
 import '../../storage/secure_storage/secure_storage.dart';
 import '../route_names/route_names.dart';
 
@@ -48,11 +50,13 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final secureStorage = ref.watch(secureStorageProvider);
+  final session = ref.read(sessionClockProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: RoutePaths.splash,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
+    refreshListenable: session,
     redirect: (context, state) async {
       final loc = state.matchedLocation;
       final hasToken = await secureStorage.hasToken();
@@ -112,7 +116,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.otpVerification,
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
-          return OtpVerificationPage(phone: phone);
+          final challengeId = state.uri.queryParameters['challenge_id'] ?? '';
+          return OtpVerificationPage(phone: phone, challengeId: challengeId);
         },
       ),
       GoRoute(
@@ -128,7 +133,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.setUsernamePassword,
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
-          return SetUsernamePasswordPage(phone: phone);
+          final verificationToken =
+              state.uri.queryParameters['verification_token'] ?? '';
+          return SetUsernamePasswordPage(
+            phone: phone,
+            verificationToken: verificationToken,
+          );
         },
       ),
       GoRoute(

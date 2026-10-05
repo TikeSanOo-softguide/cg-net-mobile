@@ -7,14 +7,20 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../core/network/api_error_text.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import 'set_username_password_controller.dart';
 
 class SetUsernamePasswordPage extends ConsumerStatefulWidget {
-  const SetUsernamePasswordPage({super.key, required this.phone});
+  const SetUsernamePasswordPage({
+    super.key,
+    required this.phone,
+    required this.verificationToken,
+  });
 
   final String phone;
+  final String verificationToken;
 
   @override
   ConsumerState<SetUsernamePasswordPage> createState() =>
@@ -58,12 +64,20 @@ class _SetUsernamePasswordPageState
           onPressed: () async {
             if (!_formKey.currentState!.validate()) return;
             final ok = await controller.submit(
+              verificationToken: widget.verificationToken,
               username: _username.text.trim(),
               password: _password.text,
-              phone: widget.phone,
             );
-            if (ok && context.mounted) {
+            if (!context.mounted) return;
+            if (ok) {
               context.goNamed(RouteNames.home);
+              return;
+            }
+            final error = ref.read(setUsernamePasswordControllerProvider).error;
+            if (error != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(apiErrorText(error))),
+              );
             }
           },
         ),
@@ -90,7 +104,7 @@ class _SetUsernamePasswordPageState
                 obscureText: true,
                 textInputAction: TextInputAction.next,
                 validator: (v) =>
-                    (v == null || v.length < 6) ? 'Password' : null,
+                    (v == null || v.length < 8) ? 'Password' : null,
               ),
               const SizedBox(height: 12),
               AppInput(

@@ -64,7 +64,11 @@ class InboxDetailPage extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item.titleKey.tr(),
+                                item.titles == null
+                                    ? item.titleKey.tr()
+                                    : item.titleFor(
+                                        context.locale.languageCode,
+                                      ),
                                 style: AppTheme.english(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -155,7 +159,9 @@ class InboxDetailPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      (item.detailKey ?? item.bodyKey).tr(),
+                      item.bodies == null
+                          ? (item.detailKey ?? item.bodyKey).tr()
+                          : item.bodyFor(context.locale.languageCode),
                       style: AppTheme.english(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

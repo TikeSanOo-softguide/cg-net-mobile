@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../models/user_model/user_model.dart';
 
 class ProfileController extends StateNotifier<UserProfileModel> {
-  ProfileController(this._secureStorage)
+  ProfileController(this._secureStorage, this._push)
       : super(
           const UserProfileModel(
             id: 'u1',
@@ -17,17 +18,22 @@ class ProfileController extends StateNotifier<UserProfileModel> {
         );
 
   final SecureStorage _secureStorage;
+  final PushNotificationService _push;
 
   void updateProfile(UserProfileModel profile) {
     state = profile;
   }
 
   Future<void> logout() async {
+    await _push.unregister();
     await _secureStorage.clearToken();
   }
 }
 
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, UserProfileModel>((ref) {
-  return ProfileController(ref.watch(secureStorageProvider));
+  return ProfileController(
+    ref.watch(secureStorageProvider),
+    ref.watch(pushNotificationServiceProvider),
+  );
 });
