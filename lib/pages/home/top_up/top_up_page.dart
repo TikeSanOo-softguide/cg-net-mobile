@@ -23,7 +23,7 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/top_up/top_up_repository.dart';
 import 'top_up_result.dart';
 
-/// Top-up screen with serial verification and backend submission flow.
+/// Top-up screen with optional serial verification and backend submission flow.
 class TopUpPage extends ConsumerStatefulWidget {
   const TopUpPage({super.key});
 
@@ -39,7 +39,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   final _serialFieldKey = GlobalKey<FormFieldState<String>>();
   String? _serialErrorKey;
   bool _submitting = false;
-  bool _serialChecked = false;
 
   static const _serialLength = 16;
   static const _fallbackAmount = 0;
@@ -66,10 +65,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       return;
     }
     if (len != _serialLength) {
-      setState(() {
-        _serialChecked = false;
-        _serialErrorKey = 'topup.serial_required';
-      });
+      setState(() => _serialErrorKey = 'topup.serial_required');
       _serialFieldKey.currentState?.validate();
       return;
     }
@@ -83,7 +79,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       if (!mounted) return;
 
       if (result.isValid) {
-        setState(() => _serialChecked = true);
         await showAppSuccessModal(
           context,
           title: 'topup.verified'.tr(),
@@ -92,7 +87,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
               : 'topup.verify_amount'.tr(),
         );
       } else {
-        setState(() => _serialChecked = false);
         await showAppFailureModal(
           context,
           title: 'topup.verify_fail_title'.tr(),
@@ -103,7 +97,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       }
     } on ApiException catch (error) {
       if (!mounted) return;
-      setState(() => _serialChecked = false);
       if (isOfflineError(error)) {
         final shouldRetry = await openNoInternetPage(context);
         if (shouldRetry == true && mounted) {
@@ -118,7 +111,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _serialChecked = false);
       await showAppFailureModal(
         context,
         title: 'topup.verify_fail_title'.tr(),
@@ -184,12 +176,9 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
 
   Future<void> _submit() async {
     if (_submitting) return;
+    setState(() => _serialErrorKey = null);
+    _serialFieldKey.currentState?.validate();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!_serialChecked) {
-      setState(() => _serialErrorKey = 'topup.check_serial_first');
-      _serialFieldKey.currentState?.validate();
-      return;
-    }
 
     setState(() => _submitting = true);
     _showProcessing();
@@ -392,7 +381,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                               textInputAction: TextInputAction.next,
                               onChanged: (_) {
                                 setState(() {
-                                  _serialChecked = false;
                                   _serialErrorKey = null;
                                 });
                                 _serialFieldKey.currentState?.validate();
