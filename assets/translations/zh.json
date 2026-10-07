@@ -224,6 +224,7 @@
     "points_unit": "积分",
     "result_success_title": "充值成功",
     "result_success_body": "您的充值已成功完成。",
+    "result_success_body_amount": "已向您的账户添加 {points} 积分。",
     "result_failure_title": "充值失败",
     "result_failure_body": "无法完成充值，请检查信息后重试。",
     "result_pending_title": "充值处理中",

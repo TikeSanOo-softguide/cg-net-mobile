@@ -23,6 +23,10 @@ class AppPillActionInput extends StatefulWidget {
     this.inputFormatters,
     this.onChanged,
     this.validator,
+    this.showActionIcon = true,
+    this.fieldFillColor,
+    this.fieldBorderColor,
+    this.actionFontSize = 12,
   });
 
   final Key? fieldKey;
@@ -39,6 +43,10 @@ class AppPillActionInput extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
   final String? Function(String?)? validator;
+  final bool showActionIcon;
+  final Color? fieldFillColor;
+  final Color? fieldBorderColor;
+  final double actionFontSize;
 
   @override
   State<AppPillActionInput> createState() => _AppPillActionInputState();
@@ -78,7 +86,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
         ? AppColors.error
         : focused
             ? AppColors.primary
-            : AppColors.paperBorder;
+            : widget.fieldBorderColor ?? AppColors.paperBorder;
     return OutlineInputBorder(
       borderRadius: _fieldRadius,
       borderSide: BorderSide(
@@ -152,7 +160,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                           color: labelColor,
                         ),
                         filled: true,
-                        fillColor: AppColors.surface,
+                        fillColor: widget.fieldFillColor ?? AppColors.surface,
                         contentPadding:
                             const EdgeInsets.fromLTRB(12, 12, 12, 12),
                         counterText: '',
@@ -199,16 +207,18 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                LucideIcons.badge_check,
-                                size: 13,
-                                color: fg,
-                              ),
-                              const SizedBox(width: 4),
+                              if (widget.showActionIcon) ...[
+                                Icon(
+                                  LucideIcons.badge_check,
+                                  size: 13,
+                                  color: fg,
+                                ),
+                                const SizedBox(width: 4),
+                              ],
                               Text(
                                 widget.actionLabel,
                                 style: AppTheme.button(color: fg).copyWith(
-                                  fontSize: 12,
+                                  fontSize: widget.actionFontSize,
                                   fontWeight: FontWeight.w600,
                                   height: 1,
                                 ),

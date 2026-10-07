@@ -30,6 +30,8 @@ class AppInput extends StatefulWidget {
     this.inputFormatters,
     this.autofocus = false,
     this.focusNode,
+    this.fieldFillColor,
+    this.fieldBorderColor,
   });
 
   /// Key for the inner [TextFormField] (e.g. call `validate()`).
@@ -63,6 +65,8 @@ class AppInput extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final bool autofocus;
   final FocusNode? focusNode;
+  final Color? fieldFillColor;
+  final Color? fieldBorderColor;
 
   /// Trailing field icon (no background).
   static Widget iconChip({
@@ -198,9 +202,7 @@ class _AppInputState extends State<AppInput> {
     final labelStyle = WidgetStateTextStyle.resolveWith(_labelStyle);
     final fill = !widget.enabled
         ? AppColors.backgroundAlt
-        : focused
-            ? AppColors.surface
-            : _idleFill;
+        : widget.fieldFillColor ?? (focused ? AppColors.surface : _idleFill);
 
     return TextFormField(
       key: widget.formFieldKey,
@@ -262,7 +264,9 @@ class _AppInputState extends State<AppInput> {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(
-        color: focused ? AppColors.primary : _idleBorder,
+        color: focused
+            ? AppColors.primary
+            : widget.fieldBorderColor ?? _idleBorder,
         width: focused ? 1.4 : 1,
       ),
     );

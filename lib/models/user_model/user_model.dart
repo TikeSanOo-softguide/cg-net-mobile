@@ -75,6 +75,7 @@ class UserProfileModel {
     required this.accountNumber,
     this.email,
     this.username,
+    this.walletBalance,
   });
 
   final String id;
@@ -83,4 +84,55 @@ class UserProfileModel {
   final String accountNumber;
   final String? email;
   final String? username;
+  final num? walletBalance;
+
+  factory UserProfileModel.fromCustomerProfileJson(Object? json) {
+    final envelope = _asMap(json);
+    final resource = _asMap(envelope['data']);
+    final payload = resource.isEmpty ? envelope : resource;
+    final user = _asMap(payload['user']);
+    final wallet = _asMap(payload['wallet']);
+    final phone = _firstValue(user, ['phone', 'mobile', 'phone_number']);
+
+    return UserProfileModel(
+      id: _firstValue(user, ['id']) ?? '',
+      fullName: _firstValue(user, ['full_name', 'name']) ?? '',
+      phone: phone ?? '',
+      accountNumber: _firstValue(
+            user,
+            ['account_number', 'account_no', 'customer_number'],
+          ) ??
+          phone ??
+          '',
+      email: _firstValue(user, ['email']),
+      username: _firstValue(user, ['username']),
+      walletBalance: _asNum(
+        wallet['balance'] ?? wallet['balance_points'] ?? wallet['points'],
+      ),
+    );
+  }
+
+  static Map<String, dynamic> _asMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map(
+        (key, item) => MapEntry(key.toString(), item),
+      );
+    }
+    return const {};
+  }
+
+  static String? _firstValue(Map<String, dynamic> source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key]?.toString().trim();
+      if (value != null && value.isNotEmpty && value != 'null') return value;
+    }
+    return null;
+  }
+
+  static num? _asNum(Object? value) {
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
 }

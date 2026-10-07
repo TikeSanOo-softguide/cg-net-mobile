@@ -20,6 +20,7 @@ class EditProfileController extends StateNotifier<bool> {
             accountNumber: current.accountNumber,
             email: email,
             username: current.username,
+            walletBalance: current.walletBalance,
           ),
         );
     state = false;

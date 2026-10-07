@@ -6,6 +6,7 @@ import '../api_endpoints/api_endpoints.dart';
 import '../api_exception.dart';
 import '../dio_client/dio_client.dart';
 import '../get_retry_interceptor.dart';
+import '../../../models/user_model/user_model.dart';
 
 class OtpChallengeResult {
   const OtpChallengeResult({required this.challengeId, this.debugOtp});
@@ -77,6 +78,13 @@ class AuthApi {
     );
   }
 
+  Future<UserProfileModel> getCustomerProfile() async {
+    final response = await _send(
+      () => _dio.get(ApiEndpoints.customerProfile),
+    );
+    return UserProfileModel.fromCustomerProfileJson(response.data);
+  }
+
   /// Throws [ApiException]; `unauthorized` means the stored token is no
   /// longer valid (the interceptor has already cleared it).
   Future<void> checkSession() async {
@@ -104,4 +112,8 @@ class AuthApi {
 
 final authApiProvider = Provider<AuthApi>((ref) {
   return AuthApi(ref.watch(dioProvider));
+});
+
+final customerProfileProvider = FutureProvider<UserProfileModel>((ref) {
+  return ref.watch(authApiProvider).getCustomerProfile();
 });

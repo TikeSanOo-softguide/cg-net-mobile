@@ -15,6 +15,7 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.height = 45,
     this.fontSize = 14,
+    this.disabledColor,
   });
 
   final String label;
@@ -24,10 +25,14 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
   final double height;
   final double fontSize;
+  final Color? disabledColor;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
+    final buttonColor = !enabled && !isLoading
+        ? disabledColor ?? AppColors.primary
+        : AppColors.primary;
 
     final child = isLoading
         ? SizedBox(
@@ -70,7 +75,7 @@ class AppButton extends StatelessWidget {
       child: ClipRRect(
         borderRadius: AppStyle.borderRadiusButton,
         child: ColoredBox(
-          color: AppColors.primary,
+          color: buttonColor,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: height),
             child: Padding(

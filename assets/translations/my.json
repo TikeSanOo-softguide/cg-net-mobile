@@ -224,6 +224,7 @@
     "points_unit": "ပွိုင့်",
     "result_success_title": "Top Up အောင်မြင်ပါသည်",
     "result_success_body": "Top-up အောင်မြင်စွာ ပြီးစီးပါပြီ။",
+    "result_success_body_amount": "{points} ပွိုင့် သင့်အကောင့်ထဲသို့ ထည့်ပြီးပါပြီ။",
     "result_failure_title": "Top Up မအောင်မြင်ပါ",
     "result_failure_body": "Top-up မအောင်မြင်ပါ။ အချက်အလက်များ စစ်ဆေးပြီး ထပ်မံကြိုးစားပါ။",
     "result_pending_title": "Top Up လုပ်ဆောင်နေသည်",
