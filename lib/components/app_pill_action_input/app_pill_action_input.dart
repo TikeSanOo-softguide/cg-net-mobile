@@ -130,6 +130,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                       keyboardType: widget.keyboardType,
                       textInputAction: widget.textInputAction,
                       inputFormatters: widget.inputFormatters,
+                      onTapOutside: (_) => _focus.unfocus(),
                       onChanged: (v) {
                         field.didChange(v);
                         widget.onChanged?.call(v);

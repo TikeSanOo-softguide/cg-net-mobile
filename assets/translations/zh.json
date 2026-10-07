@@ -242,7 +242,7 @@
     "account_label": "账号",
     "account_hint": "请输入账号",
     "account_required": "请填写账号",
-    "pin_label": "PIN 码",
+    "pin_label": "输入 PIN",
     "pin_hint": "请输入 12 位 PIN",
     "pin_required": "请填写 PIN",
     "pin_invalid": "PIN 必须为 12 位",

@@ -242,7 +242,7 @@
     "account_label": "Account Number",
     "account_hint": "Account number ထည့်ပါ",
     "account_required": "Account number လိုအပ်သည်",
-    "pin_label": "PIN code",
+    "pin_label": "PIN ထည့်ပါ",
     "pin_hint": "12-digit PIN ထည့်ပါ",
     "pin_required": "PIN လိုအပ်သည်",
     "pin_invalid": "PIN သည် 12 လုံး ဖြစ်ရမည်",
