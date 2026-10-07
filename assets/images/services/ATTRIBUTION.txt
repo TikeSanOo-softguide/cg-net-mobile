@@ -9,7 +9,7 @@ Sources:
 - relocation: relocation_12201646 — https://www.flaticon.com/free-icon/relocation_12201646
 - check_cpe: router_6890265 — https://www.flaticon.com/free-icon/router_6890265
 - change_plan: change_10384429 — https://www.flaticon.com/free-icon/change_10384429
-- change_wifi: encryption_9424830 — https://www.flaticon.com/free-icon/encryption_9424830
+- change_wifi: wifi_18696280 — https://www.flaticon.com/free-icon/wifi_18696280
 
 Icons by Flaticon authors — https://www.flaticon.com
 Recolored for CG-NET: pay_bill #0100CA; others per-tile accents.

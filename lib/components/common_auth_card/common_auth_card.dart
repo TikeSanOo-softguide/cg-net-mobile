@@ -281,6 +281,8 @@ class AuthBackgroundScaffold extends StatelessWidget {
                       if (showBack)
                         AppCircleIconButton(
                           icon: LucideIcons.chevron_left,
+                          iconSize: 24,
+                          backgroundColor: Colors.transparent,
                           onPressed: onBack ??
                               () => Navigator.of(context).maybePop(),
                         )

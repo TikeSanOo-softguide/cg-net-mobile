@@ -65,8 +65,8 @@ class AppCurvedScaffold extends StatelessWidget {
                         if (showLeading)
                           AppCircleIconButton(
                             icon: LucideIcons.chevron_left,
-                            backgroundColor:
-                                Colors.white.withValues(alpha: 0.22),
+                            iconSize: 24,
+                            backgroundColor: Colors.transparent,
                             onPressed: onBack ??
                                 () => Navigator.of(context).maybePop(),
                           )

@@ -221,35 +221,29 @@ class HomeServicesSection extends ConsumerWidget {
 
     return Padding(
       padding: AppStyle.pagePaddingH,
-      child: Column(
-        children: [
-          HomeSectionHeader(
-            title: 'home.services'.tr(),
-            onSeeAll: () => _openServicesDrawer(context, ref),
-          ),
-          AppCard(
-            elevated: false,
-            bordered: false,
-            borderRadius: AppStyle.borderRadiusSm,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppStyle.spaceSm,
-              vertical: 16,
+      child: AppCard(
+        elevated: false,
+        bordered: false,
+        borderRadius: AppStyle.borderRadiusSm,
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            HomeSectionHeader(
+              title: 'home.services'.tr(),
+              onSeeAll: () => _openServicesDrawer(context, ref),
             ),
-            child: Column(
-              children: [
-                _ServiceGrid(
-                  items: items.take(3).toList(),
-                  onTap: (item) => _onServiceTap(context, ref, item),
-                ),
-                const SizedBox(height: 8),
-                _ServiceGrid(
-                  items: items.skip(3).take(3).toList(),
-                  onTap: (item) => _onServiceTap(context, ref, item),
-                ),
-              ],
+            _ServiceGrid(
+              items: items.take(3).toList(),
+              onTap: (item) => _onServiceTap(context, ref, item),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            _ServiceGrid(
+              items: items.skip(3).take(3).toList(),
+              onTap: (item) => _onServiceTap(context, ref, item),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -348,7 +342,8 @@ class _ServiceTile extends StatelessWidget {
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        // No top pad — HomeSectionHeader.titleToContent sets title→content gap.
+        padding: const EdgeInsets.only(bottom: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
