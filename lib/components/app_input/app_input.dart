@@ -214,6 +214,7 @@ class _AppInputState extends State<AppInput> {
       validator: widget.validator,
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onSubmitted,
+      onTapOutside: (_) => _effectiveFocus.unfocus(),
       maxLength: widget.maxLength,
       maxLines: widget.obscureText ? 1 : widget.maxLines,
       enabled: widget.enabled,

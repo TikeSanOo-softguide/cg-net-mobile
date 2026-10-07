@@ -466,7 +466,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                     controller: _pin,
                     label: null,
                     hint: 'topup.pin_hint'.tr(),
-                    obscureText: true,
+                    obscureText: false,
                     keyboardType: TextInputType.number,
                     maxLength: 16,
                     inputFormatters: [
