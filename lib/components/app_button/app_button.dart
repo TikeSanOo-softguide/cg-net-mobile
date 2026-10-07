@@ -5,6 +5,10 @@ import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
 /// Solid primary CTA — background exactly `#0100CA`, white label, no overlays.
+///
+/// Locale-stable: fixed [height], single-line label with gentle scale-down so
+/// EN / MY / ZH text swaps never change button size or layout.
+/// When [onPressed] is null or [isLoading], shows a muted disabled style.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -28,61 +32,72 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
+    final background =
+        enabled ? AppColors.primary : AppColors.primary.withValues(alpha: 0.38);
+    final foreground = enabled
+        ? AppColors.onPrimary
+        : AppColors.onPrimary.withValues(alpha: 0.92);
+
+    final labelStyle = AppTheme.button(color: foreground).copyWith(
+      fontSize: fontSize,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.4,
+      height: 1.2,
+    );
 
     final child = isLoading
         ? SizedBox(
             height: fontSize + 4,
             width: fontSize + 4,
-            child: const CircularProgressIndicator(
+            child: CircularProgressIndicator(
               strokeWidth: 2.2,
-              color: AppColors.onPrimary,
+              color: foreground,
             ),
           )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: fontSize + 2,
-                  color: AppColors.onPrimary,
-                ),
-                const SizedBox(width: AppStyle.spaceSm),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.button(color: AppColors.onPrimary).copyWith(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.4,
-                    height: 1.2,
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: fontSize + 2,
+                    color: foreground,
                   ),
+                  const SizedBox(width: AppStyle.spaceSm),
+                ],
+                Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: labelStyle,
                 ),
-              ),
-            ],
+              ],
+            ),
           );
 
     final button = GestureDetector(
       onTap: enabled ? onPressed : null,
-      child: ClipRRect(
-        borderRadius: AppStyle.borderRadiusButton,
-        child: ColoredBox(
-          color: AppColors.primary,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: height),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppStyle.spaceLg),
-              child: Center(child: child),
-            ),
-          ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        height: height,
+        width: isExpanded ? double.infinity : null,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: AppStyle.borderRadiusButton,
         ),
+        padding: const EdgeInsets.symmetric(horizontal: AppStyle.spaceLg),
+        alignment: Alignment.center,
+        child: child,
       ),
     );
 
     if (!isExpanded) return button;
-    return SizedBox(width: double.infinity, child: button);
+    return SizedBox(width: double.infinity, height: height, child: button);
   }
 }

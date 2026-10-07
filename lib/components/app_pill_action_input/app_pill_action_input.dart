@@ -227,11 +227,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                 padding: const EdgeInsets.only(top: 6, left: 12),
                 child: Text(
                   field.errorText ?? '',
-                  style: AppTheme.english(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.error,
-                  ),
+                  style: AppTheme.fieldError(),
                 ),
               ),
           ],

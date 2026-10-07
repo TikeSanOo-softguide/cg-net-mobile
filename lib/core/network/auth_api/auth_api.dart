@@ -8,10 +8,52 @@ import '../dio_client/dio_client.dart';
 import '../get_retry_interceptor.dart';
 
 class OtpChallengeResult {
-  const OtpChallengeResult({required this.challengeId, this.debugOtp});
+  const OtpChallengeResult({
+    required this.challengeId,
+    this.debugOtp,
+    this.resendAfter = 60,
+  });
 
   final String challengeId;
   final String? debugOtp;
+
+  /// Seconds until the next OTP request is allowed.
+  final int resendAfter;
+}
+
+/// POST /auth/otp/verify — `next_step` drives the post-OTP flow.
+class OtpVerifyResult {
+  const OtpVerifyResult({
+    required this.nextStep,
+    this.verificationToken,
+    this.accessToken,
+  });
+
+  final String nextStep;
+  final String? verificationToken;
+  final String? accessToken;
+
+  bool get isRegister => nextStep == 'register';
+  bool get isPassword => nextStep == 'password';
+  bool get isAuthenticated => nextStep == 'authenticated';
+
+  factory OtpVerifyResult.fromJson(Map<String, dynamic> data) {
+    final nextStep = data['next_step']?.toString().trim().toLowerCase() ?? '';
+    if (nextStep.isEmpty) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    final verificationToken = data['verification_token']?.toString();
+    final accessToken = data['token']?.toString();
+    return OtpVerifyResult(
+      nextStep: nextStep,
+      verificationToken:
+          verificationToken == null || verificationToken.isEmpty
+              ? null
+              : verificationToken,
+      accessToken:
+          accessToken == null || accessToken.isEmpty ? null : accessToken,
+    );
+  }
 }
 
 class AuthApi {
@@ -20,22 +62,55 @@ class AuthApi {
   final Dio _dio;
 
   Future<OtpChallengeResult> requestOtp(String phone) async {
-    final response = await _send(
-      () => _dio.post(
+    try {
+      final response = await _dio.post(
         ApiEndpoints.requestOtp,
         data: {'phone': phone},
-      ),
-    );
-    final data = response.data;
-    final debugOtp = data is Map ? data['debug_otp']?.toString() : null;
+      );
+      final data = response.data;
+      final debugOtp = data is Map ? data['debug_otp']?.toString() : null;
+      final resendAfter = _readPositiveInt(
+            data is Map ? data['resend_after'] : null,
+          ) ??
+          60;
 
-    return OtpChallengeResult(
-      challengeId: data['challenge_id'] as String,
-      debugOtp: debugOtp == null || debugOtp.isEmpty ? null : debugOtp,
-    );
+      return OtpChallengeResult(
+        challengeId: data['challenge_id'] as String,
+        debugOtp: debugOtp == null || debugOtp.isEmpty ? null : debugOtp,
+        resendAfter: resendAfter,
+      );
+    } on DioException catch (error) {
+      throw _otpRequestException(error);
+    }
   }
 
-  Future<String> verifyOtp({
+  static int? _readPositiveInt(Object? value) {
+    if (value is int && value > 0) return value;
+    if (value is num && value > 0) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return null;
+  }
+
+  static ApiException _otpRequestException(DioException error) {
+    final status = error.response?.statusCode;
+    if (status == 429) {
+      final data = error.response?.data;
+      final retryAfter = _readPositiveInt(
+            data is Map ? data['retry_after'] : null,
+          ) ??
+          _readPositiveInt(error.response?.headers.value('retry-after'));
+      return ApiException(
+        ApiFailure.tooManyRequests,
+        detail: retryAfter?.toString(),
+      );
+    }
+    return ApiException.fromDio(error);
+  }
+
+  Future<OtpVerifyResult> verifyOtp({
     required String challengeId,
     required String code,
   }) async {
@@ -45,7 +120,32 @@ class AuthApi {
         data: {'challenge_id': challengeId, 'code': code},
       ),
     );
-    return response.data['verification_token'] as String;
+    final raw = response.data;
+    if (raw is! Map) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    final data = raw is Map<String, dynamic>
+        ? raw
+        : Map<String, dynamic>.from(raw);
+    return OtpVerifyResult.fromJson(data);
+  }
+
+  Future<String> loginWithPassword({
+    required String verificationToken,
+    required String password,
+  }) async {
+    final response = await _send(
+      () => _dio.post(
+        ApiEndpoints.login,
+        data: {
+          'verification_token': verificationToken,
+          'password': password,
+          'platform':
+              defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+        },
+      ),
+    );
+    return response.data['token'] as String;
   }
 
   Future<String> completeRegistration({

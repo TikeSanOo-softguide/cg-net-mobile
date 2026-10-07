@@ -19,6 +19,7 @@ import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/phone_number.dart';
 import '../../profile/language_settings/language_settings_controller.dart';
 import 'components/login_help_footer.dart';
 import 'login_controller.dart';
@@ -35,6 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _phoneController = TextEditingController();
   late final TapGestureRecognizer _termsTap;
   bool _sessionExpiredNoticeShown = false;
+  bool _autovalidate = false;
 
   @override
   void initState() {
@@ -144,8 +146,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final localeCode = ref.watch(appLocaleProvider);
     final _ = context.locale;
 
+    // Refresh cached FormField errors into the active language.
+    ref.listen<String>(appLocaleProvider, (_, __) {
+      if (!_autovalidate || !mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState?.validate();
+      });
+    });
+
     return AuthBackgroundScaffold(
-      key: ValueKey('login-$localeCode'),
       trailing: AppCircleIconButton(
         icon: LucideIcons.languages,
         backgroundColor: Colors.white.withValues(alpha: 0.18),
@@ -161,150 +170,166 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
       headerTitle: 'login.title'.tr().toUpperCase(),
       headerTitleGap: 4,
-      // Push logo + title down; keep them near the white sheet.
-      headerBodyTopGap: 80,
+      // Keep logo near sheet; avoid large gap that overflows small screens.
+      headerBodyTopGap: 48,
       compactTop: true,
       headerTopPadding: 10,
-      headerBottomPadding: 20,
-      sheetRadius: 30,
+      headerBottomPadding: 16,
+      sheetRadius: 24,
+      sheetMiddle: LoginHelpFooter(
+        key: ValueKey('login-help-$localeCode'),
+      ),
+      sheetBottom: _LoginContinueNotice(termsTap: _termsTap),
       card: CommonAuthCard(
         description: 'login.subtitle'.tr(),
+        descriptionFontSize: 16,
+        descriptionFontWeight: FontWeight.w500,
+        descriptionHeight: 1.5,
+        descriptionLetterSpacing: 0.2,
+        descriptionLineCount: 1,
+        childTopGap: 15,
+        actionTopGap: 0,
         primaryAction: AppButton(
           label: 'login.send_otp'.tr(),
-          height: 42,
-          fontSize: 13,
+          height: 44,
+          fontSize: 14,
           isLoading: state.isLoading,
-          onPressed: !state.acceptedTerms
-              ? null
-              : () async {
-                  if (!_formKey.currentState!.validate()) return;
-                  final phone = await controller.submit(_phoneController.text);
-                  if (!context.mounted) return;
-                  final challengeId = controller.challengeId;
-                  if (phone != null && challengeId != null) {
-                    final debugOtp = controller.debugOtp;
-                    if (kDebugMode && debugOtp != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('OTP $debugOtp')),
-                      );
-                    }
-                    context.pushNamed(
-                      RouteNames.otpVerification,
-                      queryParameters: {
-                        'phone': phone,
-                        'challenge_id': challengeId,
-                      },
-                    );
-                    return;
-                  }
-                  final error = ref.read(loginControllerProvider).error;
-                  if (isOfflineError(error)) {
-                    await openNoInternetPage(context);
-                    return;
-                  }
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(content: Text(apiErrorOrFallback(error))),
-                    );
+          onPressed: () async {
+            setState(() => _autovalidate = true);
+            if (!_formKey.currentState!.validate()) return;
+            final phone = await controller.submit(_phoneController.text);
+            if (!context.mounted) return;
+            final challengeId = controller.challengeId;
+            if (phone != null && challengeId != null) {
+              final debugOtp = controller.debugOtp;
+              if (kDebugMode && debugOtp != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('OTP $debugOtp')),
+                );
+              }
+              context.pushNamed(
+                RouteNames.otpVerification,
+                queryParameters: {
+                  'phone': phone,
+                  'challenge_id': challengeId,
+                  'resend_after': '${controller.resendAfter}',
                 },
-        ),
-        secondaryAction: LoginHelpFooter(
-          key: ValueKey('login-help-$localeCode'),
+              );
+              return;
+            }
+            final error = ref.read(loginControllerProvider).error;
+            if (isOfflineError(error)) {
+              await openNoInternetPage(context);
+              return;
+            }
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(apiErrorOrFallback(error))),
+              );
+          },
         ),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppInput(
-                controller: _phoneController,
-                hint: 'login.phone_hint'.tr(),
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(12),
-                ],
-                prefix: Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<CountryDial>(
-                      value: state.country,
-                      isDense: true,
-                      borderRadius: AppStyle.borderRadiusInput,
-                      icon: const Icon(
-                        LucideIcons.chevron_down,
-                        size: 14,
-                        color: AppColors.primary,
-                      ),
-                      items: CountryDial.values
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(
-                                '${c.flag} ${c.dialCode}',
+          autovalidateMode: _autovalidate
+              ? AutovalidateMode.onUserInteraction
+              : AutovalidateMode.disabled,
+          child: AppInput(
+            controller: _phoneController,
+            hint: 'login.phone_hint'.tr(),
+            hintLetterSpacing: 1,
+            keyboardType: TextInputType.phone,
+            autofillHints: const [AutofillHints.telephoneNumber],
+            textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(12),
+            ],
+            prefix: Padding(
+              padding: const EdgeInsets.only(left: 12, right: 6),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<CountryDial>(
+                  value: state.country,
+                  isDense: true,
+                  borderRadius: AppStyle.borderRadiusInput,
+                  icon: const Icon(
+                    LucideIcons.chevron_down,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  items: CountryDial.values
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                c.flag,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                c.dialCode,
                                 style: AppTheme.english(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.primary,
                                 ),
                               ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) controller.setCountry(value);
-                      },
-                    ),
-                  ),
-                ),
-                suffixIcon: LucideIcons.phone,
-                validator: (value) {
-                  if (value == null || value.trim().length < 8) {
-                    return 'login.phone_label'.tr();
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _LoginCheckbox(
-                    value: state.acceptedTerms,
-                    onChanged: controller.setAcceptedTerms,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text.rich(
-                        TextSpan(
-                          style: AppTheme.english(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                            height: 1.4,
+                            ],
                           ),
-                          children: [
-                            TextSpan(text: 'login.terms_prefix'.tr()),
-                            TextSpan(
-                              text: 'login.terms_link'.tr(),
-                              style: AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                              recognizer: _termsTap,
-                            ),
-                            TextSpan(text: 'login.terms_suffix'.tr()),
-                          ],
                         ),
-                      ),
-                    ),
-                  ),
-                ],
+                      )
+                      .toList(),
+                  selectedItemBuilder: (context) {
+                    return CountryDial.values
+                        .map(
+                          (c) => Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  c.flag,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  c.dialCode,
+                                  style: AppTheme.english(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList();
+                  },
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.setCountry(value);
+                      if (_autovalidate) {
+                        _formKey.currentState?.validate();
+                      }
+                    }
+                  },
+                ),
               ),
-            ],
+            ),
+            suffixIcon: LucideIcons.phone,
+            validator: (value) {
+              final errorKey = PhoneNumber.validationErrorKey(
+                dialCode: state.country.dialCode,
+                localInput: value,
+              );
+              if (errorKey == null) return null;
+              // Bind to current locale so EN / MY / ZH messages stay correct.
+              return context.tr(errorKey);
+            },
           ),
         ),
       ),
@@ -312,40 +337,72 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 }
 
-class _LoginCheckbox extends StatelessWidget {
-  const _LoginCheckbox({
-    required this.value,
-    required this.onChanged,
-  });
+/// Compact legal notice pinned near the bottom of the login sheet.
+class _LoginContinueNotice extends StatelessWidget {
+  const _LoginContinueNotice({required this.termsTap});
 
-  final bool value;
-  final ValueChanged<bool> onChanged;
+  final TapGestureRecognizer termsTap;
+
+  TextStyle get _bodyStyle => AppTheme.english(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textMuted,
+        height: 1.5,
+        letterSpacing: 0.3,
+      );
+
+  TextStyle get _linkStyle => AppTheme.english(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: AppColors.primary,
+        height: 1.5,
+        letterSpacing: 0.3,
+      );
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        width: 22,
-        height: 22,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: value ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: value ? AppColors.primary : AppColors.border,
-            width: 1.4,
-          ),
-        ),
-        child: value
-            ? const Icon(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 14,
+              height: 14,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: const Icon(
                 LucideIcons.check,
-                size: 14,
+                size: 9,
                 color: AppColors.onPrimary,
-              )
-            : null,
-      ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                'login.continue_prefix'.tr().trim(),
+                textAlign: TextAlign.center,
+                style: _bodyStyle,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text.rich(
+          TextSpan(
+            text:
+                '${'login.continue_terms'.tr()}${'login.continue_suffix'.tr()}',
+            style: _linkStyle,
+            recognizer: termsTap,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -371,7 +428,7 @@ class _LanguageOption extends StatelessWidget {
         width: 36,
         height: 24,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppStyle.radiusSm),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.borderLight),
         ),
         clipBehavior: Clip.antiAlias,
