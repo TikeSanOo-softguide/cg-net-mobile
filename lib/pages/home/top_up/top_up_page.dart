@@ -327,6 +327,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200 && response.isSuccess) {
+        _pin.clear();
         ref.invalidate(customerProfileProvider);
         final amountMessage = 'topup.result_success_body_amount'.tr(
           namedArgs: {
@@ -406,12 +407,12 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       onBack: () => context.pop(),
       body: Form(
         key: _formKey,
-        child: ListView(
+        child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 22, 16, 32),
-          children: [
-            AppCard(
-              borderRadius: AppStyle.borderRadiusMd,
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+          child: AppCard(
+            borderRadius: AppStyle.borderRadiusMd,
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -510,7 +511,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
