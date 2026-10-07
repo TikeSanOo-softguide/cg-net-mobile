@@ -4,6 +4,7 @@ class ApiEndpoints {
   static const _env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
   static const _override =
       String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
   /// Real-phone LAN default. Emulator should override with
   /// `--dart-define=API_BASE_URL=http://10.0.2.2:8080/api`.
   /// PC localhost / USB `adb reverse` can use
@@ -39,6 +40,7 @@ class ApiEndpoints {
   static const String logout = '/auth/logout';
   static const String inbox = '/inbox';
   static const String deviceTokens = '/device-tokens';
+  static const String customerProfile = '/customer/profile';
   static const String availablePlans = '/web-app/packages';
   static const String packagesBuy = '/packages/buy';
   static const String redeemCheckSerialNo = '/redeem/check-serial-no';
