@@ -22,10 +22,12 @@ class AppScanInput extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.validator,
+    this.fieldFillColor,
+    this.fieldBorderColor,
   });
 
   final TextEditingController controller;
-  final String label;
+  final String? label;
   final String? hint;
   final bool obscureText;
   final TextInputType? keyboardType;
@@ -35,6 +37,8 @@ class AppScanInput extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final String? Function(String?)? validator;
+  final Color? fieldFillColor;
+  final Color? fieldBorderColor;
 
   String _normalize(String raw) {
     var next = TextEditingValue(text: raw.trim());
@@ -78,6 +82,8 @@ class AppScanInput extends StatelessWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       validator: validator,
+      fieldFillColor: fieldFillColor,
+      fieldBorderColor: fieldBorderColor,
       suffix: Tooltip(
         message: 'topup.scan'.tr(),
         child: AppInput.iconChip(

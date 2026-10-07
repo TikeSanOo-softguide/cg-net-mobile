@@ -7,21 +7,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
+import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_pill_action_input/app_pill_action_input.dart';
 import '../../../components/app_scan_input/app_scan_input.dart';
-import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/network/idempotency_key.dart';
 import '../../../core/network/offline_navigation.dart';
-import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/top_up/top_up_repository.dart';
-import 'top_up_result.dart';
 
 /// Top-up screen with optional serial verification and backend submission flow.
 class TopUpPage extends ConsumerStatefulWidget {
@@ -39,14 +38,39 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   final _serialFieldKey = GlobalKey<FormFieldState<String>>();
   String? _serialErrorKey;
   bool _submitting = false;
+  bool _accountEdited = false;
 
   static const _serialLength = 16;
   static const _fallbackAmount = 0;
 
   int get _serialLen => _serial.text.trim().length;
+  bool get _canSubmit =>
+      !_submitting &&
+      _account.text.trim().isNotEmpty &&
+      _pin.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(
+      customerProfileProvider,
+      (previous, next) {
+        next.whenData((profile) {
+          if (_accountEdited || profile.accountNumber.isEmpty) return;
+          _account.value = TextEditingValue(
+            text: profile.accountNumber,
+            selection: TextSelection.collapsed(
+              offset: profile.accountNumber.length,
+            ),
+          );
+          if (mounted) setState(() {});
+        });
+      },
+      fireImmediately: true,
+    );
+  }
 
   bool get _checkEnabled => _serialLen == 0 || _serialLen == _serialLength;
-  bool get _checkActive => _serialLen == _serialLength;
 
   @override
   void dispose() {
@@ -174,6 +198,111 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     );
   }
 
+  Future<void> _showTopUpResultModal({
+    required bool success,
+    required String title,
+    required String body,
+  }) {
+    return showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: const Color(0x6B000000),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Dialog(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    tooltip: 'common.close'.tr(),
+                    icon: const Icon(
+                      LucideIcons.x,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.english(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: success ? AppColors.primary : AppColors.error,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  body,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.english(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                SizedBox(
+                  width: 92,
+                  height: 40,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      elevation: 0,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                    ),
+                    child: Text(
+                      'common.ok'.tr(),
+                      style: AppTheme.english(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submit() async {
     if (_submitting) return;
     setState(() => _serialErrorKey = null);
@@ -184,10 +313,8 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     _showProcessing();
 
     try {
-      final serial = _serial.text.trim();
       final account = _account.text.trim();
       final pin = _pin.text.trim();
-      final now = DateTime.now();
       final idempotencyKey = IdempotencyKey.forTopUp(phone: account);
       final response = await ref.read(topUpRepositoryProvider).topUpAccount(
             phone: account,
@@ -196,38 +323,35 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
           );
       if (!mounted) return;
 
-      late final TopUpResult result;
-      if (!response.isSuccess) {
-        result = TopUpResult.failure(
-          amountPoints: response.amountPoints ?? _fallbackAmount,
-          serialRaw: serial.isEmpty ? '0000000000000000' : serial,
-          transactionId: response.transactionNo ?? 'TXN-UNKNOWN',
-          occurredAt: now,
-          errorTitleKey: 'topup.result_failure_title',
-          errorBody: response.message,
-        );
-      } else {
-        result = TopUpResult.success(
-          amountPoints: response.amountPoints ?? _fallbackAmount,
-          serialRaw: serial.isEmpty ? '0000000000000000' : serial,
-          transactionId: response.transactionNo ?? 'TXN-UNKNOWN',
-          occurredAt: now,
-        );
-      }
-
       _closeProcessingDialog();
       if (!mounted) return;
 
-      switch (result.status) {
-        case TopUpTxnStatus.success:
-          context.pushReplacementNamed(RouteNames.topUpSuccess, extra: result);
-          return;
-        case TopUpTxnStatus.failure:
-          context.pushReplacementNamed(RouteNames.topUpFailure, extra: result);
-          return;
-        case TopUpTxnStatus.pending:
-          context.pushReplacementNamed(RouteNames.topUpPending, extra: result);
-          return;
+      if (response.statusCode == 200 && response.isSuccess) {
+        ref.invalidate(customerProfileProvider);
+        final amountMessage = 'topup.result_success_body_amount'.tr(
+          namedArgs: {
+            'points': NumberFormat('#,##0')
+                .format(response.amountPoints ?? _fallbackAmount),
+          },
+        );
+        await _showTopUpResultModal(
+          success: true,
+          title: 'topup.result_success_title'.tr(),
+          body: [
+            if (response.message?.trim().isNotEmpty == true)
+              response.message!.trim(),
+            amountMessage,
+          ].join('\n'),
+        );
+      } else {
+        await _showTopUpResultModal(
+          success: false,
+          title: 'topup.result_failure_title'.tr(),
+          body: apiMessageText(
+            response.message,
+            fallbackKey: 'topup.result_failure_body',
+          ),
+        );
       }
     } on ApiException catch (error) {
       _closeProcessingDialog();
@@ -236,30 +360,18 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         await openNoInternetPage(context);
         return;
       }
-      final serial = _serial.text.trim();
-      context.pushNamed(
-        RouteNames.topUpFailure,
-        extra: TopUpResult.failure(
-          amountPoints: _fallbackAmount,
-          serialRaw: serial.isEmpty ? '0000000000000000' : serial,
-          transactionId: 'TXN-UNKNOWN',
-          errorTitleKey: 'topup.result_failure_title',
-          errorBody: apiErrorText(error),
-        ),
+      await _showTopUpResultModal(
+        success: false,
+        title: 'topup.result_failure_title'.tr(),
+        body: apiErrorText(error),
       );
     } catch (_) {
       _closeProcessingDialog();
       if (!mounted) return;
-      final serial = _serial.text.trim();
-      context.pushNamed(
-        RouteNames.topUpFailure,
-        extra: TopUpResult.failure(
-          amountPoints: _fallbackAmount,
-          serialRaw: serial.isEmpty ? '0000000000000000' : serial,
-          transactionId: 'TXN-UNKNOWN',
-          errorTitleKey: 'topup.result_failure_title',
-          errorBodyKey: 'topup.result_failure_body',
-        ),
+      await _showTopUpResultModal(
+        success: false,
+        title: 'topup.result_failure_title'.tr(),
+        body: 'topup.result_failure_body'.tr(),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -272,279 +384,133 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     }
   }
 
-  Widget _cardHeader({
-    required String index,
-    required String title,
-    required String body,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            index,
-            style: AppTheme.english(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppTheme.english(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  letterSpacing: 0.2,
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                body,
-                style: AppTheme.english(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textMuted,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.systemOverlayImmersive,
-      child: Scaffold(
-        backgroundColor: AppColors.primary,
-        resizeToAvoidBottomInset: true,
-        body: Column(
-          children: [
-            _TopUpHeader(onBack: () => context.pop()),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(AppStyle.radiusCurve),
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                    children: [
-                      AppCard(
-                        elevated: false,
-                        bordered: false,
-                        borderRadius: AppStyle.borderRadiusLg,
-                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _cardHeader(
-                              index: '1',
-                              title: 'topup.step_verify_title'.tr(),
-                              body: 'topup.step_verify_body'.tr(),
-                            ),
-                            const SizedBox(height: 16),
-                            AppPillActionInput(
-                              fieldKey: _serialFieldKey,
-                              controller: _serial,
-                              label: 'topup.serial_label'.tr(),
-                              hint: 'topup.serial_hint'.tr(),
-                              actionLabel: 'topup.check'.tr(),
-                              actionEnabled: _checkEnabled,
-                              actionActive: _checkActive,
-                              onAction: _checkSerial,
-                              maxLength: _serialLength,
-                              textInputAction: TextInputAction.next,
-                              onChanged: (_) {
-                                setState(() {
-                                  _serialErrorKey = null;
-                                });
-                                _serialFieldKey.currentState?.validate();
-                              },
-                              validator: (_) => _serialErrorKey?.tr(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      AppCard(
-                        elevated: false,
-                        bordered: false,
-                        borderRadius: AppStyle.borderRadiusLg,
-                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _cardHeader(
-                              index: '2',
-                              title: 'topup.step_details_title'.tr(),
-                              body: 'topup.step_details_body'.tr(),
-                            ),
-                            const SizedBox(height: 16),
-                            AppInput(
-                              controller: _account,
-                              label: 'topup.account_label'.tr(),
-                              hint: 'topup.account_hint'.tr(),
-                              prefixIcon: LucideIcons.hash,
-                              keyboardType: TextInputType.phone,
-                              textInputAction: TextInputAction.next,
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return 'topup.account_required'.tr();
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 14),
-                            AppScanInput(
-                              controller: _pin,
-                              label: 'topup.pin_label'.tr(),
-                              hint: 'topup.pin_hint'.tr(),
-                              obscureText: true,
-                              keyboardType: TextInputType.number,
-                              maxLength: 12,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _submit(),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return 'topup.pin_required'.tr();
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 20),
-                            AppButton(
-                              label: 'topup.submit'.tr(),
-                              onPressed: _submitting ? null : _submit,
-                              isLoading: _submitting,
-                              height: 42,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+  Widget _fieldLabel(String key) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 10, bottom: 7),
+      child: Text(
+        key.tr(),
+        style: AppTheme.english(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
         ),
       ),
     );
   }
-}
-
-/// Clear primary header — flat brand wash, compact title block.
-class _TopUpHeader extends StatelessWidget {
-  const _TopUpHeader({required this.onBack});
-
-  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.primary,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onBack,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Ink(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        width: 0.7,
-                      ),
-                    ),
-                    child: const Icon(
-                      LucideIcons.chevron_left,
-                      size: 18,
-                      color: AppColors.onPrimary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+    return AppCurvedScaffold(
+      title: Text('topup.title'.tr()),
+      showBack: true,
+      onBack: () => context.pop(),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 22, 16, 32),
+          children: [
+            AppCard(
+              borderRadius: AppStyle.borderRadiusMd,
+              padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  QuickActionIconChip(
-                    asset: QuickActionIconChip.topUpAsset,
-                    background: Colors.white.withValues(alpha: 0.14),
-                    tint: AppColors.onPrimary,
-                    size: 40,
-                    iconSize: 22,
+                  _fieldLabel('topup.serial_label'),
+                  AppPillActionInput(
+                    fieldKey: _serialFieldKey,
+                    controller: _serial,
+                    hint: 'topup.serial_hint'.tr(),
+                    actionLabel: 'topup.check'.tr(),
+                    actionEnabled: _checkEnabled,
+                    actionActive: true,
+                    onAction: _checkSerial,
+                    maxLength: _serialLength,
+                    textInputAction: TextInputAction.next,
+                    showActionIcon: false,
+                    actionFontSize: 14,
+                    fieldFillColor: AppColors.primarySoft,
+                    fieldBorderColor: AppColors.primarySoft,
+                    onChanged: (_) {
+                      setState(() {
+                        _serialErrorKey = null;
+                      });
+                      _serialFieldKey.currentState?.validate();
+                    },
+                    validator: (_) => _serialErrorKey?.tr(),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'topup.hero_title'.tr(),
-                          style: AppTheme.english(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onPrimary,
-                            letterSpacing: 0.3,
-                            height: 1.2,
+                  const SizedBox(height: 20),
+                  _fieldLabel('topup.account_label'),
+                  AppInput(
+                    controller: _account,
+                    label: null,
+                    hint: 'topup.account_hint'.tr(),
+                    suffixIcon: LucideIcons.user,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    fieldFillColor: AppColors.primarySoft,
+                    fieldBorderColor: AppColors.primarySoft,
+                    onChanged: (_) {
+                      _accountEdited = true;
+                      setState(() {});
+                    },
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'topup.account_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  _fieldLabel('topup.pin_label'),
+                  AppScanInput(
+                    controller: _pin,
+                    label: null,
+                    hint: 'topup.pin_hint'.tr(),
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    maxLength: 16,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    textInputAction: TextInputAction.done,
+                    fieldFillColor: AppColors.primarySoft,
+                    fieldBorderColor: AppColors.primarySoft,
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _submit(),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'topup.pin_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 30),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: AppStyle.borderRadiusButton,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(
+                            alpha: _canSubmit ? 0.16 : 0,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'topup.hero_body'.tr(),
-                          style: AppTheme.english(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.onPrimary.withValues(alpha: 0.82),
-                            height: 1.35,
-                          ),
+                          blurRadius: _canSubmit ? 6 : 0,
+                          offset: _canSubmit ? const Offset(0, 3) : Offset.zero,
                         ),
                       ],
+                    ),
+                    child: AppButton(
+                      label: 'topup.submit'.tr(),
+                      onPressed: _canSubmit ? _submit : null,
+                      isLoading: _submitting,
+                      height: 40,
+                      fontSize: 14,
+                      disabledColor: AppColors.primary.withValues(alpha: 0.45),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

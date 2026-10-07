@@ -337,7 +337,9 @@ class _AppInputState extends State<AppInput> {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(
-        color: focused ? AppColors.primary : _idleBorder,
+        color: focused
+            ? AppColors.primary
+            : widget.fieldBorderColor ?? _idleBorder,
         width: focused ? 1.4 : 1,
       ),
     );

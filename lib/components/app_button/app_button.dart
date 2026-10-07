@@ -19,6 +19,7 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.height = 45,
     this.fontSize = 14,
+    this.disabledColor,
   });
 
   final String label;
@@ -28,22 +29,11 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
   final double height;
   final double fontSize;
+  final Color? disabledColor;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
-    final background =
-        enabled ? AppColors.primary : AppColors.primary.withValues(alpha: 0.38);
-    final foreground = enabled
-        ? AppColors.onPrimary
-        : AppColors.onPrimary.withValues(alpha: 0.92);
-
-    final labelStyle = AppTheme.button(color: foreground).copyWith(
-      fontSize: fontSize,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.4,
-      height: 1.2,
-    );
 
     final child = isLoading
         ? SizedBox(
@@ -82,18 +72,18 @@ class AppButton extends StatelessWidget {
 
     final button = GestureDetector(
       onTap: enabled ? onPressed : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        height: height,
-        width: isExpanded ? double.infinity : null,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: AppStyle.borderRadiusButton,
+      child: ClipRRect(
+        borderRadius: AppStyle.borderRadiusButton,
+        child: ColoredBox(
+          color: AppColors.primary,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: height),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppStyle.spaceLg),
+              child: Center(child: child),
+            ),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: AppStyle.spaceLg),
-        alignment: Alignment.center,
-        child: child,
       ),
     );
 

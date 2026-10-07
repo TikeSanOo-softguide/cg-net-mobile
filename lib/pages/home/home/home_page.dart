@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/promotion_ads_modal/promotion_ads_modal.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
@@ -81,8 +82,20 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     final data = ref.watch(homeControllerProvider);
+    final customerProfile = ref.watch(customerProfileProvider);
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
+    final accountNumber = customerProfile.when(
+      data: (profile) =>
+          profile.accountNumber.isEmpty ? '—' : profile.accountNumber,
+      loading: () => '…',
+      error: (_, __) => '—',
+    );
+    final balanceAmount = customerProfile.when(
+      data: (profile) => profile.walletBalance?.toString() ?? '—',
+      loading: () => '…',
+      error: (_, __) => '—',
+    );
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
     final pinnedH = HomePinnedBar.heightOf(context);
@@ -108,7 +121,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           HomeBalanceHeader(
-                            balanceAmount: data.balanceAmount,
+                            balanceAmount: balanceAmount,
                           ),
                           const SizedBox(height: HomeQuickActions.hangBelow),
                         ],
@@ -155,7 +168,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              child: HomePinnedBar(accountNumber: data.accountNumber),
+              child: HomePinnedBar(accountNumber: accountNumber),
             ),
           ],
         ),

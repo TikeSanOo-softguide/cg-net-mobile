@@ -20,6 +20,7 @@ class TopUpSerialCheckResult {
 class TopUpAccountResult {
   const TopUpAccountResult({
     required this.isSuccess,
+    required this.statusCode,
     this.message,
     this.amountPoints,
     this.balancePoints,
@@ -27,6 +28,7 @@ class TopUpAccountResult {
   });
 
   final bool isSuccess;
+  final int? statusCode;
   final String? message;
   final int? amountPoints;
   final int? balancePoints;
@@ -44,6 +46,7 @@ class TopUpRepository {
         ApiEndpoints.redeemCheckSerialNo,
         data: {'serial_no': serialNo},
       );
+      // print('Top-up response: ${response.data}');
       final data = _asMap(response.data);
       final success = _resolveSuccess(response.statusCode, data);
 
@@ -68,15 +71,17 @@ class TopUpRepository {
         data: {'phone': phone, 'pin': pin},
         options: Options(
           headers: {'Idempotency-Key': idempotencyKey},
+          validateStatus: (status) =>
+              status == 200 || status == 400 || status == 409,
         ),
       );
 
       final root = _asMap(response.data);
       final nestedData = _asMap(root['data']);
-      final success = _resolveSuccess(response.statusCode, root);
-
+      final statusCode = response.statusCode;
       return TopUpAccountResult(
-        isSuccess: success,
+        isSuccess: statusCode == 200 && root['success'] == true,
+        statusCode: statusCode,
         message: root['message']?.toString(),
         amountPoints: _toInt(root['amount']) ?? _toInt(nestedData['amount']),
         balancePoints: _toInt(root['balance']) ?? _toInt(nestedData['balance']),
