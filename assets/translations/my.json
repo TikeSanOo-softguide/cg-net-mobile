@@ -204,6 +204,23 @@
     "popular": "HOT",
     "buy_now": "ဝယ်မည်"
   },
+    "broadband": {
+    "bind_now": "အကောင့်ချိတ်ရန်",
+    "validation":{
+      "account_required": "အကောင့်နံပါတ် ထည့်ရန်လိုအပ်ပါသည်",
+      "customer_name_required": "ဖောက်သည်အမည် ထည့်ရန်လိုအပ်ပါသည်",
+      "account_max_length": "အကောင့်နံပါတ်သည် စာလုံး ၃၂ လုံးထက် မကျော်ရပါ",
+      "customer_name_max_length": "ဖောက်သည်အမည်သည် စာလုံး ၅၀ ထက် မကျော်ရပါ",
+      "bind_fail_title": "ချိတ်ဆက်မှု မအောင်မြင်ပါဘူး",
+      "bind_fail_body": "Broadband account ကို ချိတ်ဆက်မရပါဘူး၊ ထပ်ကြိုးစားကြည့်ပါ။",
+      "unbind_fail_title": "ဖယ်ရှားမှု မအောင်မြင်ပါဘူး",
+      "unbind_fail_body": "Broadband account ကို ဖယ်ရှားမရပါဘူး၊ ထပ်ကြိုးစားကြည့်ပါ။",
+      "broadband_account_not_match": "အကောင့်အချက်အလက်များ ကိုက်ညီမှုမရှိပါ။",
+      "broadband_already_connected": "ဤအကောင့်ကို ချိတ်ဆက်ပြီးသားဖြစ်ပါသည်။",
+      "broadband_different_account": "အခြား Broadband အကောင့်တစ်ခု ချိတ်ဆက်ထားပြီးဖြစ်ပါသည်။",
+      "broadband_account_in_use": "ဤအကောင့်ကို အခြားအသုံးပြုသူတစ်ဦးနှင့် ချိတ်ဆက်ထားပြီးဖြစ်ပါသည်။"
+    }
+  },
   "topup": {
     "title": "Top Up",
     "form_title": "Top Up",

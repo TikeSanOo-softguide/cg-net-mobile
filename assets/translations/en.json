@@ -204,6 +204,24 @@
     "popular": "HOT",
     "buy_now": "Buy now"
   },
+  "broadband": {
+    "bind_now": "Bind Account",
+    "validation":{
+      "account_required": "Account number is required",
+      "customer_name_required": "Customer name is required",
+      "account_max_length": "Account number must not exceed 32 characters",
+      "customer_name_max_length": "Customer name must not exceed 50 characters",
+      "bind_fail_title": "Binding failed",
+      "bind_fail_body": "We could not connect your broadband account. Please try again.",
+      "unbind_fail_title": "Removal failed",
+      "unbind_fail_body": "We could not remove your broadband account. Please try again.",
+      "remove_broadband": "Remove broadband",
+      "broadband_account_not_match": "Account details don't match.",
+      "broadband_already_connected": "This account is already connected.",
+      "broadband_different_account": "Another broadband account is already connected.",
+      "broadband_account_in_use": "This account is already connected to another user."
+    }
+  },  
   "topup": {
     "title": "Top Up",
     "form_title": "Top Up",
