@@ -1,78 +1,122 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/locale/app_locale_provider.dart';
+import '../../core/network/api_endpoints/api_endpoints.dart';
+import '../../core/network/api_exception.dart';
+import '../../core/network/dio_client/dio_client.dart';
+import '../../core/utils/image_url_helper.dart';
 import '../../models/advertisement_model/advertisement_model.dart';
 
-/// Local/mock launch creatives. Swap implementation for Laravel API later.
 class LaunchPromoRepository {
-  static const skipTimerAsset = 'assets/images/launch/skip_timer.png';
-  static const networkNoticeAsset = 'assets/images/launch/network_notice.png';
-  static const advertisementAsset = 'assets/images/launch/advertisement.png';
+  LaunchPromoRepository(this._dio);
 
-  Future<SkipTimerPromo> fetchSkipTimerPromo() async {
-    await Future<void>.delayed(const Duration(milliseconds: 50));
-    return const SkipTimerPromo(
-      image: skipTimerAsset,
-      durationSeconds: 5,
-    );
+  final Dio _dio;
+
+  Future<SkipTimerPromo?> fetchSkipTimerPromo(
+    String language,
+  ) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.banners,
+      );
+
+      final data = response.data;
+
+      final List list;
+      if (data is List) {
+        list = data;
+      } else if (data is Map && data['data'] is List) {
+        list = data['data'] as List;
+      } else {
+        return null;
+      }
+
+      final entryBanners = list.where(
+        (item) => item is Map && (item['type'] == 'app_entry'),
+      );
+
+      for (final item in entryBanners) {
+        if (item is! Map) continue;
+
+        final imageUrl = ImageUrlHelper.resolve(
+          item,
+          language: language,
+        );
+
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          return SkipTimerPromo(
+            image: imageUrl,
+            durationSeconds: (item['duration'] as num?)?.toInt() ?? 5,
+          );
+        }
+      }
+
+      return null;
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
 
-  /// Network / outage notice shown before the promotion ad.
-  Future<Advertisement?> fetchNetworkNotice() async {
-    await Future<void>.delayed(const Duration(milliseconds: 40));
+  Future<Advertisement?> fetchActiveAdvertisement(
+    String language,
+  ) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.banners,
+      );
 
-    final notice = Advertisement(
-      id: 'local_network_notice',
-      image: networkNoticeAsset,
-      title: 'Network notice',
-      description: 'Service disruption notice',
-      durationSeconds: 0,
-      isActive: true,
-      startDate: DateTime(2025, 1, 1),
-      endDate: DateTime(2027, 12, 31, 23, 59, 59),
-      actionUrl: null,
-      actionType: 'none',
-    );
+      final data = response.data;
 
-    if (!notice.isCurrentlyValid) return null;
-    return notice;
-  }
+      final List list;
+      if (data is List) {
+        list = data;
+      } else if (data is Map && data['data'] is List) {
+        list = data['data'] as List;
+      } else {
+        return null;
+      }
 
-  /// Returns null when no active advertisement should be shown.
-  Future<Advertisement?> fetchActiveAdvertisement() async {
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+      final popUpsBanners = list.where(
+        (item) => item is Map && (item['type'] == 'app_popup'),
+      );
 
-    final ad = Advertisement(
-      id: 'local_december_promo',
-      image: advertisementAsset,
-      title: 'December Promotion',
-      description: 'Seasonal broadband offer',
-      durationSeconds: 5,
-      isActive: true,
-      startDate: DateTime(2025, 12, 1),
-      endDate: DateTime(2026, 12, 31, 23, 59, 59),
-      actionUrl: null,
-      actionType: 'none',
-    );
+      for (final item in popUpsBanners) {
+        if (item is! Map) continue;
 
-    if (!ad.isCurrentlyValid) return null;
-    return ad;
+        final imageUrl = ImageUrlHelper.resolve(
+          item,
+          language: language,
+        );
+
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          return Advertisement(image: imageUrl);
+        }
+      }
+
+      return null;
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
   }
 }
 
 final launchPromoRepositoryProvider = Provider<LaunchPromoRepository>((ref) {
-  return LaunchPromoRepository();
+  return LaunchPromoRepository(
+    ref.watch(dioProvider),
+  );
 });
 
-final skipTimerPromoProvider = FutureProvider<SkipTimerPromo>((ref) {
-  return ref.watch(launchPromoRepositoryProvider).fetchSkipTimerPromo();
-});
-
-final networkNoticeProvider = FutureProvider<Advertisement?>((ref) {
-  return ref.watch(launchPromoRepositoryProvider).fetchNetworkNotice();
+final skipTimerPromoProvider = FutureProvider<SkipTimerPromo?>((ref) {
+  final language = ref.watch(appLocaleProvider);
+  return ref.watch(launchPromoRepositoryProvider).fetchSkipTimerPromo(language);
 });
 
 final activeAdvertisementProvider = FutureProvider<Advertisement?>((ref) {
-  return ref.watch(launchPromoRepositoryProvider).fetchActiveAdvertisement();
+  final language = ref.watch(appLocaleProvider);
+  return ref
+      .watch(launchPromoRepositoryProvider)
+      .fetchActiveAdvertisement(language);
 });
 
 /// When true, [HomePage] presents launch notice + promotion modals once after open.

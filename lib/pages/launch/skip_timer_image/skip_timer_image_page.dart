@@ -51,6 +51,11 @@ class _SkipTimerImagePageState extends ConsumerState<SkipTimerImagePage> {
         return const Scaffold(backgroundColor: AppColors.primary);
       },
       data: (promo) {
+        if (promo == null || promo.image.isEmpty) {
+          _scheduleContinue();
+          return const Scaffold(backgroundColor: AppColors.primary);
+        }
+
         return TimedSkipImageScaffold(
           imagePath: promo.image,
           durationSeconds: promo.durationSeconds,
