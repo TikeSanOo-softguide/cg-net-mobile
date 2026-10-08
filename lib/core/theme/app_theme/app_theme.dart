@@ -34,6 +34,17 @@ class AppTheme {
   static String? get englishFontFamily =>
       GoogleFonts.plusJakartaSans().fontFamily;
 
+  /// Bundled Burmese typeface (assets/fonts, declared in pubspec.yaml).
+  /// Same family/weights (400, 600) as greenwaymyanmar.com.
+  static const String myanmarFontFamily = 'NotoSansMyanmar';
+
+  /// Latin renders with Plus Jakarta Sans; Myanmar script falls back to
+  /// [myanmarFontFamily] so Burmese looks the same on every device.
+  static const List<String> fontFamilyFallback = [myanmarFontFamily];
+
+  /// Minimum line height that keeps Burmese stacked marks from clipping.
+  static const double lineHeightMyanmarSafe = 1.4;
+
   static TextStyle english({
     double? fontSize,
     FontWeight? fontWeight,
@@ -47,7 +58,7 @@ class AppTheme {
       color: color,
       height: height,
       letterSpacing: letterSpacing,
-    );
+    ).copyWith(fontFamilyFallback: fontFamilyFallback);
   }
 
   // —— Semantic text styles ——
@@ -81,7 +92,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         color: color ?? AppColors.onPrimary,
         letterSpacing: 0.15,
-        height: 1.15,
+        height: lineHeightMyanmarSafe,
       );
 
   static TextStyle sectionTitle({Color? color}) => english(
@@ -144,7 +155,7 @@ class AppTheme {
         fontSize: AppStyle.fontButton,
         fontWeight: FontWeight.w500,
         color: color,
-        height: 1.2,
+        height: lineHeightMyanmarSafe,
         letterSpacing: 0.4,
       );
 
@@ -156,7 +167,7 @@ class AppTheme {
         fontSize: AppStyle.bottomNavLabelSize,
         fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
         color: color,
-        height: 1.15,
+        height: lineHeightMyanmarSafe,
       );
 
   /// Explicit scheme — pure `#0100CA` primary, no seed-derived blues.
@@ -198,6 +209,7 @@ class AppTheme {
     final baseText = GoogleFonts.plusJakartaSansTextTheme().apply(
       bodyColor: AppColors.textPrimary,
       displayColor: AppColors.textPrimary,
+      fontFamilyFallback: fontFamilyFallback,
     );
 
     return ThemeData(
@@ -206,6 +218,7 @@ class AppTheme {
       colorScheme: colorScheme,
       primaryColor: AppColors.primary,
       fontFamily: englishFontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       scaffoldBackgroundColor: AppColors.background,
       canvasColor: AppColors.surface,
       dividerColor: AppColors.border,

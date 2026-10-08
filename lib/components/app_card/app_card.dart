@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 
-/// Shared card — white fill, no border / shadow.
+/// Shared card — white fill; optional soft elevation for clearer lift.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
@@ -38,10 +38,22 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? AppColors.surface,
         borderRadius: radius,
+        boxShadow: elevated
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
-      clipBehavior: Clip.antiAlias,
+      // Don't clip when elevated — otherwise soft shadow is cut off.
+      clipBehavior: elevated ? Clip.none : Clip.antiAlias,
       child: onTap == null
-          ? content
+          ? (elevated
+              ? ClipRRect(borderRadius: radius, child: content)
+              : content)
           : Material(
               color: Colors.transparent,
               child: InkWell(

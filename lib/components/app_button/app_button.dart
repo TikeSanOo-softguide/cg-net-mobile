@@ -42,7 +42,7 @@ class AppButton extends StatelessWidget {
       fontSize: fontSize,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.4,
-      height: 1.2,
+      height: AppTheme.lineHeightMyanmarSafe,
     );
 
     final child = isLoading

@@ -10,7 +10,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import 'package_buy_result.dart';
 
-const _successGreen = Color(0xFF499A13);
+const _successGreen = Color(0xFF3D7A12);
 const _successSoft = Color(0xFFE8F5DC);
 const _failureRed = Color(0xFFD90000);
 const _failureSoft = Color(0xFFFCE6E6);
@@ -130,7 +130,7 @@ class PackageBuyResultShell extends StatelessWidget {
                         fontSize: 22,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textPrimary,
-                        height: 1,
+                        height: AppTheme.lineHeightMyanmarSafe,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -141,7 +141,7 @@ class PackageBuyResultShell extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textPrimary,
-                        height: 1,
+                        height: AppTheme.lineHeightMyanmarSafe,
                       ),
                     ),
                   ],

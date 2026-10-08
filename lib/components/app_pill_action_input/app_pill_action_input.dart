@@ -210,7 +210,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                                 style: AppTheme.button(color: fg).copyWith(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  height: 1,
+                                  height: AppTheme.lineHeightMyanmarSafe,
                                 ),
                               ),
                             ],

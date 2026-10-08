@@ -430,7 +430,7 @@ class _PeriodChip extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: selected ? AppColors.onPrimary : AppColors.textPrimary,
-                height: 1.1,
+                height: AppTheme.lineHeightMyanmarSafe,
               ),
             ),
           ),

@@ -105,7 +105,7 @@ class _HomePlanCardState extends State<HomePlanCard> {
                             color: AppColors.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            height: 1.2,
+                            height: AppTheme.lineHeightMyanmarSafe,
                             letterSpacing: -0.2,
                           ),
                         ),
@@ -132,8 +132,7 @@ class _HomePlanCardState extends State<HomePlanCard> {
               ),
             ),
           ),
-          const Divider(
-              height: 1, thickness: 0.5, color: AppColors.borderLight),
+          const Divider(height: 1, thickness: 0.5, color: AppColors.borderLight),
           InkWell(
             onTap: () => setState(() => _wifiOpen = !_wifiOpen),
             splashColor: Colors.transparent,
@@ -157,7 +156,7 @@ class _HomePlanCardState extends State<HomePlanCard> {
                         color: AppColors.textPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        height: 1.2,
+                        height: AppTheme.lineHeightMyanmarSafe,
                       ),
                     ),
                   ),
@@ -224,7 +223,7 @@ class _StatusPill extends StatelessWidget {
 
   final bool active;
 
-  static const _activeGreen = Color(0xFF499A13);
+  static const _activeGreen = Color(0xFF3D7A12);
   static const _activeSoft = Color(0xFFE8F5DC);
 
   @override
@@ -253,7 +252,7 @@ class _StatusPill extends StatelessWidget {
               color: active ? _activeGreen : AppColors.primary,
               fontSize: 9,
               fontWeight: FontWeight.w700,
-              height: 1.1,
+              height: AppTheme.lineHeightMyanmarSafe,
             ),
           ),
         ],
@@ -304,7 +303,7 @@ class _CredentialRow extends StatelessWidget {
               color: AppColors.textMuted,
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              height: 1.2,
+              height: AppTheme.lineHeightMyanmarSafe,
             ),
           ),
         ),
@@ -317,7 +316,7 @@ class _CredentialRow extends StatelessWidget {
               color: AppColors.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              height: 1.2,
+              height: AppTheme.lineHeightMyanmarSafe,
             ),
           ),
         ),

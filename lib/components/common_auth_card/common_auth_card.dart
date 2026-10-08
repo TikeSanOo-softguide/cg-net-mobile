@@ -232,7 +232,7 @@ class AuthBackgroundScaffold extends StatelessWidget {
   /// Override bottom padding under the blue header content.
   final double? headerBottomPadding;
 
-  /// White sheet top radius. Defaults to [AppStyle.radiusCurve] (16).
+  /// White sheet top radius. Defaults to [AppStyle.radiusCurve] (24).
   final double? sheetRadius;
 
   /// Pinned near the bottom of the white sheet (small safe-area gap).

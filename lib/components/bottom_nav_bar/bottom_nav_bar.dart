@@ -26,8 +26,8 @@ class BottomNavBar extends ConsumerWidget {
     (Icons.person, 'nav.profile'),
   ];
 
-  static const _pillWidth = 44.0;
-  static const _pillHeight = 26.0;
+  static const _pillWidth = 52.0;
+  static const _pillHeight = 28.0;
   static const _pillTop = 10.0;
 
   @override
@@ -185,7 +185,7 @@ class _NavItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                height: 26,
+                height: 28,
                 child: Icon(
                   icon,
                   color: color,

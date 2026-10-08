@@ -19,7 +19,7 @@ Future<void> showOtpSuccessDrawer(
   const iconBox = 45.0;
   const iconSize = 26.0;
   const iconRadius = 10.0;
-  // Soft wash of success #499A13
+  // Soft wash of success #3D7A12
   const successChip = Color(0xFFE8F5DC);
 
   return showModalBottomSheet<void>(

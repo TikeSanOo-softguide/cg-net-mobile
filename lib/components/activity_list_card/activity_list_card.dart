@@ -67,8 +67,8 @@ class ActivityListCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? amountColor;
 
-  static const _creditGreen = Color(0xFF499A13);
-  static const _debitRed = Color(0xFFFF0000);
+  static const _creditGreen = Color(0xFF3D7A12);
+  static const _debitRed = Color(0xFFD90000);
 
   static const topUpAsset = QuickActionIconChip.topUpAsset;
   static const historyAsset = QuickActionIconChip.historyAsset;
