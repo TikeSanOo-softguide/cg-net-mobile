@@ -40,6 +40,7 @@ class ApiEndpoints {
   static const String inbox = '/inbox';
   static const String deviceTokens = '/device-tokens';
   static const String availablePlans = '/web-app/packages';
+  static const String banners = '/web-app/banners';
   static const String packagesBuy = '/packages/buy';
   static const String redeemCheckSerialNo = '/redeem/check-serial-no';
   static const String redeemTopUpAccount = '/redeem/top-up-account';

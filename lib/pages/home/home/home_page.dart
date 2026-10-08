@@ -8,7 +8,6 @@ import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
-// import 'components/home_plan_card.dart'; // restore with active package card
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
@@ -44,24 +43,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     ref.read(pendingLaunchPromotionProvider.notifier).state = false;
 
     try {
-      // 1) Network notice first, then 2) promotion ad.
-      final notice = await ref.read(networkNoticeProvider.future);
       if (!mounted) return;
-      if (notice != null && notice.isCurrentlyValid) {
-        await showPromotionAdsModal(
-          context,
-          imagePath: notice.image,
-          barrierDismissible: false,
-        );
-      }
-
+      final promo = await ref.read(activeAdvertisementProvider.future);
       if (!mounted) return;
-      final ad = await ref.read(activeAdvertisementProvider.future);
-      if (!mounted) return;
-      if (ad == null || !ad.isCurrentlyValid) return;
+      if (promo == null || promo.image.isEmpty) return;
       await showPromotionAdsModal(
         context,
-        imagePath: ad.image,
+        imagePath: promo.image,
       );
     } catch (_) {
       // Empty / failed ads → stay on Home with no modal.
@@ -125,20 +113,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SliverToBoxAdapter(
                   child: SizedBox(height: HomeSectionHeader.sectionGap),
                 ),
-                // Temporary: hide active package card on home.
-                // SliverToBoxAdapter(
-                //   child: HomePlanCard(
-                //     packageId: data.packageId,
-                //     titleKey: data.planTitleKey,
-                //     expiry: data.planExpiry,
-                //     username: data.username,
-                //     password: data.password,
-                //     validityDays: data.validityDays,
-                //   ),
-                // ),
-                // const SliverToBoxAdapter(
-                //   child: SizedBox(height: HomeSectionHeader.sectionGap),
-                // ),
                 const SliverToBoxAdapter(child: HomeServicesSection()),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: HomeSectionHeader.sectionGap),
