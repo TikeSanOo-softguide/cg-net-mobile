@@ -33,9 +33,7 @@ class LaunchPromoRepository {
       }
 
       final entryBanners = list.where(
-        (item) =>
-            item is Map &&
-            (item['type'] == 'app_entry'),
+        (item) => item is Map && (item['type'] == 'app_entry'),
       );
 
       for (final item in entryBanners) {
@@ -60,7 +58,7 @@ class LaunchPromoRepository {
     }
   }
 
-  Future<SkipTimerPromo?> fetchActiveAdvertisement(
+  Future<Advertisement?> fetchActiveAdvertisement(
     String language,
   ) async {
     try {
@@ -80,9 +78,7 @@ class LaunchPromoRepository {
       }
 
       final popUpsBanners = list.where(
-        (item) =>
-            item is Map &&
-            (item['type'] == 'app_popup'),
+        (item) => item is Map && (item['type'] == 'app_popup'),
       );
 
       for (final item in popUpsBanners) {
@@ -94,10 +90,7 @@ class LaunchPromoRepository {
         );
 
         if (imageUrl != null && imageUrl.isNotEmpty) {
-          return SkipTimerPromo(
-            image: imageUrl,
-            durationSeconds: (item['duration'] as num?)?.toInt() ?? 5,
-          );
+          return Advertisement(image: imageUrl);
         }
       }
 
@@ -119,7 +112,7 @@ final skipTimerPromoProvider = FutureProvider<SkipTimerPromo?>((ref) {
   return ref.watch(launchPromoRepositoryProvider).fetchSkipTimerPromo(language);
 });
 
-final activeAdvertisementProvider = FutureProvider<SkipTimerPromo?>((ref) {
+final activeAdvertisementProvider = FutureProvider<Advertisement?>((ref) {
   final language = ref.watch(appLocaleProvider);
   return ref
       .watch(launchPromoRepositoryProvider)

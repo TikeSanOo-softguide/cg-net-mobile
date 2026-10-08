@@ -96,7 +96,7 @@ class _HomePromoBannerState extends ConsumerState<HomePromoBanner> {
                     },
                     itemBuilder: (context, index) {
                       return Image.network(
-                        banners[index],
+                        banners[index].image,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,

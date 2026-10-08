@@ -5,13 +5,14 @@ import '../../core/network/api_endpoints/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 import '../../core/utils/image_url_helper.dart';
+import '../../models/advertisement_model/advertisement_model.dart';
 
 class HomeBannerRepository {
   HomeBannerRepository(this._dio);
 
   final Dio _dio;
 
-  Future<List<String>> fetchBannerImages(String language) async {
+  Future<List<BannerModel>> fetchBanners(String language) async {
     try {
       final response = await _dio.get<dynamic>(
         ApiEndpoints.banners,
@@ -19,22 +20,19 @@ class HomeBannerRepository {
 
       final data = response.data;
 
-      if (data is! Map || data['data'] is! List) {
+      final List list;
+      if (data is List) {
+        list = data;
+      } else if (data is Map && data['data'] is List) {
+        list = data['data'] as List;
+      } else {
         return [];
       }
 
-      final list = data['data'] as List;
-
-      final backgrounds = list
-          .where(
-            (item) => item is Map && item['type'] == 'web_background',
-          )
-          .toList();
-
-      final banners = <String>[];
-
-      for (final item in backgrounds) {
+      final banners = <BannerModel>[];
+      for (final item in list) {
         if (item is! Map) continue;
+        if (item['type'] != 'web_background') continue;
 
         final imageUrl = ImageUrlHelper.resolve(
           item,
@@ -42,7 +40,7 @@ class HomeBannerRepository {
         );
 
         if (imageUrl != null && imageUrl.isNotEmpty) {
-          banners.add(imageUrl);
+          banners.add(BannerModel(image: imageUrl));
         }
       }
 
@@ -60,8 +58,8 @@ final homeBannerRepositoryProvider = Provider<HomeBannerRepository>((ref) {
 });
 
 final homeBannerProvider =
-    FutureProvider.family<List<String>, String>((ref, language) async {
+    FutureProvider.family<List<BannerModel>, String>((ref, language) async {
   final repository = ref.watch(homeBannerRepositoryProvider);
 
-  return repository.fetchBannerImages(language);
+  return repository.fetchBanners(language);
 });
