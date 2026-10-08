@@ -1,10 +1,10 @@
-import 'package:cg_net_mobile/core/utils/image_url_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_endpoints/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
+import '../../core/utils/image_url_helper.dart';
 
 class HomeBannerRepository {
   HomeBannerRepository(this._dio);
@@ -40,6 +40,7 @@ class HomeBannerRepository {
           item,
           language: language,
         );
+
         if (imageUrl != null && imageUrl.isNotEmpty) {
           banners.add(imageUrl);
         }

@@ -4,9 +4,9 @@ class ImageUrlHelper {
   ImageUrlHelper._();
 
   static String? resolve(
-      Map item, {
-        String language = 'en',
-      }) {
+    Map item, {
+    String language = 'en',
+  }) {
     final languageKey = switch (language) {
       'my' => 'my',
       'zh' => 'zh',
@@ -21,8 +21,8 @@ class ImageUrlHelper {
       item['image_url'],
     ].map((value) => value?.toString().trim()).firstWhere(
           (value) => value != null && value.isNotEmpty,
-      orElse: () => null,
-    );
+          orElse: () => null,
+        );
 
     if (raw == null) {
       return null;
