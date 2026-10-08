@@ -291,7 +291,7 @@ class _HotlineSection extends StatelessWidget {
                     children: [
                       Text(
                         entry.$1.flag,
-                        style: const TextStyle(fontSize: 14, height: 1),
+                        style: const TextStyle(fontSize: 14, height: AppTheme.lineHeightMyanmarSafe),
                       ),
                       const SizedBox(width: 6),
                       Text(

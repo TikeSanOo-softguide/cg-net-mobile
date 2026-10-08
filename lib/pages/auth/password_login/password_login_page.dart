@@ -355,11 +355,11 @@ class _PasswordDigitState extends State<_PasswordDigit> {
                   fontSize: fontSize,
                   fontWeight: FontWeight.w700,
                   color: filled ? AppColors.textPrimary : AppColors.textMuted,
-                  height: 1,
+                  height: AppTheme.lineHeightMyanmarSafe,
                 ),
                 strutStyle: StrutStyle(
                   fontSize: fontSize,
-                  height: 1,
+                  height: AppTheme.lineHeightMyanmarSafe,
                   forceStrutHeight: true,
                 ),
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],

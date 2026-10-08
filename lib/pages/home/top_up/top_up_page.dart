@@ -537,7 +537,7 @@ class _TopUpHeader extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: AppColors.onPrimary,
                             letterSpacing: 0.3,
-                            height: 1.2,
+                            height: AppTheme.lineHeightMyanmarSafe,
                           ),
                         ),
                         const SizedBox(height: 4),

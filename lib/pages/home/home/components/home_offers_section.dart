@@ -48,7 +48,7 @@ class HomeOffersSection extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final contentWidth = screenWidth - (AppStyle.pageMarginH * 2);
     // Inner width after AppCard horizontal padding (matches services card).
-    final innerWidth = contentWidth - (AppStyle.spaceSm * 2);
+    final innerWidth = contentWidth - 20; // 10 + 10 card pad
     // Wider cards — ~2.85 visible, slightly taller image.
     final cardWidth = ((innerWidth - _gap) / 2.85).clamp(90.0, 112.0);
     final imageHeight = cardWidth * 1.22;
@@ -62,7 +62,7 @@ class HomeOffersSection extends StatelessWidget {
         elevated: false,
         bordered: false,
         borderRadius: AppStyle.borderRadiusSm,
-        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+        padding: const EdgeInsets.fromLTRB(10, 14, 10, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -231,7 +231,7 @@ class _PopularCornerBadge extends StatelessWidget {
           fontWeight: FontWeight.w800,
           fontSize: 8,
           letterSpacing: 0.5,
-          height: 1.1,
+          height: AppTheme.lineHeightMyanmarSafe,
         ),
       ),
     );
@@ -263,7 +263,7 @@ class _BuyNowButton extends StatelessWidget {
               style: AppTheme.captionSm(color: AppColors.onPrimary).copyWith(
                 fontWeight: FontWeight.w700,
                 fontSize: 10,
-                height: 1,
+                height: AppTheme.lineHeightMyanmarSafe,
               ),
             ),
           ),

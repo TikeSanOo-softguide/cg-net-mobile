@@ -214,7 +214,9 @@ class _InboxCard extends StatelessWidget {
       bordered: false,
       padding: EdgeInsets.zero,
       borderRadius: AppStyle.borderRadiusSm,
-      child: IntrinsicHeight(
+      child: ClipRRect(
+        borderRadius: AppStyle.borderRadiusSm,
+        child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -295,6 +297,7 @@ class _InboxCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

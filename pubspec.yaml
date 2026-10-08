@@ -61,3 +61,14 @@ flutter:
     - assets/images/auth/
     - assets/images/support/
     - assets/images/profile/
+  fonts:
+    - family: NotoSansMyanmar
+      fonts:
+        - asset: assets/fonts/NotoSansMyanmar-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansMyanmar-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansMyanmar-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansMyanmar-Bold.ttf
+          weight: 700

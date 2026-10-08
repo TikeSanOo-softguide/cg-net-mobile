@@ -11,7 +11,7 @@ class AppStyle {
   static const double spaceSm = 8;
   static const double spaceMd = 12;
   static const double spaceLg = 16;
-  static const double spaceXl = 15;
+  static const double spaceXl = 20;
   static const double spaceXxl = 24;
   static const double spaceXxxl = 32;
 
@@ -29,8 +29,8 @@ class AppStyle {
   static const double radiusLg = 16;
   static const double radiusXl = 20;
 
-  /// Default curved sheet / top-bar join radius (login uses 30 via override).
-  static const double radiusCurve = 16;
+  /// Default curved sheet / top-bar join radius.
+  static const double radiusCurve = 24;
   static const double radiusInput = 8;
   static const double radiusButton = 8;
 
@@ -53,9 +53,9 @@ class AppStyle {
   static const double iconBox = 40;
   static const double circleButtonSize = 30;
   static const double topBarHeight = 40;
-  static const double bottomNavHeight = 64;
-  static const double bottomNavIconSize = 20;
-  static const double bottomNavLabelSize = 11;
+  static const double bottomNavHeight = 68;
+  static const double bottomNavIconSize = 22;
+  static const double bottomNavLabelSize = 12;
   static const double bottomNavIconGap = 4;
 
   // —— Typography sizes ——
@@ -67,7 +67,7 @@ class AppStyle {
   static const double fontBody = 14;
   static const double fontBodyLg = 15;
   static const double fontSecondary = 13;
-  static const double fontCaption = 11;
+  static const double fontCaption = 12;
   static const double fontCaptionSm = 11;
   /// Field / inline validation error copy.
   static const double fontError = 12;
@@ -80,7 +80,7 @@ class AppStyle {
 
   /// Comfortable line height for mixed EN / Myanmar.
   static const double lineHeightBody = 1.45;
-  static const double lineHeightTitle = 1.25;
+  static const double lineHeightTitle = 1.4;
   static const double lineHeightCaption = 1.35;
 
   static const double inputFontSize = fontBody;

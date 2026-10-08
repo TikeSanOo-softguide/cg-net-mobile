@@ -23,28 +23,28 @@ class AppColors {
   /// Dark ink for text on accent
   static const Color onAccent = Color(0xFF173236);
 
-  /// Page background — soft cool gray so white cards lift slightly.
-  static const Color background = Color(0xFFF2F4F7);
+  /// Page canvas — cool blue-gray like KPay content zone (cards stay pure white).
+  static const Color background = Color(0xFFEDF1F7);
 
-  /// Alternate light surface
-  static const Color backgroundAlt = Color(0xFFF7FAFC);
+  /// Alternate light surface (cool wash).
+  static const Color backgroundAlt = Color(0xFFF5F8FC);
 
   /// Crisp clear card white.
   static const Color surface = Color(0xFFFFFFFF);
   static const Color onPrimary = Color(0xFFFFFFFF);
 
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF5F6B64);
-  static const Color textMuted = Color(0xFF64748B);
+  static const Color textPrimary = Color(0xFF0B1220);
+  static const Color textSecondary = Color(0xFF4A5568);
+  static const Color textMuted = Color(0xFF616A78);
 
-  static const Color border = Color(0xFFE0E3E5);
-  static const Color borderLight = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFD9E0EA);
+  static const Color borderLight = Color(0xFFE8EEF5);
 
   /// Cool hairline for crisp white cards.
-  static const Color paperBorder = Color(0xFFE8EAED);
+  static const Color paperBorder = Color(0xFFE2E8F0);
 
   /// Thin translucent cool rim for a glass edge.
-  static const Color glassBorder = Color(0x73DDE3EA);
+  static const Color glassBorder = Color(0x73D5DEEA);
 
   static const Color error = Color(0xFFB3261E);
   static const Color success = Color(0xFF1B7A4E);

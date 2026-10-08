@@ -41,19 +41,19 @@ class HomeServicesSection extends ConsumerWidget {
           id: 'installation',
           asset: 'assets/images/services/installation.png',
           label: 'home.service_packages'.tr(),
-          color: const Color(0xFFEA580C),
+          color: const Color(0xFFDA0C81),
         ),
         _ServiceItem(
           id: 'complaint',
           asset: 'assets/images/services/complaint.png',
           label: 'home.service_support'.tr(),
-          color: const Color(0xFFDC2626),
+          color: const Color(0xFFFF0000),
         ),
         _ServiceItem(
           id: 'relocation',
           asset: 'assets/images/services/relocation.png',
           label: 'home.service_alerts'.tr(),
-          color: const Color(0xFF2563EB),
+          color: const Color(0xFF1B4EF5),
         ),
       ];
 
@@ -62,19 +62,19 @@ class HomeServicesSection extends ConsumerWidget {
           id: 'check_cpe',
           asset: 'assets/images/services/check_cpe.png',
           label: 'home.service_check_cpe'.tr(),
-          color: const Color(0xFF059669),
+          color: const Color(0xFF007880),
         ),
         _ServiceItem(
           id: 'change_plan',
           asset: 'assets/images/services/change_plan.png',
           label: 'home.service_change_plan'.tr(),
-          color: const Color(0xFFDB2777),
+          color: const Color(0xFF7A0BC0),
         ),
         _ServiceItem(
           id: 'change_wifi',
           asset: 'assets/images/services/change_wifi.png',
           label: 'home.service_change_wifi'.tr(),
-          color: const Color(0xFF0891B2),
+          color: const Color(0xFFF25912),
         ),
       ];
 
@@ -148,7 +148,10 @@ class HomeServicesSection extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           'home.services'.tr(),
-                          style: AppTheme.sectionTitle(),
+                          style: AppTheme.sectionTitle().copyWith(
+                            fontSize: 15,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
                       Material(
@@ -225,7 +228,7 @@ class HomeServicesSection extends ConsumerWidget {
         elevated: false,
         bordered: false,
         borderRadius: AppStyle.borderRadiusSm,
-        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+        padding: const EdgeInsets.fromLTRB(10, 14, 10, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -237,7 +240,7 @@ class HomeServicesSection extends ConsumerWidget {
               items: items.take(3).toList(),
               onTap: (item) => _onServiceTap(context, ref, item),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             _ServiceGrid(
               items: items.skip(3).take(3).toList(),
               onTap: (item) => _onServiceTap(context, ref, item),
@@ -308,12 +311,13 @@ class _ServiceTile extends StatelessWidget {
   final _ServiceItem item;
   final VoidCallback onTap;
 
-  static const double _iconSize = 32;
+  static const double _iconSize = 36;
 
   @override
   Widget build(BuildContext context) {
     final color = item.color;
     final drawnSize = _iconSize;
+    // PNGs are pure black silhouettes; srcIn applies the exact hex brightly.
     final iconWidget = item.asset != null
         ? ColorFiltered(
             colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
@@ -323,6 +327,8 @@ class _ServiceTile extends StatelessWidget {
               height: drawnSize,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+              gaplessPlayback: true,
               errorBuilder: (_, __, ___) => Icon(
                 item.icon ?? Icons.image_not_supported_outlined,
                 size: drawnSize,
@@ -342,14 +348,14 @@ class _ServiceTile extends StatelessWidget {
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Padding(
-        // No top pad — HomeSectionHeader.titleToContent sets title→content gap.
-        padding: const EdgeInsets.only(bottom: 4),
+        // Extra vertical room → taller services card, clearer vibe.
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             iconWidget,
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               item.label,
               textAlign: TextAlign.center,

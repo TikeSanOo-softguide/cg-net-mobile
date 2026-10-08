@@ -33,10 +33,11 @@ class HomeSectionHeader extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTheme.body(
                   color: AppColors.textPrimary,
-                  weight: FontWeight.w500,
+                  weight: FontWeight.w600,
                 ).copyWith(
                   fontSize: 15,
-                  height: 1,
+                  height: AppTheme.lineHeightMyanmarSafe,
+                  letterSpacing: 0.2,
                 ),
               ),
             ),
@@ -53,7 +54,7 @@ class HomeSectionHeader extends StatelessWidget {
                     style: AppTheme.caption(
                       color: AppColors.primary,
                       weight: FontWeight.w500,
-                    ).copyWith(fontSize: 11, height: 1),
+                    ).copyWith(fontSize: 11, height: AppTheme.lineHeightMyanmarSafe),
                   ),
                 ),
               ),
