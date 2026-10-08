@@ -30,9 +30,9 @@ class AppStyle {
   static const double radiusXl = 20;
 
   /// Default curved sheet / top-bar join radius (login uses 30 via override).
-  static const double radiusCurve = 24;
+  static const double radiusCurve = 16;
   static const double radiusInput = 8;
-  static const double radiusButton = 10;
+  static const double radiusButton = 8;
 
   static BorderRadius get borderRadiusSm => BorderRadius.circular(radiusSm);
   static BorderRadius get borderRadiusMd => BorderRadius.circular(radiusMd);
@@ -69,6 +69,12 @@ class AppStyle {
   static const double fontSecondary = 13;
   static const double fontCaption = 11;
   static const double fontCaptionSm = 11;
+  /// Field / inline validation error copy.
+  static const double fontError = 12;
+  static const double letterSpacingError = 0.3;
+
+  /// Fixed slot under fields / OTP so layout does not jump on errors.
+  static const double errorSlotHeight = 26;
   static const double fontButton = 14;
   static const double fontAmount = 28;
 

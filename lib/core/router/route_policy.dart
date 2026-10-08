@@ -11,6 +11,7 @@ bool isPublicRouteLocation(String location) {
       location == RoutePaths.terms ||
       location.startsWith('/otp') ||
       location.startsWith('/set-username') ||
+      location == RoutePaths.passwordLogin ||
       location.startsWith('/error') ||
       location == RoutePaths.notFound;
 }
@@ -21,7 +22,8 @@ bool isAuthOnlyRouteLocation(String location) {
       location == RoutePaths.onboarding ||
       location == RoutePaths.terms ||
       location.startsWith('/otp') ||
-      location.startsWith('/set-username');
+      location.startsWith('/set-username') ||
+      location == RoutePaths.passwordLogin;
 }
 
 String loginWithSessionExpiredReason() {

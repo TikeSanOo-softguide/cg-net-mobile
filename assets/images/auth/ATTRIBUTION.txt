@@ -2,7 +2,9 @@ Auth icons — Flaticon sources, recolored, transparent background.
 
 Sources:
 - otp: secure-password_16230751 — https://www.flaticon.com/free-icon/secure-password_16230751
+- password: unlock_12795759 — https://www.flaticon.com/free-icon/unlock_12795759
 - create_account: add-user_7542128 — https://www.flaticon.com/free-icon/add-user_7542128
+- terms: terms-and-conditions_16331104 — https://www.flaticon.com/free-icon/terms-and-conditions_16331104
 
 Icons by Flaticon authors — https://www.flaticon.com
 Recolored to CG-NET primary #0100CA.

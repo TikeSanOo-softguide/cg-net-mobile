@@ -7,6 +7,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/user_model/user_model.dart';
 import 'inbox_detail_controller.dart';
@@ -47,6 +48,7 @@ class InboxDetailPage extends ConsumerWidget {
               AppCard(
                 elevated: false,
                 bordered: false,
+                borderRadius: AppStyle.borderRadiusSm,
                 padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -13,6 +13,7 @@ class AppInput extends StatefulWidget {
     this.controller,
     this.label,
     this.hint,
+    this.hintLetterSpacing,
     this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
@@ -30,8 +31,8 @@ class AppInput extends StatefulWidget {
     this.inputFormatters,
     this.autofocus = false,
     this.focusNode,
-    this.fieldFillColor,
-    this.fieldBorderColor,
+    this.autofillHints,
+    this.reserveErrorSpace = true,
   });
 
   /// Key for the inner [TextFormField] (e.g. call `validate()`).
@@ -39,6 +40,7 @@ class AppInput extends StatefulWidget {
   final TextEditingController? controller;
   final String? label;
   final String? hint;
+  final double? hintLetterSpacing;
   final bool obscureText;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -65,14 +67,17 @@ class AppInput extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final bool autofocus;
   final FocusNode? focusNode;
-  final Color? fieldFillColor;
-  final Color? fieldBorderColor;
+  final Iterable<String>? autofillHints;
+
+  /// Keep a fixed helper/error slot so the CTA below does not jump when
+  /// validation text appears. Only applied when [validator] is set.
+  final bool reserveErrorSpace;
 
   /// Trailing field icon (no background).
   static Widget iconChip({
     required IconData icon,
-    double size = 28,
-    double iconSize = 15,
+    double size = 30,
+    double iconSize = 17,
     bool focused = false,
     Color? backgroundColor,
     Color? iconColor,
@@ -187,12 +192,16 @@ class _AppInputState extends State<AppInput> {
   static const Color _idleBorder = AppColors.paperBorder;
   static const Color _idleFill = AppColors.surface;
 
+  /// Fixed slot under the field so the CTA never jumps when errors appear.
+  static const double _errorSlotHeight = AppStyle.errorSlotHeight;
+
   TextStyle _labelStyle(Set<WidgetState> states) {
     final focused = states.contains(WidgetState.focused);
     return AppTheme.english(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
       color: focused ? AppColors.primary : AppColors.textSecondary,
+      letterSpacing: 0.2,
     );
   }
 
@@ -202,62 +211,120 @@ class _AppInputState extends State<AppInput> {
     final labelStyle = WidgetStateTextStyle.resolveWith(_labelStyle);
     final fill = !widget.enabled
         ? AppColors.backgroundAlt
-        : widget.fieldFillColor ?? (focused ? AppColors.surface : _idleFill);
+        : focused
+            ? AppColors.surface
+            : _idleFill;
+    final reserveError = widget.reserveErrorSpace && widget.validator != null;
+    final errorTextStyle = AppTheme.fieldError();
 
-    return TextFormField(
+    return FormField<String>(
       key: widget.formFieldKey,
-      controller: widget.controller,
-      focusNode: _effectiveFocus,
-      obscureText: widget.obscureText,
-      keyboardType: widget.keyboardType,
-      textInputAction: widget.textInputAction,
-      validator: widget.validator,
-      onChanged: widget.onChanged,
-      onFieldSubmitted: widget.onSubmitted,
-      onTapOutside: (_) => _effectiveFocus.unfocus(),
-      maxLength: widget.maxLength,
-      maxLines: widget.obscureText ? 1 : widget.maxLines,
-      enabled: widget.enabled,
-      readOnly: widget.readOnly,
-      inputFormatters: widget.inputFormatters,
-      autofocus: widget.autofocus,
-      style: AppTheme.english(
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-      ),
-      cursorColor: AppColors.primary,
-      decoration: InputDecoration(
-        isDense: true,
-        labelText: widget.label,
-        hintText: widget.hint,
-        hintStyle: AppTheme.english(
-          fontSize: 12,
-          color: AppColors.textMuted,
-          fontWeight: FontWeight.w400,
-        ),
-        labelStyle: labelStyle,
-        floatingLabelStyle: labelStyle,
-        filled: true,
-        fillColor: fill,
-        contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-        prefixIcon: widget.prefix,
-        suffixIcon: _buildTrailing(focused),
-        prefixIconConstraints: const BoxConstraints(
-          minWidth: 36,
-          minHeight: 44,
-        ),
-        suffixIconConstraints: widget.suffix != null
-            ? const BoxConstraints(minWidth: 0, minHeight: 44)
-            : const BoxConstraints(minWidth: 36, minHeight: 44),
-        border: _border(false),
-        enabledBorder: _border(false),
-        focusedBorder: _border(true),
-        errorBorder: AppStyle.inputErrorBorder,
-        focusedErrorBorder: AppStyle.inputErrorBorder,
-        disabledBorder: _border(false),
-        counterText: '',
-      ),
+      validator: widget.validator == null
+          ? null
+          : (_) => widget.validator!(widget.controller?.text),
+      initialValue: widget.controller?.text ?? '',
+      builder: (field) {
+        final hasError = field.hasError;
+        final errorText = field.errorText;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: widget.controller,
+              focusNode: _effectiveFocus,
+              obscureText: widget.obscureText,
+              keyboardType: widget.keyboardType,
+              textInputAction: widget.textInputAction,
+              onChanged: (value) {
+                field.didChange(value);
+                widget.onChanged?.call(value);
+              },
+              onSubmitted: widget.onSubmitted,
+              maxLength: widget.maxLength,
+              maxLines: widget.obscureText ? 1 : widget.maxLines,
+              enabled: widget.enabled,
+              readOnly: widget.readOnly,
+              inputFormatters: widget.inputFormatters,
+              autofocus: widget.autofocus,
+              autofillHints: widget.autofillHints,
+              style: AppTheme.english(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.2,
+              ),
+              cursorColor: AppColors.primary,
+              decoration: InputDecoration(
+                isDense: true,
+                labelText: widget.label,
+                hintText: widget.hint,
+                hintStyle: AppTheme.english(
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: widget.hintLetterSpacing ?? 0.2,
+                ),
+                hintMaxLines: 1,
+                labelStyle: labelStyle,
+                floatingLabelStyle: labelStyle,
+                filled: true,
+                fillColor: fill,
+                contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                prefixIcon: widget.prefix,
+                suffixIcon: _buildTrailing(focused),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 48,
+                ),
+                suffixIconConstraints: widget.suffix != null
+                    ? const BoxConstraints(minWidth: 0, minHeight: 48)
+                    : const BoxConstraints(minWidth: 40, minHeight: 48),
+                border: hasError ? AppStyle.inputErrorBorder : _border(false),
+                enabledBorder:
+                    hasError ? AppStyle.inputErrorBorder : _border(false),
+                focusedBorder:
+                    hasError ? AppStyle.inputErrorBorder : _border(true),
+                disabledBorder: _border(false),
+                // Error copy is drawn in the fixed slot below (no built-in indent).
+                errorText: null,
+                counterText: '',
+              ),
+            ),
+            if (reserveError)
+              SizedBox(
+                height: _errorSlotHeight,
+                child: (hasError && errorText != null && errorText.isNotEmpty)
+                    ? Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            errorText,
+                            textAlign: TextAlign.left,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: errorTextStyle,
+                          ),
+                        ),
+                      )
+                    : null,
+              )
+            else if (hasError && errorText != null && errorText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2, bottom: 2),
+                child: Text(
+                  errorText,
+                  textAlign: TextAlign.left,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: errorTextStyle,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

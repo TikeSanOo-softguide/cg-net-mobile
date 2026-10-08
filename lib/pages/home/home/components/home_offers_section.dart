@@ -47,8 +47,10 @@ class HomeOffersSection extends StatelessWidget {
     final locale = context.locale.languageCode;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final contentWidth = screenWidth - (AppStyle.pageMarginH * 2);
+    // Inner width after AppCard horizontal padding (matches services card).
+    final innerWidth = contentWidth - (AppStyle.spaceSm * 2);
     // Wider cards — ~2.85 visible, slightly taller image.
-    final cardWidth = ((contentWidth - _gap) / 2.85).clamp(90.0, 112.0);
+    final cardWidth = ((innerWidth - _gap) / 2.85).clamp(90.0, 112.0);
     final imageHeight = cardWidth * 1.22;
     // Image + top button pad + button + bottom button pad.
     final slideHeight = imageHeight + _buttonPadV + _buttonHeight + _buttonPadV;
@@ -56,36 +58,42 @@ class HomeOffersSection extends StatelessWidget {
     return Padding(
       key: ValueKey('offers-$locale'),
       padding: AppStyle.pagePaddingH,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HomeSectionHeader(
-            title: context.tr('home.special_offers'),
-            onSeeAll: () => context.goNamed(RouteNames.packageList),
-          ),
-          SizedBox(
-            width: contentWidth,
-            height: slideHeight,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: _packages.length,
-              separatorBuilder: (_, __) => const SizedBox(width: _gap),
-              itemBuilder: (context, index) {
-                final package = _packages[index];
-                return _PackageOfferCard(
-                  id: package.id,
-                  imagePath: package.imagePath,
-                  width: cardWidth,
-                  imageHeight: imageHeight,
-                  popular: package.popular,
-                  locale: locale,
-                );
-              },
+      child: AppCard(
+        elevated: false,
+        bordered: false,
+        borderRadius: AppStyle.borderRadiusSm,
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            HomeSectionHeader(
+              title: context.tr('home.special_offers'),
+              onSeeAll: () => context.goNamed(RouteNames.packageList),
             ),
-          ),
-        ],
+            SizedBox(
+              width: innerWidth,
+              height: slideHeight,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: _packages.length,
+                separatorBuilder: (_, __) => const SizedBox(width: _gap),
+                itemBuilder: (context, index) {
+                  final package = _packages[index];
+                  return _PackageOfferCard(
+                    id: package.id,
+                    imagePath: package.imagePath,
+                    width: cardWidth,
+                    imageHeight: imageHeight,
+                    popular: package.popular,
+                    locale: locale,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

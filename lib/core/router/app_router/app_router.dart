@@ -10,6 +10,7 @@ import '../../../pages/auth/login/login_qa_page.dart';
 import '../../../pages/auth/onboarding/onboarding_page.dart';
 import '../../../pages/auth/otp_success/otp_success_page.dart';
 import '../../../pages/auth/otp_verification/otp_verification_page.dart';
+import '../../../pages/auth/password_login/password_login_page.dart';
 import '../../../pages/auth/set_username_password/set_username_password_page.dart';
 import '../../../pages/auth/splash/splash_page.dart';
 import '../../../pages/auth/terms/terms_page.dart';
@@ -113,7 +114,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
           final challengeId = state.uri.queryParameters['challenge_id'] ?? '';
-          return OtpVerificationPage(phone: phone, challengeId: challengeId);
+          final resendAfter = int.tryParse(
+                state.uri.queryParameters['resend_after'] ?? '',
+              ) ??
+              60;
+          return OtpVerificationPage(
+            phone: phone,
+            challengeId: challengeId,
+            resendAfter: resendAfter,
+          );
         },
       ),
       GoRoute(
@@ -132,6 +141,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final verificationToken =
               state.uri.queryParameters['verification_token'] ?? '';
           return SetUsernamePasswordPage(
+            phone: phone,
+            verificationToken: verificationToken,
+          );
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.passwordLogin,
+        name: RouteNames.passwordLogin,
+        builder: (context, state) {
+          final phone = state.uri.queryParameters['phone'] ?? '';
+          final verificationToken =
+              state.uri.queryParameters['verification_token'] ?? '';
+          return PasswordLoginPage(
             phone: phone,
             verificationToken: verificationToken,
           );

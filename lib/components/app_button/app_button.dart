@@ -5,6 +5,10 @@ import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
 /// Solid primary CTA — background exactly `#0100CA`, white label, no overlays.
+///
+/// Locale-stable: fixed [height], single-line label with gentle scale-down so
+/// EN / MY / ZH text swaps never change button size or layout.
+/// When [onPressed] is null or [isLoading], shows a muted disabled style.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -38,36 +42,35 @@ class AppButton extends StatelessWidget {
         ? SizedBox(
             height: fontSize + 4,
             width: fontSize + 4,
-            child: const CircularProgressIndicator(
+            child: CircularProgressIndicator(
               strokeWidth: 2.2,
-              color: AppColors.onPrimary,
+              color: foreground,
             ),
           )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: fontSize + 2,
-                  color: AppColors.onPrimary,
-                ),
-                const SizedBox(width: AppStyle.spaceSm),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.button(color: AppColors.onPrimary).copyWith(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.4,
-                    height: 1.2,
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: fontSize + 2,
+                    color: foreground,
                   ),
+                  const SizedBox(width: AppStyle.spaceSm),
+                ],
+                Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: labelStyle,
                 ),
-              ),
-            ],
+              ],
+            ),
           );
 
     final button = GestureDetector(
@@ -88,6 +91,6 @@ class AppButton extends StatelessWidget {
     );
 
     if (!isExpanded) return button;
-    return SizedBox(width: double.infinity, child: button);
+    return SizedBox(width: double.infinity, height: height, child: button);
   }
 }

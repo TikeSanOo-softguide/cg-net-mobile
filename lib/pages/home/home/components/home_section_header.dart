@@ -16,7 +16,8 @@ class HomeSectionHeader extends StatelessWidget {
   final VoidCallback? onSeeAll;
 
   static const double sectionGap = 10;
-  static const double titleToContent = 8;
+  /// Gap under title + See all → services / offer images (same on both cards).
+  static const double titleToContent = 12;
 
   @override
   Widget build(BuildContext context) {

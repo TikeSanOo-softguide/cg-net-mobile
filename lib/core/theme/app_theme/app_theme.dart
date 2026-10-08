@@ -124,6 +124,15 @@ class AppTheme {
         height: AppStyle.lineHeightCaption,
       );
 
+  /// Shared field / inline validation error (12 / w400 / letterSpacing 0.3).
+  static TextStyle fieldError({Color? color}) => english(
+        fontSize: AppStyle.fontError,
+        fontWeight: FontWeight.w400,
+        color: color ?? AppColors.error,
+        letterSpacing: AppStyle.letterSpacingError,
+        height: AppStyle.lineHeightCaption,
+      );
+
   static TextStyle captionSm({Color? color}) => english(
         fontSize: AppStyle.fontCaptionSm,
         fontWeight: FontWeight.w400,
@@ -449,6 +458,7 @@ class AppTheme {
         focusedBorder: AppStyle.inputFocusedBorder,
         errorBorder: AppStyle.inputErrorBorder,
         focusedErrorBorder: AppStyle.inputErrorBorder,
+        errorStyle: fieldError(),
         prefixIconColor: AppColors.primary,
         suffixIconColor: AppColors.primary,
         floatingLabelStyle: const TextStyle(color: AppColors.primary),
