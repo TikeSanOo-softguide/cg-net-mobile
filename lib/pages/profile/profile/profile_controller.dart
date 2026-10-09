@@ -1,26 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/auth_api/auth_api.dart';
+import '../../../core/network/profile_api/profile_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../models/user_model/user_model.dart';
 
 class ProfileController extends StateNotifier<UserProfileModel> {
-  ProfileController(this._secureStorage, this._push, this._authApi)
-      : super(
+  ProfileController({
+    required SecureStorage secureStorage,
+    required PushNotificationService push,
+    required ProfileApi profileApi,
+    required AuthApi authApi,
+  })  : _secureStorage = secureStorage,
+        _push = push,
+        _profileApi = profileApi,
+        _authApi = authApi,
+        super(
           const UserProfileModel(
-            id: 'u1',
-            fullName: 'CG Net Customer',
-            phone: '+959123456789',
-            accountNumber: '09970071489',
-            email: 'customer@example.com',
-            username: 'cguser',
+            id: '',
+            fullName: '',
+            phone: '',
+            accountNumber: '',
+            username: '',
           ),
-        );
+        ) {
+    fetchProfile();
+  }
 
   final SecureStorage _secureStorage;
   final PushNotificationService _push;
+  final ProfileApi _profileApi;
   final AuthApi _authApi;
+
+  Future<void> fetchProfile() async {
+    try {
+      final user = await _profileApi.fetchProfile();
+      state = user;
+    } catch (_) {
+      // Best-effort fetch; keep existing state on network error.
+    }
+  }
 
   void updateProfile(UserProfileModel profile) {
     state = profile;
@@ -44,8 +64,9 @@ class ProfileController extends StateNotifier<UserProfileModel> {
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, UserProfileModel>((ref) {
   return ProfileController(
-    ref.watch(secureStorageProvider),
-    ref.watch(pushNotificationServiceProvider),
-    ref.watch(authApiProvider),
+    secureStorage: ref.watch(secureStorageProvider),
+    push: ref.watch(pushNotificationServiceProvider),
+    profileApi: ref.watch(profileApiProvider),
+    authApi: ref.watch(authApiProvider),
   );
 });

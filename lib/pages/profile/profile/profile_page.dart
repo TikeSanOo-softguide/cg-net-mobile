@@ -45,52 +45,63 @@ class ProfilePage extends ConsumerWidget {
         style: AppTheme.topBarTitle(),
       ),
       showBack: false,
-      body: ListView(
-        key: ValueKey('profile-$localeCode'),
-        padding: const EdgeInsets.fromLTRB(
-          AppStyle.spaceLg,
-          AppStyle.spaceLg,
-          AppStyle.spaceLg,
-          AppStyle.spaceXxl,
-        ),
-        children: [
-          AppCard(
-            elevated: true,
-            bordered: false,
-            padding: const EdgeInsets.all(AppStyle.spaceMd),
-            child: Row(
-              children: [
-                _AccountAvatar(name: profile.fullName),
-                const SizedBox(width: AppStyle.spaceMd),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.accountNumber,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.english(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted,
+      body: RefreshIndicator(
+        onRefresh: () =>
+            ref.read(profileControllerProvider.notifier).fetchProfile(),
+        child: ListView(
+          key: ValueKey('profile-$localeCode'),
+          padding: const EdgeInsets.fromLTRB(
+            AppStyle.spaceLg,
+            AppStyle.spaceLg,
+            AppStyle.spaceLg,
+            AppStyle.spaceXxl,
+          ),
+          children: [
+            AppCard(
+              elevated: true,
+              bordered: false,
+              padding: const EdgeInsets.all(AppStyle.spaceMd),
+              child: Row(
+                children: [
+                  _AccountAvatar(name: profile.fullName),
+                  const SizedBox(width: AppStyle.spaceMd),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.fullName.isNotEmpty
+                              ? profile.fullName
+                              : (profile.accountNumber.isNotEmpty
+                                  ? profile.accountNumber
+                                  : '---'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.english(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textMuted,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        profile.phone,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.english(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                          letterSpacing: 0.2,
+                        const SizedBox(height: 2),
+                        Text(
+                          profile.phone.isNotEmpty
+                              ? profile.phone
+                              : (profile.accountNumber.isNotEmpty
+                                  ? profile.accountNumber
+                                  : '---'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.english(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.2,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 const SizedBox(width: AppStyle.spaceSm),
                 Material(
                   color: AppColors.primaryLight,
@@ -194,8 +205,9 @@ class ProfilePage extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _AccountAvatar extends StatelessWidget {

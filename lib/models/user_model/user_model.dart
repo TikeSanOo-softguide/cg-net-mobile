@@ -73,7 +73,7 @@ class UserProfileModel {
     required this.fullName,
     required this.phone,
     required this.accountNumber,
-    this.email,
+    this.status = 'active',
     this.username,
   });
 
@@ -81,6 +81,87 @@ class UserProfileModel {
   final String fullName;
   final String phone;
   final String accountNumber;
-  final String? email;
+  final String status;
   final String? username;
+
+  String get displayPhone => formatLocalPhone(phone);
+
+  static String formatLocalPhone(String rawPhone) {
+    var value = rawPhone.trim().replaceAll(RegExp(r'[\s().-]+'), '');
+    if (value.startsWith('+')) {
+      value = value.substring(1);
+    }
+    if (value.startsWith('959')) {
+      return '09${value.substring(3)}';
+    }
+    if (value.startsWith('950')) {
+      return '0${value.substring(3)}';
+    }
+    if (value.startsWith('95')) {
+      return '0${value.substring(2)}';
+    }
+    if (!value.startsWith('0') && value.startsWith('9') && value.length >= 8) {
+      return '0$value';
+    }
+    return rawPhone;
+  }
+
+  factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> rawData = json;
+    if (json['data'] is Map) {
+      rawData = Map<String, dynamic>.from(json['data'] as Map);
+      if (rawData['user'] is Map) {
+        rawData = Map<String, dynamic>.from(rawData['user'] as Map);
+      }
+    } else if (json['user'] is Map) {
+      rawData = Map<String, dynamic>.from(json['user'] as Map);
+    }
+
+    final id = (rawData['id'] ?? rawData['user_id'] ?? '').toString();
+    final fullName = rawData['name']?.toString() ??
+        rawData['full_name']?.toString() ??
+        rawData['fullName']?.toString() ??
+        '';
+    final rawPhone = rawData['phone']?.toString() ??
+        rawData['phone_number']?.toString() ??
+        rawData['mobile']?.toString() ??
+        '';
+    final phone = formatLocalPhone(rawPhone);
+    final accountNumber = rawData['broadband_account_number']?.toString() ??
+        rawData['account_number']?.toString() ??
+        rawData['account_no']?.toString() ??
+        rawData['accountNumber']?.toString() ??
+        rawData['customer_id']?.toString() ??
+        rawData['user_code']?.toString() ??
+        '';
+    final status = rawData['status']?.toString() ?? 'active';
+    final username = rawData['username']?.toString();
+
+    return UserProfileModel(
+      id: id,
+      fullName: fullName,
+      phone: phone,
+      accountNumber: accountNumber,
+      status: status,
+      username: username,
+    );
+  }
+
+  UserProfileModel copyWith({
+    String? id,
+    String? fullName,
+    String? phone,
+    String? accountNumber,
+    String? status,
+    String? username,
+  }) {
+    return UserProfileModel(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      phone: phone != null ? formatLocalPhone(phone) : this.phone,
+      accountNumber: accountNumber ?? this.accountNumber,
+      status: status ?? this.status,
+      username: username ?? this.username,
+    );
+  }
 }
