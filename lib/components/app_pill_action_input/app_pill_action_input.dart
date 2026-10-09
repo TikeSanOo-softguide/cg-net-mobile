@@ -126,6 +126,7 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                         field.didChange(v);
                         widget.onChanged?.call(v);
                       },
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       style: AppTheme.english(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

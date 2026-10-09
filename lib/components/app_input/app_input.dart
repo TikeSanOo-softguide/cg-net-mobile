@@ -214,8 +214,7 @@ class _AppInputState extends State<AppInput> {
         : focused
             ? AppColors.surface
             : _idleFill;
-    final reserveError =
-        widget.reserveErrorSpace && widget.validator != null;
+    final reserveError = widget.reserveErrorSpace && widget.validator != null;
     final errorTextStyle = AppTheme.fieldError();
 
     return FormField<String>(
@@ -242,6 +241,7 @@ class _AppInputState extends State<AppInput> {
                 field.didChange(value);
                 widget.onChanged?.call(value);
               },
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               onSubmitted: widget.onSubmitted,
               maxLength: widget.maxLength,
               maxLines: widget.obscureText ? 1 : widget.maxLines,
@@ -282,15 +282,11 @@ class _AppInputState extends State<AppInput> {
                 suffixIconConstraints: widget.suffix != null
                     ? const BoxConstraints(minWidth: 0, minHeight: 48)
                     : const BoxConstraints(minWidth: 40, minHeight: 48),
-                border: hasError
-                    ? AppStyle.inputErrorBorder
-                    : _border(false),
-                enabledBorder: hasError
-                    ? AppStyle.inputErrorBorder
-                    : _border(false),
-                focusedBorder: hasError
-                    ? AppStyle.inputErrorBorder
-                    : _border(true),
+                border: hasError ? AppStyle.inputErrorBorder : _border(false),
+                enabledBorder:
+                    hasError ? AppStyle.inputErrorBorder : _border(false),
+                focusedBorder:
+                    hasError ? AppStyle.inputErrorBorder : _border(true),
                 disabledBorder: _border(false),
                 // Error copy is drawn in the fixed slot below (no built-in indent).
                 errorText: null,
