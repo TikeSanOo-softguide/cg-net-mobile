@@ -4,13 +4,14 @@ class ApiEndpoints {
   static const _env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
   static const _override =
       String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
   /// Real-phone LAN default. Emulator should override with
   /// `--dart-define=API_BASE_URL=http://10.0.2.2:8080/api`.
   /// PC localhost / USB `adb reverse` can use
   /// `--dart-define=API_BASE_URL=http://127.0.0.1:8080/api`.
   static const _devBaseUrl = String.fromEnvironment(
     'DEV_API_BASE_URL',
-    defaultValue: 'http://192.168.10.148:8080/api',
+    defaultValue: 'http://192.168.10.203:8080/api',
   );
   static const _healthOverride =
       String.fromEnvironment('API_HEALTHCHECK_PATH', defaultValue: '');
@@ -44,6 +45,8 @@ class ApiEndpoints {
   static const String packagesBuy = '/packages/buy';
   static const String redeemCheckSerialNo = '/redeem/check-serial-no';
   static const String redeemTopUpAccount = '/redeem/top-up-account';
+  static const String broadbandBind = '/broadband-account/bind';
+  static const String broadbandUnbind = '/broadband-account/unbind';
   static const String profile = '/user';
 
   /// Override with:
