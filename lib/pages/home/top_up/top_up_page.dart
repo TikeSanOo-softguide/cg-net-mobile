@@ -288,98 +288,96 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       title: Text('topup.form_title'.tr()),
       showBack: true,
       onBack: () => context.pop(),
-      body: Form(
-        key: _formKey,
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
-            child: AppCard(
-              padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
-              borderRadius: AppStyle.borderRadiusLg,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 16),
-                  AppPillActionInput(
-                    controller: _serial,
-                    label: 'topup.serial_label'.tr(),
-                    hint: 'topup.serial_hint'.tr(),
-                    actionLabel: 'topup.check'.tr(),
-                    actionEnabled: true,
-                    onAction: _checkSerial,
-                    maxLength: _serialLength,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(() => _serialErrorKey = null),
-                  ),
-                  SizedBox(
-                    height: AppStyle.errorSlotHeight,
-                    child: _serialErrorKey == null
-                        ? null
-                        : Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: 4,
-                                left: 12,
-                              ),
-                              child: Text(
-                                _serialErrorKey!.tr(),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTheme.fieldError(),
-                              ),
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
+        child: Form(
+          key: _formKey,
+          child: AppCard(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+            borderRadius: AppStyle.borderRadiusLg,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
+                AppPillActionInput(
+                  controller: _serial,
+                  label: 'topup.serial_label'.tr(),
+                  hint: 'topup.serial_hint'.tr(),
+                  actionLabel: 'topup.check'.tr(),
+                  actionEnabled: true,
+                  onAction: _checkSerial,
+                  maxLength: _serialLength,
+                  textInputAction: TextInputAction.next,
+                  onChanged: (_) => setState(() => _serialErrorKey = null),
+                ),
+                SizedBox(
+                  height: AppStyle.errorSlotHeight,
+                  child: _serialErrorKey == null
+                      ? null
+                      : Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: 4,
+                              left: 12,
+                            ),
+                            child: Text(
+                              _serialErrorKey!.tr(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.fieldError(),
                             ),
                           ),
-                  ),
-                  const SizedBox(height: 18),
-                  AppInput(
-                    controller: _account,
-                    label: 'topup.account_label'.tr(),
-                    hint: 'topup.account_hint'.tr(),
-                    prefixIcon: LucideIcons.user,
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(() {}),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'topup.account_required'.tr();
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  AppScanInput(
-                    controller: _pin,
-                    label: 'topup.pin_label'.tr(),
-                    hint: 'topup.pin_hint'.tr(),
-                    obscureText: false,
-                    keyboardType: TextInputType.number,
-                    maxLength: 16,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    textInputAction: TextInputAction.done,
-                    onChanged: (_) => setState(() {}),
-                    onSubmitted: (_) => _submit(),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'topup.pin_required'.tr();
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  AppButton(
-                    label: 'topup.submit'.tr(),
-                    onPressed:
-                        _canSubmit && !topUpState.isSubmitting ? _submit : null,
-                    isLoading: topUpState.isSubmitting,
-                    height: 42,
-                  ),
-                ],
-              ),
+                        ),
+                ),
+                const SizedBox(height: 18),
+                AppInput(
+                  controller: _account,
+                  label: 'topup.account_label'.tr(),
+                  hint: 'topup.account_hint'.tr(),
+                  prefixIcon: LucideIcons.user,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  onChanged: (_) => setState(() {}),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'topup.account_required'.tr();
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 18),
+                AppScanInput(
+                  controller: _pin,
+                  label: 'topup.pin_label'.tr(),
+                  hint: 'topup.pin_hint'.tr(),
+                  obscureText: false,
+                  keyboardType: TextInputType.number,
+                  maxLength: 16,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  textInputAction: TextInputAction.done,
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _submit(),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'topup.pin_required'.tr();
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                AppButton(
+                  label: 'topup.submit'.tr(),
+                  onPressed:
+                      _canSubmit && !topUpState.isSubmitting ? _submit : null,
+                  isLoading: topUpState.isSubmitting,
+                  height: 42,
+                ),
+              ],
             ),
           ),
         ),
