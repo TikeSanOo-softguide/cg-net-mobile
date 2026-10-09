@@ -12,10 +12,17 @@ enum ApiFailure {
 }
 
 class ApiException implements Exception {
-  const ApiException(this.failure, {this.detail});
+  const ApiException(
+    this.failure, {
+    this.detail,
+    this.statusCode,
+    this.responseData,
+  });
 
   final ApiFailure failure;
   final String? detail;
+  final int? statusCode;
+  final Object? responseData;
 
   String get messageKey => switch (failure) {
         ApiFailure.offline => 'api.offline',
@@ -47,11 +54,34 @@ class ApiException implements Exception {
     final detail = _detail(error.response?.data);
 
     return switch (status) {
-      401 => ApiException(ApiFailure.unauthorized, detail: detail),
-      422 => ApiException(ApiFailure.validation, detail: detail),
-      429 => const ApiException(ApiFailure.tooManyRequests),
-      final int code when code >= 500 => const ApiException(ApiFailure.server),
-      _ => ApiException(ApiFailure.unknown, detail: detail),
+      401 => ApiException(
+          ApiFailure.unauthorized,
+          detail: detail,
+          statusCode: status,
+          responseData: error.response?.data,
+        ),
+      422 => ApiException(
+          ApiFailure.validation,
+          detail: detail,
+          statusCode: status,
+          responseData: error.response?.data,
+        ),
+      429 => ApiException(
+          ApiFailure.tooManyRequests,
+          statusCode: status,
+          responseData: error.response?.data,
+        ),
+      final int code when code >= 500 => ApiException(
+          ApiFailure.server,
+          statusCode: code,
+          responseData: error.response?.data,
+        ),
+      _ => ApiException(
+          ApiFailure.unknown,
+          detail: detail,
+          statusCode: status,
+          responseData: error.response?.data,
+        ),
     };
   }
 

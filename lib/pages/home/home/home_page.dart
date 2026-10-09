@@ -6,13 +6,15 @@ import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../data/customer_profile/customer_profile_repository.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
 import 'components/home_services_section.dart';
-import 'home_controller.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -68,7 +70,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       });
     });
 
-    final data = ref.watch(homeControllerProvider);
+    final profile = ref.watch(customerProfileProvider);
+    ref.listen(customerProfileProvider, (previous, next) {
+      next.whenOrNull(
+        error: (error, _) {
+          if (previous?.hasError == true || !context.mounted) return;
+          final message =
+              error is ApiException ? apiErrorText(error) : error.toString();
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        },
+      );
+    });
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
 
@@ -96,7 +110,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           HomeBalanceHeader(
-                            balanceAmount: data.balanceAmount,
+                            balanceAmount:
+                                profile.valueOrNull?.walletBalance ?? '—',
                           ),
                           const SizedBox(height: HomeQuickActions.hangBelow),
                         ],
@@ -129,7 +144,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              child: HomePinnedBar(accountNumber: data.accountNumber),
+              child: HomePinnedBar(
+                  accountNumber: profile.valueOrNull?.phone ?? '—'),
             ),
           ],
         ),

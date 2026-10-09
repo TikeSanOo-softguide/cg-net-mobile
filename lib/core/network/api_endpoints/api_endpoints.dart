@@ -47,7 +47,7 @@ class ApiEndpoints {
   static const String redeemTopUpAccount = '/redeem/top-up-account';
   static const String broadbandBind = '/broadband-account/bind';
   static const String broadbandUnbind = '/broadband-account/unbind';
-  static const String profile = '/user';
+  static const String profile = '/customer/profile';
 
   /// Override with:
   /// --dart-define=API_HEALTHCHECK_PATH=/health

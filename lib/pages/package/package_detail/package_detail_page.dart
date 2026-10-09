@@ -224,8 +224,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       final now = DateTime.now();
       final response = await ref.read(packageBuyRepositoryProvider).buyPackage(
             packageId: packageId,
-            idempotencyKey:
-                IdempotencyKey.forPackageBuy(packageId: widget.packageId),
+            idempotencyKey: IdempotencyKey.generate(),
           );
 
       late final PackageBuyResult result;
