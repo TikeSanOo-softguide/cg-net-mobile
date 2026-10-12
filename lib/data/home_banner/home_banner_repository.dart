@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/core/utils/banner_response_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,7 +7,6 @@ import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 import '../../core/utils/image_url_helper.dart';
 import '../../models/advertisement_model/advertisement_model.dart';
-import '../banner/banner_response_helper.dart';
 
 class HomeBannerRepository {
   HomeBannerRepository(this._dio);
