@@ -13,6 +13,7 @@ import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../../data/broadband/broadband_repository.dart';
+import '../../../profile/profile/profile_controller.dart';
 
 class BoundBroadband {
   const BoundBroadband({
@@ -166,6 +167,7 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
               );
 
       debugPrint('BROADBAND CONNECT RESPONSE: $response');
+      await container.read(profileControllerProvider.notifier).fetchProfile();
 
       if (!mounted) return;
 

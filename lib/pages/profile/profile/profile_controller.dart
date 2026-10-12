@@ -3,27 +3,57 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
+import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
 
 class ProfileController extends StateNotifier<UserProfileModel> {
-  ProfileController(this._secureStorage, this._push, this._authApi)
-      : super(
+  ProfileController({
+    required SecureStorage secureStorage,
+    required PushNotificationService push,
+    required ProfileRepository profileRepository,
+    required AuthApi authApi,
+  })  : _secureStorage = secureStorage,
+        _push = push,
+        _profileRepository = profileRepository,
+        _authApi = authApi,
+        super(
           const UserProfileModel(
-            id: 'u1',
-            fullName: 'CG Net Customer',
-            phone: '+959123456789',
-            accountNumber: '09970071489',
-            email: 'customer@example.com',
-            username: 'cguser',
+            id: '',
+            fullName: '',
+            phone: '',
+            accountNumber: '',
+            username: '',
           ),
-        );
+        ) {
+    fetchProfile();
+  }
 
   final SecureStorage _secureStorage;
   final PushNotificationService _push;
+  final ProfileRepository _profileRepository;
   final AuthApi _authApi;
+
+  Future<void> fetchProfile() async {
+    try {
+      final user = await _profileRepository.fetchProfile();
+      state = user;
+    } catch (_) {
+      // Best-effort fetch; keep existing state on network error.
+    }
+  }
 
   void updateProfile(UserProfileModel profile) {
     state = profile;
+  }
+
+  void clearProfile() {
+    state = const UserProfileModel(
+      id: '',
+      fullName: '',
+      phone: '',
+      accountNumber: '',
+      username: '',
+    );
   }
 
   Future<void> logout() async {
@@ -38,14 +68,16 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       // Push token cleanup is non-blocking for user logout.
     }
     await _secureStorage.clearToken();
+    clearProfile();
   }
 }
 
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, UserProfileModel>((ref) {
   return ProfileController(
-    ref.watch(secureStorageProvider),
-    ref.watch(pushNotificationServiceProvider),
-    ref.watch(authApiProvider),
+    secureStorage: ref.watch(secureStorageProvider),
+    push: ref.watch(pushNotificationServiceProvider),
+    profileRepository: ref.watch(profileRepositoryProvider),
+    authApi: ref.watch(authApiProvider),
   );
 });
