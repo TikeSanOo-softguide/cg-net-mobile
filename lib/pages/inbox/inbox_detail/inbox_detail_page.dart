@@ -72,11 +72,12 @@ class InboxDetailPage extends ConsumerWidget {
                                         context.locale.languageCode,
                                       ),
                                 style: AppTheme.english(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2,
                                   color: item.isFailure
                                       ? InboxCategoryIcon.failureColor
-                                      : AppColors.textPrimary,
+                                      : AppColors.primary,
                                   height: 1.3,
                                 ),
                               ),
@@ -165,8 +166,9 @@ class InboxDetailPage extends ConsumerWidget {
                           ? (item.detailKey ?? item.bodyKey).tr()
                           : item.bodyFor(context.locale.languageCode),
                       style: AppTheme.english(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0,
                         color: AppColors.textPrimary,
                         height: 1.55,
                       ),

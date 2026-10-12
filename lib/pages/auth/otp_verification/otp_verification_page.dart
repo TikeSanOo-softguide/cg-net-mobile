@@ -324,7 +324,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
         title: 'otp.title'.tr(),
         titleColor: AppColors.primary,
         titleFontSize: titleSize,
-        titleFontWeight: FontWeight.w700,
+        titleFontWeight: FontWeight.w600,
         titleLetterSpacing: 0.2,
         description: 'otp.subtitle'.tr(),
         descriptionWidget: _OtpSubtitle(
@@ -332,7 +332,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
           fontSize: subtitleSize,
         ),
         lockDescriptionHeight: false,
-        titleBottomGap: 16,
+        titleBottomGap: 10,
         childTopGap: 20,
         actionTopGap: 24,
         primaryAction: AppButton(
@@ -468,9 +468,10 @@ class _OtpResendRow extends StatelessWidget {
         ? 'otp.resend_in'.tr(namedArgs: {'seconds': '$secondsLeft'})
         : 'otp.resend'.tr();
     final resendSize = otpResendFontSize(context);
+    final promptSize = usesCompactAuthType(context) ? 13.0 : 14.0;
 
     final promptStyle = AppTheme.english(
-      fontSize: 14,
+      fontSize: promptSize,
       fontWeight: FontWeight.w400,
       color: AppColors.textMuted,
       letterSpacing: 0.2,

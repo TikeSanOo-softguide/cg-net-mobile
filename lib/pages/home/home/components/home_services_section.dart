@@ -362,9 +362,10 @@ class _ServiceTile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTheme.english(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+                color: AppColors.textMuted,
+                letterSpacing: 0.2,
               ),
             ),
           ],
