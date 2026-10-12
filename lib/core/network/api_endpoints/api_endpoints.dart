@@ -53,6 +53,24 @@ class ApiEndpoints {
   static const String changeWifiPasswordRequests = '/change-password-requests';
   static String cancelChangeWifiPasswordRequest(String requestId) =>
       '$changeWifiPasswordRequests/$requestId';
+  static const String chatStart = '/chat/start';
+  static const String chatCurrent = '/chat/current';
+  static const String chatSelectOption = '/chat/select-option';
+  static const String chatNavigate = '/chat/navigate';
+  static const String chatSendMessage = '/chat/messages';
+  static const String reverbHost = String.fromEnvironment('REVERB_HOST');
+  static const int reverbPort = int.fromEnvironment(
+    'REVERB_PORT',
+    defaultValue: 8081,
+  );
+  static const String reverbAppKey = String.fromEnvironment(
+    'REVERB_APP_KEY',
+    defaultValue: 'cgnet-reverb-key',
+  );
+  static const String reverbScheme = String.fromEnvironment(
+    'REVERB_SCHEME',
+    defaultValue: 'http',
+  );
 
   /// Override with:
   /// --dart-define=API_HEALTHCHECK_PATH=/health
