@@ -7,6 +7,7 @@ import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 import '../../core/utils/image_url_helper.dart';
 import '../../models/advertisement_model/advertisement_model.dart';
+import '../banner/banner_response_helper.dart';
 
 class LaunchPromoRepository {
   LaunchPromoRepository(this._dio);
@@ -21,24 +22,11 @@ class LaunchPromoRepository {
         ApiEndpoints.banners,
       );
 
-      final data = response.data;
-
-      final List list;
-      if (data is List) {
-        list = data;
-      } else if (data is Map && data['data'] is List) {
-        list = data['data'] as List;
-      } else {
-        return null;
-      }
-
-      final entryBanners = list.where(
-        (item) => item is Map && (item['type'] == 'app_entry'),
+      final promoItems = BannerResponseHelper.itemsOfType(
+        response.data,
+        type: 'app_entry',
       );
-
-      for (final item in entryBanners) {
-        if (item is! Map) continue;
-
+      for (final item in promoItems) {
         final imageUrl = ImageUrlHelper.resolve(
           item,
           language: language,
@@ -58,7 +46,7 @@ class LaunchPromoRepository {
     }
   }
 
-  Future<Advertisement?> fetchActiveAdvertisement(
+  Future<List<Advertisement>> fetchActiveAdvertisement(
     String language,
   ) async {
     try {
@@ -66,35 +54,28 @@ class LaunchPromoRepository {
         ApiEndpoints.banners,
       );
 
-      final data = response.data;
-
-      final List list;
-      if (data is List) {
-        list = data;
-      } else if (data is Map && data['data'] is List) {
-        list = data['data'] as List;
-      } else {
-        return null;
-      }
-
-      final popUpsBanners = list.where(
-        (item) => item is Map && (item['type'] == 'app_popup'),
-      );
-
-      for (final item in popUpsBanners) {
-        if (item is! Map) continue;
-
+      final advertisements = <Advertisement>[];
+      for (final item in BannerResponseHelper.itemsOfType(
+        response.data,
+        type: 'app_popup',
+      )) {
         final imageUrl = ImageUrlHelper.resolve(
           item,
           language: language,
         );
 
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          return Advertisement(image: imageUrl);
+        if (imageUrl == null || imageUrl.isEmpty) {
+          continue;
         }
+
+        advertisements.add(
+          Advertisement(
+            image: imageUrl,
+          ),
+        );
       }
 
-      return null;
+      return advertisements;
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
@@ -112,7 +93,7 @@ final skipTimerPromoProvider = FutureProvider<SkipTimerPromo?>((ref) {
   return ref.watch(launchPromoRepositoryProvider).fetchSkipTimerPromo(language);
 });
 
-final activeAdvertisementProvider = FutureProvider<Advertisement?>((ref) {
+final activeAdvertisementProvider = FutureProvider<List<Advertisement>>((ref) {
   final language = ref.watch(appLocaleProvider);
   return ref
       .watch(launchPromoRepositoryProvider)
