@@ -10,22 +10,38 @@ import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
+import '../../../../data/customer_profile/customer_profile_repository.dart';
 import '../bound_broadband_provider.dart';
 import 'bind_broadband_drawer.dart';
 
 Future<void> onHomeBindTap(BuildContext context, WidgetRef ref) async {
-  final bound = ref.read(boundBroadbandProvider);
+  var bound = ref.read(boundBroadbandProvider);
   if (bound == null) {
-    final result = await showBindBroadbandDrawer(context);
-    if (!context.mounted || result == null) return;
-    ref.read(boundBroadbandProvider.notifier).state = result;
-    await showBindSuccessModal(context);
-    return;
+    final profile = ref.read(customerProfileProvider).valueOrNull;
+    final accountNumber = profile?.accountNumber;
+    final customerName = profile?.customerName;
+    if (accountNumber != null &&
+        accountNumber.isNotEmpty &&
+        customerName != null &&
+        customerName.isNotEmpty) {
+      bound = BoundBroadband(
+        account: accountNumber,
+        customerName: customerName,
+      );
+      ref.read(boundBroadbandProvider.notifier).state = bound;
+    } else {
+      final result = await showBindBroadbandDrawer(context);
+      if (!context.mounted || result == null) return;
+      ref.read(boundBroadbandProvider.notifier).state = result;
+      await showBindSuccessModal(context);
+      return;
+    }
   }
 
   final removed = await showBoundAccountDrawer(context, bound: bound);
   if (!context.mounted || !removed) return;
   ref.read(boundBroadbandProvider.notifier).state = null;
+  ref.invalidate(customerProfileProvider);
 }
 
 /// Fixed home top: glass logo, account number, notification — does not scroll.
