@@ -74,3 +74,8 @@ class ProfileRepository {
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(dioProvider));
 });
+
+final userProfileProvider =
+    FutureProvider.autoDispose<UserProfileModel>((ref) {
+  return ref.watch(profileRepositoryProvider).fetchProfile();
+});
