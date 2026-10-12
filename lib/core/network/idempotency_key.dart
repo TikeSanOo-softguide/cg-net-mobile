@@ -1,21 +1,18 @@
+import 'dart:math';
+
 class IdempotencyKey {
   IdempotencyKey._();
 
-  static String forTopUp({required String phone}) {
-    final seed = _digitsOnly(phone);
-    return _build('topup', seed.isEmpty ? 'unknown' : seed);
-  }
+  static String generate() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
-  static String forPackageBuy({required String packageId}) {
-    return _build('package-buy', packageId);
-  }
-
-  static String _build(String scope, String identifier) {
-    final millis = DateTime.now().millisecondsSinceEpoch;
-    return '$scope-$identifier-$millis';
-  }
-
-  static String _digitsOnly(String input) {
-    return input.replaceAll(RegExp(r'\D'), '');
+    final hex = bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0'));
+    final value = hex.join();
+    return '${value.substring(0, 8)}-${value.substring(8, 12)}-'
+        '${value.substring(12, 16)}-${value.substring(16, 20)}-'
+        '${value.substring(20)}';
   }
 }

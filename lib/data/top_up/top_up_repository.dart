@@ -49,7 +49,7 @@ class TopUpRepository {
 
       return TopUpSerialCheckResult(
         isValid: success,
-        message: data['message']?.toString(),
+        message: _responseMessage(data),
         amountPoints: _toInt(data['amount']),
       );
     } on DioException catch (error) {
@@ -77,7 +77,7 @@ class TopUpRepository {
 
       return TopUpAccountResult(
         isSuccess: success,
-        message: root['message']?.toString(),
+        message: _responseMessage(root),
         amountPoints: _toInt(root['amount']) ?? _toInt(nestedData['amount']),
         balancePoints: _toInt(root['balance']) ?? _toInt(nestedData['balance']),
         transactionNo: root['transaction_no']?.toString() ??
@@ -106,6 +106,20 @@ class TopUpRepository {
     if (value is int) return value;
     if (value is num) return value.round();
     if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  static String? _responseMessage(Map<String, dynamic> root) {
+    final rootMessage = root['message'];
+    if (rootMessage is String && rootMessage.trim().isNotEmpty) {
+      return rootMessage;
+    }
+
+    final dataMessage = _asMap(root['data'])['message'];
+    if (dataMessage is String && dataMessage.trim().isNotEmpty) {
+      return dataMessage;
+    }
+
     return null;
   }
 
