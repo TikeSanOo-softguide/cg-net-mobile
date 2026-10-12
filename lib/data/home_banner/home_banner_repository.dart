@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/core/utils/banner_response_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,29 +19,20 @@ class HomeBannerRepository {
         ApiEndpoints.banners,
       );
 
-      final data = response.data;
-
-      final List list;
-      if (data is List) {
-        list = data;
-      } else if (data is Map && data['data'] is List) {
-        list = data['data'] as List;
-      } else {
-        return [];
-      }
-
       final banners = <BannerModel>[];
-      for (final item in list) {
-        if (item is! Map) continue;
-        if (item['type'] != 'web_background') continue;
-
+      for (final item in BannerResponseHelper.itemsOfType(
+        response.data,
+        type: 'web_background',
+      )) {
         final imageUrl = ImageUrlHelper.resolve(
           item,
           language: language,
         );
 
         if (imageUrl != null && imageUrl.isNotEmpty) {
-          banners.add(BannerModel(image: imageUrl));
+          banners.add(BannerModel(
+            image: imageUrl,
+          ));
         }
       }
 

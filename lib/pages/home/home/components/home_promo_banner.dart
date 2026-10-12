@@ -38,9 +38,8 @@ class _HomePromoBannerState extends ConsumerState<HomePromoBanner> {
     if (bannerCount <= 1) return;
     _timer = Timer.periodic(_autoSlide, (_) {
       if (!mounted || !_controller.hasClients) return;
-      final next = (_index + 1) % _bannerCount;
-      _controller.animateToPage(
-        next,
+
+      _controller.nextPage(
         duration: const Duration(milliseconds: 420),
         curve: Curves.easeInOut,
       );
@@ -88,15 +87,16 @@ class _HomePromoBannerState extends ConsumerState<HomePromoBanner> {
                   const ColoredBox(color: AppColors.primary),
                   PageView.builder(
                     controller: _controller,
-                    itemCount: banners.length,
+                    itemCount: null,
                     onPageChanged: (value) {
                       setState(() {
-                        _index = value;
+                        _index = value % banners.length;
                       });
                     },
                     itemBuilder: (context, index) {
+                      final bannerIndex = index % banners.length;
                       return Image.network(
-                        banners[index].image,
+                        banners[bannerIndex].image,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,

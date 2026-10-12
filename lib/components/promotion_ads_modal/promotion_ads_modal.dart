@@ -1,5 +1,6 @@
+import 'dart:math' as math;
 import 'dart:ui';
-
+import 'package:cg_net_mobile/models/advertisement_model/advertisement_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
@@ -9,7 +10,7 @@ import '../../core/theme/app_style/app_style.dart';
 /// Presents a promotion / notice card as a modal overlay.
 Future<void> showPromotionAdsModal(
   BuildContext context, {
-  required String imagePath,
+  required List<Advertisement> images,
   bool barrierDismissible = true,
   bool useRootNavigator = true,
 }) {
@@ -22,7 +23,7 @@ Future<void> showPromotionAdsModal(
     transitionDuration: const Duration(milliseconds: 380),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return PromotionAdsModal(
-        imagePath: imagePath,
+        images: images,
         onClose: () => Navigator.of(dialogContext).pop(),
       );
     },
@@ -47,31 +48,49 @@ Future<void> showPromotionAdsModal(
 }
 
 /// Centered ad image with close pinned inside the top-right of the image.
-class PromotionAdsModal extends StatelessWidget {
+class PromotionAdsModal extends StatefulWidget {
   const PromotionAdsModal({
     super.key,
-    required this.imagePath,
+    required this.images,
     required this.onClose,
   });
 
-  final String imagePath;
+  final List<Advertisement> images;
   final VoidCallback onClose;
 
-  bool get _isNetwork => imagePath.startsWith('http');
+  @override
+  State<PromotionAdsModal> createState() => _PromotionAdsModalState();
+}
+
+class _PromotionAdsModalState extends State<PromotionAdsModal> {
+  int _currentIndex = 0;
+
+  String get imagePath => widget.images[_currentIndex].image;
+
+  void _showNextOrClose() {
+    if (_currentIndex < widget.images.length - 1) {
+      setState(() => _currentIndex++);
+    } else {
+      widget.onClose();
+    }
+  }
 
   Widget _buildImage() {
-    if (_isNetwork) {
+    if (imagePath.startsWith('http')) {
       return Image.network(
         imagePath,
-        fit: BoxFit.contain,
+        key: ValueKey(imagePath),
+        fit: BoxFit.cover,
         alignment: Alignment.center,
         filterQuality: FilterQuality.high,
         errorBuilder: (_, __, ___) => const _ImageFallback(),
       );
     }
+
     return Image.asset(
       imagePath,
-      fit: BoxFit.contain,
+      key: ValueKey(imagePath),
+      fit: BoxFit.cover,
       alignment: Alignment.center,
       filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => const _ImageFallback(),
@@ -82,8 +101,13 @@ class PromotionAdsModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.paddingOf(context);
-    final maxWidth = (size.width - 40).clamp(260.0, 400.0);
-    final maxHeight = (size.height - padding.vertical - 48).clamp(280.0, 560.0);
+    final availableWidth = size.width - 40;
+    final availableHeight = size.height - padding.vertical - 24;
+    final imageHeight = math.min(
+      450.0,
+      math.min(availableHeight, availableWidth * 250 / 200),
+    );
+    final imageWidth = imageHeight * 200 / 250;
 
     return Material(
       type: MaterialType.transparency,
@@ -91,11 +115,9 @@ class PromotionAdsModal extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxWidth,
-                maxHeight: maxHeight,
-              ),
+            child: SizedBox(
+              width: imageWidth,
+              height: imageHeight,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: AppStyle.borderRadiusXl,
@@ -110,13 +132,41 @@ class PromotionAdsModal extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: AppStyle.borderRadiusXl,
                   child: Stack(
-                    fit: StackFit.passthrough,
+                    fit: StackFit.expand,
                     children: [
-                      _buildImage(),
+                      Transform.scale(
+                        scale: 1.02,
+                        child: _buildImage(),
+                      ),
+                      if (widget.images.length > 1)
+                        Positioned(
+                          bottom: 30,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              widget.images.length,
+                              (index) => AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 3),
+                                width: index == _currentIndex ? 16 : 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(
+                                    alpha: index == _currentIndex ? 1 : 0.55,
+                                  ),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       Positioned(
                         top: 8,
                         right: 8,
-                        child: _CloseButton(onPressed: onClose),
+                        child: _CloseButton(onPressed: _showNextOrClose),
                       ),
                     ],
                   ),
@@ -135,9 +185,9 @@ class _CloseButton extends StatelessWidget {
 
   final VoidCallback onPressed;
 
-  static const double _size = 20;
+  static const double _size = 30;
   static const double _radius = 5;
-  static const Color _iconColor = Color(0xFFFFFFFF);
+  static const Color _iconColor = Color(0xFF000000);
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +217,7 @@ class _CloseButton extends StatelessWidget {
               alignment: Alignment.center,
               child: const Icon(
                 LucideIcons.x,
-                size: 10,
+                size: 20,
                 color: _iconColor,
               ),
             ),

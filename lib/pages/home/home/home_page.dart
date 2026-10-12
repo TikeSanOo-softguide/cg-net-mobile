@@ -46,12 +46,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     try {
       if (!mounted) return;
-      final promo = await ref.read(activeAdvertisementProvider.future);
-      if (!mounted) return;
-      if (promo == null || promo.image.isEmpty) return;
+      final advertisements = await ref.read(activeAdvertisementProvider.future);
+      if (!mounted || advertisements.isEmpty) return;
       await showPromotionAdsModal(
         context,
-        imagePath: promo.image,
+        images: advertisements,
       );
     } catch (_) {
       // Empty / failed ads → stay on Home with no modal.

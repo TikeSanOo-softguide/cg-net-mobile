@@ -1,18 +1,10 @@
-/// Image displayed in the home advertisement modal.
+/// Pop ups
 class Advertisement {
   const Advertisement({
     required this.image,
   });
 
   final String image;
-
-  factory Advertisement.fromJson(Map<String, dynamic> json) {
-    return Advertisement(
-      image: json['image']?.toString() ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {'image': image};
 }
 
 /// Full-screen skip-timer promo shown before the advertisement step.
