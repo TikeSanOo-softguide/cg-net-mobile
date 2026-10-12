@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
-import '../../../core/network/profile_api/profile_api.dart';
+import '../../../data/profile/profile_repository.dart';
 import '../profile/profile_controller.dart';
 
 class EditProfileState {
@@ -26,7 +26,7 @@ class EditProfileController extends StateNotifier<EditProfileState> {
   Future<bool> save({required String fullName}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final updated = await _ref.read(profileApiProvider).updateProfile(
+      final updated = await _ref.read(profileRepositoryProvider).updateProfile(
             fullName: fullName,
           );
       _ref.read(profileControllerProvider.notifier).updateProfile(updated);

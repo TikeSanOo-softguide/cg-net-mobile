@@ -128,8 +128,10 @@ class UserProfileModel {
         '';
     final phone = formatLocalPhone(rawPhone);
     final accountNumber = rawData['broadband_account_number']?.toString() ??
+        rawData['broadband_account']?.toString() ??
         rawData['account_number']?.toString() ??
         rawData['account_no']?.toString() ??
+        rawData['account']?.toString() ??
         rawData['accountNumber']?.toString() ??
         rawData['customer_id']?.toString() ??
         rawData['user_code']?.toString() ??

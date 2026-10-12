@@ -7,13 +7,12 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_input/app_input.dart';
-import '../../../core/network/api_exception.dart';
-import '../../../core/network/requests/change_wifi_password/change_wifi_password_api.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
 import '../../profile/profile/profile_controller.dart';
+import 'change_wifi_password_controller.dart';
 import 'change_wifi_password_submitted_page.dart';
 
 class ChangeWifiPasswordPage extends ConsumerStatefulWidget {
@@ -26,36 +25,20 @@ class ChangeWifiPasswordPage extends ConsumerStatefulWidget {
 
 class _ChangeWifiPasswordPageState
     extends ConsumerState<ChangeWifiPasswordPage> {
-  List<ChangePasswordRequestModel> _requests = [];
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _fetchRequests();
+    Future.microtask(() {
+      ref.read(profileControllerProvider.notifier).fetchProfile();
+      ref.read(changeWifiPasswordControllerProvider.notifier).fetchRequests();
+    });
   }
 
   Future<void> _fetchRequests() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final items =
-          await ref.read(changeWifiPasswordApiProvider).fetchRequests();
-      if (mounted) {
-        setState(() {
-          _requests = items;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    await ref.read(profileControllerProvider.notifier).fetchProfile();
+    await ref
+        .read(changeWifiPasswordControllerProvider.notifier)
+        .fetchRequests();
   }
 
   Future<void> _cancelRequest(ChangePasswordRequestModel item) async {
@@ -80,29 +63,34 @@ class _ChangeWifiPasswordPageState
 
     if (confirm != true) return;
 
-    try {
-      await ref
-          .read(changeWifiPasswordApiProvider)
-          .cancelRequest(item);
+    final success = await ref
+        .read(changeWifiPasswordControllerProvider.notifier)
+        .cancelRequest(item);
 
-      await _fetchRequests();
-
-      if (mounted) {
+    if (mounted) {
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('change_wifi.cancel_success'.tr()),
             backgroundColor: AppColors.error,
           ),
         );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.detail ?? e.messageKey),
-            backgroundColor: AppColors.error,
-          ),
-        );
+      } else {
+        final state = ref.read(changeWifiPasswordControllerProvider);
+        if (state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.errorMessage!.startsWith('change_wifi.') ||
+                        state.errorMessage!.startsWith('api.') ||
+                        state.errorMessage!.startsWith('common.')
+                    ? state.errorMessage!.tr()
+                    : state.errorMessage!,
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
   }
@@ -123,9 +111,12 @@ class _ChangeWifiPasswordPageState
 
       await _fetchRequests();
 
+      final state = ref.read(changeWifiPasswordControllerProvider);
+      final requests = state.requests;
+
       final requestModel = result is ChangePasswordRequestModel
           ? result
-          : (_requests.isNotEmpty ? _requests.first : null);
+          : (requests.isNotEmpty ? requests.first : null);
 
       if (requestModel != null && mounted) {
         Navigator.of(context).push(
@@ -167,13 +158,16 @@ class _ChangeWifiPasswordPageState
   }
 
   Widget _buildBody() {
-    if (_isLoading && _requests.isEmpty) {
+    final state = ref.watch(changeWifiPasswordControllerProvider);
+    final requests = state.requests;
+
+    if (state.status == ChangeWifiPasswordStatus.loading && requests.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (_requests.isEmpty) {
+    if (requests.isEmpty) {
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
@@ -231,10 +225,10 @@ class _ChangeWifiPasswordPageState
         AppStyle.spaceLg,
         80, // Clearance for FAB
       ),
-      itemCount: _requests.length,
+      itemCount: requests.length,
       separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceMd),
       itemBuilder: (context, index) {
-        final item = _requests[index];
+        final item = requests[index];
         return _RequestItemCard(
           item: item,
           onCancel: () => _cancelRequest(item),
@@ -416,8 +410,6 @@ class __NewRequestFormSheetState
 
   bool _isChangingWifiName = true;
   bool _obscurePassword = true;
-  bool _isSubmitting = false;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -428,7 +420,7 @@ class __NewRequestFormSheetState
     _contactNameController = TextEditingController(
       text: profile.fullName.isNotEmpty ? profile.fullName : 'Customer',
     );
-    _phoneController = TextEditingController(text: profile.phone);
+    _phoneController = TextEditingController(text: profile.displayPhone);
     _wifiNameController = TextEditingController();
     _passwordController = TextEditingController();
   }
@@ -446,107 +438,39 @@ class __NewRequestFormSheetState
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
-
-    final broadbandAccount = _broadbandAccountController.text.trim();
-    final parentState =
-        context.findAncestorStateOfType<_ChangeWifiPasswordPageState>();
-
-    final hasPending = parentState?._requests.any((r) {
-          final s = r.status.toLowerCase().trim();
-          final isPending = s == 'under_review' ||
-              s == 'pending' ||
-              s == 'under review' ||
-              s == 'review';
-          final isSameAccount = r.broadbandAccountNumber == null ||
-              r.broadbandAccountNumber!.isEmpty ||
-              r.broadbandAccountNumber == broadbandAccount;
-          return isPending && isSameAccount;
-        }) ??
-        false;
-
-    if (hasPending) {
-      setState(() {
-        _isSubmitting = false;
-        _errorMessage = 'change_wifi.already_exists';
-      });
-      return;
-    }
-
     final profile = ref.read(profileControllerProvider);
-    final userId = int.tryParse(profile.id);
+    final inputAccount = _broadbandAccountController.text.trim();
+    final boundAccount = inputAccount.isNotEmpty
+        ? inputAccount
+        : profile.accountNumber;
+    final userId = int.tryParse(profile.id) ?? 0;
 
-    final model = ChangePasswordRequestModel(
-      id: '',
-      userId: userId ?? 1,
-      broadbandAccountNumber: broadbandAccount,
-      contactName: _contactNameController.text.trim(),
-      contactPhone: _phoneController.text.trim(),
-      newPassword: _passwordController.text.trim(),
-      newWifiName:
-          _isChangingWifiName ? _wifiNameController.text.trim() : null,
-      createdAt: DateTime.now(),
-    );
+    final savedModel = await ref
+        .read(changeWifiPasswordControllerProvider.notifier)
+        .submitRequest(
+          broadbandAccount: boundAccount,
+          contactName: _contactNameController.text.trim(),
+          contactPhone: _phoneController.text.trim(),
+          newPassword: _passwordController.text.trim(),
+          newWifiName:
+              _isChangingWifiName ? _wifiNameController.text.trim() : null,
+          userId: userId,
+        );
 
-    try {
-      final savedModel =
-          await ref.read(changeWifiPasswordApiProvider).submitRequest(model);
+    if (!mounted) return;
 
-      if (!mounted) return;
-
-      setState(() => _isSubmitting = false);
+    if (savedModel != null) {
       Navigator.of(context).pop(savedModel);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-
-      final detailRaw = e.detail ?? e.messageKey;
-      final detail = detailRaw.toLowerCase();
-
-      final isAlreadyUnderReview = detail.contains('already under review') ||
-          detail.contains('already exist') ||
-          detail.contains('under_review') ||
-          detail.contains('under review');
-
-      if (isAlreadyUnderReview) {
-        setState(() {
-          _isSubmitting = false;
-          _errorMessage = 'change_wifi.already_exists';
-        });
-        return;
-      }
-
-      if (e.failure == ApiFailure.server ||
-          e.failure == ApiFailure.unknown ||
-          detail.contains('pusher') ||
-          detail.contains('reverb') ||
-          detail.contains('curl error') ||
-          detail.contains('could not resolve host')) {
-        setState(() => _isSubmitting = false);
-        Navigator.of(context).pop(model);
-        return;
-      }
-
-      setState(() {
-        _isSubmitting = false;
-        _errorMessage = detailRaw;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        Navigator.of(context).pop(model);
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
+    final controllerState = ref.watch(changeWifiPasswordControllerProvider);
 
-    if (_broadbandAccountController.text.isEmpty &&
-        profile.accountNumber.isNotEmpty) {
+    if (profile.accountNumber.isNotEmpty &&
+        _broadbandAccountController.text != profile.accountNumber) {
       _broadbandAccountController.text = profile.accountNumber;
     }
     if ((_contactNameController.text.isEmpty ||
@@ -555,8 +479,10 @@ class __NewRequestFormSheetState
       _contactNameController.text = profile.fullName;
     }
     if (_phoneController.text.isEmpty && profile.phone.isNotEmpty) {
-      _phoneController.text = profile.phone;
+      _phoneController.text = profile.displayPhone;
     }
+
+    final errorMessage = controllerState.errorMessage;
 
     return Container(
       decoration: const BoxDecoration(
@@ -608,9 +534,15 @@ class __NewRequestFormSheetState
                     AppInput(
                       controller: _broadbandAccountController,
                       label: 'change_wifi.broadband_account'.tr(),
-                      readOnly: true,
-                      enabled: false,
+                      readOnly: profile.accountNumber.isNotEmpty,
+                      enabled: profile.accountNumber.isEmpty,
                       prefixIcon: LucideIcons.id_card,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'This field is required';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: AppStyle.spaceLg),
 
@@ -739,7 +671,7 @@ class __NewRequestFormSheetState
                 ),
               ),
 
-              if (_errorMessage != null) ...[
+              if (errorMessage != null) ...[
                 const SizedBox(height: AppStyle.spaceMd),
                 Container(
                   padding: const EdgeInsets.all(AppStyle.spaceMd),
@@ -760,11 +692,11 @@ class __NewRequestFormSheetState
                       const SizedBox(width: AppStyle.spaceSm),
                       Expanded(
                         child: Text(
-                          _errorMessage!.startsWith('change_wifi.') ||
-                                  _errorMessage!.startsWith('api.') ||
-                                  _errorMessage!.startsWith('common.')
-                              ? _errorMessage!.tr()
-                              : _errorMessage!,
+                          errorMessage.startsWith('change_wifi.') ||
+                                  errorMessage.startsWith('api.') ||
+                                  errorMessage.startsWith('common.')
+                              ? errorMessage.tr()
+                              : errorMessage,
                           style: const TextStyle(
                             color: AppColors.error,
                             fontSize: 13,
@@ -783,7 +715,7 @@ class __NewRequestFormSheetState
                 label: 'common.submit'.tr() != 'common.submit'
                     ? 'common.submit'.tr()
                     : 'Submit',
-                isLoading: _isSubmitting,
+                isLoading: controllerState.isSubmitting,
                 onPressed: _submitForm,
               ),
               const SizedBox(height: AppStyle.spaceMd),

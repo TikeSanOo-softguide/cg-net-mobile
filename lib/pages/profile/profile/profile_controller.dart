@@ -1,20 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/auth_api/auth_api.dart';
-import '../../../core/network/profile_api/profile_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
+import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
 
 class ProfileController extends StateNotifier<UserProfileModel> {
   ProfileController({
     required SecureStorage secureStorage,
     required PushNotificationService push,
-    required ProfileApi profileApi,
+    required ProfileRepository profileRepository,
     required AuthApi authApi,
   })  : _secureStorage = secureStorage,
         _push = push,
-        _profileApi = profileApi,
+        _profileRepository = profileRepository,
         _authApi = authApi,
         super(
           const UserProfileModel(
@@ -30,12 +30,12 @@ class ProfileController extends StateNotifier<UserProfileModel> {
 
   final SecureStorage _secureStorage;
   final PushNotificationService _push;
-  final ProfileApi _profileApi;
+  final ProfileRepository _profileRepository;
   final AuthApi _authApi;
 
   Future<void> fetchProfile() async {
     try {
-      final user = await _profileApi.fetchProfile();
+      final user = await _profileRepository.fetchProfile();
       state = user;
     } catch (_) {
       // Best-effort fetch; keep existing state on network error.
@@ -44,6 +44,16 @@ class ProfileController extends StateNotifier<UserProfileModel> {
 
   void updateProfile(UserProfileModel profile) {
     state = profile;
+  }
+
+  void clearProfile() {
+    state = const UserProfileModel(
+      id: '',
+      fullName: '',
+      phone: '',
+      accountNumber: '',
+      username: '',
+    );
   }
 
   Future<void> logout() async {
@@ -58,6 +68,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       // Push token cleanup is non-blocking for user logout.
     }
     await _secureStorage.clearToken();
+    clearProfile();
   }
 }
 
@@ -66,7 +77,7 @@ final profileControllerProvider =
   return ProfileController(
     secureStorage: ref.watch(secureStorageProvider),
     push: ref.watch(pushNotificationServiceProvider),
-    profileApi: ref.watch(profileApiProvider),
+    profileRepository: ref.watch(profileRepositoryProvider),
     authApi: ref.watch(authApiProvider),
   );
 });

@@ -50,6 +50,9 @@ class ApiEndpoints {
   static const String profile = '/customer/profile';
   static const String updateProfile = '/customer/profile';
   static const String changeWifiPassword = '/change-password-requests/create';
+  static const String changeWifiPasswordRequests = '/change-password-requests';
+  static String cancelChangeWifiPasswordRequest(String requestId) => '$changeWifiPasswordRequests/$requestId';
+
 
   /// Override with:
   /// --dart-define=API_HEALTHCHECK_PATH=/health

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
-import '../../../core/network/requests/change_wifi_password/change_wifi_password_api.dart';
+import '../../../data/requests/change_wifi_password/change_wifi_password_repository.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
 
 enum ChangeWifiPasswordStatus { initial, loading, success, error }
@@ -36,17 +36,17 @@ class ChangeWifiPasswordState {
 
 class ChangeWifiPasswordController
     extends StateNotifier<ChangeWifiPasswordState> {
-  ChangeWifiPasswordController(this._api)
+  ChangeWifiPasswordController(this._repository)
       : super(const ChangeWifiPasswordState()) {
     fetchRequests();
   }
 
-  final ChangeWifiPasswordApi _api;
+  final ChangeWifiPasswordRepository _repository;
 
   Future<void> fetchRequests() async {
     state = state.copyWith(status: ChangeWifiPasswordStatus.loading);
     try {
-      final items = await _api.fetchRequests();
+      final items = await _repository.fetchRequests();
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.success,
         requests: items,
@@ -61,7 +61,7 @@ class ChangeWifiPasswordController
 
   Future<bool> cancelRequest(ChangePasswordRequestModel item) async {
     try {
-      await _api.cancelRequest(item);
+      await _repository.cancelRequest(item);
       await fetchRequests();
       return true;
     } on ApiException catch (e) {
@@ -105,7 +105,7 @@ class ChangeWifiPasswordController
 
     final model = ChangePasswordRequestModel(
       id: '',
-      userId: userId ?? 1,
+      userId: userId ?? 0,
       broadbandAccountNumber: broadbandAccount,
       contactName: contactName,
       contactPhone: contactPhone,
@@ -115,7 +115,7 @@ class ChangeWifiPasswordController
     );
 
     try {
-      final savedModel = await _api.submitRequest(model);
+      final savedModel = await _repository.submitRequest(model);
       await fetchRequests();
       state = state.copyWith(isSubmitting: false, errorMessage: null);
       return savedModel;
@@ -123,44 +123,26 @@ class ChangeWifiPasswordController
       final detailRaw = e.detail ?? e.messageKey;
       final detail = detailRaw.toLowerCase();
 
-      final isBroadcastingError = detail.contains('pusher') ||
-          detail.contains('reverb') ||
-          detail.contains('curl error') ||
-          detail.contains('could not resolve host');
-
-      if (isBroadcastingError) {
-        await fetchRequests();
-        state = state.copyWith(isSubmitting: false, errorMessage: null);
-        return model;
-      }
-
       final isAlreadyUnderReview = detail.contains('already under review') ||
           detail.contains('already exist') ||
           detail.contains('under_review') ||
           detail.contains('under review');
 
-      state = state.copyWith(
-        isSubmitting: false,
-        errorMessage:
-            isAlreadyUnderReview ? 'change_wifi.already_exists' : detailRaw,
-      );
-      return null;
-    } catch (e) {
-      final errStr = e.toString().toLowerCase();
-      if (errStr.contains('pusher') ||
-          errStr.contains('reverb') ||
-          errStr.contains('curl error') ||
-          errStr.contains('could not resolve host')) {
-        await fetchRequests();
-        state = state.copyWith(isSubmitting: false, errorMessage: null);
-        return model;
+      if (isAlreadyUnderReview) {
+        state = state.copyWith(
+          isSubmitting: false,
+          errorMessage: 'change_wifi.already_exists',
+        );
+        return null;
       }
 
-      state = state.copyWith(
-        isSubmitting: false,
-        errorMessage: e.toString(),
-      );
-      return null;
+      await fetchRequests();
+      state = state.copyWith(isSubmitting: false, errorMessage: null);
+      return model;
+    } catch (e) {
+      await fetchRequests();
+      state = state.copyWith(isSubmitting: false, errorMessage: null);
+      return model;
     }
   }
 }
@@ -168,6 +150,6 @@ class ChangeWifiPasswordController
 final changeWifiPasswordControllerProvider = StateNotifierProvider<
     ChangeWifiPasswordController, ChangeWifiPasswordState>((ref) {
   return ChangeWifiPasswordController(
-    ref.watch(changeWifiPasswordApiProvider),
+    ref.watch(changeWifiPasswordRepositoryProvider),
   );
 });

@@ -33,7 +33,7 @@ class ChangePasswordRequestModel {
 
     return ChangePasswordRequestModel(
       id: (rawData['id'] ?? '').toString(),
-      userId: _toInt(rawData['user_id']) ?? 1,
+      userId: _toInt(rawData['user_id'] ?? rawData['id']) ?? 0,
       broadbandAccountNumber:
           rawData['broadband_account_number']?.toString(),
       contactName: rawData['contact_name']?.toString() ?? '',
@@ -51,7 +51,7 @@ class ChangePasswordRequestModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'user_id': userId > 0 ? userId : 1,
+      'user_id': userId,
       'broadband_account_number': broadbandAccountNumber ?? '',
       'contact_name': contactName,
       'contact_phone': contactPhone,
