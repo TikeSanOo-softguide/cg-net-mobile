@@ -168,7 +168,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
         title: 'password_login.title'.tr(),
         titleColor: AppColors.primary,
         titleFontSize: titleSize,
-        titleFontWeight: FontWeight.w700,
+        titleFontWeight: FontWeight.w600,
         titleLetterSpacing: 0.2,
         description: 'password_login.subtitle'.tr(),
         descriptionFontSize: subtitleSize,
@@ -177,7 +177,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
         descriptionHeight: 1.4,
         descriptionLineCount: 2,
         lockDescriptionHeight: false,
-        titleBottomGap: 16,
+        titleBottomGap: 10,
         childTopGap: 20,
         actionTopGap: 24,
         primaryAction: AppButton(

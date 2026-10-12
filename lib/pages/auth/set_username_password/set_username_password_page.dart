@@ -150,7 +150,7 @@ class _SetUsernamePasswordPageState
         title: 'set_credentials.title'.tr(),
         titleColor: AppColors.primary,
         titleFontSize: titleSize,
-        titleFontWeight: FontWeight.w700,
+        titleFontWeight: FontWeight.w600,
         titleLetterSpacing: 0.2,
         description: 'set_credentials.subtitle'.tr(),
         descriptionFontSize: subtitleSize,
@@ -159,7 +159,7 @@ class _SetUsernamePasswordPageState
         descriptionHeight: 1.4,
         descriptionLineCount: 2,
         lockDescriptionHeight: false,
-        titleBottomGap: 16,
+        titleBottomGap: 10,
         childTopGap: 20,
         actionTopGap: 24,
         primaryAction: AppButton(

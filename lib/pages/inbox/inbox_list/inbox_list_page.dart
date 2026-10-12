@@ -251,8 +251,9 @@ class _InboxCard extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTheme.english(
-                                    fontSize: 14,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2,
                                     color: item.isFailure
                                         ? InboxCategoryIcon.failureColor
                                         : AppColors.primary,
@@ -282,8 +283,9 @@ class _InboxCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.english(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0,
                               color: AppColors.textMuted,
                               height: 1.5,
                             ),

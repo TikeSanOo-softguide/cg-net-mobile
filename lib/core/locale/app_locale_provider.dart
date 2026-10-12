@@ -20,17 +20,14 @@ bool isChineseLocale(BuildContext context) =>
 bool usesCompactAuthType(BuildContext context) =>
     isMyanmarLocale(context) || isChineseLocale(context);
 
-/// Auth title: 20 default, −2 for Myanmar / Chinese.
+/// Auth title: 18 default, −2 for Myanmar / Chinese.
 double authTitleFontSize(BuildContext context) =>
-    usesCompactAuthType(context) ? 18 : 20;
+    usesCompactAuthType(context) ? 16 : 18;
 
-/// Auth subtitle: 16 default, −1 for Myanmar / Chinese.
+/// Auth subtitle: 15 default, −1 for Myanmar / Chinese.
 double authSubtitleFontSize(BuildContext context) =>
-    usesCompactAuthType(context) ? 15 : 16;
+    usesCompactAuthType(context) ? 14 : 15;
 
-/// OTP resend / countdown: 16 base → EN/ZH −1, Myanmar −2.
-double otpResendFontSize(BuildContext context) {
-  final code = context.locale.languageCode;
-  if (code == 'my') return 14;
-  return 15; // en, zh, and others
-}
+/// OTP resend / countdown: 15 English, 14 Myanmar / Chinese.
+double otpResendFontSize(BuildContext context) =>
+    usesCompactAuthType(context) ? 14 : 15;

@@ -82,13 +82,13 @@ Future<void> showOtpSuccessDrawer(
                   textAlign: TextAlign.center,
                   style: AppTheme.english(
                     fontSize: titleSize,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.success,
                     letterSpacing: 0.2,
                     height: AppStyle.lineHeightTitle,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Text(
                   'otp.success_body'.tr(),
                   textAlign: TextAlign.center,
