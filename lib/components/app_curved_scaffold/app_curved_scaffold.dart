@@ -21,6 +21,7 @@ class AppCurvedScaffold extends StatelessWidget {
     this.backgroundColor,
     this.resizeToAvoidBottomInset = true,
     this.floatingActionButton,
+    this.topBarContentHeight,
   });
 
   final Widget body;
@@ -33,6 +34,7 @@ class AppCurvedScaffold extends StatelessWidget {
   final Color? backgroundColor;
   final bool resizeToAvoidBottomInset;
   final Widget? floatingActionButton;
+  final double? topBarContentHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +61,7 @@ class AppCurvedScaffold extends StatelessWidget {
                     AppStyle.spaceMd,
                   ),
                   child: SizedBox(
-                    height: AppStyle.topBarHeight,
+                    height: topBarContentHeight ?? AppStyle.topBarHeight,
                     child: Row(
                       children: [
                         if (showLeading)

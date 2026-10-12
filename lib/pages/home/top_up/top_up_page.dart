@@ -18,7 +18,7 @@ import '../../../core/network/offline_navigation.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
-import '../../../data/customer_profile/customer_profile_repository.dart';
+import '../../../data/profile/profile_repository.dart';
 import 'top_up_controller.dart';
 
 /// Top-up screen with serial verification and backend submission flow.
@@ -41,15 +41,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
 
   bool get _canSubmit =>
       _account.text.trim().isNotEmpty && _pin.text.trim().length >= 16;
-
-  String _topUpErrorMessage(ApiException error) {
-    final backendMessage = error.detail?.trim();
-    if (backendMessage != null && backendMessage.isNotEmpty) {
-      return backendMessage;
-    }
-
-    return apiErrorText(error);
-  }
 
   void _prefillAccount(String phone) {
     final value = phone.trim();
@@ -94,19 +85,15 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         _unfocusInputs();
         await showAppSuccessModal(
           context,
-          title: 'topup.verified'.tr(),
-          body: result.message?.trim().isNotEmpty == true
-              ? result.message!
-              : 'topup.verify_amount'.tr(),
+          title: 'topup.serial_valid_title'.tr(),
+          body: 'topup.serial_valid_body'.tr(),
         );
       } else {
         _unfocusInputs();
         await showAppFailureModal(
           context,
-          title: 'topup.verify_fail_title'.tr(),
-          body: result.message?.trim().isNotEmpty == true
-              ? result.message!
-              : 'topup.verify_fail_body'.tr(),
+          title: 'topup.serial_invalid_title'.tr(),
+          body: 'topup.serial_invalid_body'.tr(),
         );
       }
     } on ApiException catch (error) {
@@ -120,10 +107,18 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         return;
       }
       _unfocusInputs();
+      if (error.failure == ApiFailure.tooManyRequests) {
+        await showAppFailureModal(
+          context,
+          title: 'common.error'.tr(),
+          body: apiErrorText(error),
+        );
+        return;
+      }
       await showAppFailureModal(
         context,
-        title: 'topup.verify_fail_title'.tr(),
-        body: _topUpErrorMessage(error),
+        title: 'topup.serial_invalid_title'.tr(),
+        body: 'topup.serial_invalid_body'.tr(),
       );
     } catch (_) {
       if (!mounted) return;
@@ -216,10 +211,8 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         _unfocusInputs();
         await showAppFailureModal(
           context,
-          title: 'topup.result_failure_title'.tr(),
-          body: response.message?.trim().isNotEmpty == true
-              ? response.message!
-              : 'topup.result_failure_body'.tr(),
+          title: 'topup.redeem_failure_title'.tr(),
+          body: 'topup.redeem_failure_body'.tr(),
         );
         return;
       }
@@ -227,13 +220,11 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       _closeProcessingDialog();
       if (!mounted) return;
       _unfocusInputs();
-      ref.invalidate(customerProfileProvider);
+      ref.invalidate(userProfileProvider);
       await showAppSuccessModal(
         context,
-        title: 'topup.result_success_title'.tr(),
-        body: response.message?.trim().isNotEmpty == true
-            ? response.message!
-            : 'topup.result_success_body'.tr(),
+        title: 'topup.redeem_success_title'.tr(),
+        body: 'topup.redeem_success_body'.tr(),
       );
       if (!mounted) return;
       _pin.clear();
@@ -246,10 +237,18 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         return;
       }
       _unfocusInputs();
+      if (error.failure == ApiFailure.tooManyRequests) {
+        await showAppFailureModal(
+          context,
+          title: 'topup.redeem_failure_title'.tr(),
+          body: apiErrorText(error),
+        );
+        return;
+      }
       await showAppFailureModal(
         context,
-        title: 'topup.result_failure_title'.tr(),
-        body: _topUpErrorMessage(error),
+        title: 'topup.redeem_failure_title'.tr(),
+        body: 'topup.redeem_failure_body'.tr(),
       );
     } catch (_) {
       _closeProcessingDialog();
@@ -276,9 +275,9 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   @override
   Widget build(BuildContext context) {
     final topUpState = ref.watch(topUpControllerProvider);
-    final profile = ref.watch(customerProfileProvider);
-    profile.whenData((customer) => _prefillAccount(customer.phone));
-    ref.listen(customerProfileProvider, (previous, next) {
+    final profile = ref.watch(userProfileProvider);
+    profile.whenData((user) => _prefillAccount(user.phone));
+    ref.listen(userProfileProvider, (previous, next) {
       next.whenData((profile) {
         _prefillAccount(profile.phone);
       });
@@ -309,7 +308,11 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   actionEnabled: true,
                   onAction: _checkSerial,
                   maxLength: _serialLength,
-                  textInputAction: TextInputAction.next,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() => _serialErrorKey = null),
                 ),
                 SizedBox(
@@ -361,7 +364,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   ],
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
-                  onSubmitted: (_) => _submit(),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'topup.pin_required'.tr();

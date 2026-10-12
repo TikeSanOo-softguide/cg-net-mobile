@@ -75,6 +75,7 @@ class UserProfileModel {
     required this.accountNumber,
     this.status = 'active',
     this.username,
+    this.walletBalance = '',
   });
 
   final String id;
@@ -83,6 +84,7 @@ class UserProfileModel {
   final String accountNumber;
   final String status;
   final String? username;
+  final String walletBalance;
 
   String get displayPhone => formatLocalPhone(phone);
 
@@ -116,6 +118,12 @@ class UserProfileModel {
     } else if (json['user'] is Map) {
       rawData = Map<String, dynamic>.from(json['user'] as Map);
     }
+    final data = json['data'] is Map
+        ? Map<String, dynamic>.from(json['data'] as Map)
+        : json;
+    final wallet = data['wallet'] is Map
+        ? Map<String, dynamic>.from(data['wallet'] as Map)
+        : <String, dynamic>{};
 
     final id = (rawData['id'] ?? rawData['user_id'] ?? '').toString();
     final fullName = rawData['name']?.toString() ??
@@ -146,6 +154,7 @@ class UserProfileModel {
       accountNumber: accountNumber,
       status: status,
       username: username,
+      walletBalance: wallet['balance']?.toString().trim() ?? '',
     );
   }
 
@@ -156,6 +165,7 @@ class UserProfileModel {
     String? accountNumber,
     String? status,
     String? username,
+    String? walletBalance,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -164,6 +174,7 @@ class UserProfileModel {
       accountNumber: accountNumber ?? this.accountNumber,
       status: status ?? this.status,
       username: username ?? this.username,
+      walletBalance: walletBalance ?? this.walletBalance,
     );
   }
 }

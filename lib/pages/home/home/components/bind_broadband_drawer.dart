@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/core/network/offline_navigation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
@@ -25,7 +26,9 @@ class BoundBroadband {
   final String customerName;
 }
 
-Future<BoundBroadband?> showBindBroadbandDrawer(BuildContext context) async {
+Future<BoundBroadband?> showBindBroadbandDrawer(
+  BuildContext context,
+) async {
   final container = ProviderScope.containerOf(context);
   final nav = container.read(bottomNavVisibleProvider.notifier);
   nav.state = false;
@@ -109,34 +112,35 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
   void _validateAccount(String value) {
     final text = value.trim();
 
-    String? error;
-
-    if (text.isEmpty) {
-      error = 'broadband.validation.account_required'.tr();
-    } else if (text.length > 32) {
-      error = 'broadband.validation.account_max_length'.tr();
-    }
-
     setState(() {
-      _accountError = error;
+      if (text.isEmpty) {
+        _accountError = 'broadband.validation.account_required'.tr();
+      } else if (text.length > 32) {
+        _accountError = 'broadband.validation.account_max_length'.tr();
+      } else {
+        _accountError = null;
+      }
+
       _updateFormValidity();
+      _formKey.currentState?.validate();
     });
   }
 
   void _validateCustomerName(String value) {
     final text = value.trim();
 
-    String? error;
-
-    if (text.isEmpty) {
-      error = 'broadband.validation.customer_name_required'.tr();
-    } else if (text.length > 50) {
-      error = 'broadband.validation.customer_name_max_length'.tr();
-    }
-
     setState(() {
-      _customerNameError = error;
+      if (text.isEmpty) {
+        _customerNameError = 'broadband.validation.customer_name_required'.tr();
+      } else if (text.length > 50) {
+        _customerNameError =
+            'broadband.validation.customer_name_max_length'.tr();
+      } else {
+        _customerNameError = null;
+      }
+
       _updateFormValidity();
+      _formKey.currentState?.validate();
     });
   }
 
@@ -160,38 +164,54 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
 
     try {
       final container = ProviderScope.containerOf(context);
-      final response =
-          await container.read(broadbandRepositoryProvider).connect(
-                accountNumber: bound.account,
-                customerName: bound.customerName,
-              );
+      final repository = container.read(broadbandRepositoryProvider);
 
-      debugPrint('BROADBAND CONNECT RESPONSE: $response');
-      await container.read(profileControllerProvider.notifier).fetchProfile();
+      while (true) {
+        try {
+          final response = await repository.connect(
+            accountNumber: bound.account,
+            customerName: bound.customerName,
+          );
 
-      if (!mounted) return;
+          debugPrint('BROADBAND CONNECT RESPONSE: $response');
+          await container
+              .read(profileControllerProvider.notifier)
+              .fetchProfile();
 
-      Navigator.of(context).pop(bound);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      final errorKey = error.detail?.trim();
+          if (!mounted) return;
 
-      final message = errorKey != null && errorKey.isNotEmpty
-          ? 'broadband.validation.$errorKey'.tr()
-          : apiErrorText(error);
+          Navigator.of(context).pop(bound);
+          return;
+        } on ApiException catch (error) {
+          if (!mounted) return;
 
-      await showAppFailureModal(
-        context,
-        title: 'broadband.validation.bind_fail_title'.tr(),
-        body: message,
-      );
-    } catch (_) {
-      if (!mounted) return;
-      await showAppFailureModal(
-        context,
-        title: 'broadband.validation.bind_fail_title'.tr(),
-        body: 'broadband.validation.bind_fail_body'.tr(),
-      );
+          if (isOfflineError(error)) {
+            final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+
+          final errorKey = error.detail?.trim();
+          final message = errorKey != null && errorKey.isNotEmpty
+              ? 'broadband.validation.$errorKey'.tr()
+              : apiErrorText(error);
+
+          await showAppFailureModal(
+            context,
+            title: 'broadband.validation.bind_fail_title'.tr(),
+            body: message,
+          );
+          return;
+        } catch (_) {
+          if (!mounted) return;
+          await showAppFailureModal(
+            context,
+            title: 'broadband.validation.bind_fail_title'.tr(),
+            body: 'broadband.validation.bind_fail_body'.tr(),
+          );
+          return;
+        }
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -240,69 +260,23 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
                 hint: 'home.broadband_account_hint'.tr(),
                 prefixIcon: LucideIcons.router,
                 textInputAction: TextInputAction.next,
-                reserveErrorSpace: false,
+                reserveErrorSpace: true,
                 onChanged: _validateAccount,
-                validator: (v) {
-                  final value = v?.trim() ?? '';
-                  if (value.isEmpty) {
-                    return 'Broadband account is required';
-                  }
-                  if (value.length > 32) {
-                    return 'Broadband account must not exceed 32 characters';
-                  }
-                  return null;
-                },
+                validator: (_) => _accountError,
               ),
-              SizedBox(
-                height: 30,
-                child: _accountError != null
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Text(
-                          _accountError!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 12,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
+              const SizedBox(height: AppStyle.spaceMd),
               AppInput(
                 controller: _customerName,
                 label: 'home.customer_name'.tr(),
                 hint: 'home.customer_name_hint'.tr(),
                 prefixIcon: LucideIcons.user,
                 textInputAction: TextInputAction.done,
-                reserveErrorSpace: false,
+                reserveErrorSpace: true,
                 onChanged: _validateCustomerName,
                 onSubmitted: (_) => _submit(),
-                validator: (v) {
-                  final value = v?.trim() ?? '';
-                  if (value.isEmpty) {
-                    return 'Customer name is required';
-                  }
-                  if (value.length > 50) {
-                    return 'Customer name must not exceed 50 characters';
-                  }
-                  return null;
-                },
+                validator: (_) => _customerNameError,
               ),
-              SizedBox(
-                height: 30,
-                child: _customerNameError != null
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Text(
-                          _customerNameError!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 12,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
+              const SizedBox(height: AppStyle.spaceMd),
               AppButton(
                 label: 'home.bind'.tr(),
                 height: 40,
@@ -348,33 +322,45 @@ class _BoundAccountSheetState extends State<_BoundAccountSheet> {
     setState(() => _isSubmitting = true);
 
     try {
-      await repository.unbindAccount(
-        accountNumber: widget.bound.account,
-      );
+      while (true) {
+        try {
+          await repository.unbindAccount(
+            accountNumber: widget.bound.account,
+          );
 
-      if (!mounted) return;
+          if (!mounted) return;
 
-      Navigator.of(context).pop(true);
-    } on ApiException catch (error) {
-      if (!mounted) return;
+          Navigator.of(context).pop(true);
+          return;
+        } on ApiException catch (error) {
+          if (!mounted) return;
 
-      final backendMessage = error.detail?.trim();
+          if (isOfflineError(error)) {
+            final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
 
-      await showAppFailureModal(
-        context,
-        title: 'broadband.validation.unbind_fail_title'.tr(),
-        body: backendMessage != null && backendMessage.isNotEmpty
-            ? backendMessage
-            : apiErrorText(error),
-      );
-    } catch (_) {
-      if (!mounted) return;
+          final backendMessage = error.detail?.trim();
+          await showAppFailureModal(
+            context,
+            title: 'broadband.validation.unbind_fail_title'.tr(),
+            body: backendMessage != null && backendMessage.isNotEmpty
+                ? backendMessage
+                : apiErrorText(error),
+          );
+          return;
+        } catch (_) {
+          if (!mounted) return;
 
-      await showAppFailureModal(
-        context,
-        title: 'broadband.validation.unbind_fail_title'.tr(),
-        body: 'broadband.validation.unbind_fail_body'.tr(),
-      );
+          await showAppFailureModal(
+            context,
+            title: 'broadband.validation.unbind_fail_title'.tr(),
+            body: 'broadband.validation.unbind_fail_body'.tr(),
+          );
+          return;
+        }
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -432,7 +418,8 @@ class _BoundAccountSheetState extends State<_BoundAccountSheet> {
                   const SizedBox(height: 10),
                   _InfoRow(
                     label: 'home.customer_name'.tr(),
-                    value: bound.customerName,
+                    value:
+                        bound.customerName.isEmpty ? '-' : bound.customerName,
                   ),
                 ],
               ),

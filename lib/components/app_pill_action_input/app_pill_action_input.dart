@@ -128,8 +128,8 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                       },
                       onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       style: AppTheme.english(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                       cursorColor: AppColors.primary,
@@ -138,24 +138,25 @@ class _AppPillActionInputState extends State<AppPillActionInput> {
                         labelText: widget.label,
                         hintText: widget.hint,
                         hintStyle: AppTheme.english(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: AppColors.textMuted,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                         ),
                         labelStyle: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                           color: labelColor,
                         ),
                         floatingLabelStyle: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                           color: labelColor,
                         ),
                         filled: true,
                         fillColor: AppColors.surface,
                         contentPadding:
-                            const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                            const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                        constraints: const BoxConstraints(minHeight: 48),
                         counterText: '',
                         border: _fieldBorder(focused: false, error: hasError),
                         enabledBorder:

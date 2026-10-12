@@ -84,7 +84,7 @@ class HomeServicesSection extends ConsumerWidget {
     _ServiceItem item, {
     bool fromSheet = false,
   }) async {
-    if (ref.read(boundBroadbandProvider) == null) {
+    if (item.id != 'installation' && ref.read(boundBroadbandProvider) == null) {
       await showAppAlertModal(
         context,
         message: 'home.service_bind_required'.tr(),
