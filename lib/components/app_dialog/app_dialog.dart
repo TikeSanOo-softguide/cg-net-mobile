@@ -18,6 +18,7 @@ const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
 const String _alertIconAsset = 'assets/images/dialogs/alert.png';
 const String _failureIconAsset = 'assets/images/dialogs/failure.png';
 const String _passwordIconAsset = 'assets/images/dialogs/password.png';
+const String _wifiOffIconAsset = 'assets/images/dialogs/wifi-off-icon.png';
 const Color _failure = Color(0xFFD90000);
 const Color _failureSoft = Color(0xFFFCE6E6); // light of #D90000
 const double _dialogIconChip = 36;
@@ -413,6 +414,82 @@ Future<String?> showAppPasswordModal(
       );
     },
   );
+}
+
+///Offline Network Modal
+Future<bool> showOfflineModal(BuildContext context) async {
+  final result = await _showAppDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) {
+      return _appDialogShell(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _dialogPngIcon(
+              asset: _wifiOffIconAsset,
+              background: _failureSoft,
+            ),
+            const SizedBox(height: _gapIconTitle),
+            Text(
+              'shared.no_internet_title'.tr(),
+              textAlign: TextAlign.center,
+              style: _dialogTitleStyle(_failure),
+            ),
+            const SizedBox(height: _gapTitleBody),
+            Text(
+              'shared.no_internet_body'.tr(),
+              textAlign: TextAlign.center,
+              style: _dialogMessageStyle(),
+            ),
+            const SizedBox(height: _gapBodyButton),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: _modalBtnHeight,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      style: _cancelOutlineModalBtnStyle(),
+                      child: Text(
+                        'common.cancel'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _modalBtnText(
+                          color: _cancelRed,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: _modalBtnHeight,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: _primaryModalBtnStyle(),
+                      child: Text(
+                        'common.retry'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _modalBtnText(
+                          color: AppColors.onPrimary,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+  return result == true;
 }
 
 class _AppPasswordDialog extends StatefulWidget {

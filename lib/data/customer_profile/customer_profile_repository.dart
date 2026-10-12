@@ -9,10 +9,14 @@ class CustomerProfile {
   const CustomerProfile({
     required this.phone,
     required this.walletBalance,
+    this.accountNumber,
+    this.customerName,
   });
 
   final String phone;
   final String walletBalance;
+  final String? accountNumber;
+  final String? customerName;
 }
 
 class CustomerProfileRepository {
@@ -28,9 +32,13 @@ class CustomerProfileRepository {
       final resource = data.isEmpty ? root : data;
       final user = _asMap(resource['user']);
       final wallet = _asMap(resource['wallet']);
+      final broadbandAccount = _asMap(resource['broadbandAccount']);
       final phone = user['phone']?.toString().trim();
       final balance = wallet['balance'];
       final walletBalance = balance?.toString().trim();
+      final accountNumber =
+          broadbandAccount['account_number']?.toString().trim();
+      final customerName = broadbandAccount['customer_name']?.toString().trim();
 
       if (phone == null || phone.isEmpty) {
         throw const FormatException(
@@ -43,7 +51,15 @@ class CustomerProfileRepository {
         );
       }
 
-      return CustomerProfile(phone: phone, walletBalance: walletBalance);
+      return CustomerProfile(
+        phone: phone,
+        walletBalance: walletBalance,
+        accountNumber: accountNumber == null || accountNumber.isEmpty
+            ? null
+            : accountNumber,
+        customerName:
+            customerName == null || customerName.isEmpty ? null : customerName,
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
