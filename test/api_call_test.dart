@@ -121,7 +121,31 @@ void main() {
     final result = await TopUpRepository(dio).checkSerialNo('1234567890123456');
 
     expect(result.isValid, isFalse);
+    expect(result.result, TopUpSerialCheckStatus.invalid);
     expect(result.message, 'Invalid or unavailable top-up card.');
+  });
+
+  test('serial check distinguishes an unknown card from a used card', () async {
+    final invalidDio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = _JsonAdapter(
+        '{"result":"invalid_card","message":"Invalid top-up card."}',
+        statusCode: 400,
+      );
+    final usedDio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = _JsonAdapter(
+        '{"result":"already_used","message":"This top-up card has already been used."}',
+        statusCode: 400,
+      );
+
+    final invalid =
+        await TopUpRepository(invalidDio).checkSerialNo('1234567890123456');
+    final used =
+        await TopUpRepository(usedDio).checkSerialNo('1234567890123456');
+
+    expect(invalid.result, TopUpSerialCheckStatus.invalid);
+    expect(invalid.isValid, isFalse);
+    expect(used.result, TopUpSerialCheckStatus.alreadyUsed);
+    expect(used.isValid, isFalse);
   });
 }
 
@@ -130,9 +154,10 @@ final _uuidV4Pattern = RegExp(
 );
 
 class _JsonAdapter implements HttpClientAdapter {
-  _JsonAdapter(this.body);
+  _JsonAdapter(this.body, {this.statusCode = 200});
 
   final String body;
+  final int statusCode;
 
   @override
   Future<ResponseBody> fetch(
@@ -142,7 +167,7 @@ class _JsonAdapter implements HttpClientAdapter {
   ) async {
     return ResponseBody.fromString(
       body,
-      200,
+      statusCode,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },

@@ -7,14 +7,20 @@ import '../../core/network/dio_client/dio_client.dart';
 
 class TopUpSerialCheckResult {
   const TopUpSerialCheckResult({
-    required this.isValid,
+    required this.result,
     this.message,
-    this.amountPoints,
   });
 
-  final bool isValid;
+  final TopUpSerialCheckStatus result;
   final String? message;
-  final int? amountPoints;
+
+  bool get isValid => result == TopUpSerialCheckStatus.valid;
+}
+
+enum TopUpSerialCheckStatus {
+  valid,
+  alreadyUsed,
+  invalid,
 }
 
 class TopUpAccountResult {
@@ -45,14 +51,13 @@ class TopUpRepository {
         data: {'serial_no': serialNo},
       );
       final data = _asMap(response.data);
-      final success = _resolveSuccess(response.statusCode, data);
-
-      return TopUpSerialCheckResult(
-        isValid: success,
-        message: _responseMessage(data),
-        amountPoints: _toInt(data['amount']),
-      );
+      return _serialCheckResult(response.statusCode, data);
     } on DioException catch (error) {
+      final data = _asMap(error.response?.data);
+      final statusCode = error.response?.statusCode;
+      if (statusCode == 400 && _serialCheckStatus(data['result']) != null) {
+        return _serialCheckResult(statusCode, data);
+      }
       throw ApiException.fromDio(error);
     }
   }
@@ -100,6 +105,30 @@ class TopUpRepository {
       }
     }
     return (statusCode ?? 500) >= 200 && (statusCode ?? 500) < 300;
+  }
+
+  static TopUpSerialCheckResult _serialCheckResult(
+    int? statusCode,
+    Map<String, dynamic> data,
+  ) {
+    final result = _serialCheckStatus(data['result']) ??
+        (_resolveSuccess(statusCode, data)
+            ? TopUpSerialCheckStatus.valid
+            : TopUpSerialCheckStatus.invalid);
+
+    return TopUpSerialCheckResult(
+      result: result,
+      message: _responseMessage(data),
+    );
+  }
+
+  static TopUpSerialCheckStatus? _serialCheckStatus(Object? value) {
+    return switch (value) {
+      'valid' => TopUpSerialCheckStatus.valid,
+      'already_used' => TopUpSerialCheckStatus.alreadyUsed,
+      'invalid_card' => TopUpSerialCheckStatus.invalid,
+      _ => null,
+    };
   }
 
   static int? _toInt(Object? value) {

@@ -19,6 +19,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/profile/profile_repository.dart';
+import '../../../data/top_up/top_up_repository.dart';
 import 'top_up_controller.dart';
 
 /// Top-up screen with serial verification and backend submission flow.
@@ -90,10 +91,15 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         );
       } else {
         _unfocusInputs();
+        final alreadyUsed = result.result == TopUpSerialCheckStatus.alreadyUsed;
         await showAppFailureModal(
           context,
-          title: 'topup.serial_invalid_title'.tr(),
-          body: 'topup.serial_invalid_body'.tr(),
+          title: alreadyUsed
+              ? 'topup.serial_invalid_title'.tr()
+              : 'topup.serial_invalid_card_title'.tr(),
+          body: alreadyUsed
+              ? 'topup.serial_invalid_body'.tr()
+              : 'topup.serial_invalid_card_body'.tr(),
         );
       }
     } on ApiException catch (error) {
@@ -107,18 +113,10 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         return;
       }
       _unfocusInputs();
-      if (error.failure == ApiFailure.tooManyRequests) {
-        await showAppFailureModal(
-          context,
-          title: 'common.error'.tr(),
-          body: apiErrorText(error),
-        );
-        return;
-      }
       await showAppFailureModal(
         context,
-        title: 'topup.serial_invalid_title'.tr(),
-        body: 'topup.serial_invalid_body'.tr(),
+        title: 'common.error'.tr(),
+        body: apiErrorText(error),
       );
     } catch (_) {
       if (!mounted) return;
@@ -195,15 +193,30 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     try {
       final account = _account.text.trim();
       final pin = _pin.text.trim();
-      final response = await ref.read(topUpControllerProvider.notifier).submit(
-            phone: account,
-            pin: pin,
-          );
-      if (!mounted) return;
-      if (response == null) {
-        _closeProcessingDialog();
-        return;
+      late final TopUpAccountResult response;
+      while (true) {
+        try {
+          final result =
+              await ref.read(topUpControllerProvider.notifier).submit(
+                    phone: account,
+                    pin: pin,
+                  );
+          if (result == null) {
+            _closeProcessingDialog();
+            return;
+          }
+          response = result;
+          break;
+        } on ApiException catch (error) {
+          if (!isOfflineError(error)) rethrow;
+          _closeProcessingDialog();
+          if (!mounted) return;
+          final shouldRetry = await showOfflineModal(context);
+          if (!mounted || !shouldRetry) return;
+          _showProcessing();
+        }
       }
+      if (!mounted) return;
 
       if (!response.isSuccess) {
         _closeProcessingDialog();
@@ -232,10 +245,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     } on ApiException catch (error) {
       _closeProcessingDialog();
       if (!mounted) return;
-      if (isOfflineError(error)) {
-        await openNoInternetPage(context);
-        return;
-      }
       _unfocusInputs();
       if (error.failure == ApiFailure.tooManyRequests) {
         await showAppFailureModal(

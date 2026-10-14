@@ -70,9 +70,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     final profile = ref.watch(userProfileProvider);
+    final cachedProfile = ref.watch(cachedUserProfileProvider);
+    final displayProfile = profile.valueOrNull ?? cachedProfile.valueOrNull;
     ref.listen(userProfileProvider, (previous, next) {
       next.whenOrNull(
         error: (error, _) {
+          if (error is ApiException &&
+              (error.failure == ApiFailure.offline ||
+                  error.failure == ApiFailure.timeout)) {
+            return;
+          }
           if (previous?.hasError == true || !context.mounted) return;
           final message =
               error is ApiException ? apiErrorText(error) : error.toString();
@@ -110,10 +117,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                         children: [
                           HomeBalanceHeader(
                             balanceAmount:
-                                profile.valueOrNull?.walletBalance.isNotEmpty ==
-                                        true
-                                    ? profile.valueOrNull!.walletBalance
-                                    : '—',
+                                displayProfile?.walletBalance.isNotEmpty == true
+                                    ? displayProfile!.walletBalance
+                                    : cachedProfile.isLoading
+                                        ? ''
+                                        : '—',
                           ),
                           const SizedBox(height: HomeQuickActions.hangBelow),
                         ],
@@ -147,7 +155,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               left: 0,
               right: 0,
               child: HomePinnedBar(
-                  accountNumber: profile.valueOrNull?.phone ?? '—'),
+                accountNumber: displayProfile?.phone ??
+                    (cachedProfile.isLoading ? '' : '—'),
+              ),
             ),
           ],
         ),
