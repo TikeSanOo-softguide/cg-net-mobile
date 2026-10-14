@@ -34,6 +34,7 @@ import '../../../pages/package/package_detail/package_detail_page.dart';
 import '../../../pages/package/package_list/package_list_page.dart';
 import '../../../pages/profile/about_app/about_app_page.dart';
 import '../../../pages/profile/change_password/change_password_page.dart';
+import '../../../pages/profile/change_password/verify_change_password_otp_page.dart';
 import '../../../pages/profile/device_session/device_session_page.dart';
 import '../../../pages/profile/edit_profile/edit_profile_page.dart';
 import '../../../pages/profile/language_settings/language_settings_page.dart';
@@ -43,6 +44,7 @@ import '../../../pages/shared_pages/error_no_internet/error_no_internet_page.dar
 import '../../../pages/shared_pages/force_update/force_update_page.dart';
 import '../../../pages/shared_pages/not_found/not_found_page.dart';
 import '../../../pages/support/support_chat/support_chat_page.dart';
+import '../../../models/change_password_model/change_password_otp_session.dart';
 import '../../network/session_clock.dart';
 import '../../storage/secure_storage/secure_storage.dart';
 import '../route_names/route_names.dart';
@@ -418,6 +420,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     name: RouteNames.changePassword,
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const ChangePasswordPage(),
+                    routes: [
+                      GoRoute(
+                        path: 'verify-otp',
+                        name: RouteNames.verifyChangePasswordOtp,
+                        parentNavigatorKey: _rootNavigatorKey,
+                        builder: (context, state) {
+                          final session = state.extra;
+                          if (session is! ChangePasswordOtpSession) {
+                            return const NotFoundPage();
+                          }
+                          return VerifyChangePasswordOtpPage(
+                            session: session,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'devices',
