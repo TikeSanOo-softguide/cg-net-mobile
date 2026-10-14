@@ -66,6 +66,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     label: 'profile.current_password'.tr(),
                     prefixIcon: LucideIcons.lock,
                     obscureText: _obscureCurrentPassword,
+                    keyboardType: TextInputType.number,
                     suffix: AppInput.iconChip(
                       icon: _obscureCurrentPassword
                           ? LucideIcons.eye_off
