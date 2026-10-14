@@ -2,8 +2,10 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/core/network/idempotency_key.dart';
+import 'package:cg_net_mobile/data/change_password/change_password_repository.dart';
 import 'package:cg_net_mobile/data/inbox/inbox_repository.dart';
 import 'package:cg_net_mobile/data/top_up/top_up_repository.dart';
+import 'package:cg_net_mobile/models/change_password_model/change_password_model.dart';
 import 'package:cg_net_mobile/models/user_model/user_model.dart';
 import 'package:cg_net_mobile/pages/home/top_up/top_up_controller.dart';
 import 'package:dio/dio.dart';
@@ -123,6 +125,45 @@ void main() {
     expect(result.isValid, isFalse);
     expect(result.message, 'Invalid or unavailable top-up card.');
   });
+
+  test('change password carries the challenge id into OTP verification',
+      () async {
+    final adapter = _ChangePasswordAdapter();
+    final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = adapter;
+    final repository = ChangePasswordRepository(dio);
+
+    const password = ChangePasswordModel(
+      currentPassword: 'current-secret',
+      newPassword: 'new-secret',
+      newPasswordConfirmation: 'new-secret',
+    );
+    final challenge = await repository.changePassword(
+      password: password,
+    );
+    await repository.verifyOtp(
+      challengeId: challenge.challengeId,
+      otp: '123456',
+    );
+    final resentChallenge = await repository.changePassword(password: password);
+
+    expect(challenge.challengeId, 'challenge-123');
+    expect(challenge.debugOtp, '654321');
+    expect(challenge.resendAfter, 60);
+    expect(adapter.requests[0].path, '/change-password');
+    expect(adapter.requests[0].data, {
+      'current_password': 'current-secret',
+      'new_password': 'new-secret',
+      'new_password_confirmation': 'new-secret',
+    });
+    expect(adapter.requests[1].path, '/change-password/verify-otp');
+    expect(adapter.requests[1].data, {
+      'challenge_id': challenge.challengeId,
+      'code': '123456',
+    });
+    expect(resentChallenge.challengeId, 'challenge-456');
+    expect(adapter.requests[2].data, adapter.requests[0].data);
+  });
 }
 
 final _uuidV4Pattern = RegExp(
@@ -174,6 +215,35 @@ class _RetryTopUpAdapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       '{"success":true,"message":"Top-up successful."}',
       200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _ChangePasswordAdapter implements HttpClientAdapter {
+  final requests = <({String path, Object? data})>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add((path: options.path, data: options.data));
+    final challengeCount = requests
+        .where((request) => request.path.endsWith('/change-password'))
+        .length;
+    final response = options.path.endsWith('/verify-otp')
+        ? '{"message":"Password changed successfully."}'
+        : '{"challenge_id":"challenge-${challengeCount == 1 ? '123' : '456'}","debug_otp":"654321","resend_after":"60"}';
+    return ResponseBody.fromString(
+      response,
+      202,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },
