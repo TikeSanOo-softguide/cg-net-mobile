@@ -285,11 +285,10 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   Widget build(BuildContext context) {
     final topUpState = ref.watch(topUpControllerProvider);
     final profile = ref.watch(userProfileProvider);
+    final cachedProfile = ref.watch(cachedUserProfileProvider);
     profile.whenData((user) => _prefillAccount(user.phone));
-    ref.listen(userProfileProvider, (previous, next) {
-      next.whenData((profile) {
-        _prefillAccount(profile.phone);
-      });
+    cachedProfile.whenData((user) {
+      if (user != null) _prefillAccount(user.phone);
     });
 
     return AppCurvedScaffold(

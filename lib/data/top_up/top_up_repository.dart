@@ -55,7 +55,7 @@ class TopUpRepository {
     } on DioException catch (error) {
       final data = _asMap(error.response?.data);
       final statusCode = error.response?.statusCode;
-      if (statusCode == 400 && _serialCheckStatus(data['result']) != null) {
+      if (statusCode == 400) {
         return _serialCheckResult(statusCode, data);
       }
       throw ApiException.fromDio(error);
