@@ -2,8 +2,10 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/core/network/idempotency_key.dart';
+import 'package:cg_net_mobile/data/change_password/change_password_repository.dart';
 import 'package:cg_net_mobile/data/inbox/inbox_repository.dart';
 import 'package:cg_net_mobile/data/top_up/top_up_repository.dart';
+import 'package:cg_net_mobile/models/change_password_model/change_password_model.dart';
 import 'package:cg_net_mobile/models/user_model/user_model.dart';
 import 'package:cg_net_mobile/pages/home/top_up/top_up_controller.dart';
 import 'package:dio/dio.dart';
@@ -199,6 +201,35 @@ class _RetryTopUpAdapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       '{"success":true,"message":"Top-up successful."}',
       200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _ChangePasswordAdapter implements HttpClientAdapter {
+  final requests = <({String path, Object? data})>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add((path: options.path, data: options.data));
+    final challengeCount = requests
+        .where((request) => request.path.endsWith('/change-password'))
+        .length;
+    final response = options.path.endsWith('/verify-otp')
+        ? '{"message":"Password changed successfully."}'
+        : '{"challenge_id":"challenge-${challengeCount == 1 ? '123' : '456'}","debug_otp":"654321","resend_after":"60"}';
+    return ResponseBody.fromString(
+      response,
+      202,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },

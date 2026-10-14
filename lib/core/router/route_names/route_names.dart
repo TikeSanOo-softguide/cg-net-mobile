@@ -33,6 +33,7 @@ class RouteNames {
   static const editProfile = 'editProfile';
   static const languageSettings = 'languageSettings';
   static const changePassword = 'changePassword';
+  static const verifyChangePasswordOtp = 'verifyChangePasswordOtp';
   static const deviceSession = 'deviceSession';
   static const notificationPreferences = 'notificationPreferences';
   static const aboutApp = 'aboutApp';
@@ -77,6 +78,7 @@ class RoutePaths {
   static const editProfile = '/profile/edit';
   static const languageSettings = '/profile/language';
   static const changePassword = '/profile/change-password';
+  static const verifyChangePasswordOtp = '/profile/change-password/verify-otp';
   static const deviceSession = '/profile/devices';
   static const notificationPreferences = '/profile/notifications';
   static const aboutApp = '/profile/about';
