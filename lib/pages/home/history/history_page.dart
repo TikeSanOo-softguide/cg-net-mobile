@@ -5,14 +5,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/activity_filter_drawer/activity_filter_drawer.dart';
-import '../../../components/activity_list_card/activity_list_card.dart';
+import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
-import '../../../core/router/route_names/route_names.dart';
-import '../../package/package_detail/package_buy_result.dart';
-import '../top_up/top_up_result.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
+import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/history/history_repository.dart';
+import '../../../models/history_model/history_model.dart';
+
+final transactionHistoryProvider =
+    FutureProvider.autoDispose.family<List<HistoryModel>, String?>(
+  (ref, type) => ref.watch(historyRepositoryProvider).fetch(type: type),
+);
 
 /// History — tabs: All / Top-Up / Package / Bill.
 class HistoryPage extends ConsumerStatefulWidget {
@@ -33,61 +44,12 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
     'history.tab_package',
     'history.tab_bill',
   ];
-
-  List<ActivityItem> get _allItems => [
-        ActivityItem(
-          id: 'h1',
-          kind: ActivityKind.topUp,
-          titleKey: 'history.item_topup_title',
-          subtitleKey: 'history.item_topup_body',
-          amount: 2500,
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-          isCredit: true,
-        ),
-        ActivityItem(
-          id: 'h-pkg-ok',
-          kind: ActivityKind.package,
-          titleKey: 'history.item_package_success_title',
-          subtitleKey: 'history.item_package_success_body',
-          amount: 15000,
-          createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-          isSuccess: true,
-        ),
-        ActivityItem(
-          id: 'h3',
-          kind: ActivityKind.bill,
-          titleKey: 'history.item_bill_title',
-          subtitleKey: 'history.item_bill_body',
-          amount: 18000,
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        ActivityItem(
-          id: 'h-pkg-fail',
-          kind: ActivityKind.package,
-          titleKey: 'history.item_package_fail_title',
-          subtitleKey: 'history.item_package_fail_body',
-          amount: 40000,
-          createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
-          isSuccess: false,
-        ),
-        ActivityItem(
-          id: 'h4',
-          kind: ActivityKind.topUp,
-          titleKey: 'history.item_topup_title',
-          subtitleKey: 'history.item_topup_body',
-          amount: 100,
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-          isCredit: true,
-        ),
-        ActivityItem(
-          id: 'h6',
-          kind: ActivityKind.bill,
-          titleKey: 'history.item_bill_title',
-          subtitleKey: 'history.item_bill_body',
-          amount: 12000,
-          createdAt: DateTime.now().subtract(const Duration(days: 6)),
-        ),
-      ];
+  static const _tabTypes = [
+    null,
+    'topup',
+    'wifi_package',
+    'ftth_bill',
+  ];
 
   @override
   void initState() {
@@ -110,19 +72,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
     if (result != null && mounted) {
       setState(() => _filter = result);
     }
-  }
-
-  List<ActivityItem> _itemsForTab(int index) {
-    Iterable<ActivityItem> filtered = _allItems;
-    switch (index) {
-      case 1:
-        filtered = _allItems.where((e) => e.kind == ActivityKind.topUp);
-      case 2:
-        filtered = _allItems.where((e) => e.kind == ActivityKind.package);
-      case 3:
-        filtered = _allItems.where((e) => e.kind == ActivityKind.bill);
-    }
-    return filtered.where((e) => _filter.matches(e.createdAt)).toList();
   }
 
   @override
@@ -154,7 +103,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
                     key: ValueKey(
                       'history-list-$locale-$t-${_filter.period}-${_filter.start}-${_filter.end}',
                     ),
-                    items: _itemsForTab(t),
+                    type: _tabTypes[t],
+                    filter: _filter,
                   ),
               ],
             ),
@@ -165,65 +115,204 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   }
 }
 
-class _HistoryList extends StatelessWidget {
-  const _HistoryList({super.key, required this.items});
+class _HistoryList extends ConsumerWidget {
+  const _HistoryList({
+    super.key,
+    required this.type,
+    required this.filter,
+  });
 
-  final List<ActivityItem> items;
+  final String? type;
+  final ActivityDateFilter filter;
 
   @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return EmptyState(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final history = ref.watch(transactionHistoryProvider(type));
+
+    return history.when(
+      data: (items) {
+        final filteredItems = items
+            .where((item) => filter.matches(item.createdAt.toLocal()))
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        if (filteredItems.isEmpty) return _emptyState();
+
+        final groupedItems = <DateTime, List<HistoryModel>>{};
+        for (final item in filteredItems) {
+          final createdAt = item.createdAt.toLocal();
+          final date = DateTime(createdAt.year, createdAt.month, createdAt.day);
+          groupedItems.putIfAbsent(date, () => []).add(item);
+        }
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: [
+            for (final group in groupedItems.entries) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+                child: _HistoryDateHeader(date: group.key),
+              ),
+              for (final item in group.value) ...[
+                _HistoryRow(item: item),
+                const SizedBox(height: 5),
+              ],
+            ],
+          ],
+        );
+      },
+      loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
+      error: (error, _) => EmptyState(
+        title: isOfflineError(error)
+            ? 'shared.no_internet_title'.tr()
+            : 'common.error'.tr(),
+        message: isOfflineError(error)
+            ? 'shared.no_internet_body'.tr()
+            : apiErrorText(error),
+        actionLabel: 'common.retry'.tr(),
+        onAction: () async {
+          final recoveryKey = 'history-${type ?? 'all'}-reload';
+          if (isOfflineError(error)) {
+            ref.read(networkRecoveryControllerProvider).enqueue(
+                  recoveryKey,
+                  () async => ref.invalidate(transactionHistoryProvider(type)),
+                );
+            final shouldRetry = await openNoInternetPage(context);
+            if (shouldRetry == true && context.mounted) {
+              ref.read(networkRecoveryControllerProvider).clear(recoveryKey);
+              ref.invalidate(transactionHistoryProvider(type));
+            }
+            return;
+          }
+          ref.invalidate(transactionHistoryProvider(type));
+        },
+      ),
+    );
+  }
+
+  Widget _emptyState() => EmptyState(
         title: 'history.empty_title'.tr(),
         message: 'history.empty_body'.tr(),
       );
-    }
+}
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 5),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return ActivityListCard(
-          item: item,
-          index: index,
-          onTap: () {
-            if (item.kind == ActivityKind.topUp) {
-              context.pushNamed(
-                RouteNames.topUpSuccess,
-                extra: TopUpResult.fromActivityAmount(
-                  amountPoints: item.amount,
-                  transactionId: 'TXN-${item.id.toUpperCase()}',
-                  occurredAt: item.createdAt,
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({required this.item});
+
+  final HistoryModel item;
+
+  String get _titleKey => switch (item.type.toLowerCase()) {
+        'topup' => 'history.tab_topup',
+        'wifi_package' => 'history.tab_package',
+        'ftth_bill' => 'history.tab_bill',
+        _ => 'history.tab_all',
+      };
+
+  String get _asset => switch (item.type.toLowerCase()) {
+        'topup' => QuickActionIconChip.topUpAsset,
+        'wifi_package' => QuickActionIconChip.packageAsset,
+        'ftth_bill' => QuickActionIconChip.billAsset,
+        _ => QuickActionIconChip.historyAsset,
+      };
+
+  Color get _iconBackground => switch (item.type.toLowerCase()) {
+        'topup' => QuickActionIconChip.topUpSoft,
+        'wifi_package' => QuickActionIconChip.packageSoft,
+        'ftth_bill' => QuickActionIconChip.billSoft,
+        _ => QuickActionIconChip.historySoft,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.locale;
+    final amount = item.amount == null
+        ? '-'
+        : NumberFormat('#,##0.##', locale.toString()).format(item.amount);
+    final transactionNo = item.transactionNo?.trim();
+
+    return AppCard(
+      elevated: true,
+      bordered: false,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          QuickActionIconChip(
+            asset: _asset,
+            background: _iconBackground,
+            size: 38,
+            iconSize: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.description.isEmpty ? _titleKey.tr() : item.description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.english(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
                 ),
-              );
-              return;
-            }
-            if (item.kind == ActivityKind.package) {
-              final result = PackageBuyResult.fromActivity(
-                packageId: '1m',
-                packageTitle: 'package.item_1m_title'.tr(),
-                pricePoints: item.amount,
-                transactionId: 'PKG-${item.id.toUpperCase()}',
-                occurredAt: item.createdAt,
-                success: item.isSuccess,
-              );
-              context.pushNamed(
-                item.isSuccess
-                    ? RouteNames.packageBuySuccess
-                    : RouteNames.packageBuyFailure,
-                extra: result,
-              );
-              return;
-            }
-            context.pushNamed(
-              RouteNames.activityDetail,
-              extra: item,
-            );
-          },
-        );
-      },
+                const SizedBox(height: 4),
+                Text(
+                  '${'history.amount'.tr()}: $amount',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.english(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                if (transactionNo != null && transactionNo.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${'history.transaction_no'.tr()}: $transactionNo',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryDateHeader extends StatelessWidget {
+  const _HistoryDateHeader({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final headerDate = DateUtils.dateOnly(date);
+    final relativeLabel = headerDate == today
+        ? 'history.today'.tr()
+        : headerDate == today.subtract(const Duration(days: 1))
+            ? 'history.yesterday'.tr()
+            : null;
+    final formattedDate =
+        DateFormat('MM/dd/yyyy (EEEE)', context.locale.toString()).format(date);
+
+    return Text(
+      relativeLabel == null ? formattedDate : '$relativeLabel $formattedDate',
+      style: AppTheme.english(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textSecondary,
+      ),
     );
   }
 }
