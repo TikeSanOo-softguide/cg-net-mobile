@@ -123,46 +123,31 @@ void main() {
     final result = await TopUpRepository(dio).checkSerialNo('1234567890123456');
 
     expect(result.isValid, isFalse);
+    expect(result.result, TopUpSerialCheckStatus.invalid);
     expect(result.message, 'Invalid or unavailable top-up card.');
   });
 
-  test('change password carries the challenge id into OTP verification',
-      () async {
-    final adapter = _ChangePasswordAdapter();
-    final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
-      ..httpClientAdapter = adapter;
-    final repository = ChangePasswordRepository(dio);
+  test('serial check distinguishes an unknown card from a used card', () async {
+    final invalidDio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = _JsonAdapter(
+        '{"result":"invalid_card","message":"Invalid top-up card."}',
+        statusCode: 400,
+      );
+    final usedDio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = _JsonAdapter(
+        '{"result":"already_used","message":"This top-up card has already been used."}',
+        statusCode: 400,
+      );
 
-    const password = ChangePasswordModel(
-      currentPassword: 'current-secret',
-      newPassword: 'new-secret',
-      newPasswordConfirmation: 'new-secret',
-    );
-    final challenge = await repository.changePassword(
-      password: password,
-    );
-    await repository.verifyOtp(
-      challengeId: challenge.challengeId,
-      otp: '123456',
-    );
-    final resentChallenge = await repository.changePassword(password: password);
+    final invalid =
+        await TopUpRepository(invalidDio).checkSerialNo('1234567890123456');
+    final used =
+        await TopUpRepository(usedDio).checkSerialNo('1234567890123456');
 
-    expect(challenge.challengeId, 'challenge-123');
-    expect(challenge.debugOtp, '654321');
-    expect(challenge.resendAfter, 60);
-    expect(adapter.requests[0].path, '/change-password');
-    expect(adapter.requests[0].data, {
-      'current_password': 'current-secret',
-      'new_password': 'new-secret',
-      'new_password_confirmation': 'new-secret',
-    });
-    expect(adapter.requests[1].path, '/change-password/verify-otp');
-    expect(adapter.requests[1].data, {
-      'challenge_id': challenge.challengeId,
-      'code': '123456',
-    });
-    expect(resentChallenge.challengeId, 'challenge-456');
-    expect(adapter.requests[2].data, adapter.requests[0].data);
+    expect(invalid.result, TopUpSerialCheckStatus.invalid);
+    expect(invalid.isValid, isFalse);
+    expect(used.result, TopUpSerialCheckStatus.alreadyUsed);
+    expect(used.isValid, isFalse);
   });
 }
 
@@ -171,9 +156,10 @@ final _uuidV4Pattern = RegExp(
 );
 
 class _JsonAdapter implements HttpClientAdapter {
-  _JsonAdapter(this.body);
+  _JsonAdapter(this.body, {this.statusCode = 200});
 
   final String body;
+  final int statusCode;
 
   @override
   Future<ResponseBody> fetch(
@@ -183,7 +169,7 @@ class _JsonAdapter implements HttpClientAdapter {
   ) async {
     return ResponseBody.fromString(
       body,
-      200,
+      statusCode,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },

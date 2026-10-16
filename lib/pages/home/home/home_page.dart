@@ -6,8 +6,6 @@ import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
-import '../../../core/network/api_error_text.dart';
-import '../../../core/network/api_exception.dart';
 import '../../../data/profile/profile_repository.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
@@ -70,18 +68,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     final profile = ref.watch(userProfileProvider);
-    ref.listen(userProfileProvider, (previous, next) {
-      next.whenOrNull(
-        error: (error, _) {
-          if (previous?.hasError == true || !context.mounted) return;
-          final message =
-              error is ApiException ? apiErrorText(error) : error.toString();
-          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-            SnackBar(content: Text(message)),
-          );
-        },
-      );
-    });
+    final cachedProfile = ref.watch(cachedUserProfileProvider);
+    final displayProfile = profile.valueOrNull ?? cachedProfile.valueOrNull;
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
 
@@ -110,10 +98,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                         children: [
                           HomeBalanceHeader(
                             balanceAmount:
-                                profile.valueOrNull?.walletBalance.isNotEmpty ==
-                                        true
-                                    ? profile.valueOrNull!.walletBalance
-                                    : '—',
+                                displayProfile?.walletBalance.isNotEmpty == true
+                                    ? displayProfile!.walletBalance
+                                    : cachedProfile.isLoading
+                                        ? ''
+                                        : '—',
                           ),
                           const SizedBox(height: HomeQuickActions.hangBelow),
                         ],
@@ -147,7 +136,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               left: 0,
               right: 0,
               child: HomePinnedBar(
-                  accountNumber: profile.valueOrNull?.phone ?? '—'),
+                accountNumber: displayProfile?.phone ??
+                    (cachedProfile.isLoading ? '' : '—'),
+              ),
             ),
           ],
         ),

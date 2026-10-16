@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,12 +7,14 @@ import '../../core/network/api_endpoints/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 import '../../core/network/get_retry_interceptor.dart';
+import '../../core/storage/secure_storage/secure_storage.dart';
 import '../../models/user_model/user_model.dart';
 
 class ProfileRepository {
-  ProfileRepository(this._dio);
+  ProfileRepository(this._dio, this._secureStorage);
 
   final Dio _dio;
+  final SecureStorage _secureStorage;
 
   Future<void> checkSession() async {
     try {
@@ -33,7 +37,10 @@ class ProfileRepository {
       );
       final data = response.data;
       if (data is Map) {
-        return UserProfileModel.fromJson(Map<String, dynamic>.from(data));
+        final profile =
+            UserProfileModel.fromJson(Map<String, dynamic>.from(data));
+        await _cacheProfile(profile);
+        return profile;
       }
       throw const ApiException(
         ApiFailure.unknown,
@@ -42,6 +49,36 @@ class ProfileRepository {
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  Future<UserProfileModel?> readCachedProfile() async {
+    final cached = await _secureStorage.readCachedProfile();
+    if (cached == null || cached.isEmpty) return null;
+
+    try {
+      final decoded = jsonDecode(cached);
+      if (decoded is! Map) {
+        throw const FormatException('Cached profile is not a JSON object.');
+      }
+      return UserProfileModel.fromJson(Map<String, dynamic>.from(decoded));
+    } on FormatException {
+      await _secureStorage.clearCachedProfile();
+      return null;
+    } on TypeError {
+      await _secureStorage.clearCachedProfile();
+      return null;
+    }
+  }
+
+  Future<void> _cacheProfile(UserProfileModel profile) {
+    return _secureStorage.writeCachedProfile(
+      jsonEncode({
+        'data': {
+          'user': {'phone': profile.phone},
+          'wallet': {'balance': profile.walletBalance},
+        },
+      }),
+    );
   }
 
   Future<UserProfileModel> updateProfile({
@@ -59,7 +96,10 @@ class ProfileRepository {
       );
       final data = response.data;
       if (data is Map) {
-        return UserProfileModel.fromJson(Map<String, dynamic>.from(data));
+        final profile =
+            UserProfileModel.fromJson(Map<String, dynamic>.from(data));
+        await _cacheProfile(profile);
+        return profile;
       }
       throw const ApiException(
         ApiFailure.unknown,
@@ -72,10 +112,17 @@ class ProfileRepository {
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
-  return ProfileRepository(ref.watch(dioProvider));
+  return ProfileRepository(
+    ref.watch(dioProvider),
+    ref.watch(secureStorageProvider),
+  );
 });
 
-final userProfileProvider =
-    FutureProvider.autoDispose<UserProfileModel>((ref) {
+final userProfileProvider = FutureProvider.autoDispose<UserProfileModel>((ref) {
   return ref.watch(profileRepositoryProvider).fetchProfile();
+});
+
+final cachedUserProfileProvider =
+    FutureProvider.autoDispose<UserProfileModel?>((ref) {
+  return ref.watch(profileRepositoryProvider).readCachedProfile();
 });
