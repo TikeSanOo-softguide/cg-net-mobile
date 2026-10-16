@@ -49,6 +49,7 @@ class ApiEndpoints {
   static const String redeemTopUpAccount = '/redeem/top-up-account';
   static const String broadbandBind = '/broadband-account/bind';
   static const String broadbandUnbind = '/broadband-account/unbind';
+  static const String transactions = '/customer/transactions';
   static const String profile = '/customer/profile';
   static const String updateProfile = '/customer/profile';
   static const String changeWifiPassword = '/change-password-requests/create';
