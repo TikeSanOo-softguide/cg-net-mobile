@@ -10,6 +10,9 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -221,6 +224,16 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
       }
       await ref.read(secureStorageProvider).writeToken(token);
       ref.read(pushNotificationServiceProvider).syncToken();
+      try {
+        await ref.read(authApiProvider).syncCurrentLanguage();
+      } on ApiException catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(apiErrorOrFallback(error))),
+          );
+      }
       if (!mounted) return;
       context.goNamed(RouteNames.home);
       return;

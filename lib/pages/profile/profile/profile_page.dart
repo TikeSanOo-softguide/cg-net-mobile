@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/components/language_setting/language_picker_modal.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -156,7 +157,7 @@ class ProfilePage extends ConsumerWidget {
                 ),
               ],
             ),
-            onTap: () => context.pushNamed(RouteNames.languageSettings),
+            onTap: () => showLanguagePickerModal(context: context, ref: ref),
           ),
           const SizedBox(height: 5),
           _SettingsCard(
