@@ -42,6 +42,7 @@ class ApiEndpoints {
   static const String deviceTokens = '/device-tokens';
   static const String availablePlans = '/web-app/packages';
   static const String banners = '/web-app/banners';
+  static const String appVersion = '/app-version';
   static const String changePassword = '/change-password';
   static const String verifyChangePasswordOtp  = '/change-password/verify-otp';
   static const String packagesBuy = '/packages/buy';
@@ -51,6 +52,7 @@ class ApiEndpoints {
   static const String broadbandUnbind = '/broadband-account/unbind';
   static const String transactions = '/customer/transactions';
   static const String profile = '/customer/profile';
+  static const String language = '/customer/language';
   static const String updateProfile = '/customer/profile';
   static const String changeWifiPassword = '/change-password-requests/create';
   static const String changeWifiPasswordRequests = '/change-password-requests';
