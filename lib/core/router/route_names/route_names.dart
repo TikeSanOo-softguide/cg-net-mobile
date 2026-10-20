@@ -36,6 +36,7 @@ class RouteNames {
   static const verifyChangePasswordOtp = 'verifyChangePasswordOtp';
   static const deviceSession = 'deviceSession';
   static const notificationPreferences = 'notificationPreferences';
+  static const version = 'version';
   static const aboutApp = 'aboutApp';
 
   static const errorNoInternet = 'errorNoInternet';
@@ -81,6 +82,7 @@ class RoutePaths {
   static const verifyChangePasswordOtp = '/profile/change-password/verify-otp';
   static const deviceSession = '/profile/devices';
   static const notificationPreferences = '/profile/notifications';
+  static const version = '/profile/version';
   static const aboutApp = '/profile/about';
 
   static const errorNoInternet = '/error/no-internet';

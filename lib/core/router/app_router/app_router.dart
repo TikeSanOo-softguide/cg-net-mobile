@@ -40,6 +40,7 @@ import '../../../pages/profile/edit_profile/edit_profile_page.dart';
 import '../../../pages/profile/language_settings/language_settings_page.dart';
 import '../../../pages/profile/notification_preferences/notification_preferences_page.dart';
 import '../../../pages/profile/profile/profile_page.dart';
+import '../../../pages/profile/version/version_page.dart';
 import '../../../pages/shared_pages/error_no_internet/error_no_internet_page.dart';
 import '../../../pages/shared_pages/force_update/force_update_page.dart';
 import '../../../pages/shared_pages/not_found/not_found_page.dart';
@@ -449,6 +450,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) =>
                         const NotificationPreferencesPage(),
+                  ),
+                  GoRoute(
+                    path: 'version',
+                    name: RouteNames.version,
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const VersionPage(),
                   ),
                   GoRoute(
                     path: 'about',

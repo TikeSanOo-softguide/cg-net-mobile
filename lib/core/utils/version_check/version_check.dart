@@ -14,6 +14,10 @@ class VersionCheck {
     return _compare(currentVersion, minimumRequired) < 0;
   }
 
+  bool isLatestVersion(String latestVersion) {
+    return _compare(currentVersion, latestVersion) >= 0;
+  }
+
   int _compare(String a, String b) {
     final aParts = a.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     final bParts = b.split('.').map((e) => int.tryParse(e) ?? 0).toList();
