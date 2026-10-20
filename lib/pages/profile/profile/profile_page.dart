@@ -103,112 +103,120 @@ class ProfilePage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                const SizedBox(width: AppStyle.spaceSm),
-                Material(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    onTap: () => context.pushNamed(RouteNames.editProfile),
+                  const SizedBox(width: AppStyle.spaceSm),
+                  Material(
+                    color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(8),
-                    splashColor: AppColors.primary.withValues(alpha: 0.08),
-                    highlightColor: AppColors.primary.withValues(alpha: 0.04),
-                    child: SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: Center(
-                        child: Image.asset(
-                          'assets/images/profile/edit.png',
-                          width: 16,
-                          height: 16,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
+                    child: InkWell(
+                      onTap: () => context.pushNamed(RouteNames.editProfile),
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: AppColors.primary.withValues(alpha: 0.08),
+                      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+                      child: SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: Center(
+                          child: Image.asset(
+                            'assets/images/profile/edit.png',
+                            width: 16,
+                            height: 16,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppStyle.spaceXl),
-          Text(
-            'profile.general'.tr(),
-            style: AppTheme.sectionTitle(color: AppColors.textSecondary)
-                .copyWith(fontSize: AppStyle.fontSectionTitle - 1),
-          ),
-          const SizedBox(height: AppStyle.spaceMd),
-          _SettingsCard(
-            asset: 'assets/images/profile/language.png',
-            title: 'profile.language'.tr(),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _languageLabel(context),
-                  style: AppTheme.caption(color: AppColors.textMuted).copyWith(
-                    fontSize: AppStyle.fontCaption,
+            const SizedBox(height: AppStyle.spaceXl),
+            Text(
+              'profile.general'.tr(),
+              style: AppTheme.sectionTitle(color: AppColors.textSecondary)
+                  .copyWith(fontSize: AppStyle.fontSectionTitle - 1),
+            ),
+            const SizedBox(height: AppStyle.spaceMd),
+            _SettingsCard(
+              asset: 'assets/images/profile/language.png',
+              title: 'profile.language'.tr(),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _languageLabel(context),
+                    style:
+                        AppTheme.caption(color: AppColors.textMuted).copyWith(
+                      fontSize: AppStyle.fontCaption,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 2),
-                const Icon(
-                  LucideIcons.chevron_down,
-                  size: 16,
-                  color: AppColors.textMuted,
-                ),
-              ],
+                  const SizedBox(width: 2),
+                  const Icon(
+                    LucideIcons.chevron_down,
+                    size: 16,
+                    color: AppColors.textMuted,
+                  ),
+                ],
+              ),
+              onTap: () => showLanguagePickerModal(context: context, ref: ref),
             ),
-            onTap: () => showLanguagePickerModal(context: context, ref: ref),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            asset: 'assets/images/profile/account_settings.png',
-            title: 'profile.account_settings'.tr(),
-            onTap: () => context.pushNamed(RouteNames.editProfile),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            asset: 'assets/images/profile/change_password.png',
-            title: 'profile.change_password'.tr(),
-            onTap: () => context.pushNamed(RouteNames.changePassword),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            asset: 'assets/images/profile/device.png',
-            title: 'profile.devices'.tr(),
-            onTap: () => context.pushNamed(RouteNames.deviceSession),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            asset: 'assets/images/profile/notification.png',
-            title: 'profile.notifications'.tr(),
-            onTap: () => context.pushNamed(RouteNames.notificationPreferences),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            asset: 'assets/images/profile/version.png',
-            title: 'profile.version'.tr(),
-            trailingText: versionText,
-            onTap: () => context.pushNamed(RouteNames.aboutApp),
-          ),
-          const SizedBox(height: 5),
-          _SettingsCard(
-            asset: 'assets/images/profile/logout.png',
-            tint: const Color(0xFFFFEBEE),
-            title: 'common.logout'.tr(),
-            titleColor: AppColors.error,
-            chevronColor: AppColors.error,
-            onTap: () async {
-              await ref.read(profileControllerProvider.notifier).logout();
-              if (context.mounted) {
-                context.goNamed(RouteNames.login);
-              }
-            },
-          ),
-        ],
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/account_settings.png',
+              title: 'profile.account_settings'.tr(),
+              onTap: () => context.pushNamed(RouteNames.editProfile),
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/change_password.png',
+              title: 'profile.change_password'.tr(),
+              onTap: () => context.pushNamed(RouteNames.changePassword),
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/device.png',
+              title: 'profile.devices'.tr(),
+              onTap: () => context.pushNamed(RouteNames.deviceSession),
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/notification.png',
+              title: 'profile.notifications'.tr(),
+              onTap: () =>
+                  context.pushNamed(RouteNames.notificationPreferences),
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/version.png',
+              title: 'profile.version'.tr(),
+              trailingText: versionText,
+              onTap: () => context.pushNamed(RouteNames.version),
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/version.png',
+              title: 'profile.about'.tr(),
+              onTap: () => context.pushNamed(RouteNames.aboutApp),
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
+              asset: 'assets/images/profile/logout.png',
+              tint: const Color(0xFFFFEBEE),
+              title: 'common.logout'.tr(),
+              titleColor: AppColors.error,
+              chevronColor: AppColors.error,
+              onTap: () async {
+                await ref.read(profileControllerProvider.notifier).logout();
+                if (context.mounted) {
+                  context.goNamed(RouteNames.login);
+                }
+              },
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _AccountAvatar extends StatelessWidget {

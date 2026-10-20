@@ -42,6 +42,7 @@ class ApiEndpoints {
   static const String deviceTokens = '/device-tokens';
   static const String availablePlans = '/web-app/packages';
   static const String banners = '/web-app/banners';
+  static const String appVersion = '/app-version';
   static const String changePassword = '/change-password';
   static const String verifyChangePasswordOtp  = '/change-password/verify-otp';
   static const String packagesBuy = '/packages/buy';
