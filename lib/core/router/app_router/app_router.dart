@@ -37,7 +37,6 @@ import '../../../pages/profile/change_password/change_password_page.dart';
 import '../../../pages/profile/change_password/verify_change_password_otp_page.dart';
 import '../../../pages/profile/device_session/device_session_page.dart';
 import '../../../pages/profile/edit_profile/edit_profile_page.dart';
-import '../../../pages/profile/language_settings/language_settings_page.dart';
 import '../../../pages/profile/notification_preferences/notification_preferences_page.dart';
 import '../../../pages/profile/profile/profile_page.dart';
 import '../../../pages/profile/version/version_page.dart';
@@ -409,12 +408,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     name: RouteNames.editProfile,
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const EditProfilePage(),
-                  ),
-                  GoRoute(
-                    path: 'language',
-                    name: RouteNames.languageSettings,
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const LanguageSettingsPage(),
                   ),
                   GoRoute(
                     path: 'change-password',

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api_endpoints/api_endpoints.dart';
 import '../api_exception.dart';
+import '../auth_interceptor/auth_interceptor.dart';
 import '../dio_client/dio_client.dart';
 import '../get_retry_interceptor.dart';
 
@@ -57,9 +58,10 @@ class OtpVerifyResult {
 }
 
 class AuthApi {
-  AuthApi(this._dio);
+  AuthApi(this._dio, this._languageCode);
 
   final Dio _dio;
+  final String Function() _languageCode;
 
   Future<OtpChallengeResult> requestOtp(String phone) async {
     try {
@@ -140,6 +142,7 @@ class AuthApi {
         data: {
           'verification_token': verificationToken,
           'password': password,
+          'lang': _languageCode(),
           'platform':
               defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
         },
@@ -161,6 +164,7 @@ class AuthApi {
           'name': name,
           'password': password,
           'password_confirmation': password,
+          'lang': _languageCode(),
           'platform':
               defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
         },
@@ -168,6 +172,17 @@ class AuthApi {
     );
     return response.data['token'] as String;
   }
+
+  Future<void> updateLanguage({required String lang}) async {
+    await _send(
+      () => _dio.patch(
+        ApiEndpoints.language,
+        data: {'lang': lang},
+      ),
+    );
+  }
+
+  Future<void> syncCurrentLanguage() => updateLanguage(lang: _languageCode());
 
   Future<void> logout() async {
     await _send(
@@ -203,5 +218,8 @@ class AuthApi {
 }
 
 final authApiProvider = Provider<AuthApi>((ref) {
-  return AuthApi(ref.watch(dioProvider));
+  return AuthApi(
+    ref.watch(dioProvider),
+    ref.watch(languageCodeProvider),
+  );
 });

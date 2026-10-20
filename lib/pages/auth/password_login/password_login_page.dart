@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -133,6 +136,17 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
     if (!mounted) return;
 
     if (ok) {
+      try {
+        await ref.read(authApiProvider).syncCurrentLanguage();
+      } on ApiException catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(apiErrorOrFallback(error))),
+          );
+      }
+      if (!mounted) return;
       setState(() => _submitting = false);
       context.goNamed(RouteNames.home);
       return;
