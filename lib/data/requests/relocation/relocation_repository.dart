@@ -57,7 +57,7 @@ class RelocationRepository {
     if (request.id.trim().isEmpty) {
       throw ApiException(
         ApiFailure.unknown,
-        detail: 'relocations.required_id'.tr(),
+        detail: 'requests.required_id'.tr(),
       );
     }
 
@@ -76,7 +76,7 @@ class RelocationRepository {
     if (requestId.isEmpty) {
       throw ApiException(
         ApiFailure.unknown,
-        detail: 'relocations.required_id'.tr(),
+        detail: 'requests.required_id'.tr(),
       );
     }
 
@@ -93,7 +93,7 @@ class RelocationRepository {
     if (requestId.isEmpty) {
       throw ApiException(
         ApiFailure.unknown,
-        detail: 'relocations.required_id'.tr(),
+        detail: 'requests.required_id'.tr(),
       );
     }
 
