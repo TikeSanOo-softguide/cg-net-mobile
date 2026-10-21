@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_circle_icon_button/app_circle_icon_button.dart';
+import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
@@ -59,6 +60,72 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       context: context,
       ref: ref,
     );
+  }
+
+  Future<void> _continueLogin() async {
+    setState(() => _autovalidate = true);
+    if (!_formKey.currentState!.validate()) return;
+
+    final controller = ref.read(loginControllerProvider.notifier);
+    final session = await controller.checkSession(_phoneController.text);
+    if (!mounted) return;
+
+    if (session == null) {
+      await _showLoginError();
+      return;
+    }
+
+    if (session.showAlert) {
+      await showAppAlertModal(
+        context,
+        title: 'login.device_conflict_title'.tr(),
+        message: 'login.registered_on_another_device'.tr(),
+      );
+      return;
+    }
+
+    await _requestOtp(session.phone);
+  }
+
+  Future<void> _requestOtp(String phone) async {
+    final controller = ref.read(loginControllerProvider.notifier);
+    final requestedPhone = await controller.requestOtp(phone);
+    if (!mounted) return;
+
+    final challengeId = controller.challengeId;
+    if (requestedPhone != null && challengeId != null) {
+      final debugOtp = controller.debugOtp;
+      if (kDebugMode && debugOtp != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('OTP $debugOtp')),
+        );
+      }
+      context.pushNamed(
+        RouteNames.otpVerification,
+        queryParameters: {
+          'phone': requestedPhone,
+          'challenge_id': challengeId,
+          'resend_after': '${controller.resendAfter}',
+        },
+      );
+      return;
+    }
+    await _showLoginError();
+  }
+
+  Future<void> _showLoginError() async {
+    final error = ref.read(loginControllerProvider).error;
+    if (error == null) return;
+    if (isOfflineError(error)) {
+      await openNoInternetPage(context);
+      return;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(apiErrorOrFallback(error))),
+      );
   }
 
   @override
@@ -129,40 +196,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           height: 44,
           fontSize: 14,
           isLoading: state.isLoading,
-          onPressed: () async {
-            setState(() => _autovalidate = true);
-            if (!_formKey.currentState!.validate()) return;
-            final phone = await controller.submit(_phoneController.text);
-            if (!context.mounted) return;
-            final challengeId = controller.challengeId;
-            if (phone != null && challengeId != null) {
-              final debugOtp = controller.debugOtp;
-              if (kDebugMode && debugOtp != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('OTP $debugOtp')),
-                );
-              }
-              context.pushNamed(
-                RouteNames.otpVerification,
-                queryParameters: {
-                  'phone': phone,
-                  'challenge_id': challengeId,
-                  'resend_after': '${controller.resendAfter}',
-                },
-              );
-              return;
-            }
-            final error = ref.read(loginControllerProvider).error;
-            if (isOfflineError(error)) {
-              await openNoInternetPage(context);
-              return;
-            }
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(content: Text(apiErrorOrFallback(error))),
-              );
-          },
+          onPressed: state.isLoading ? null : _continueLogin,
         ),
         child: Form(
           key: _formKey,

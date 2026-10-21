@@ -206,8 +206,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                final available =
-                    constraints.maxWidth - (_gap * (_length - 1));
+                final available = constraints.maxWidth - (_gap * (_length - 1));
                 final size = (available / _length).clamp(40.0, 52.0);
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,

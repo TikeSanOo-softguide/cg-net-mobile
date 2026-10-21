@@ -22,6 +22,22 @@ class OtpChallengeResult {
   final int resendAfter;
 }
 
+class AccountSessionCheckResult {
+  const AccountSessionCheckResult({
+    required this.showAlert,
+  });
+
+  final bool showAlert;
+
+  factory AccountSessionCheckResult.fromJson(Map<String, dynamic> data) {
+    final showAlert = data['show_alert'];
+    if (showAlert is! bool) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    return AccountSessionCheckResult(showAlert: showAlert);
+  }
+}
+
 /// POST /auth/otp/verify — `next_step` drives the post-OTP flow.
 class OtpVerifyResult {
   const OtpVerifyResult({
@@ -47,10 +63,9 @@ class OtpVerifyResult {
     final accessToken = data['token']?.toString();
     return OtpVerifyResult(
       nextStep: nextStep,
-      verificationToken:
-          verificationToken == null || verificationToken.isEmpty
-              ? null
-              : verificationToken,
+      verificationToken: verificationToken == null || verificationToken.isEmpty
+          ? null
+          : verificationToken,
       accessToken:
           accessToken == null || accessToken.isEmpty ? null : accessToken,
     );
@@ -62,6 +77,22 @@ class AuthApi {
 
   final Dio _dio;
   final String Function() _languageCode;
+
+  Future<AccountSessionCheckResult> checkPhoneSession(String phone) async {
+    final response = await _send(
+      () => _dio.post(
+        ApiEndpoints.checkSession,
+        data: {'phone': phone},
+      ),
+    );
+    final raw = response.data;
+    if (raw is! Map) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    final data =
+        raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw);
+    return AccountSessionCheckResult.fromJson(data);
+  }
 
   Future<OtpChallengeResult> requestOtp(String phone) async {
     try {
@@ -126,9 +157,8 @@ class AuthApi {
     if (raw is! Map) {
       throw const ApiException(ApiFailure.unknown);
     }
-    final data = raw is Map<String, dynamic>
-        ? raw
-        : Map<String, dynamic>.from(raw);
+    final data =
+        raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw);
     return OtpVerifyResult.fromJson(data);
   }
 

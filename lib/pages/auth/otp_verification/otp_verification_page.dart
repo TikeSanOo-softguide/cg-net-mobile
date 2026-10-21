@@ -664,9 +664,8 @@ class _OtpSquareState extends State<_OtpSquare> {
                 cursorWidth: 2,
                 cursorHeight: fontSize,
                 enableInteractiveSelection: true,
-                autofillHints: widget.autofill
-                    ? const [AutofillHints.oneTimeCode]
-                    : null,
+                autofillHints:
+                    widget.autofill ? const [AutofillHints.oneTimeCode] : null,
                 style: AppTheme.english(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w700,
