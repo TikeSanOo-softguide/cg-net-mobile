@@ -74,7 +74,7 @@
     "phone_unsupported": "不支持此手机号码。",
     "send_otp": "继续",
     "device_conflict_title": "账户已在其他设备使用",
-    "registered_on_another_device": "此账户已在另一台设备上注册。",
+    "registered_on_another_device": "此账户已在另一台设备上登录。",
     "terms_prefix": "我同意",
     "terms_link": "服务条款",
     "terms_suffix": "",
