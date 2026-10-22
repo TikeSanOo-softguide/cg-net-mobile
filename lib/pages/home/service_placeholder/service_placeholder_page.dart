@@ -6,6 +6,8 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../requests/change_wifi_password/change_wifi_password_page.dart';
+import '../../requests/installation_application/installation_application_page.dart';
+import '../../requests/relocation/relocation_page.dart';
 
 /// Shared empty template for all Home services (until real screens exist).
 class ServicePlaceholderPage extends StatelessWidget {
@@ -45,6 +47,12 @@ class ServicePlaceholderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (serviceId == 'change_wifi') {
       return const ChangeWifiPasswordPage();
+    }
+    if (serviceId == 'installation') {
+      return const InstallationApplicationPage();
+    }
+    if (serviceId == 'relocation') {
+      return const RelocationPage();
     }
 
     final title = titleForId(serviceId);

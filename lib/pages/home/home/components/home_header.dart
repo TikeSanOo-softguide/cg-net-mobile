@@ -5,7 +5,10 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../components/app_dialog/app_dialog.dart';
 import '../../../../components/app_logo/app_logo.dart';
+import '../../../../core/network/api_error_text.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -14,22 +17,50 @@ import '../../../../data/customer_profile/customer_profile_repository.dart';
 import '../bound_broadband_provider.dart';
 import 'bind_broadband_drawer.dart';
 
+Future<bool?> ensureBoundBroadband(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  if (ref.read(boundBroadbandProvider) != null) return true;
+
+  try {
+    final profile = await ref.read(customerProfileProvider.future);
+    if (!context.mounted) return null;
+
+    final accountNumber = profile.accountNumber;
+    final customerName = profile.customerName;
+    if (accountNumber == null ||
+        accountNumber.isEmpty ||
+        customerName == null ||
+        customerName.isEmpty) {
+      return false;
+    }
+
+    ref.read(boundBroadbandProvider.notifier).state = BoundBroadband(
+      account: accountNumber,
+      customerName: customerName,
+    );
+    return true;
+  } on ApiException catch (error) {
+    if (context.mounted) {
+      await showAppAlertModal(context, message: apiErrorText(error));
+    }
+    return null;
+  } on FormatException catch (error) {
+    if (context.mounted) {
+      await showAppAlertModal(context, message: error.message);
+    }
+    return null;
+  }
+}
+
 Future<void> onHomeBindTap(BuildContext context, WidgetRef ref) async {
   var bound = ref.read(boundBroadbandProvider);
   if (bound == null) {
-    final profile = ref.read(customerProfileProvider).valueOrNull;
-    final accountNumber = profile?.accountNumber;
-    final customerName = profile?.customerName;
-    if (accountNumber != null &&
-        accountNumber.isNotEmpty &&
-        customerName != null &&
-        customerName.isNotEmpty) {
-      bound = BoundBroadband(
-        account: accountNumber,
-        customerName: customerName,
-      );
-      ref.read(boundBroadbandProvider.notifier).state = bound;
-    } else {
+    final isBound = await ensureBoundBroadband(context, ref);
+    if (!context.mounted || isBound == null) return;
+    bound = ref.read(boundBroadbandProvider);
+    if (!isBound) {
       final result = await showBindBroadbandDrawer(context);
       if (!context.mounted || result == null) return;
       ref.read(boundBroadbandProvider.notifier).state = result;
@@ -38,6 +69,7 @@ Future<void> onHomeBindTap(BuildContext context, WidgetRef ref) async {
     }
   }
 
+  if (bound == null) return;
   final removed = await showBoundAccountDrawer(context, bound: bound);
   if (!context.mounted || !removed) return;
   ref.read(boundBroadbandProvider.notifier).state = null;

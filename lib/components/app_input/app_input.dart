@@ -20,6 +20,7 @@ class AppInput extends StatefulWidget {
     this.validator,
     this.onChanged,
     this.onSubmitted,
+    this.onTap,
     this.prefixIcon,
     this.suffixIcon,
     this.prefix,
@@ -47,6 +48,7 @@ class AppInput extends StatefulWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onTap;
 
   /// Field icon shown on the right (common style).
   final IconData? prefixIcon;
@@ -242,6 +244,7 @@ class _AppInputState extends State<AppInput> {
                 widget.onChanged?.call(value);
               },
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              onTap: widget.onTap,
               onSubmitted: widget.onSubmitted,
               maxLength: widget.maxLength,
               maxLines: widget.obscureText ? 1 : widget.maxLines,

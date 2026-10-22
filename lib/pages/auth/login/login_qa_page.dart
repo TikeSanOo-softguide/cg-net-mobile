@@ -9,6 +9,7 @@ import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/settings/general_setting_repository.dart';
 import 'login_controller.dart';
 
 class LoginQaPage extends ConsumerWidget {
@@ -31,26 +32,92 @@ class LoginQaPage extends ConsumerWidget {
     (CountryDial.china, 'login.hotline_cn_local'),
   ];
 
-  static TextStyle get _bodyStyle => AppTheme.english(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMuted,
-        height: 1.4,
-        letterSpacing: 0.2,
-      );
+  static TextStyle get _bodyStyle =>
+      AppTheme.bodySecondary(color: AppColors.textMuted);
 
-  static TextStyle get _titleStyle => AppTheme.english(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-        height: 1.4,
-        letterSpacing: 0.2,
-      );
+  static TextStyle get _titleStyle => AppTheme.sectionTitle();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localeCode = ref.watch(appLocaleProvider);
+    final faqAsync = ref.watch(faqProvider);
+    final supportContactsAsync = ref.watch(supportContactProvider);
     final _ = context.locale;
+
+    final faqItems = faqAsync.when(
+      data: (items) {
+        if (items.isEmpty) {
+          return <_QaItemData>[];
+        }
+
+        return items
+            .map(
+              (item) => _QaItemData(
+                question: item.titleFor(localeCode),
+                answer: item.descriptionFor(localeCode),
+              ),
+            )
+            .toList();
+      },
+      loading: () => <_QaItemData>[],
+      error: (_, __) => <_QaItemData>[],
+    );
+
+    final hotlineNumbers = supportContactsAsync.when(
+      data: (items) {
+        final phonesByCountry = <CountryDial, List<String>>{};
+
+        for (final contact in items) {
+          final phone = contact.phone.replaceAll(
+            RegExp(r'[^\d+]'),
+            '',
+          );
+
+          for (final country in CountryDial.values) {
+            if (phone.startsWith(country.dialCode)) {
+              final localNumber = phone.substring(country.dialCode.length);
+
+              if (localNumber.isNotEmpty) {
+                phonesByCountry
+                    .putIfAbsent(country, () => <String>[])
+                    .add(localNumber);
+              }
+
+              break;
+            }
+          }
+        }
+
+        return [
+          for (final country in CountryDial.values)
+            for (final phone in phonesByCountry[country] ?? <String>[])
+              (country, phone),
+        ];
+      },
+      loading: () => const <(CountryDial, String)>[],
+      error: (_, __) => const <(CountryDial, String)>[],
+    );
+
+    final qaWidgets = faqItems.isNotEmpty
+        ? faqItems
+            .map(
+              (item) => _QaItem(
+                question: item.question,
+                answer: item.answer,
+                titleStyle: _titleStyle,
+                bodyStyle: _bodyStyle,
+              ),
+            )
+            .toList()
+        : [
+            for (var i = 0; i < _items.length; i += 2)
+              _QaItem(
+                question: _items[i].tr(),
+                answer: _items[i + 1].tr(),
+                titleStyle: _titleStyle,
+                bodyStyle: _bodyStyle,
+              ),
+          ];
 
     return AuthBackgroundScaffold(
       key: ValueKey('login-qa-$localeCode'),
@@ -65,16 +132,19 @@ class LoginQaPage extends ConsumerWidget {
             style: _bodyStyle,
           ),
           const SizedBox(height: AppStyle.spaceMd),
-          for (var i = 0; i < _items.length; i += 2)
-            _QaItem(
-              question: _items[i].tr(),
-              answer: _items[i + 1].tr(),
-              titleStyle: _titleStyle,
-              bodyStyle: _bodyStyle,
-            ),
+          ...qaWidgets,
           const SizedBox(height: AppStyle.spaceSm),
           _HotlineSection(
-            hotlines: _hotlines,
+            hotlines: hotlineNumbers.isNotEmpty
+                ? hotlineNumbers
+                : supportContactsAsync.hasValue &&
+                        supportContactsAsync.value!.isNotEmpty
+                    ? const []
+                    : _hotlines
+                        .map(
+                          (entry) => (entry.$1, entry.$2.tr()),
+                        )
+                        .toList(),
             titleStyle: _titleStyle,
             bodyStyle: _bodyStyle,
           ),
@@ -84,7 +154,17 @@ class LoginQaPage extends ConsumerWidget {
   }
 }
 
-class _QaItem extends StatelessWidget {
+class _QaItemData {
+  const _QaItemData({
+    required this.question,
+    required this.answer,
+  });
+
+  final String question;
+  final String answer;
+}
+
+class _QaItem extends StatefulWidget {
   const _QaItem({
     required this.question,
     required this.answer,
@@ -98,39 +178,85 @@ class _QaItem extends StatelessWidget {
   final TextStyle bodyStyle;
 
   @override
+  State<_QaItem> createState() => _QaItemState();
+}
+
+class _QaItemState extends State<_QaItem> {
+  bool _isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppStyle.spaceSm),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppStyle.spaceMd,
-        vertical: AppStyle.spaceSm,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(
+        bottom: AppStyle.spaceSm,
       ),
       decoration: BoxDecoration(
-        color: AppColors.primarySoft,
+        color: _isExpanded
+            ? AppColors.primarySoft.withValues(alpha: 0.7)
+            : AppColors.primarySoft,
         borderRadius: AppStyle.borderRadiusSm,
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(
+          color: _isExpanded
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : AppColors.borderLight,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.help_outline,
-                size: 14,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: 6),
-              Expanded(child: Text(question, style: titleStyle)),
-            ],
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppStyle.borderRadiusSm,
+        child: InkWell(
+          borderRadius: AppStyle.borderRadiusSm,
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppStyle.spaceMd,
+              vertical: AppStyle.spaceSm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.help_outline,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: AppStyle.spaceSm),
+                    Expanded(
+                      child: Text(
+                        widget.question,
+                        style: widget.titleStyle,
+                      ),
+                    ),
+                    const SizedBox(width: AppStyle.spaceSm),
+                    Icon(
+                      _isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: AppStyle.iconSizeSm,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
+                ),
+                if (_isExpanded) ...[
+                  const SizedBox(height: AppStyle.spaceSm),
+                  const Divider(height: 1, color: AppColors.borderLight),
+                  const SizedBox(height: AppStyle.spaceSm),
+                  Padding(
+                    padding: const EdgeInsets.only(left: AppStyle.spaceXxl),
+                    child: Text(
+                      widget.answer,
+                      style: widget.bodyStyle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: Text(answer, style: bodyStyle),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -147,84 +273,93 @@ class _HotlineSection extends StatelessWidget {
   final TextStyle titleStyle;
   final TextStyle bodyStyle;
 
-  Future<void> _openContactSheet(
+  Future<void> _openContactDialog(
     BuildContext context, {
     required CountryDial country,
     required String localNumber,
   }) async {
     final displayNumber = '${country.dialCode} $localNumber';
-    final digits = displayNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final digits = displayNumber.replaceAll(
+      RegExp(r'[^\d+]'),
+      '',
+    );
     final telDigits = digits.replaceAll('+', '');
 
-    await showModalBottomSheet<void>(
+    await showDialog<void>(
       context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppStyle.radiusCurve),
-        ),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: AppStyle.borderRadiusLg,
+          ),
+          title: Text('login.contact_via'.tr()),
+          content: SizedBox(
+            width: double.maxFinite,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'login.contact_via'.tr(),
-                  style: AppTheme.english(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
                 Text(
                   displayNumber,
-                  style: AppTheme.english(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.2,
+                  style: AppTheme.body(
+                    color: AppColors.textPrimary,
+                    weight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 12),
-                _ContactOption(
-                  icon: LucideIcons.phone,
-                  label: 'login.contact_phone'.tr(),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await _launchUri(Uri(scheme: 'tel', path: digits));
-                  },
-                ),
-                _ContactOption(
-                  icon: Icons.chat_bubble_outline,
-                  label: 'login.contact_viber'.tr(),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await _launchUri(
-                      Uri.parse('viber://chat?number=$telDigits'),
-                    );
-                  },
-                ),
-                _ContactOption(
-                  icon: Icons.send_outlined,
-                  label: 'login.contact_telegram'.tr(),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await _launchUri(Uri.parse('https://t.me/+$telDigits'));
-                  },
+                const SizedBox(height: AppStyle.spaceLg),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: _ContactOption(
+                        icon: LucideIcons.phone,
+                        label: 'login.contact_phone'.tr(),
+                        onTap: () async {
+                          Navigator.pop(dialogContext);
+
+                          await _launchUri(
+                            context,
+                            Uri(
+                              scheme: 'tel',
+                              path: digits,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: _ContactOption(
+                        icon: Icons.chat_bubble_rounded,
+                        label: 'login.contact_viber'.tr(),
+                        onTap: () async {
+                          Navigator.pop(dialogContext);
+
+                          await _launchUri(
+                            context,
+                            Uri.parse(
+                              'viber://chat?number=$telDigits',
+                            ),
+                            fallbackUrl: 'https://www.viber.com/',
+                          );
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: _ContactOption(
+                        icon: Icons.send_outlined,
+                        label: 'login.contact_telegram'.tr(),
+                        onTap: () async {
+                          Navigator.pop(dialogContext);
+
+                          await _launchUri(
+                            context,
+                            Uri.parse(
+                              'https://t.me/+$telDigits',
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -234,11 +369,39 @@ class _HotlineSection extends StatelessWidget {
     );
   }
 
-  Future<void> _launchUri(Uri uri) async {
+  Future<bool> _tryLaunch(Uri uri) async {
     try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
     } catch (_) {
-      // App may not be installed — ignore.
+      return false;
+    }
+  }
+
+  Future<void> _launchUri(
+    BuildContext context,
+    Uri uri, {
+    String? fallbackUrl,
+  }) async {
+    var launched = await _tryLaunch(uri);
+
+    if (!launched && fallbackUrl != null) {
+      launched = await _tryLaunch(
+        Uri.parse(fallbackUrl),
+      );
+    }
+
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'login.contact_error'.tr(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -247,10 +410,11 @@ class _HotlineSection extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppStyle.borderRadiusSm,
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.all(AppStyle.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -259,55 +423,73 @@ class _HotlineSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.help_outline,
-                  size: 13,
-                  color: AppColors.primary.withValues(alpha: 0.85),
+                  Icons.headset_mic_outlined,
+                  size: 14,
+                  color: AppColors.primary.withValues(
+                    alpha: 0.85,
+                  ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppStyle.spaceXs),
                 Text(
                   'login.hotline_title'.tr(),
-                  style: AppTheme.english(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
-                    height: 1.3,
-                    letterSpacing: 0.2,
-                  ),
+                  style: AppTheme.bodySecondary(
+                    color: AppColors.textPrimary,
+                  ).copyWith(fontWeight: FontWeight.w500),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppStyle.spaceSm),
             for (final entry in hotlines)
-              InkWell(
-                onTap: () => _openContactSheet(
-                  context,
-                  country: entry.$1,
-                  localNumber: entry.$2.tr(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppStyle.spaceXs,
                 ),
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Text(
-                        entry.$1.flag,
-                        style: const TextStyle(fontSize: 14, height: AppTheme.lineHeightMyanmarSafe),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        entry.$1.dialCode,
-                        style: bodyStyle.copyWith(
-                          color: AppColors.textPrimary,
+                child: InkWell(
+                  onTap: () => _openContactDialog(
+                    context,
+                    country: entry.$1,
+                    localNumber: entry.$2,
+                  ),
+                  borderRadius: AppStyle.borderRadiusInput,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppStyle.spaceSm,
+                      vertical: AppStyle.spaceXs,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          entry.$1.flag,
+                          style: AppTheme.english(
+                            fontSize: AppStyle.fontBodyLg,
+                            height: AppTheme.lineHeightMyanmarSafe,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          entry.$2.tr(),
-                          style: bodyStyle.copyWith(color: AppColors.primary),
+                        const SizedBox(width: AppStyle.spaceSm),
+                        Text(
+                          entry.$1.dialCode,
+                          style: bodyStyle.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: AppStyle.spaceSm),
+                        Expanded(
+                          child: Text(
+                            entry.$2,
+                            style: bodyStyle.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: AppColors.textMuted,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -331,27 +513,41 @@ class _ContactOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.primarySoft,
-          borderRadius: AppStyle.borderRadiusSm,
-        ),
-        child: Icon(icon, size: 18, color: AppColors.primary),
-      ),
-      title: Text(
-        label,
-        style: AppTheme.english(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textPrimary,
-        ),
-      ),
+    return InkWell(
+      borderRadius: AppStyle.borderRadiusSm,
       onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppStyle.spaceXs,
+          vertical: AppStyle.spaceXs,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: AppStyle.iconBox,
+              height: AppStyle.iconBox,
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: AppStyle.borderRadiusSm,
+              ),
+              child: Icon(
+                icon,
+                size: AppStyle.iconSize,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: AppStyle.spaceXs),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTheme.caption(
+                color: AppColors.textPrimary,
+              ).copyWith(fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

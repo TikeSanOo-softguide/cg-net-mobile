@@ -104,7 +104,8 @@
     "qa_q3": "Why must I accept Terms & Conditions?",
     "qa_a3": "You need to agree before we can send an OTP and create your account.",
     "qa_q4": "Who can I call for help?",
-    "qa_a4": "Tap a hotline below for your country — call, Viber, or Telegram."
+    "qa_a4": "Tap a hotline below for your country — call, Viber, or Telegram.",
+    "contact_error": "Unable to open the selected contact method."
   },
   "terms": {
     "title": "Terms & Conditions",
@@ -555,6 +556,20 @@
     "email_notifications": "Email notifications",
     "sms_notifications": "SMS notifications"
   },
+   "requests": {
+    "broadband_account": "Broadband account number",
+    "choose_date": "Choose a date",
+    "phone": "Contact phone number",
+    "required": "This field is required",
+    "max_length": "Must not exceed {max} characters",
+    "submitted_title": "Request Submitted",
+    "status_under_review": "Under review",
+    "status_approved": "Approved",
+    "status_cancelled": "Cancelled",
+    "status_rejected": "Rejected",
+    "status": "Status",
+    "cancel_action": "Yes, Cancel"
+  },
   "change_wifi": {
     "title": "Change WiFi Password",
     "no_requests": "No Password Change Requests",
@@ -581,6 +596,49 @@
     "status_approved": "Approved",
     "status_cancelled": "Cancelled",
     "status_rejected": "Rejected"
+  },
+  "relocation": {
+    "no_requests": "No relocation requests",
+    "no_requests_desc": "Tap the + button to submit a broadband relocation request.",
+    "new_request": "New relocation request",
+    "edit_request": "Edit relocation request",
+    "current_address": "Current address",
+    "new_address": "New address",
+    "preferred_date": "Preferred relocation date",
+    "details": "Additional details",
+     "submit_success_title": "Relocation Request Submitted",
+    "submit_success_body": "Your relocation request has been submitted successfully.",
+    "submitted_desc": "Your relocation request is being processed. You will receive a notification once it is complete.",
+    "cancel_title": "Cancel relocation request",
+    "cancel_confirm": "Are you sure you want to cancel this relocation request?",
+    "cancel_success": "Relocation request cancelled.",
+    "required_id":"Request ID is missing"
+  },
+  "installationApplication": {
+    "no_requests": "No installation applications",
+    "no_requests_desc": "Tap the + button to submit an installation application.",
+    "new_request": "New installation application",
+    "edit_request": "Edit installation application",
+    "package": "Package",
+    "area": "Service area",
+    "options_unavailable": "Packages or service areas are currently unavailable. Please try again.",
+    "photos": "Photos (exactly 2)",
+    "add_photos": "Add photos",
+    "photos_required": "Select exactly 2 photos.",
+    "photo_type_error": "Photos must be JPG, JPEG, PNG, or WEBP images.",
+    "photo_size_error": "Each photo must be 2 MB or smaller.",
+    "photo_pick_error": "Could not select photos: {error}",
+    "submitted_desc": "Your installation application is being processed. You will receive a notification once it is complete.",
+    "update_success": "Installation application updated.",
+    "cancel_title": "Cancel installation application",
+    "cancel_confirm": "Are you sure you want to cancel this installation application?",
+    "cancel_action": "Cancel application",
+    "cancel_success": "Installation application cancelled.",
+    "id_name": "Applicant name",
+    "id_type": "Identification type",
+    "id_number": "Identification number",
+    "address": "Installation address",
+    "note": "Additional details"
   },
   "shared": {
     "no_internet_title": "No internet connection",

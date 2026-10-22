@@ -11,7 +11,7 @@ import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../core/ui/bottom_nav_visibility_provider.dart';
-import '../bound_broadband_provider.dart';
+import 'home_header.dart';
 import 'home_section_header.dart';
 
 /// Home service icons — one main [AppCard] with flat tinted PNG tiles.
@@ -84,12 +84,16 @@ class HomeServicesSection extends ConsumerWidget {
     _ServiceItem item, {
     bool fromSheet = false,
   }) async {
-    if (item.id != 'installation' && ref.read(boundBroadbandProvider) == null) {
-      await showAppAlertModal(
-        context,
-        message: 'home.service_bind_required'.tr(),
-      );
-      return;
+    if (item.id != 'installation') {
+      final isBound = await ensureBoundBroadband(context, ref);
+      if (!context.mounted || isBound == null) return;
+      if (!isBound) {
+        await showAppAlertModal(
+          context,
+          message: 'home.service_bind_required'.tr(),
+        );
+        return;
+      }
     }
 
     final router = GoRouter.of(context);

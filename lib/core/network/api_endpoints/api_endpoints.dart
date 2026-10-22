@@ -45,7 +45,7 @@ class ApiEndpoints {
   static const String banners = '/web-app/banners';
   static const String appVersion = '/app-version';
   static const String changePassword = '/change-password';
-  static const String verifyChangePasswordOtp  = '/change-password/verify-otp';
+  static const String verifyChangePasswordOtp = '/change-password/verify-otp';
   static const String packagesBuy = '/packages/buy';
   static const String redeemCheckSerialNo = '/redeem/check-serial-no';
   static const String redeemTopUpAccount = '/redeem/top-up-account';
@@ -59,6 +59,24 @@ class ApiEndpoints {
   static const String changeWifiPasswordRequests = '/change-password-requests';
   static String cancelChangeWifiPasswordRequest(String requestId) =>
       '$changeWifiPasswordRequests/$requestId';
+  static const String availableAreas = '/areas';
+  static const String termAndCondition = '/general-settings/term-and-condition';
+  static const String faq = '/general-settings/faq';
+  static const String supportContact = '/general-settings/support-contact';
+  static const String relocationRequests = '/relocation-requests';
+  static const String createRelocationRequest = '/relocation-requests/create';
+  static String relocationRequest(String requestId) =>
+      '$relocationRequests/$requestId';
+  static String cancelRelocationRequest(String requestId) =>
+      '${relocationRequest(requestId)}/cancel';
+  static const String installationApplicationRequests =
+      '/installation-application';
+  static const String createInstallationApplicationRequest =
+      '/installation-application/create';
+  static String installationApplicationRequest(String requestId) =>
+      '$installationApplicationRequests/$requestId';
+  static String cancelInstallationRequest(String requestId) =>
+      '${installationApplicationRequest(requestId)}/cancel';
   static const String chatStart = '/chat/start';
   static const String chatCurrent = '/chat/current';
   static const String chatSelectOption = '/chat/select-option';
