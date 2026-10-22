@@ -15,7 +15,6 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
-import 'relocation_submitted_page.dart';
 
 class RelocationPage extends ConsumerStatefulWidget {
   const RelocationPage({super.key});
@@ -44,17 +43,20 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => _RelocationFormSheet(request: request),
     );
+
     if (!mounted || savedRequest == null) return;
+
     if (request != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('relocation.update_success'.tr())),
       );
       return;
     }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => RelocationSubmittedPage(request: savedRequest),
-      ),
+
+    await showAppSuccessModal(
+      context,
+      title: 'relocation.submit_success_title'.tr(),
+      body: 'relocation.submit_success_body'.tr(),
     );
   }
 
@@ -65,7 +67,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       context,
       title: 'relocation.cancel_title'.tr(),
       body: 'relocation.cancel_confirm'.tr(),
-      confirmLabel: 'relocation.cancel_action'.tr(),
+      confirmLabel: 'requests.cancel_action'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true) return;

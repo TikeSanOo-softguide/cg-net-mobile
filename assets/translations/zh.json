@@ -102,7 +102,8 @@
     "qa_q3": "为什么必须同意服务条款？",
     "qa_a3": "发送 OTP 和创建账户前需要您同意条款。",
     "qa_q4": "需要帮助可以联系谁？",
-    "qa_a4": "点击下方您所在国家的热线，可通过电话、Viber 或 Telegram 联系。"
+    "qa_a4": "点击下方您所在国家的热线，可通过电话、Viber 或 Telegram 联系。",
+    "contact_error": "无法打开所选的联系方式。"
   },
   "terms": {
     "title": "服务条款",
@@ -552,6 +553,21 @@
     "email_notifications": "邮件通知",
     "sms_notifications": "短信通知"
   },
+    "requests": {
+    "broadband_account": "宽带账号",
+    "choose_date": "选择日期",
+    "phone": "联系电话",
+    "required": "此项为必填项",
+    "max_length": "不能超过 {max} 个字符",
+    "update_success": "迁移申请已更新。",
+    "submitted_title": "申请已提交",
+    "status_under_review": "审核中",
+    "status_approved": "已通过",
+    "status_cancelled": "已取消",
+    "status_rejected": "已拒绝",
+    "status": "状态",
+    "cancel_action": "取消申请"
+  },
   "change_wifi": {
     "title": "修改 WiFi 密码",
     "no_requests": "暂无密码修改申请",
@@ -578,6 +594,50 @@
     "status_approved": "已通过",
     "status_cancelled": "已取消",
     "status_rejected": "已拒绝"
+  },
+  "relocation": {
+    "no_requests": "暂无迁移申请",
+    "no_requests_desc": "点击 + 按钮提交宽带迁移申请。",
+    "new_request": "新建迁移申请",
+    "edit_request": "编辑迁移申请",
+    "current_address": "当前地址",
+    "new_address": "新地址",
+    "preferred_date": "期望迁移日期",
+    "details": "补充说明",
+     "submit_success_title": "搬迁申请提交成功",
+    "submit_success_body": "您的搬迁申请已成功提交。",
+    "update_success": "迁移申请已更新。",
+    "submitted_desc": "您的迁移申请正在处理中。完成后您将收到通知。",
+    "cancel_title": "取消迁移申请",
+    "cancel_confirm": "确定要取消此迁移申请吗？",
+    "cancel_success": "迁移申请已取消。",
+    "required_id": "缺少请求 ID。"
+  },
+  "installationApplication": {
+    "no_requests": "暂无安装申请",
+    "no_requests_desc": "点击 + 按钮提交安装申请。",
+    "new_request": "新建安装申请",
+    "edit_request": "编辑安装申请",
+    "package": "套餐",
+    "area": "服务区域",
+    "options_unavailable": "套餐或服务区域暂不可用，请重试。",
+    "photos": "照片（必须 2 张）",
+    "add_photos": "添加照片",
+    "photos_required": "请选择 2 张照片。",
+    "photo_type_error": "照片必须为 JPG、JPEG、PNG 或 WEBP 格式。",
+    "photo_size_error": "每张照片不能超过 2 MB。",
+    "photo_pick_error": "无法选择照片：{error}",
+    "submitted_desc": "您的安装申请正在处理中。完成后您将收到通知。",
+    "update_success": "安装申请已更新。",
+    "cancel_title": "取消安装申请",
+    "cancel_confirm": "确定要取消此安装申请吗？",
+    "cancel_action": "取消申请",
+    "cancel_success": "安装申请已取消。",
+    "id_name": "申请人姓名",
+    "id_type": "身份证明类型",
+    "id_number": "身份证明号码",
+    "address": "安装地址",
+    "note": "补充说明"
   },
   "shared": {
     "no_internet_title": "无网络连接",
