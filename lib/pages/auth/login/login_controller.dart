@@ -39,6 +39,16 @@ class LoginState {
   }
 }
 
+class LoginSessionCheck {
+  const LoginSessionCheck({
+    required this.phone,
+    required this.showAlert,
+  });
+
+  final String phone;
+  final bool showAlert;
+}
+
 class LoginController extends StateNotifier<LoginState> {
   LoginController(this._authApi) : super(const LoginState());
 
@@ -51,6 +61,32 @@ class LoginController extends StateNotifier<LoginState> {
     state = state.copyWith(country: country);
   }
 
+  Future<LoginSessionCheck?> checkSession(String rawPhone) async {
+    final apiPhone = PhoneNumber.toApiPhone(
+      dialCode: state.country.dialCode,
+      localInput: rawPhone,
+    );
+    if (apiPhone == null || state.isLoading) return null;
+
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final result = await _authApi.checkPhoneSession(apiPhone);
+      if (!mounted) return null;
+      state = state.copyWith(isLoading: false);
+      return LoginSessionCheck(
+        phone: apiPhone,
+        showAlert: result.showAlert,
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return null;
+      state = state.copyWith(
+        isLoading: false,
+        error: error.failure == ApiFailure.cancelled ? null : error,
+      );
+      return null;
+    }
+  }
+
   Future<String?> submit(String rawPhone) async {
     final apiPhone = PhoneNumber.toApiPhone(
       dialCode: state.country.dialCode,
@@ -58,6 +94,11 @@ class LoginController extends StateNotifier<LoginState> {
     );
     if (apiPhone == null) return null;
 
+    return requestOtp(apiPhone);
+  }
+
+  Future<String?> requestOtp(String apiPhone) async {
+    if (state.isLoading) return null;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final result = await _authApi.requestOtp(apiPhone);
@@ -70,8 +111,12 @@ class LoginController extends StateNotifier<LoginState> {
     } on ApiException catch (error) {
       challengeId = null;
       debugOtp = null;
-      if (!mounted || error.failure == ApiFailure.cancelled) return null;
-      state = state.copyWith(isLoading: false, error: error);
+      if (!mounted) return null;
+      state = state.copyWith(
+        isLoading: false,
+        error: error.failure == ApiFailure.cancelled ? null : error,
+      );
+      if (error.failure == ApiFailure.cancelled) return null;
       return null;
     }
   }

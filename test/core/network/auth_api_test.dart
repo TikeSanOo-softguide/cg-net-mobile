@@ -35,9 +35,47 @@ void main() {
     expect(requests.single.path, ApiEndpoints.language);
     expect(requests.single.data, {'lang': 'zh'});
   });
+
+  test('checks the phone session before requesting an OTP', () async {
+    final requests = <RequestOptions>[];
+    final api = AuthApi(
+      _recordingDio(
+        requests,
+        responseData: {
+          'show_alert': true,
+        },
+      ),
+      () => 'en',
+    );
+
+    final result = await api.checkPhoneSession('+959123456789');
+
+    expect(requests.single.method, 'POST');
+    expect(ApiEndpoints.checkSession, '/auth/session/check');
+    expect(requests.single.uri.path, '/api/auth/session/check');
+    expect(requests.single.data, {'phone': '+959123456789'});
+    expect(result.showAlert, isTrue);
+  });
+
+  test('parses a phone session with no conflict', () async {
+    final api = AuthApi(
+      _recordingDio(
+        [],
+        responseData: {'show_alert': false},
+      ),
+      () => 'en',
+    );
+
+    final result = await api.checkPhoneSession('+959123456789');
+    expect(result.showAlert, isFalse);
+    expect(result.showAlert, isFalse);
+  });
 }
 
-Dio _recordingDio(List<RequestOptions> requests) {
+Dio _recordingDio(
+  List<RequestOptions> requests, {
+  Map<String, dynamic> responseData = const {'token': 'test-token'},
+}) {
   final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
   dio.interceptors.add(
     InterceptorsWrapper(
@@ -47,7 +85,7 @@ Dio _recordingDio(List<RequestOptions> requests) {
           Response<dynamic>(
             requestOptions: options,
             statusCode: 200,
-            data: {'token': 'test-token'},
+            data: responseData,
           ),
         );
       },

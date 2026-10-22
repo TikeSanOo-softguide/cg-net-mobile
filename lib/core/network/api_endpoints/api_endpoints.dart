@@ -35,6 +35,7 @@ class ApiEndpoints {
 
   static const String requestOtp = '/auth/otp/request';
   static const String verifyOtp = '/auth/otp/verify';
+  static const String checkSession = '/auth/session/check';
   static const String completeRegistration = '/auth/register';
   static const String login = '/auth/login';
   static const String logout = '/auth/logout';

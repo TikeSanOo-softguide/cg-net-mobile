@@ -73,6 +73,8 @@
     "phone_invalid": "Enter a valid phone number.",
     "phone_unsupported": "This phone number is not supported.",
     "send_otp": "Continue",
+    "device_conflict_title": "Account already in use",
+    "registered_on_another_device": "This account is registered on another device.",
     "terms_prefix": "I agree to the ",
     "terms_link": "Terms & Conditions",
     "terms_suffix": "",
