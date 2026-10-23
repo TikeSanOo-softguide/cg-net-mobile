@@ -1,9 +1,9 @@
 import 'package:cg_net_mobile/components/language_setting/language_picker_modal.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
@@ -16,8 +16,21 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/version_check/version_check.dart';
 import 'profile_controller.dart';
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(profileControllerProvider.notifier).fetchProfile();
+    });
+  }
 
   String _languageLabel(BuildContext context) {
     switch (context.locale.languageCode) {
@@ -31,7 +44,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
     final localeCode = ref.watch(appLocaleProvider);
     final versionAsync = ref.watch(packageInfoProvider);
@@ -86,8 +99,8 @@ class ProfilePage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          profile.phone.isNotEmpty
-                              ? profile.phone
+                          profile.displayPhone.isNotEmpty
+                              ? profile.displayPhone
                               : (profile.accountNumber.isNotEmpty
                                   ? profile.accountNumber
                                   : '---'),

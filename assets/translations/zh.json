@@ -214,9 +214,9 @@
     "popular": "HOT",
     "buy_now": "立即购买"
   },
- "broadband": {
+  "broadband": {
     "bind_now": "绑定账户",
-    "validation":{
+    "validation": {
       "account_required": "请输入账户号码",
       "customer_name_required": "请输入客户姓名",
       "service_type_required": "请选择服务类型",
@@ -548,7 +548,7 @@
     "promotion_notifications": "促销通知",
     "general_notifications": "通用通知"
   },
-    "requests": {
+  "requests": {
     "broadband_account": "宽带账号",
     "choose_date": "选择日期",
     "phone": "联系电话",
@@ -577,6 +577,9 @@
     "req_new_password": "请输入您想修改的新密码。",
     "new_wifi_name_hint": "新 WiFi 名称",
     "new_password_hint": "新密码",
+    "request_details": "申请详情",
+    "status": "状态",
+    "date": "日期",
     "already_exists": "该宽带账号已有同类型申请正在审核中。",
     "submitted_title": "申请已提交",
     "submitted_desc": "您的 WiFi 设置修改申请正在处理中。更新完成后您将收到通知。",
@@ -599,7 +602,7 @@
     "new_address": "新地址",
     "preferred_date": "期望迁移日期",
     "details": "补充说明",
-     "submit_success_title": "搬迁申请提交成功",
+    "submit_success_title": "搬迁申请提交成功",
     "submit_success_body": "您的搬迁申请已成功提交。",
     "update_success": "迁移申请已更新。",
     "submitted_desc": "您的迁移申请正在处理中。完成后您将收到通知。",
@@ -633,6 +636,39 @@
     "id_number": "身份证明号码",
     "address": "安装地址",
     "note": "补充说明"
+  },
+  "failure_report": {
+    "title": "故障报修",
+    "no_reports": "暂无报修记录",
+    "no_reports_desc": "点击右下角 + 按钮提交故障报修。",
+    "load_error": "无法加载故障报告。",
+    "form_desc": "请使用此表单上报网络或线路故障。",
+    "broadband_account": "宽带账号",
+    "contact_name": "联系人姓名",
+    "contact_phone": "联系电话",
+    "failure_type": "故障类型",
+    "failure_type_subtitle": "请选择您遇到的故障类型",
+    "type_no_internet": "无网络",
+    "type_slow_speed": "网速极慢",
+    "type_unstable_connection": "网络不稳定",
+    "type_wifi_coverage": "Wi-Fi 覆盖问题",
+    "type_equipment_failure": "设备故障",
+    "type_cable_damage": "光缆/线路损坏",
+    "type_password_issue": "密码问题",
+    "type_other": "其他",
+    "description": "故障详细描述",
+    "description_hint": "请详细描述您遇到的问题...",
+    "failure_time": "故障发生时间",
+    "select_failure_time": "选择日期与时间",
+    "upload_photos": "故障照片（最多3张）",
+    "add_photo": "添加照片",
+    "already_exists": "该宽带账号已有报修单正在处理中。",
+    "submitted_title": "报修单已提交",
+    "submitted_desc": "我们已收到您的报修申请。我们的技术团队将尽快为您处理并联系您。",
+    "cancel_report": "取消报修",
+    "cancel_title": "取消故障报修",
+    "cancel_confirm": "您确定要取消此故障报修单吗？",
+    "cancel_success": "报修单已成功取消。"
   },
   "shared": {
     "no_internet_title": "无网络连接",
