@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../components/app_button/app_button.dart';
 import '../../../../components/app_dialog/app_dialog.dart';
 import '../../../../components/app_input/app_input.dart';
+import '../../../../components/app_select/app_select_dropdown.dart';
 import '../../../../core/network/api_error_text.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
@@ -19,11 +20,11 @@ import '../../../profile/profile/profile_controller.dart';
 class BoundBroadband {
   const BoundBroadband({
     required this.account,
-    required this.customerName,
+    required this.serviceType,
   });
 
   final String account;
-  final String customerName;
+  final String serviceType;
 }
 
 Future<BoundBroadband?> showBindBroadbandDrawer(
@@ -95,17 +96,15 @@ class _BindBroadbandSheet extends StatefulWidget {
 
 class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
   final _account = TextEditingController();
-  final _customerName = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String? _serviceType;
   bool _isSubmitting = false;
   bool _isFormValid = false;
   String? _accountError;
-  String? _customerNameError;
 
   @override
   void dispose() {
     _account.dispose();
-    _customerName.dispose();
     super.dispose();
   }
 
@@ -126,19 +125,9 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
     });
   }
 
-  void _validateCustomerName(String value) {
-    final text = value.trim();
-
+  void _updateServiceType(String? value) {
     setState(() {
-      if (text.isEmpty) {
-        _customerNameError = 'broadband.validation.customer_name_required'.tr();
-      } else if (text.length > 50) {
-        _customerNameError =
-            'broadband.validation.customer_name_max_length'.tr();
-      } else {
-        _customerNameError = null;
-      }
-
+      _serviceType = value;
       _updateFormValidity();
       _formKey.currentState?.validate();
     });
@@ -147,18 +136,16 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
   void _updateFormValidity() {
     _isFormValid = _account.text.trim().isNotEmpty &&
         _account.text.trim().length <= 32 &&
-        _customerName.text.trim().isNotEmpty &&
-        _customerName.text.trim().length <= 50 &&
-        _accountError == null &&
-        _customerNameError == null;
+        _serviceType != null &&
+        _accountError == null;
   }
 
   Future<void> _submit() async {
     if (_isSubmitting || !(_formKey.currentState?.validate() ?? false)) return;
 
     final bound = BoundBroadband(
+      serviceType: _serviceType!,
       account: _account.text.trim(),
-      customerName: _customerName.text.trim(),
     );
     setState(() => _isSubmitting = true);
 
@@ -170,7 +157,7 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
         try {
           final response = await repository.connect(
             accountNumber: bound.account,
-            customerName: bound.customerName,
+            serviceType: bound.serviceType,
           );
 
           debugPrint('BROADBAND CONNECT RESPONSE: $response');
@@ -254,6 +241,20 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
                 ),
               ),
               const SizedBox(height: AppStyle.spaceXxl),
+              AppSelectDropdown<String>(
+                options: const [
+                  AppSelectOption(value: 'FTTH', label: 'FTTH'),
+                  AppSelectOption(value: 'CG', label: 'CG'),
+                ],
+                value: _serviceType,
+                label: 'home.service_type'.tr(),
+                hint: 'home.service_type_hint'.tr(),
+                onChanged: _updateServiceType,
+                validator: (value) => value == null
+                    ? 'broadband.validation.service_type_required'.tr()
+                    : null,
+              ),
+              const SizedBox(height: AppStyle.spaceMd),
               AppInput(
                 controller: _account,
                 label: 'home.broadband_account'.tr(),
@@ -263,18 +264,6 @@ class _BindBroadbandSheetState extends State<_BindBroadbandSheet> {
                 reserveErrorSpace: true,
                 onChanged: _validateAccount,
                 validator: (_) => _accountError,
-              ),
-              const SizedBox(height: AppStyle.spaceMd),
-              AppInput(
-                controller: _customerName,
-                label: 'home.customer_name'.tr(),
-                hint: 'home.customer_name_hint'.tr(),
-                prefixIcon: LucideIcons.user,
-                textInputAction: TextInputAction.done,
-                reserveErrorSpace: true,
-                onChanged: _validateCustomerName,
-                onSubmitted: (_) => _submit(),
-                validator: (_) => _customerNameError,
               ),
               const SizedBox(height: AppStyle.spaceMd),
               AppButton(
@@ -417,9 +406,8 @@ class _BoundAccountSheetState extends State<_BoundAccountSheet> {
                   ),
                   const SizedBox(height: 10),
                   _InfoRow(
-                    label: 'home.customer_name'.tr(),
-                    value:
-                        bound.customerName.isEmpty ? '-' : bound.customerName,
+                    label: 'home.service_type'.tr(),
+                    value: bound.serviceType.isEmpty ? '-' : bound.serviceType,
                   ),
                 ],
               ),
