@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
@@ -19,6 +18,7 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.height = 45,
     this.fontSize = 14,
+    this.backgroundColor,
   });
 
   final String label;
@@ -28,12 +28,13 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
   final double height;
   final double fontSize;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
-    final background =
-        enabled ? AppColors.primary : AppColors.primary.withValues(alpha: 0.38);
+    final color = backgroundColor ?? AppColors.primary;
+    final background = enabled ? color : color.withValues(alpha: 0.38);
     final foreground = enabled
         ? AppColors.onPrimary
         : AppColors.onPrimary.withValues(alpha: 0.92);

@@ -213,7 +213,7 @@
   },
   "broadband": {
     "bind_now": "Bind Account",
-    "validation":{
+    "validation": {
       "account_required": "Account number is required",
       "customer_name_required": "Customer name is required",
       "service_type_required": "Select a service type",
@@ -229,7 +229,7 @@
       "broadband_different_account": "Another broadband account is already connected.",
       "broadband_account_in_use": "This account is already connected to another user."
     }
-  },  
+  },
   "topup": {
     "title": "Top Up",
     "form_title": "Top Up",
@@ -574,6 +574,9 @@
     "req_new_password": "Please enter the new password you want to change.",
     "new_wifi_name_hint": "New Wifi Name",
     "new_password_hint": "New Password",
+    "request_details": "Request Details",
+    "status": "Status",
+    "date": "Date",
     "already_exists": "A request of this type for this broadband account is already under review.",
     "submitted_title": "Request Submitted",
     "submitted_desc": "Your WiFi setting change request is being processed. You will receive a notification once the update is complete.",
@@ -587,6 +590,7 @@
     "status_cancelled": "Cancelled",
     "status_rejected": "Rejected"
   },
+
   "relocation": {
     "no_requests": "No relocation requests",
     "no_requests_desc": "Tap the + button to submit a broadband relocation request.",
@@ -602,7 +606,7 @@
     "cancel_title": "Cancel relocation request",
     "cancel_confirm": "Are you sure you want to cancel this relocation request?",
     "cancel_success": "Relocation request cancelled.",
-    "required_id":"Request ID is missing"
+    "required_id": "Request ID is missing"
   },
   "installationApplication": {
     "no_requests": "No installation applications",
@@ -629,6 +633,39 @@
     "id_number": "Identification number",
     "address": "Installation address",
     "note": "Additional details"
+  },
+  "failure_report": {
+    "title": "Failure Report",
+    "no_reports": "No Failure Reports",
+    "no_reports_desc": "Tap the + button at the bottom right to submit a failure report.",
+    "load_error": "Unable to load failure reports.",
+    "form_desc": "Use this form to report internet or line issues.",
+    "broadband_account": "Broadband Account Number",
+    "contact_name": "Contact Name",
+    "contact_phone": "Phone Number",
+    "failure_type": "Failure Type",
+    "failure_type_subtitle": "Select the problem you are experiencing.",
+    "type_no_internet": "No Internet",
+    "type_slow_speed": "Slow Internet",
+    "type_unstable_connection": "Unstable Connection",
+    "type_wifi_coverage": "Wi-Fi Coverage",
+    "type_equipment_failure": "Equipment Failure",
+    "type_cable_damage": "Cable / Fiber Damage",
+    "type_password_issue": "Password Issue",
+    "type_other": "Other",
+    "description": "Problem Description",
+    "description_hint": "Describe the issue in detail...",
+    "failure_time": "Failure Date & Time",
+    "select_failure_time": "Select Date & Time",
+    "upload_photos": "Failure Photos (Up to 3 images)",
+    "add_photo": "Add Photo",
+    "already_exists": "A failure report for this broadband account is already under review.",
+    "submitted_title": "Report Submitted",
+    "submitted_desc": "Your failure report has been received. Our support team will inspect and contact you shortly.",
+    "cancel_report": "Cancel Report",
+    "cancel_title": "Cancel Failure Report",
+    "cancel_confirm": "Are you sure you want to cancel this failure report?",
+    "cancel_success": "Failure report cancelled successfully."
   },
   "shared": {
     "no_internet_title": "No internet connection",
