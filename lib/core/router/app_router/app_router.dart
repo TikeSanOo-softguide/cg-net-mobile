@@ -35,11 +35,9 @@ import '../../../pages/package/package_list/package_list_page.dart';
 import '../../../pages/profile/about_app/about_app_page.dart';
 import '../../../pages/profile/change_password/change_password_page.dart';
 import '../../../pages/profile/change_password/verify_change_password_otp_page.dart';
-import '../../../pages/profile/device_session/device_session_page.dart';
 import '../../../pages/profile/edit_profile/edit_profile_page.dart';
 import '../../../pages/profile/notification_preferences/notification_preferences_page.dart';
 import '../../../pages/profile/profile/profile_page.dart';
-import '../../../pages/profile/version/version_page.dart';
 import '../../../pages/shared_pages/error_no_internet/error_no_internet_page.dart';
 import '../../../pages/shared_pages/force_update/force_update_page.dart';
 import '../../../pages/shared_pages/not_found/not_found_page.dart';
@@ -432,23 +430,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ],
                   ),
                   GoRoute(
-                    path: 'devices',
-                    name: RouteNames.deviceSession,
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const DeviceSessionPage(),
-                  ),
-                  GoRoute(
                     path: 'notifications',
                     name: RouteNames.notificationPreferences,
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) =>
                         const NotificationPreferencesPage(),
-                  ),
-                  GoRoute(
-                    path: 'version',
-                    name: RouteNames.version,
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const VersionPage(),
                   ),
                   GoRoute(
                     path: 'about',

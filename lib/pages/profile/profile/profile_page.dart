@@ -174,12 +174,6 @@ class ProfilePage extends ConsumerWidget {
             ),
             const SizedBox(height: 5),
             _SettingsCard(
-              asset: 'assets/images/profile/device.png',
-              title: 'profile.devices'.tr(),
-              onTap: () => context.pushNamed(RouteNames.deviceSession),
-            ),
-            const SizedBox(height: 5),
-            _SettingsCard(
               asset: 'assets/images/profile/notification.png',
               title: 'profile.notifications'.tr(),
               onTap: () =>
@@ -188,14 +182,8 @@ class ProfilePage extends ConsumerWidget {
             const SizedBox(height: 5),
             _SettingsCard(
               asset: 'assets/images/profile/version.png',
-              title: 'profile.version'.tr(),
-              trailingText: versionText,
-              onTap: () => context.pushNamed(RouteNames.version),
-            ),
-            const SizedBox(height: 5),
-            _SettingsCard(
-              asset: 'assets/images/profile/version.png',
               title: 'profile.about'.tr(),
+              trailingText: versionText,
               onTap: () => context.pushNamed(RouteNames.aboutApp),
             ),
             const SizedBox(height: 5),
