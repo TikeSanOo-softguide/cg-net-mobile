@@ -8,6 +8,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../requests/change_wifi_password/change_wifi_password_page.dart';
 import '../../requests/installation_application/installation_application_page.dart';
 import '../../requests/relocation/relocation_page.dart';
+import '../../requests/failure_report/failure_report_page.dart';
 
 /// Shared empty template for all Home services (until real screens exist).
 class ServicePlaceholderPage extends StatelessWidget {
@@ -53,6 +54,9 @@ class ServicePlaceholderPage extends StatelessWidget {
     }
     if (serviceId == 'relocation') {
       return const RelocationPage();
+    }
+    if (serviceId == 'complaint' || serviceId == 'failure_report') {
+      return const FailureReportPage();
     }
 
     final title = titleForId(serviceId);

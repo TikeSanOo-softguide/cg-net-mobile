@@ -84,7 +84,8 @@ class HomeServicesSection extends ConsumerWidget {
     _ServiceItem item, {
     bool fromSheet = false,
   }) async {
-    if (item.id != 'installation') {
+    final requiresBoundBroadband = item.id != 'installation';
+    if (requiresBoundBroadband) {
       final isBound = await ensureBoundBroadband(context, ref);
       if (!context.mounted || isBound == null) return;
       if (!isBound) {

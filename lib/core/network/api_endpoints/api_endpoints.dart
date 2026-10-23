@@ -11,7 +11,7 @@ class ApiEndpoints {
   /// `--dart-define=API_BASE_URL=http://127.0.0.1:8080/api`.
   static const _devBaseUrl = String.fromEnvironment(
     'DEV_API_BASE_URL',
-    defaultValue: 'http://192.168.10.148:8080/api',
+    defaultValue: 'http://192.168.10.254:8080/api',
   );
   static const _healthOverride =
       String.fromEnvironment('API_HEALTHCHECK_PATH', defaultValue: '');
@@ -78,6 +78,10 @@ class ApiEndpoints {
       '$installationApplicationRequests/$requestId';
   static String cancelInstallationRequest(String requestId) =>
       '${installationApplicationRequest(requestId)}/cancel';
+  static const String failureReport = '/failure-reports/create';
+  static const String failureReports = '/failure-reports';
+  static String failureReportDetail(String reportId) =>
+      '$failureReports/$reportId';
   static const String chatStart = '/chat/start';
   static const String chatCurrent = '/chat/current';
   static const String chatSelectOption = '/chat/select-option';
