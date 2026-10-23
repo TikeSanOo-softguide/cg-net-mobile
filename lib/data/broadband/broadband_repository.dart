@@ -12,14 +12,14 @@ class BroadbandRepository {
 
   Future<Map<String, dynamic>> connect({
     required String accountNumber,
-    required String customerName,
+    required String serviceType,
   }) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         ApiEndpoints.broadbandBind,
         data: {
           'account_number': accountNumber,
-          'customer_name': customerName,
+          'service_type': serviceType,
         },
       );
 

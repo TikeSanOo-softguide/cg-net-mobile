@@ -158,6 +158,8 @@
     "balance_label": "Balance",
     "balance_value": "{amount} MMK",
     "bind_now": "Bind Now",
+    "service_type": "Service type",
+    "service_type_hint": "Select service type",
     "broadband_account": "Broadband account",
     "broadband_account_hint": "Enter broadband account",
     "broadband_account_required": "Broadband account is required",
@@ -214,6 +216,7 @@
     "validation":{
       "account_required": "Account number is required",
       "customer_name_required": "Customer name is required",
+      "service_type_required": "Select a service type",
       "account_max_length": "Account number must not exceed 32 characters",
       "customer_name_max_length": "Customer name must not exceed 50 characters",
       "bind_fail_title": "Binding failed",

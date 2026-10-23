@@ -158,6 +158,8 @@
     "balance_label": "余额",
     "balance_value": "{amount} 缅币",
     "bind_now": "立即绑定",
+    "service_type": "服务类型",
+    "service_type_hint": "请选择服务类型",
     "broadband_account": "宽带账号",
     "broadband_account_hint": "请输入宽带账号",
     "broadband_account_required": "请填写宽带账号",
@@ -214,6 +216,7 @@
     "validation":{
       "account_required": "请输入账户号码",
       "customer_name_required": "请输入客户姓名",
+      "service_type_required": "请选择服务类型",
       "account_max_length": "账户号码不能超过32个字符",
       "customer_name_max_length": "客户姓名不能超过50个字符",
       "bind_fail_title": "绑定失败",

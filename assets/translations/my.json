@@ -158,6 +158,8 @@
     "balance_label": "လက်ကျန်ငွေ",
     "balance_value": "{amount} ကျပ်",
     "bind_now": "Bind Now",
+    "service_type": "ဝန်ဆောင်မှုအမျိုးအစား",
+    "service_type_hint": "ဝန်ဆောင်မှုအမျိုးအစားကို ရွေးပါ",
     "broadband_account": "Broadband account",
     "broadband_account_hint": "Broadband account ထည့်ပါ",
     "broadband_account_required": "Broadband account လိုအပ်သည်",
@@ -214,6 +216,7 @@
     "validation":{
       "account_required": "အကောင့်နံပါတ် ထည့်ရန်လိုအပ်ပါသည်",
       "customer_name_required": "ဖောက်သည်အမည် ထည့်ရန်လိုအပ်ပါသည်",
+      "service_type_required": "ဝန်ဆောင်မှုအမျိုးအစားကို ရွေးပါ",
       "account_max_length": "အကောင့်နံပါတ်သည် စာလုံး ၃၂ လုံးထက် မကျော်ရပါ",
       "customer_name_max_length": "ဖောက်သည်အမည်သည် စာလုံး ၅၀ ထက် မကျော်ရပါ",
       "bind_fail_title": "ချိတ်ဆက်မှု မအောင်မြင်ပါ",
