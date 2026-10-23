@@ -33,9 +33,7 @@ class RouteNames {
   static const editProfile = 'editProfile';
   static const changePassword = 'changePassword';
   static const verifyChangePasswordOtp = 'verifyChangePasswordOtp';
-  static const deviceSession = 'deviceSession';
   static const notificationPreferences = 'notificationPreferences';
-  static const version = 'version';
   static const aboutApp = 'aboutApp';
 
   static const errorNoInternet = 'errorNoInternet';
@@ -78,9 +76,7 @@ class RoutePaths {
   static const editProfile = '/profile/edit';
   static const changePassword = '/profile/change-password';
   static const verifyChangePasswordOtp = '/profile/change-password/verify-otp';
-  static const deviceSession = '/profile/devices';
   static const notificationPreferences = '/profile/notifications';
-  static const version = '/profile/version';
   static const aboutApp = '/profile/about';
 
   static const errorNoInternet = '/error/no-internet';

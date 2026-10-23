@@ -6,8 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
+import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
+import '../../../core/utils/version_check/version_check.dart';
 import 'about_app_controller.dart';
 
 class AboutAppPage extends ConsumerWidget {
@@ -15,7 +19,9 @@ class AboutAppPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(aboutAppControllerProvider);
+    final appVersion = ref.watch(aboutAppVersionProvider);
+    final installedVersion = ref.watch(packageInfoProvider);
+    final languageCode = ref.watch(appLocaleProvider);
 
     return AppCurvedScaffold(
       title: Text('profile.about_title'.tr()),
@@ -33,60 +39,25 @@ class AboutAppPage extends ConsumerWidget {
               showShadow: false,
             ),
           ),
-          const SizedBox(height: 16),
-          _SectionHeading(title: 'profile.our_story'.tr()),
-          AppCard(
-            padding: const EdgeInsets.all(22),
-            borderRadius: AppStyle.borderRadiusLg,
-            child: Text(
-              'profile.about_description'.tr(),
-              style:
-                  Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.6),
+          const SizedBox(height: 24),
+          appVersion.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          _SectionHeading(title: 'profile.what_we_hold_to'.tr()),
-          GridView.count(
-            padding: EdgeInsets.zero,
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.7,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _ValueCard(title: 'profile.value_trusted_network'.tr()),
-              _ValueCard(title: 'profile.value_local_support'.tr()),
-              _ValueCard(title: 'profile.value_innovative_technology'.tr()),
-              _ValueCard(title: 'profile.value_community_first'.tr()),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _SectionHeading(title: 'profile.how_yno_works'.tr()),
-          const SizedBox(height: 4),
-          Column(
-            children: [
-              _HowItWorksCard(
-                number: '01',
-                title: 'profile.how_yno_step_1'.tr(),
-              ),
-              _HowItWorksCard(
-                number: '02',
-                title: 'profile.how_yno_step_2'.tr(),
-              ),
-              _HowItWorksCard(
-                number: '03',
-                title: 'profile.how_yno_step_3'.tr(),
-              ),
-              _HowItWorksCard(
-                number: '04',
-                title: 'profile.how_yno_step_4'.tr(),
-              ),
-              _HowItWorksCard(
-                number: '05',
-                title: 'profile.how_yno_step_5'.tr(),
-              ),
-            ],
+            error: (error, _) => _LoadError(
+              message: error is ApiException
+                  ? apiErrorOrFallback(error)
+                  : 'profile.version_load_failed'.tr(),
+              onRetry: () => ref.refresh(aboutAppVersionProvider),
+            ),
+            data: (info) => _VersionContent(
+              info: info,
+              installedVersion: installedVersion.valueOrNull?.version,
+              languageCode: languageCode,
+            ),
           ),
           const SizedBox(height: 24),
           Text(
@@ -94,16 +65,11 @@ class AboutAppPage extends ConsumerWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
-
           const SizedBox(height: 6),
-
           Center(
             child: InkWell(
               onTap: () async {
-                final uri = Uri.parse(
-                  'https://www.flaticon.com/legal',
-                );
-
+                final uri = Uri.parse('https://www.flaticon.com/legal');
                 await launchUrl(
                   uri,
                   mode: LaunchMode.externalApplication,
@@ -145,100 +111,190 @@ class AboutAppPage extends ConsumerWidget {
   }
 }
 
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title});
+class _VersionContent extends StatelessWidget {
+  const _VersionContent({
+    required this.info,
+    required this.installedVersion,
+    required this.languageCode,
+  });
 
-  final String title;
+  final AppVersionInfo info;
+  final String? installedVersion;
+  final String languageCode;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-      ),
+    final theme = Theme.of(context);
+    final releaseDate = info.createdAt == null
+        ? null
+        : DateFormat.yMMMd(languageCode).format(info.createdAt!);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: AppStyle.borderRadiusLg,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'profile.latest_version'.tr(),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  if (info.forceUpdate)
+                    _StatusBadge(
+                      label: 'profile.force_update'.tr(),
+                      color: AppColors.error,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                info.version,
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              if (installedVersion != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '${'profile.installed_version'.tr()}: $installedVersion',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              _InfoLine(
+                label: 'profile.platform'.tr(),
+                value: info.platform == 'ios'
+                    ? 'profile.platform_ios'.tr()
+                    : 'profile.platform_android'.tr(),
+              ),
+              const SizedBox(height: 6),
+              _InfoLine(
+                label: 'profile.minimum_version'.tr(),
+                value: info.minimumVersion,
+              ),
+              if (releaseDate != null) ...[
+                const SizedBox(height: 6),
+                _InfoLine(
+                  label: 'profile.release_date'.tr(),
+                  value: releaseDate,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        AppCard(
+          padding: const EdgeInsets.all(20),
+          borderRadius: AppStyle.borderRadiusLg,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'profile.release_notes'.tr(),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                info.releaseNotes(languageCode),
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _ValueCard extends StatelessWidget {
-  const _ValueCard({required this.title});
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.label, required this.value});
 
-  final String title;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.all(12),
-      borderRadius: AppStyle.borderRadiusLg,
-      child: Center(
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 }
 
-class _HowItWorksCard extends StatelessWidget {
-  const _HowItWorksCard({
-    required this.number,
-    required this.title,
-  });
+class _LoadError extends StatelessWidget {
+  const _LoadError({required this.message, required this.onRetry});
 
-  final String number;
-  final String title;
+  final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    const accent = AppColors.primary;
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AppCard(
+      padding: const EdgeInsets.all(20),
+      borderRadius: AppStyle.borderRadiusLg,
+      child: Column(
         children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: AppCard(
-                padding: const EdgeInsets.all(16),
-                borderRadius: AppStyle.borderRadiusLg,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      number,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: Text('common.retry'.tr()),
           ),
         ],
       ),
