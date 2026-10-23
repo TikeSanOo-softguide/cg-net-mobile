@@ -15,7 +15,7 @@ void main() {
         return _jsonResponse(
           200,
           '''
-          {"announcements_enabled":true,"system_enabled":true,"promotion_enabled":true,"general_enabled":true}
+          {"announcements_notifications":true,"system_notifications":true,"promotion_notifications":true,"general_notifications":true}
           ''',
         );
       });
@@ -48,10 +48,10 @@ void main() {
       expect(request.method, 'PATCH');
       expect(request.path, ApiEndpoints.notificationPreferences);
       expect(request.data, {
-        'announcements_enabled': false,
-        'system_enabled': true,
-        'promotion_enabled': true,
-        'general_enabled': false,
+        'announcements_notifications': false,
+        'system_notifications': true,
+        'promotion_notifications': true,
+        'general_notifications': false,
       });
     });
   });
