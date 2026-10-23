@@ -1,5 +1,5 @@
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
-import 'package:cg_net_mobile/pages/profile/version/version_controller.dart';
+import 'package:cg_net_mobile/pages/profile/about_app/about_app_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,7 +36,7 @@ void main() {
       ),
     );
 
-    final version = await VersionRepository(dio).fetchForPlatform('ios');
+    final version = await AboutAppRepository(dio).fetchForPlatform('ios');
 
     expect(version.releaseNotes('en'), 'English notes');
     expect(version.releaseNotes('zh'), 'Chinese notes');
@@ -59,7 +59,7 @@ void main() {
       ),
     );
 
-    final version = await VersionRepository(dio).fetchForPlatform('ios');
+    final version = await AboutAppRepository(dio).fetchForPlatform('ios');
 
     expect(version.version, '5.0.0');
     expect(version.createdAt, DateTime(2026, 1, 1));
@@ -102,7 +102,7 @@ void main() {
       ),
     );
 
-    final version = await VersionRepository(dio).fetchForPlatform('ios');
+    final version = await AboutAppRepository(dio).fetchForPlatform('ios');
 
     expect(requested?.path, ApiEndpoints.appVersion);
     expect(version.version, '2.0.0');

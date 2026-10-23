@@ -23,6 +23,7 @@ class AppSelectDropdown<T> extends StatelessWidget {
     this.label,
     this.hint,
     this.enabled = true,
+    this.validator,
   });
 
   final List<AppSelectOption<T>> options;
@@ -31,6 +32,7 @@ class AppSelectDropdown<T> extends StatelessWidget {
   final String? label;
   final String? hint;
   final bool enabled;
+  final String? Function(T?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +56,12 @@ class AppSelectDropdown<T> extends StatelessWidget {
         fontWeight: FontWeight.w500,
         color: AppColors.textPrimary,
       ),
+      validator: validator,
       decoration: InputDecoration(
         isDense: true,
         labelText: label,
         hintText: hint,
+        errorStyle: AppTheme.fieldError(),
         hintStyle: AppTheme.english(
           fontSize: AppStyle.inputFontSize,
           color: AppColors.textMuted,

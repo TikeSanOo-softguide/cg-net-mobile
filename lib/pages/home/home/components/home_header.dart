@@ -28,17 +28,17 @@ Future<bool?> ensureBoundBroadband(
     if (!context.mounted) return null;
 
     final accountNumber = profile.accountNumber;
-    final customerName = profile.customerName;
+    final serviceType = profile.serviceType;
     if (accountNumber == null ||
         accountNumber.isEmpty ||
-        customerName == null ||
-        customerName.isEmpty) {
+        serviceType == null ||
+        serviceType.isEmpty) {
       return false;
     }
 
     ref.read(boundBroadbandProvider.notifier).state = BoundBroadband(
       account: accountNumber,
-      customerName: customerName,
+      serviceType: serviceType,
     );
     return true;
   } on ApiException catch (error) {

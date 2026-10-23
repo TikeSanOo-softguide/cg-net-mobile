@@ -10,13 +10,13 @@ class CustomerProfile {
     required this.phone,
     required this.walletBalance,
     this.accountNumber,
-    this.customerName,
+    this.serviceType,
   });
 
   final String phone;
   final String walletBalance;
   final String? accountNumber;
-  final String? customerName;
+  final String? serviceType;
 }
 
 class CustomerProfileRepository {
@@ -38,7 +38,7 @@ class CustomerProfileRepository {
       final walletBalance = balance?.toString().trim();
       final accountNumber =
           broadbandAccount['account_number']?.toString().trim();
-      final customerName = broadbandAccount['customer_name']?.toString().trim();
+      final serviceType = broadbandAccount['service_type']?.toString().trim();
 
       if (phone == null || phone.isEmpty) {
         throw const FormatException(
@@ -57,8 +57,8 @@ class CustomerProfileRepository {
         accountNumber: accountNumber == null || accountNumber.isEmpty
             ? null
             : accountNumber,
-        customerName:
-            customerName == null || customerName.isEmpty ? null : customerName,
+        serviceType:
+            serviceType == null || serviceType.isEmpty ? null : serviceType,
       );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);

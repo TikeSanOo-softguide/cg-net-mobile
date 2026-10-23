@@ -55,6 +55,7 @@ class ApiEndpoints {
   static const String profile = '/customer/profile';
   static const String language = '/customer/language';
   static const String updateProfile = '/customer/profile';
+  static const String notificationPreferences = '/customer/notification-preferences';
   static const String changeWifiPassword = '/change-password-requests/create';
   static const String changeWifiPasswordRequests = '/change-password-requests';
   static String cancelChangeWifiPasswordRequest(String requestId) =>
