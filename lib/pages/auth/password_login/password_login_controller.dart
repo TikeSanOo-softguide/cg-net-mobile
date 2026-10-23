@@ -57,19 +57,7 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
 
   static String localizedError(ApiException? error) {
     if (error == null) return 'password_login.invalid'.tr();
-    switch (error.failure) {
-      case ApiFailure.validation:
-      case ApiFailure.unauthorized:
-        return 'password_login.invalid'.tr();
-      case ApiFailure.tooManyRequests:
-        return 'api.too_many_requests'.tr();
-      case ApiFailure.offline:
-      case ApiFailure.timeout:
-      case ApiFailure.server:
-      case ApiFailure.unknown:
-      case ApiFailure.cancelled:
-        return apiErrorOrFallback(error);
-    }
+    return apiErrorOrFallback(error, fallbackKey: 'password_login.invalid');
   }
 }
 

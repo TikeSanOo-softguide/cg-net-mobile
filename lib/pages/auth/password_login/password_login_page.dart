@@ -174,7 +174,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
     final subtitleSize = authSubtitleFontSize(context);
 
     return AuthBackgroundScaffold(
-      showBack: true,
+      // showBack: true,
       compactTop: true,
       overlayKeyboard: true,
       card: CommonAuthCard(

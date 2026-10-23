@@ -15,8 +15,7 @@ import '../../../components/app_input/app_input.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
-import '../../../core/network/api_error_text.dart';
-import '../../../core/network/offline_navigation.dart';
+import '../../../core/network/api_message_modal.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -116,16 +115,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _showLoginError() async {
     final error = ref.read(loginControllerProvider).error;
     if (error == null) return;
-    if (isOfflineError(error)) {
-      await openNoInternetPage(context);
-      return;
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(apiErrorOrFallback(error))),
-      );
+    await showApiMessageModal(context, error);
   }
 
   @override

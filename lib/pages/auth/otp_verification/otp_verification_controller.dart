@@ -83,23 +83,13 @@ class OtpVerificationController extends StateNotifier<OtpVerificationState> {
   static String localizedError(ApiException? error) {
     if (error == null) return 'otp.invalid'.tr();
 
-    switch (error.failure) {
-      case ApiFailure.offline:
-      case ApiFailure.timeout:
-      case ApiFailure.server:
-      case ApiFailure.unknown:
-      case ApiFailure.cancelled:
-      case ApiFailure.unauthorized:
-        return apiErrorOrFallback(error);
-      case ApiFailure.tooManyRequests:
-        return 'api.too_many_requests'.tr();
-      case ApiFailure.validation:
-        final detail = error.detail?.toLowerCase() ?? '';
-        if (detail.contains('expired')) {
-          return 'otp.expired'.tr();
-        }
-        return 'otp.invalid'.tr();
+    if (error.failure == ApiFailure.tooManyRequests ||
+        error.failure == ApiFailure.offline ||
+        error.failure == ApiFailure.timeout) {
+      return apiErrorOrFallback(error, fallbackKey: 'otp.invalid');
     }
+
+    return 'otp.invalid'.tr();
   }
 
   static int? retryAfterSeconds(ApiException? error) {

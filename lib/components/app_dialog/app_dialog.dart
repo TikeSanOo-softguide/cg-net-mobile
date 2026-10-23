@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -211,6 +213,7 @@ Future<void> showAppFailureModal(
   required String title,
   required String body,
   String? buttonLabel,
+  int? retryAfterSeconds,
 }) {
   return _showAppDialog<void>(
     context: context,
@@ -236,6 +239,10 @@ Future<void> showAppFailureModal(
               textAlign: TextAlign.center,
               style: _dialogMessageStyle(),
             ),
+            if (retryAfterSeconds != null && retryAfterSeconds > 0) ...[
+              const SizedBox(height: _gapTitleBody),
+              _FailureRetryCountdown(seconds: retryAfterSeconds),
+            ],
             const SizedBox(height: _gapBodyButton),
             ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 120),
@@ -256,6 +263,56 @@ Future<void> showAppFailureModal(
       );
     },
   );
+}
+
+class _FailureRetryCountdown extends StatefulWidget {
+  const _FailureRetryCountdown({required this.seconds});
+
+  final int seconds;
+
+  @override
+  State<_FailureRetryCountdown> createState() => _FailureRetryCountdownState();
+}
+
+class _FailureRetryCountdownState extends State<_FailureRetryCountdown> {
+  late int _left;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _left = widget.seconds;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_left <= 1) {
+        timer.cancel();
+        setState(() => _left = 0);
+        return;
+      }
+      setState(() => _left -= 1);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = _left > 0
+        ? 'common.retry_in'.tr(namedArgs: {'seconds': '$_left'})
+        : 'common.retry_ready'.tr();
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: _dialogMessageStyle(),
+    );
+  }
 }
 
 /// Simple alert — Flaticon warning badge + alert title.

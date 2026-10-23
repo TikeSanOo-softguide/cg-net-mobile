@@ -79,19 +79,21 @@ class AuthApi {
   final String Function() _languageCode;
 
   Future<AccountSessionCheckResult> checkPhoneSession(String phone) async {
-    final response = await _send(
-      () => _dio.post(
+    try {
+      final response = await _dio.post(
         ApiEndpoints.checkSession,
         data: {'phone': phone},
-      ),
-    );
-    final raw = response.data;
-    if (raw is! Map) {
-      throw const ApiException(ApiFailure.unknown);
+      );
+      final raw = response.data;
+      if (raw is! Map) {
+        throw const ApiException(ApiFailure.unknown);
+      }
+      final data =
+          raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw);
+      return AccountSessionCheckResult.fromJson(data);
+    } on DioException catch (error) {
+      throw _otpRequestException(error);
     }
-    final data =
-        raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw);
-    return AccountSessionCheckResult.fromJson(data);
   }
 
   Future<OtpChallengeResult> requestOtp(String phone) async {
@@ -128,19 +130,23 @@ class AuthApi {
   }
 
   static ApiException _otpRequestException(DioException error) {
-    final status = error.response?.statusCode;
-    if (status == 429) {
-      final data = error.response?.data;
-      final retryAfter = _readPositiveInt(
-            data is Map ? data['retry_after'] : null,
-          ) ??
-          _readPositiveInt(error.response?.headers.value('retry-after'));
-      return ApiException(
-        ApiFailure.tooManyRequests,
-        detail: retryAfter?.toString(),
-      );
+    final mapped = ApiException.fromDio(error);
+    if (mapped.failure != ApiFailure.tooManyRequests) {
+      return mapped;
     }
-    return ApiException.fromDio(error);
+    final data = error.response?.data;
+    final retryAfter = _readPositiveInt(
+          data is Map ? data['retry_after'] : null,
+        ) ??
+        _readPositiveInt(error.response?.headers.value('retry-after'));
+    return ApiException(
+      ApiFailure.tooManyRequests,
+      detail: retryAfter?.toString() ?? mapped.detail,
+      statusCode: mapped.statusCode,
+      responseData: mapped.responseData,
+      code: mapped.code,
+      level: mapped.level,
+    );
   }
 
   Future<OtpVerifyResult> verifyOtp({

@@ -40,7 +40,8 @@ class OtpVerificationPage extends ConsumerStatefulWidget {
       _OtpVerificationPageState();
 }
 
-class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
+class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
+    with SingleTickerProviderStateMixin {
   static const _length = 6;
   static const _gap = 12.0;
   static const _errorSlotHeight = AppStyle.errorSlotHeight;
@@ -50,14 +51,29 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   Timer? _countdown;
   String? _inlineError;
   bool _submitting = false;
+  bool _handlingOtpInput = false;
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _focusNodes = List.generate(_length, (_) => FocusNode());
+  late final AnimationController _shake;
+  late final Animation<double> _shakeX;
 
   @override
   void initState() {
     super.initState();
     _challengeId = widget.challengeId;
+    _shake = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _shakeX = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: -7), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -7, end: 7), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 7, end: -5), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -5, end: 5), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 5, end: -3), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -3, end: 0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shake, curve: Curves.easeOut));
     _startCountdown(widget.resendAfter);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNodes.first.requestFocus();
@@ -67,6 +83,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   @override
   void dispose() {
     _countdown?.cancel();
+    _shake.dispose();
     for (final c in _controllers) {
       c.dispose();
     }
@@ -74,6 +91,11 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
       f.dispose();
     }
     super.dispose();
+  }
+
+  void _playErrorFeedback() {
+    HapticFeedback.vibrate();
+    _shake.forward(from: 0);
   }
 
   String get _code => _controllers.map((c) => c.text).join();
@@ -105,49 +127,89 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     _focusNodes.first.requestFocus();
   }
 
+  void _writeBox(int index, String digit) {
+    final value = TextEditingValue(
+      text: digit,
+      selection: TextSelection.collapsed(offset: digit.length),
+    );
+    if (_controllers[index].value != value) {
+      _controllers[index].value = value;
+    }
+  }
+
+  void _focusBox(int index) {
+    final node = _focusNodes[index];
+    if (!node.hasFocus) node.requestFocus();
+    final text = _controllers[index].text;
+    _controllers[index].selection = TextSelection.collapsed(offset: text.length);
+  }
+
   /// SMS autofill / paste — fill boxes only; user taps Verify to submit.
   void _applyDigits(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return;
 
     for (var i = 0; i < _length; i++) {
-      _controllers[i].text = i < digits.length ? digits[i] : '';
+      _writeBox(i, i < digits.length ? digits[i] : '');
     }
 
-    final filled = digits.length.clamp(0, _length);
-    final focusIndex =
-        (filled >= _length ? _length - 1 : filled).clamp(0, _length - 1);
-    _focusNodes[focusIndex].requestFocus();
+    final focusIndex = (digits.length.clamp(1, _length) - 1);
+    _focusBox(focusIndex);
     setState(() => _inlineError = null);
   }
 
   void _onDigitChanged(int index, String value) {
+    if (_handlingOtpInput) return;
     final digits = value.replaceAll(RegExp(r'\D'), '');
 
-    // SMS autofill / one-tap paste of the full OTP.
-    if (digits.length > 1) {
-      _applyDigits(digits);
-      return;
-    }
+    _handlingOtpInput = true;
+    try {
+      if (digits.isEmpty) {
+        if (_controllers[index].text.isNotEmpty) {
+          _writeBox(index, '');
+        }
+        if (index > 0) _focusBox(index - 1);
+        setState(() => _inlineError = null);
+        return;
+      }
 
-    _controllers[index].text = digits;
-    if (digits.isNotEmpty && index < _length - 1) {
-      _focusNodes[index + 1].requestFocus();
+      // Stay on the filled box so the next backspace always has a digit to
+      // delete. The next keystroke is routed into the following box.
+      if (digits.length == 1) {
+        _writeBox(index, digits);
+        setState(() => _inlineError = null);
+        return;
+      }
+
+      // Extra digit in the current box, or a short paste: fill forward.
+      if (digits.length < _length) {
+        var last = index;
+        for (var i = 0; i < digits.length && index + i < _length; i++) {
+          last = index + i;
+          _writeBox(last, digits[i]);
+        }
+        _focusBox(last);
+        setState(() => _inlineError = null);
+        return;
+      }
+
+      _applyDigits(digits);
+    } finally {
+      _handlingOtpInput = false;
     }
-    if (digits.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
-    setState(() => _inlineError = null);
   }
 
   KeyEventResult _onKey(int index, KeyEvent event) {
+    if (_handlingOtpInput) return KeyEventResult.ignored;
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     if (event.logicalKey != LogicalKeyboardKey.backspace) {
       return KeyEventResult.ignored;
     }
     if (_controllers[index].text.isEmpty && index > 0) {
-      _controllers[index - 1].clear();
-      _focusNodes[index - 1].requestFocus();
+      _handlingOtpInput = true;
+      _writeBox(index - 1, '');
+      _focusBox(index - 1);
+      _handlingOtpInput = false;
       setState(() => _inlineError = null);
       return KeyEventResult.handled;
     }
@@ -162,6 +224,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
 
     if (!_isComplete) {
       setState(() => _inlineError = 'otp.incomplete'.tr());
+      _playErrorFeedback();
       _focusNodes.first.requestFocus();
       return;
     }
@@ -185,6 +248,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
         _submitting = false;
         _inlineError = OtpVerificationController.localizedError(error);
       });
+      _playErrorFeedback();
       if (isOfflineError(error)) {
         await openNoInternetPage(context);
       }
@@ -312,6 +376,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     setState(() {
       _inlineError = OtpVerificationController.localizedError(error);
     });
+    _playErrorFeedback();
     if (isOfflineError(error)) {
       await openNoInternetPage(context);
     }
@@ -329,7 +394,6 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     final subtitleSize = authSubtitleFontSize(context);
 
     return AuthBackgroundScaffold(
-      showBack: true,
       compactTop: true,
       overlayKeyboard: true,
       card: CommonAuthCard(
@@ -370,23 +434,30 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                   final available =
                       constraints.maxWidth - (_gap * (_length - 1));
                   final size = (available / _length).clamp(40.0, 52.0);
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (var index = 0; index < _length; index++) ...[
-                        if (index > 0) const SizedBox(width: _gap),
-                        _OtpSquare(
-                          size: size,
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          enabled: !verifying,
-                          autofill: index == 0,
-                          hasError: hasError,
-                          onKeyEvent: (event) => _onKey(index, event),
-                          onChanged: (value) => _onDigitChanged(index, value),
-                        ),
+                  return AnimatedBuilder(
+                    animation: _shakeX,
+                    builder: (context, child) => Transform.translate(
+                      offset: Offset(_shakeX.value, 0),
+                      child: child,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var index = 0; index < _length; index++) ...[
+                          if (index > 0) const SizedBox(width: _gap),
+                          _OtpSquare(
+                            size: size,
+                            controller: _controllers[index],
+                            focusNode: _focusNodes[index],
+                            enabled: !verifying,
+                            autofill: index == 0,
+                            hasError: hasError,
+                            onKeyEvent: (event) => _onKey(index, event),
+                            onChanged: (value) => _onDigitChanged(index, value),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   );
                 },
               ),
@@ -657,7 +728,6 @@ class _OtpSquareState extends State<_OtpSquare> {
                 textInputAction: widget.autofill
                     ? TextInputAction.done
                     : TextInputAction.next,
-                // Allow multi-digit paste / SMS autofill; parent distributes.
                 maxLength: 6,
                 showCursor: true,
                 cursorColor: AppColors.primary,

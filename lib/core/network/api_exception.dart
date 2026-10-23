@@ -17,12 +17,16 @@ class ApiException implements Exception {
     this.detail,
     this.statusCode,
     this.responseData,
+    this.code,
+    this.level,
   });
 
   final ApiFailure failure;
   final String? detail;
   final int? statusCode;
   final Object? responseData;
+  final String? code;
+  final String? level;
 
   String get messageKey => switch (failure) {
         ApiFailure.offline => 'api.offline',
@@ -51,38 +55,76 @@ class ApiException implements Exception {
     }
 
     final status = error.response?.statusCode;
-    final detail = _detail(error.response?.data);
+    final data = error.response?.data;
+    final detail = _detail(data);
+    final code = _code(data);
+    final level = _level(data);
 
     return switch (status) {
       401 => ApiException(
           ApiFailure.unauthorized,
           detail: detail,
           statusCode: status,
-          responseData: error.response?.data,
+          responseData: data,
+          code: code,
+          level: level,
+        ),
+      409 => ApiException(
+          ApiFailure.validation,
+          detail: detail,
+          statusCode: status,
+          responseData: data,
+          code: code,
+          level: level,
         ),
       422 => ApiException(
           ApiFailure.validation,
           detail: detail,
           statusCode: status,
-          responseData: error.response?.data,
+          responseData: data,
+          code: code,
+          level: level,
         ),
       429 => ApiException(
           ApiFailure.tooManyRequests,
+          detail: detail,
           statusCode: status,
-          responseData: error.response?.data,
+          responseData: data,
+          code: code,
+          level: level,
         ),
-      final int code when code >= 500 => ApiException(
+      final int statusCode when statusCode >= 500 => ApiException(
           ApiFailure.server,
-          statusCode: code,
-          responseData: error.response?.data,
+          statusCode: statusCode,
+          responseData: data,
+          code: code,
+          level: level,
         ),
       _ => ApiException(
           ApiFailure.unknown,
           detail: detail,
           statusCode: status,
-          responseData: error.response?.data,
+          responseData: data,
+          code: code,
+          level: level,
         ),
     };
+  }
+
+  static String? _code(Object? data) {
+    if (data is! Map) return null;
+    final code = data['code']?.toString().trim().toUpperCase();
+    if (code == null || !code.startsWith('MSG-')) return null;
+    return code;
+  }
+
+  static String? _level(Object? data) {
+    if (data is! Map) return null;
+    final level = data['level']?.toString().trim().toLowerCase();
+    if (level == 'error' || level == 'warning' || level == 'success') {
+      return level;
+    }
+    return null;
   }
 
   static String? _detail(Object? data) {
