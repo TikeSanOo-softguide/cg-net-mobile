@@ -33,6 +33,7 @@ class ChangePasswordRepository {
         resendAfter: resendAfter,
       );
     } on DioException catch (error) {
+      final parsed = ApiException.fromDio(error);
       if (error.response?.statusCode == 429) {
         final retryAfter = _readPositiveInt(
               (error.response?.data as Map?)?['retry_after'],
@@ -43,9 +44,11 @@ class ChangePasswordRepository {
           detail: retryAfter?.toString(),
           statusCode: error.response?.statusCode,
           responseData: error.response?.data,
+          code: parsed.code,
+          level: parsed.level,
         );
       }
-      throw ApiException.fromDio(error);
+      throw parsed;
     }
   }
 

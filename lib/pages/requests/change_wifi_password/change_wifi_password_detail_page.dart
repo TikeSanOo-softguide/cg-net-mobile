@@ -94,7 +94,7 @@ class ChangeWifiPasswordDetailPage extends ConsumerWidget {
         child: Column(
           children: [
             AppCard(
-              elevated: true,
+              elevated: false,
               bordered: false,
               padding: const EdgeInsets.all(AppStyle.spaceLg),
               child: Column(

@@ -155,7 +155,7 @@ class FailureReportDetailPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AppCard(
-                elevated: true,
+                elevated: false,
                 bordered: false,
                 padding: const EdgeInsets.all(AppStyle.spaceLg),
                 child: Column(
@@ -258,7 +258,7 @@ class FailureReportDetailPage extends ConsumerWidget {
         ),
       ),
       error: (error, _) => AppCard(
-        elevated: true,
+        elevated: false,
         bordered: false,
         child: Text(
           error is ApiException
@@ -271,7 +271,7 @@ class FailureReportDetailPage extends ConsumerWidget {
         if (details.photos.isEmpty) return const SizedBox.shrink();
 
         return AppCard(
-          elevated: true,
+          elevated: false,
           bordered: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

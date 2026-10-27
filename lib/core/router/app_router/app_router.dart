@@ -16,6 +16,7 @@ import '../../../pages/auth/splash/splash_page.dart';
 import '../../../pages/auth/terms/terms_page.dart';
 import '../../../pages/home/activity_detail/activity_detail_page.dart';
 import '../../../pages/home/history/history_page.dart';
+import '../../../pages/home/bind_broadband/bind_broadband_page.dart';
 import '../../../pages/home/home/home_page.dart';
 import '../../../pages/home/service_placeholder/service_placeholder_page.dart';
 import '../../../pages/home/top_up/top_up_failure_page.dart';
@@ -118,10 +119,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 state.uri.queryParameters['resend_after'] ?? '',
               ) ??
               60;
+          final debugOtp = state.extra is String ? state.extra as String : null;
           return OtpVerificationPage(
             phone: phone,
             challengeId: challengeId,
             resendAfter: resendAfter,
+            debugOtp: debugOtp,
           );
         },
       ),
@@ -188,6 +191,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotFoundPage(),
       ),
       // Full-screen pages above the bottom-nav shell (avoids blank shell child).
+      GoRoute(
+        path: RoutePaths.bindBroadband,
+        name: RouteNames.bindBroadband,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BindBroadbandPage(),
+      ),
       GoRoute(
         path: RoutePaths.topUp,
         name: RouteNames.topUp,

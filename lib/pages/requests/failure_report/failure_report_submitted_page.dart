@@ -157,7 +157,7 @@ class FailureReportSubmittedPage extends ConsumerWidget {
               ),
               const SizedBox(height: AppStyle.spaceXxl),
               AppCard(
-                elevated: true,
+                elevated: false,
                 bordered: false,
                 padding: const EdgeInsets.all(AppStyle.spaceLg),
                 child: Column(

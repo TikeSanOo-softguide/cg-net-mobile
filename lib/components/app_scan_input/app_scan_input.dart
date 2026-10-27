@@ -22,6 +22,7 @@ class AppScanInput extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.validator,
+    this.reserveErrorSpace = true,
   });
 
   final TextEditingController controller;
@@ -35,6 +36,7 @@ class AppScanInput extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final String? Function(String?)? validator;
+  final bool reserveErrorSpace;
 
   String _normalize(String raw) {
     var next = TextEditingValue(text: raw.trim());
@@ -78,6 +80,7 @@ class AppScanInput extends StatelessWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       validator: validator,
+      reserveErrorSpace: reserveErrorSpace,
       suffix: Tooltip(
         message: 'topup.scan'.tr(),
         child: AppInput.iconChip(

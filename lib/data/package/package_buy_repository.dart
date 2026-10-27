@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_endpoints/api_endpoints.dart';
+import '../../core/network/message_codes.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 
@@ -40,7 +41,7 @@ class PackageBuyRepository {
 
       return PackageBuyApiResult(
         isSuccess: success,
-        message: root['message']?.toString(),
+        message: _message(root),
         transactionNo: root['transaction_no']?.toString() ??
             data['transaction_no']?.toString() ??
             data['id']?.toString(),
@@ -48,6 +49,14 @@ class PackageBuyRepository {
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  static String? _message(Map<String, dynamic> root) {
+    final code = root['code']?.toString().trim().toUpperCase();
+    if (MessageCodes.isKnown(code)) return code;
+    final message = root['message']?.toString().trim();
+    if (message == null || message.isEmpty) return null;
+    return message;
   }
 
   static bool _resolveSuccess(int? statusCode, Map<String, dynamic> data) {

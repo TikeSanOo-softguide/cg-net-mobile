@@ -124,7 +124,7 @@ class _ChangeWifiPasswordPageState
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
           AppCard(
-            elevated: true,
+            elevated: false,
             bordered: false,
             padding: const EdgeInsets.symmetric(
               vertical: AppStyle.spaceXxl,
@@ -286,7 +286,7 @@ class _RequestItemCard extends StatelessWidget {
         : null;
 
     return AppCard(
-      elevated: true,
+      elevated: false,
       bordered: false,
       onTap: onTap,
       padding: const EdgeInsets.all(AppStyle.spaceMd),
@@ -467,7 +467,7 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppCard(
-                  elevated: true,
+                  elevated: false,
                   bordered: false,
                   padding: const EdgeInsets.all(AppStyle.spaceLg),
                   child: Column(

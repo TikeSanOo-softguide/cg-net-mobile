@@ -128,7 +128,7 @@ class ActivityListCard extends StatelessWidget {
     return AppCard(
       key: ValueKey('activity-card-${item.id}-${locale.languageCode}'),
       onTap: onTap,
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
       borderRadius: AppStyle.borderRadiusSm,

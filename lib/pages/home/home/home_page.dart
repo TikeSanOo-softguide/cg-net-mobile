@@ -7,8 +7,10 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
 import '../../../data/profile/profile_repository.dart';
+import 'components/home_cg_package_section.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
+import 'components/home_promo_alert.dart';
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
@@ -123,7 +125,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SliverToBoxAdapter(
                   child: SizedBox(height: HomeSectionHeader.sectionGap),
                 ),
+                const SliverToBoxAdapter(child: HomePromoAlert()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
                 const SliverToBoxAdapter(child: HomeOffersSection()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                const SliverToBoxAdapter(child: HomeCgPackageSection()),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: HomeSectionHeader.sectionGap),
                 ),

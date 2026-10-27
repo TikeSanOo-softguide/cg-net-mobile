@@ -72,7 +72,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           children: [
             AppCard(
-              elevated: true,
+              elevated: false,
               bordered: false,
               padding: const EdgeInsets.all(AppStyle.spaceMd),
               child: Row(
@@ -260,7 +260,7 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       onTap: onTap,
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
       borderRadius: AppStyle.borderRadiusSm,

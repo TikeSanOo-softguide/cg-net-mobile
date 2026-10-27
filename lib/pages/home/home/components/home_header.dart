@@ -14,8 +14,8 @@ import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../data/customer_profile/customer_profile_repository.dart';
+import '../bound_broadband.dart';
 import '../bound_broadband_provider.dart';
-import 'bind_broadband_drawer.dart';
 
 Future<bool?> ensureBoundBroadband(
   BuildContext context,
@@ -55,25 +55,13 @@ Future<bool?> ensureBoundBroadband(
 }
 
 Future<void> onHomeBindTap(BuildContext context, WidgetRef ref) async {
-  var bound = ref.read(boundBroadbandProvider);
-  if (bound == null) {
+  if (ref.read(boundBroadbandProvider) == null) {
     final isBound = await ensureBoundBroadband(context, ref);
     if (!context.mounted || isBound == null) return;
-    bound = ref.read(boundBroadbandProvider);
-    if (!isBound) {
-      final result = await showBindBroadbandDrawer(context);
-      if (!context.mounted || result == null) return;
-      ref.read(boundBroadbandProvider.notifier).state = result;
-      await showBindSuccessModal(context);
-      return;
-    }
   }
 
-  if (bound == null) return;
-  final removed = await showBoundAccountDrawer(context, bound: bound);
-  if (!context.mounted || !removed) return;
-  ref.read(boundBroadbandProvider.notifier).state = null;
-  ref.invalidate(customerProfileProvider);
+  if (!context.mounted) return;
+  await context.pushNamed(RouteNames.bindBroadband);
 }
 
 /// Fixed home top: glass logo, account number, notification — does not scroll.

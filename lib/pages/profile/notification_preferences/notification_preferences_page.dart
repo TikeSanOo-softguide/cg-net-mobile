@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/inbox_category_icon/inbox_category_icon.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/notification_preferences_model/notification_preferences_model.dart';
+import '../../../models/user_model/user_model.dart';
 import 'notification_preferences_controller.dart';
 
 class NotificationPreferencesPage extends ConsumerWidget {
@@ -62,7 +65,11 @@ class NotificationPreferencesPage extends ConsumerWidget {
           child: Column(
             children: [
               _NotificationPreferenceTile(
-                icon: Icons.campaign_outlined,
+                icon: const InboxCategoryIcon(
+                  category: InboxCategory.announcement,
+                  size: 32,
+                  iconSize: 18,
+                ),
                 title: 'profile.announcements_notifications'.tr(),
                 value: preferences.announcements,
                 onChanged: (value) => _save(
@@ -72,7 +79,11 @@ class NotificationPreferencesPage extends ConsumerWidget {
               ),
               const _PreferenceDivider(),
               _NotificationPreferenceTile(
-                icon: Icons.settings_outlined,
+                icon: const InboxCategoryIcon(
+                  category: InboxCategory.system,
+                  size: 32,
+                  iconSize: 18,
+                ),
                 title: 'profile.system_notifications'.tr(),
                 value: preferences.system,
                 onChanged: (value) => _save(
@@ -82,7 +93,11 @@ class NotificationPreferencesPage extends ConsumerWidget {
               ),
               const _PreferenceDivider(),
               _NotificationPreferenceTile(
-                icon: Icons.local_offer_outlined,
+                icon: const InboxCategoryIcon(
+                  category: InboxCategory.promotion,
+                  size: 32,
+                  iconSize: 18,
+                ),
                 title: 'profile.promotion_notifications'.tr(),
                 value: preferences.promotion,
                 onChanged: (value) => _save(
@@ -92,7 +107,12 @@ class NotificationPreferencesPage extends ConsumerWidget {
               ),
               const _PreferenceDivider(),
               _NotificationPreferenceTile(
-                icon: Icons.notifications_active_outlined,
+                icon: const QuickActionIconChip(
+                  asset: 'assets/images/profile/notification.png',
+                  background: AppColors.primaryLight,
+                  size: 32,
+                  iconSize: 18,
+                ),
                 title: 'profile.general_notifications'.tr(),
                 value: preferences.general,
                 onChanged: (value) => _save(
@@ -130,7 +150,7 @@ class _NotificationPreferenceTile extends StatelessWidget {
     required this.onChanged,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -138,23 +158,10 @@ class _NotificationPreferenceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 68,
+      height: 56,
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: AppStyle.borderRadiusSm,
-            ),
-            child: Icon(
-              icon,
-              size: AppStyle.iconSizeSm,
-              color: AppColors.primary,
-            ),
-          ),
+          icon,
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -164,9 +171,14 @@ class _NotificationPreferenceTile extends StatelessWidget {
               ),
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
+          Transform.scale(
+            scale: 0.72,
+            alignment: Alignment.centerRight,
+            child: Switch(
+              value: value,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: onChanged,
+            ),
           ),
         ],
       ),
@@ -183,7 +195,7 @@ class _PreferenceDivider extends StatelessWidget {
       height: 1,
       thickness: 1,
       color: AppColors.borderLight,
-      indent: 52,
+      indent: 44,
     );
   }
 }

@@ -142,7 +142,7 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
           AppCard(
-            elevated: true,
+            elevated: false,
             bordered: false,
             padding: const EdgeInsets.all(AppStyle.spaceLg),
             child: Column(
@@ -172,7 +172,7 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
           AppCard(
-            elevated: true,
+            elevated: false,
             bordered: false,
             padding: const EdgeInsets.symmetric(
               vertical: AppStyle.spaceXxl,
@@ -234,7 +234,7 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
       children: [
         if (state.status == FailureReportStatus.error) ...[
           AppCard(
-            elevated: true,
+            elevated: false,
             bordered: false,
             padding: const EdgeInsets.all(AppStyle.spaceMd),
             child: Column(
@@ -372,7 +372,7 @@ class _ReportItemCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: const EdgeInsets.all(AppStyle.spaceMd),
       child: Column(
@@ -647,7 +647,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppCard(
-                  elevated: true,
+                  elevated: false,
                   bordered: false,
                   padding: const EdgeInsets.all(AppStyle.spaceLg),
                   child: Column(

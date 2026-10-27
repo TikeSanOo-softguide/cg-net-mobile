@@ -27,6 +27,9 @@ Future<void> showLanguagePickerModal({
 
   await showModalBottomSheet<void>(
     context: context,
+    // Profile sits inside the tab scaffold, so the default sheet stops at the
+    // top of the bottom bar. The root navigator draws over that bar.
+    useRootNavigator: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(

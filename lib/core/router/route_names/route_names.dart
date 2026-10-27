@@ -14,6 +14,7 @@ class RouteNames {
   static const advertisement = 'advertisement';
 
   static const home = 'home';
+  static const bindBroadband = 'bindBroadband';
   static const topUp = 'topUp';
   static const topUpSuccess = 'topUpSuccess';
   static const topUpFailure = 'topUpFailure';
@@ -57,6 +58,7 @@ class RoutePaths {
   static const advertisement = '/launch/advertisement';
 
   static const home = '/home';
+  static const bindBroadband = '/bind-broadband';
   static const topUp = '/top-up';
   static const topUpSuccess = '/top-up/success';
   static const topUpFailure = '/top-up/failure';

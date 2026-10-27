@@ -58,7 +58,12 @@ class AppTheme {
       color: color,
       height: height,
       letterSpacing: letterSpacing,
-    ).copyWith(fontFamilyFallback: fontFamilyFallback);
+    ).copyWith(
+      fontFamilyFallback: fontFamilyFallback,
+      // Extra line height is split above and below. Proportional leading
+      // leaves most of it under Myanmar glyphs, so button labels sit high.
+      leadingDistribution: TextLeadingDistribution.even,
+    );
   }
 
   // —— Semantic text styles ——

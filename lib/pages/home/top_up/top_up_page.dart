@@ -297,17 +297,48 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       onBack: () => context.pop(),
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.fromLTRB(16, 22, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Form(
           key: _formKey,
           child: AppCard(
-            padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+            padding: const EdgeInsets.all(16),
             borderRadius: AppStyle.borderRadiusLg,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: Image.asset(
+                        'assets/images/quick_actions/top_up.png',
+                        width: 20,
+                        height: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'topup.card_title'.tr(),
+                        style: AppTheme.english(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                          height: AppStyle.lineHeightTitle,
+                          letterSpacing: -0.15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 AppPillActionInput(
                   controller: _serial,
                   label: 'topup.serial_label'.tr(),
@@ -323,29 +354,20 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() => _serialErrorKey = null),
                 ),
-                SizedBox(
-                  height: AppStyle.errorSlotHeight,
-                  child: _serialErrorKey == null
-                      ? null
-                      : Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 4,
-                              left: 12,
-                            ),
-                            child: Text(
-                              _serialErrorKey!.tr(),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.fieldError(),
-                            ),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 18),
+                if (_serialErrorKey != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 12),
+                    child: Text(
+                      _serialErrorKey!.tr(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.fieldError(),
+                    ),
+                  ),
+                const SizedBox(height: 12),
                 AppInput(
                   controller: _account,
+                  reserveErrorSpace: false,
                   label: 'topup.account_label'.tr(),
                   hint: 'topup.account_hint'.tr(),
                   prefixIcon: LucideIcons.user,
@@ -359,7 +381,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 AppScanInput(
                   controller: _pin,
                   label: 'topup.pin_label'.tr(),
@@ -372,6 +394,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   ],
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
+                  reserveErrorSpace: false,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'topup.pin_required'.tr();
@@ -379,7 +402,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 AppButton(
                   label: 'topup.submit'.tr(),
                   onPressed:

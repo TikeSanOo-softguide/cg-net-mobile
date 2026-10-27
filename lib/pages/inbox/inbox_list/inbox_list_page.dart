@@ -210,7 +210,7 @@ class _InboxCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
       borderRadius: AppStyle.borderRadiusSm,

@@ -29,6 +29,10 @@ class BroadbandRepository {
       throw ApiException(
         apiException.failure,
         detail: _responseMessage(error.response?.data) ?? apiException.detail,
+        statusCode: apiException.statusCode,
+        responseData: apiException.responseData,
+        code: apiException.code,
+        level: apiException.level,
       );
     }
   }
@@ -50,6 +54,10 @@ class BroadbandRepository {
       throw ApiException(
         apiException.failure,
         detail: _responseMessage(error.response?.data) ?? apiException.detail,
+        statusCode: apiException.statusCode,
+        responseData: apiException.responseData,
+        code: apiException.code,
+        level: apiException.level,
       );
     }
   }

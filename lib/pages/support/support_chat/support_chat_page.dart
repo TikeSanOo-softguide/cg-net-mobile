@@ -222,27 +222,69 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
         state.flowMessage != null;
 
     return AppCurvedScaffold(
-      title: Column(
-        mainAxisSize: MainAxisSize.min,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('support.chat_title'.tr()),
-          const SizedBox(height: 2),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Color(0xFF35D07F),
-                  shape: BoxShape.circle,
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.28),
+                width: 0.6,
+              ),
+            ),
+            child: const _SupportRobotIcon(size: 20),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'support.chat_title'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.english(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onPrimary,
+                    height: 1.2,
+                    letterSpacing: 0,
+                  ),
                 ),
-                child: SizedBox(width: 8, height: 8),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'support.online_status'.tr(),
-                style: AppTheme.caption(color: AppColors.onPrimary),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Color(0xFF35D07F),
+                        shape: BoxShape.circle,
+                      ),
+                      child: SizedBox(width: 6, height: 6),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'support.online_status'.tr(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.english(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.onPrimary.withValues(alpha: 0.86),
+                        height: 1.2,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -266,27 +308,19 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
             alignment: Alignment.centerRight,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextButton.icon(
-                onPressed: state.isLoading ||
-                        state.isSubmittingOption ||
-                        state.isNavigatingToMainMenu
-                    ? null
-                    : () async {
-                        final navigated = await ref
-                            .read(supportChatControllerProvider.notifier)
-                            .navigateToMainMenu(
-                              language: context.locale.languageCode,
-                            );
-                        if (mounted && navigated) _scrollToBottom();
-                      },
-                icon: state.isNavigatingToMainMenu
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(LucideIcons.house, size: 16),
-                label: Text('support.main_menu'.tr()),
+              child: _MainMenuButton(
+                loading: state.isNavigatingToMainMenu,
+                enabled: !state.isLoading &&
+                    !state.isSubmittingOption &&
+                    !state.isNavigatingToMainMenu,
+                onTap: () async {
+                  final navigated = await ref
+                      .read(supportChatControllerProvider.notifier)
+                      .navigateToMainMenu(
+                        language: context.locale.languageCode,
+                      );
+                  if (mounted && navigated) _scrollToBottom();
+                },
               ),
             ),
           ),
@@ -306,17 +340,32 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.access_time_outlined,
-                  size: 20,
-                  color: AppColors.primary,
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    LucideIcons.headset,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     'support.waiting_for_admin'.tr(),
-                    style: AppTheme.bodySecondary(),
                     textAlign: TextAlign.center,
+                    style: AppTheme.english(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                      height: AppTheme.lineHeightMyanmarSafe,
+                      letterSpacing: 0,
+                    ),
                   ),
                 ),
               ],
@@ -374,27 +423,48 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                   ),
                 ],
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: state.isStartingChat
-                      ? null
-                      : () => ref
-                          .read(supportChatControllerProvider.notifier)
-                          .startConversation(
-                            language: context.locale.languageCode,
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: state.isStartingChat
+                          ? null
+                          : () => ref
+                              .read(supportChatControllerProvider.notifier)
+                              .startConversation(
+                                language: context.locale.languageCode,
+                              ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.onPrimary,
+                        disabledBackgroundColor:
+                            AppColors.primary.withValues(alpha: 0.45),
+                        disabledForegroundColor: AppColors.onPrimary,
+                        minimumSize: const Size.fromHeight(38),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        state.isStartingChat
+                            ? 'support.starting_conversation'.tr()
+                            : 'support.start_new_conversation'.tr(),
+                        textAlign: TextAlign.center,
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onPrimary,
+                          height: AppStyle.lineHeightCaption,
+                          letterSpacing: 0,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    state.isStartingChat
-                        ? 'support.starting_conversation'.tr()
-                        : 'support.start_new_conversation'.tr(),
-                    style: AppTheme.body(color: AppColors.onPrimary),
                   ),
                 ),
               ],
@@ -483,7 +553,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                           duration: const Duration(milliseconds: 160),
                           curve: Curves.easeOut,
                           constraints: const BoxConstraints(
-                            minHeight: 44,
+                            minHeight: 36,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
@@ -504,7 +574,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                               ),
                             ],
                           ),
-                          padding: const EdgeInsets.only(left: 4, right: 10),
+                          padding: const EdgeInsets.only(left: 12, right: 10),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -518,16 +588,28 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                                   textInputAction: TextInputAction.send,
                                   onSubmitted: (_) => _onSendText(),
                                   cursorColor: AppColors.primary,
-                                  style: AppTheme.body(),
+                                  style: AppTheme.english(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.textPrimary,
+                                    height: AppStyle.lineHeightBody,
+                                    letterSpacing: 0,
+                                  ),
                                   decoration: InputDecoration(
                                     hintText: 'support.type_message'.tr(),
-                                    hintStyle: AppTheme.bodySecondary(),
+                                    hintStyle: AppTheme.english(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w400,
+                                      color: AppColors.textMuted,
+                                      height: AppStyle.lineHeightBody,
+                                      letterSpacing: 0,
+                                    ),
                                     isDense: true,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 12),
+                                        vertical: 8),
                                   ),
                                 ),
                               ),
@@ -535,16 +617,16 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: state.composerEnabled ? _onSendText : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 160),
                           curve: Curves.easeOut,
-                          width: 44,
-                          height: 44,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
-                            borderRadius: AppStyle.borderRadiusInput,
+                            borderRadius: AppStyle.borderRadiusSm,
                             color: state.composerEnabled
                                 ? AppColors.primary
                                 : AppColors.textMuted,
@@ -569,7 +651,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                                 )
                               : const Icon(
                                   LucideIcons.send,
-                                  size: 16,
+                                  size: 14,
                                   color: AppColors.onPrimary,
                                 ),
                         ),
@@ -732,6 +814,62 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
   }
 }
 
+class _MainMenuButton extends StatelessWidget {
+  const _MainMenuButton({
+    required this.loading,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final bool loading;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? AppColors.primary : AppColors.textMuted;
+
+    return Material(
+      color: AppColors.primaryLight,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (loading)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.6,
+                    color: color,
+                  ),
+                )
+              else
+                Icon(LucideIcons.house, size: 14, color: color),
+              const SizedBox(width: 6),
+              Text(
+                'support.main_menu'.tr(),
+                style: AppTheme.english(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  height: AppStyle.lineHeightCaption,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SupportRobotIcon extends StatelessWidget {
   const _SupportRobotIcon({this.size = 26});
 
@@ -799,7 +937,7 @@ class _BotMessageCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.borderLight),
                   boxShadow: AppStyle.cardShadow,
                 ),
@@ -872,26 +1010,28 @@ class _BotFlowCard extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.borderLight),
-                  boxShadow: AppStyle.cardShadow,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       text,
-                      style: AppTheme.body(
+                      style: AppTheme.english(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
                         color: AppColors.textPrimary,
-                        weight: FontWeight.w500,
-                      ).copyWith(fontSize: 14, height: 1.4),
+                        height: AppStyle.lineHeightBody,
+                        letterSpacing: 0,
+                      ),
                     ),
                     if (options.isNotEmpty || isSubmitting) ...[
                       const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.symmetric(vertical: 8),
                         child: Divider(
                           height: 1,
                           thickness: 1,
@@ -899,7 +1039,7 @@ class _BotFlowCard extends StatelessWidget {
                         ),
                       ),
                       for (int i = 0; i < options.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 8),
+                        if (i > 0) const SizedBox(height: 6),
                         _CGNetOptionButton(
                           label: _optionLabel(context, options[i]),
                           onPressed: isSubmitting || onSelectOption == null
@@ -973,7 +1113,7 @@ class _UserMessageCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: AppStyle.cardShadow,
                 ),
                 child: Column(
@@ -1039,9 +1179,12 @@ class _CGNetOptionButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          backgroundColor: AppColors.primaryLight,
+          foregroundColor: AppColors.primary,
+          disabledBackgroundColor: AppColors.primarySoft,
+          disabledForegroundColor: AppColors.textMuted,
+          minimumSize: const Size.fromHeight(38),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           alignment: Alignment.center,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -1049,14 +1192,17 @@ class _CGNetOptionButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTheme.body(
-            color: Colors.white,
-            weight: FontWeight.w600,
-          ).copyWith(fontSize: 13.5),
+            label,
+            textAlign: TextAlign.center,
+            style: AppTheme.english(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: onPressed == null ? AppColors.textMuted : AppColors.primary,
+              height: AppStyle.lineHeightCaption,
+              letterSpacing: 0,
+            ),
+          ),
         ),
-      ),
     );
   }
 }

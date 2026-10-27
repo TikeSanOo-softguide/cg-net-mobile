@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/api_endpoints/api_endpoints.dart';
+import '../../core/network/message_codes.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 
@@ -139,6 +140,9 @@ class TopUpRepository {
   }
 
   static String? _responseMessage(Map<String, dynamic> root) {
+    final code = root['code']?.toString().trim().toUpperCase();
+    if (MessageCodes.isKnown(code)) return code;
+
     final rootMessage = root['message'];
     if (rootMessage is String && rootMessage.trim().isNotEmpty) {
       return rootMessage;

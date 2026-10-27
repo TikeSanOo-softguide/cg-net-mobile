@@ -230,7 +230,7 @@ class _HistoryRow extends StatelessWidget {
     final transactionNo = item.transactionNo?.trim();
 
     return AppCard(
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: const EdgeInsets.all(14),
       child: Row(

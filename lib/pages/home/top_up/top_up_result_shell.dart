@@ -126,7 +126,7 @@ class TopUpResultShell extends StatelessWidget {
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
         child: AppCard(
-          elevated: true,
+          elevated: false,
           bordered: false,
           borderRadius: AppStyle.borderRadiusLg,
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),

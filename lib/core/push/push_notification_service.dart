@@ -48,7 +48,7 @@ class PushNotificationService {
     // Only used to register the Android channel for background pushes;
     // foreground pushes are drawn by GlassNotificationHost.
     await _localNotifications.initialize(
-      settings: const InitializationSettings(
+      const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,

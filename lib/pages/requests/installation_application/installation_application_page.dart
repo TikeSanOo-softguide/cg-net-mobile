@@ -171,7 +171,7 @@ class _InstallationApplicationPageState
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
           AppCard(
-            elevated: true,
+            elevated: false,
             bordered: false,
             padding: const EdgeInsets.all(AppStyle.spaceXxl),
             child: Column(
@@ -291,7 +291,7 @@ class _InstallationApplicationCard extends StatelessWidget {
     final canManage = _canManageRequest(request);
 
     return AppCard(
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: const EdgeInsets.all(AppStyle.spaceMd),
       child: Column(
@@ -701,7 +701,7 @@ class _InstallationApplicationFormSheetState
                   )
                 else
                   AppCard(
-                    elevated: true,
+                    elevated: false,
                     bordered: false,
                     padding: const EdgeInsets.all(AppStyle.spaceMd),
                     child: Column(

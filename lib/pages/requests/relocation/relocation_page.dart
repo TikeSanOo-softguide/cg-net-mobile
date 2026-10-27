@@ -163,7 +163,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
           AppCard(
-            elevated: true,
+            elevated: false,
             bordered: false,
             padding: const EdgeInsets.all(AppStyle.spaceXxl),
             child: Column(
@@ -281,7 +281,7 @@ class _RelocationRequestCard extends StatelessWidget {
             .format(request.preferredDate!.toLocal());
 
     return AppCard(
-      elevated: true,
+      elevated: false,
       bordered: false,
       padding: const EdgeInsets.all(AppStyle.spaceMd),
       child: Column(
@@ -556,7 +556,7 @@ class _RelocationFormSheetState extends ConsumerState<_RelocationFormSheet> {
                 ),
                 const SizedBox(height: AppStyle.spaceSm),
                 AppCard(
-                  elevated: true,
+                  elevated: false,
                   bordered: false,
                   padding: const EdgeInsets.all(AppStyle.spaceMd),
                   child: Column(

@@ -7,6 +7,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -27,19 +28,10 @@ class AboutAppPage extends ConsumerWidget {
       title: Text('profile.about_title'.tr()),
       showBack: true,
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
-          const Center(
-            child: AppLogo(
-              width: 200,
-              height: 125,
-              padding: 8,
-              borderRadius: 18,
-              backgroundColor: Colors.transparent,
-              showShadow: false,
-            ),
-          ),
-          const SizedBox(height: 24),
+          const _AboutLogo(),
+          const SizedBox(height: 20),
           appVersion.when(
             loading: () => const Center(
               child: Padding(
@@ -111,6 +103,17 @@ class AboutAppPage extends ConsumerWidget {
   }
 }
 
+class _AboutLogo extends StatelessWidget {
+  const _AboutLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: AppLogo(size: 56),
+    );
+  }
+}
+
 class _VersionContent extends StatelessWidget {
   const _VersionContent({
     required this.info,
@@ -124,16 +127,21 @@ class _VersionContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final releaseDate = info.createdAt == null
         ? null
         : DateFormat.yMMMd(languageCode).format(info.createdAt!);
+    final notes = info
+        .releaseNotes(languageCode)
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppCard(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           borderRadius: AppStyle.borderRadiusLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,9 +151,12 @@ class _VersionContent extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'profile.latest_version'.tr(),
-                      style: theme.textTheme.labelLarge?.copyWith(
+                      style: AppTheme.english(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,
-                        letterSpacing: 1,
+                        height: AppStyle.lineHeightCaption,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ),
@@ -156,62 +167,82 @@ class _VersionContent extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 info.version,
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
+                style: AppTheme.english(
+                  fontSize: AppStyle.fontAmount,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  height: AppStyle.lineHeightTitle,
+                  letterSpacing: -0.3,
                 ),
               ),
               if (installedVersion != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 12),
                 Text(
                   '${'profile.installed_version'.tr()}: $installedVersion',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: AppTheme.english(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
                     color: AppColors.textSecondary,
+                    height: AppStyle.lineHeightBody,
+                    letterSpacing: 0,
                   ),
                 ),
               ],
               const SizedBox(height: 12),
+              const Divider(height: 1, color: AppColors.borderLight),
+              const SizedBox(height: 4),
               _InfoLine(
                 label: 'profile.platform'.tr(),
                 value: info.platform == 'ios'
                     ? 'profile.platform_ios'.tr()
                     : 'profile.platform_android'.tr(),
               ),
-              const SizedBox(height: 6),
               _InfoLine(
                 label: 'profile.minimum_version'.tr(),
                 value: info.minimumVersion,
               ),
-              if (releaseDate != null) ...[
-                const SizedBox(height: 6),
+              if (releaseDate != null)
                 _InfoLine(
                   label: 'profile.release_date'.tr(),
                   value: releaseDate,
                 ),
-              ],
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         AppCard(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           borderRadius: AppStyle.borderRadiusLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'profile.release_notes'.tr(),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
+                style: AppTheme.english(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  height: AppStyle.lineHeightTitle,
+                  letterSpacing: -0.15,
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                info.releaseNotes(languageCode),
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
-              ),
+              for (var i = 0; i < notes.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                Text(
+                  notes[i],
+                  style: AppTheme.english(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textSecondary,
+                    height: AppStyle.lineHeightBody,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -228,24 +259,34 @@ class _InfoLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-          ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTheme.english(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textSecondary,
+                height: AppStyle.lineHeightBody,
+                letterSpacing: 0,
               ),
-        ),
-      ],
+            ),
+          ),
+          Text(
+            value,
+            style: AppTheme.english(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+              height: AppStyle.lineHeightBody,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -269,7 +310,7 @@ class _StatusBadge extends StatelessWidget {
         style: TextStyle(
           color: color,
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

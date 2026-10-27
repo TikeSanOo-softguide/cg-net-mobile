@@ -80,7 +80,7 @@ class InstallationApplicationSubmittedPage extends StatelessWidget {
               ),
               const SizedBox(height: AppStyle.spaceXxl),
               AppCard(
-                elevated: true,
+                elevated: false,
                 bordered: false,
                 padding: AppStyle.cardPadding,
                 child: Column(
