@@ -194,7 +194,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             const SizedBox(height: 5),
             _SettingsCard(
-              asset: 'assets/images/profile/version.png',
+              asset: 'assets/images/profile/about.png',
               title: 'profile.about'.tr(),
               trailingText: versionText,
               onTap: () => context.pushNamed(RouteNames.aboutApp),

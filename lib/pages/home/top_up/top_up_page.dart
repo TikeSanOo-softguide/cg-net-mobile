@@ -354,23 +354,29 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() => _serialErrorKey = null),
                 ),
-                if (_serialErrorKey != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 12),
-                    child: Text(
-                      _serialErrorKey!.tr(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.fieldError(),
-                    ),
-                  ),
-                const SizedBox(height: 12),
+                SizedBox(
+                  height: AppStyle.errorSlotHeight,
+                  child: _serialErrorKey == null
+                      ? null
+                      : Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              _serialErrorKey!.tr(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.fieldError(),
+                            ),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 4),
                 AppInput(
                   controller: _account,
-                  reserveErrorSpace: false,
                   label: 'topup.account_label'.tr(),
                   hint: 'topup.account_hint'.tr(),
-                  prefixIcon: LucideIcons.user,
+                  suffixIcon: LucideIcons.user,
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   onChanged: (_) => setState(() {}),
@@ -381,7 +387,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 2),
                 AppScanInput(
                   controller: _pin,
                   label: 'topup.pin_label'.tr(),
@@ -394,7 +400,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   ],
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
-                  reserveErrorSpace: false,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'topup.pin_required'.tr();
@@ -402,13 +407,14 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 AppButton(
                   label: 'topup.submit'.tr(),
+                  height: 44,
+                  fontSize: 14,
                   onPressed:
                       _canSubmit && !topUpState.isSubmitting ? _submit : null,
                   isLoading: topUpState.isSubmitting,
-                  height: 42,
                 ),
               ],
             ),

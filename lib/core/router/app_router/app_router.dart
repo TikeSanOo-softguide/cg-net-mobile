@@ -119,12 +119,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 state.uri.queryParameters['resend_after'] ?? '',
               ) ??
               60;
-          final debugOtp = state.extra is String ? state.extra as String : null;
           return OtpVerificationPage(
             phone: phone,
             challengeId: challengeId,
             resendAfter: resendAfter,
-            debugOtp: debugOtp,
           );
         },
       ),

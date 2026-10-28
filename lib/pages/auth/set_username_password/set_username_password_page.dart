@@ -200,7 +200,7 @@ class _SetUsernamePasswordPageState
                 textInputAction: TextInputAction.next,
                 validator: _validatePassword,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               AppInput(
                 controller: _confirm,
                 label: 'set_credentials.confirm_password'.tr(),
