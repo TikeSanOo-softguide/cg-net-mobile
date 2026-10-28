@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -46,6 +47,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
+    final headerLoading = ref.watch(profileHeaderLoadingProvider);
     final localeCode = ref.watch(appLocaleProvider);
     final versionAsync = ref.watch(packageInfoProvider);
     final versionText = versionAsync.maybeWhen(
@@ -71,78 +73,83 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             AppStyle.spaceXxl,
           ),
           children: [
-            AppCard(
-              elevated: false,
-              bordered: false,
-              padding: const EdgeInsets.all(AppStyle.spaceMd),
-              child: Row(
-                children: [
-                  _AccountAvatar(name: profile.fullName),
-                  const SizedBox(width: AppStyle.spaceMd),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            headerLoading
+                ? const _AccountHeaderSkeleton()
+                : AppCard(
+                    elevated: false,
+                    bordered: false,
+                    padding: const EdgeInsets.all(AppStyle.spaceMd),
+                    child: Row(
                       children: [
-                        Text(
-                          profile.fullName.isNotEmpty
-                              ? profile.fullName
-                              : (profile.accountNumber.isNotEmpty
-                                  ? profile.accountNumber
-                                  : '---'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textMuted,
+                        _AccountAvatar(name: profile.fullName),
+                        const SizedBox(width: AppStyle.spaceMd),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                profile.fullName.isNotEmpty
+                                    ? profile.fullName
+                                    : (profile.accountNumber.isNotEmpty
+                                        ? profile.accountNumber
+                                        : '---'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.english(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                profile.displayPhone.isNotEmpty
+                                    ? profile.displayPhone
+                                    : (profile.accountNumber.isNotEmpty
+                                        ? profile.accountNumber
+                                        : '---'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.english(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          profile.displayPhone.isNotEmpty
-                              ? profile.displayPhone
-                              : (profile.accountNumber.isNotEmpty
-                                  ? profile.accountNumber
-                                  : '---'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                            letterSpacing: 0.2,
+                        const SizedBox(width: AppStyle.spaceSm),
+                        Material(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            onTap: () =>
+                                context.pushNamed(RouteNames.editProfile),
+                            borderRadius: BorderRadius.circular(8),
+                            splashColor:
+                                AppColors.primary.withValues(alpha: 0.08),
+                            highlightColor:
+                                AppColors.primary.withValues(alpha: 0.04),
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/images/profile/edit.png',
+                                  width: 16,
+                                  height: 16,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: AppStyle.spaceSm),
-                  Material(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      onTap: () => context.pushNamed(RouteNames.editProfile),
-                      borderRadius: BorderRadius.circular(8),
-                      splashColor: AppColors.primary.withValues(alpha: 0.08),
-                      highlightColor: AppColors.primary.withValues(alpha: 0.04),
-                      child: SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: Center(
-                          child: Image.asset(
-                            'assets/images/profile/edit.png',
-                            width: 16,
-                            height: 16,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: AppStyle.spaceXl),
             Text(
               'profile.general'.tr(),
@@ -215,6 +222,37 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AccountHeaderSkeleton extends StatelessWidget {
+  const _AccountHeaderSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      elevated: false,
+      bordered: false,
+      padding: const EdgeInsets.all(AppStyle.spaceMd),
+      child: const Row(
+        children: [
+          ShimmerBox(width: 38, height: 38, borderRadius: 8),
+          SizedBox(width: AppStyle.spaceMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBox(width: 88, height: 11, borderRadius: 4),
+                SizedBox(height: 6),
+                ShimmerBox(width: 140, height: 16, borderRadius: 4),
+              ],
+            ),
+          ),
+          SizedBox(width: AppStyle.spaceSm),
+          ShimmerBox(width: 32, height: 32, borderRadius: 8),
+        ],
       ),
     );
   }

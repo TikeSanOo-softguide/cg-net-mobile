@@ -6,13 +6,17 @@ import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
 
+final profileHeaderLoadingProvider = StateProvider<bool>((ref) => false);
+
 class ProfileController extends StateNotifier<UserProfileModel> {
   ProfileController({
+    required Ref ref,
     required SecureStorage secureStorage,
     required PushNotificationService push,
     required ProfileRepository profileRepository,
     required AuthApi authApi,
-  })  : _secureStorage = secureStorage,
+  })  : _ref = ref,
+        _secureStorage = secureStorage,
         _push = push,
         _profileRepository = profileRepository,
         _authApi = authApi,
@@ -28,17 +32,35 @@ class ProfileController extends StateNotifier<UserProfileModel> {
     fetchProfile();
   }
 
+  final Ref _ref;
   final SecureStorage _secureStorage;
   final PushNotificationService _push;
   final ProfileRepository _profileRepository;
   final AuthApi _authApi;
+  int _fetchSeq = 0;
+
+  static bool _hasIdentity(UserProfileModel profile) {
+    return profile.fullName.isNotEmpty ||
+        profile.phone.isNotEmpty ||
+        profile.accountNumber.isNotEmpty;
+  }
 
   Future<void> fetchProfile() async {
+    final seq = ++_fetchSeq;
+    final firstLoad = !_hasIdentity(state);
+    if (firstLoad) {
+      _ref.read(profileHeaderLoadingProvider.notifier).state = true;
+    }
     try {
       final user = await _profileRepository.fetchProfile();
+      if (seq != _fetchSeq) return;
       state = user;
     } catch (_) {
       // Best-effort fetch; keep existing state on network error.
+    } finally {
+      if (seq == _fetchSeq) {
+        _ref.read(profileHeaderLoadingProvider.notifier).state = false;
+      }
     }
   }
 
@@ -75,6 +97,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, UserProfileModel>((ref) {
   return ProfileController(
+    ref: ref,
     secureStorage: ref.watch(secureStorageProvider),
     push: ref.watch(pushNotificationServiceProvider),
     profileRepository: ref.watch(profileRepositoryProvider),

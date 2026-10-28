@@ -181,45 +181,44 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     onPressed: loading
                         ? null
                         : () async {
-                            if (!_formKey.currentState!.validate()) return;
+                      if (!_formKey.currentState!.validate()) return;
 
-                            final model = ChangePasswordModel(
-                              currentPassword: _current.text,
-                              newPassword: _next.text,
-                              newPasswordConfirmation: _confirm.text,
-                            );
+                      final model = ChangePasswordModel(
+                        currentPassword: _current.text,
+                        newPassword: _next.text,
+                        newPasswordConfirmation: _confirm.text,
+                      );
 
-                            try {
-                              final challenge = await ref
-                                  .read(
-                                      changePasswordControllerProvider.notifier)
-                                  .changePassword(password: model);
+                      try {
+                        final challenge = await ref
+                            .read(changePasswordControllerProvider.notifier)
+                            .changePassword(password: model);
 
-                              if (!context.mounted) return;
+                        if (!context.mounted) return;
 
-                              _current.clear();
-                              _next.clear();
-                              _confirm.clear();
-                              context.pushNamed(
-                                RouteNames.verifyChangePasswordOtp,
-                                queryParameters: {
-                                  'challenge_id': challenge.challengeId,
-                                },
-                                extra: ChangePasswordOtpSession(
-                                  challenge: challenge,
-                                  password: model,
-                                ),
-                              );
-                            } catch (error) {
-                              if (!context.mounted) return;
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(apiErrorText(error)),
-                                ),
-                              );
-                            }
+                        _current.clear();
+                        _next.clear();
+                        _confirm.clear();
+                        context.pushNamed(
+                          RouteNames.verifyChangePasswordOtp,
+                          queryParameters: {
+                            'challenge_id': challenge.challengeId,
                           },
+                          extra: ChangePasswordOtpSession(
+                            challenge: challenge,
+                            password: model,
+                          ),
+                        );
+                      } catch (error) {
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(apiErrorText(error)),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),

@@ -217,6 +217,10 @@
     "pkg_month": "月数",
     "pkg_install": "安装费",
     "install_fee_free": "免费",
+    "feat_dedicated": "专线",
+    "feat_bandwidth": "带宽最高 {speed} Mbps",
+    "feat_unlimited": "24小时不限量",
+    "feat_fiber": "光纤接入",
     "offer_month": "/ 月",
     "popular": "HOT",
     "buy_now": "立即购买"

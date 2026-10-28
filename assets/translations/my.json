@@ -217,6 +217,10 @@
     "pkg_month": "လ",
     "pkg_install": "တပ်ဆင်ခ",
     "install_fee_free": "အခမဲ့",
+    "feat_dedicated": "သီးသန့်လိုင်း",
+    "feat_bandwidth": "အမြန်နှုန်း {speed} Mbps အထိ",
+    "feat_unlimited": "၂၄ နာရီ အကန့်အသတ်မရှိ",
+    "feat_fiber": "ဖိုင်ဘာအင်တာနက်",
     "offer_month": "/ လ",
     "popular": "HOT",
     "buy_now": "ဝယ်မည်"

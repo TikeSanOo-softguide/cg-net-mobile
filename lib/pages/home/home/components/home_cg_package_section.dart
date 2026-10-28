@@ -47,14 +47,18 @@ class HomeCgPackageSection extends StatelessWidget {
     ),
   ];
 
+  static const _cardWidth = 148.0;
+  static const _listHeight = 206.0;
+
   @override
   Widget build(BuildContext context) {
+    final locale = context.locale.languageCode;
+
     return Padding(
       padding: AppStyle.pagePaddingH,
       child: AppCard(
         elevated: false,
         bordered: false,
-        color: AppColors.primarySoft,
         borderRadius: AppStyle.borderRadiusSm,
         padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
         child: Column(
@@ -65,9 +69,11 @@ class HomeCgPackageSection extends StatelessWidget {
               onSeeAll: () => context.goNamed(RouteNames.packageList),
             ),
             SizedBox(
-              height: 136,
+              height: _listHeight,
               child: ListView.separated(
+                key: ValueKey('cg-packages-$locale'),
                 scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.zero,
                 itemCount: _items.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -105,6 +111,13 @@ class _CgPackageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final price = NumberFormat('#,##0').format(item.pricePoints);
+    final features = <String>[
+      'home.feat_dedicated'.tr(),
+      'home.feat_bandwidth'.tr(namedArgs: {'speed': item.speedMbps}),
+      'home.feat_unlimited'.tr(),
+      'home.feat_fiber'.tr(),
+    ];
+
     void openDetail() {
       context.pushNamed(
         RouteNames.packageDetail,
@@ -112,176 +125,138 @@ class _CgPackageCard extends StatelessWidget {
       );
     }
 
+    const radius = AppStyle.radiusSm;
+
     return SizedBox(
-      width: 220,
+      width: HomeCgPackageSection._cardWidth,
       child: Material(
-        color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        color: Colors.transparent,
         child: InkWell(
           onTap: openDetail,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 26,
-                      height: 26,
-                      alignment: Alignment.center,
+          borderRadius: BorderRadius.circular(radius),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(radius),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -28,
+                    top: -36,
+                    child: Container(
+                      width: 92,
+                      height: 92,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        LucideIcons.gauge,
-                        size: 14,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: item.speedMbps,
-                              style: AppTheme.english(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                                height: 1.05,
-                                letterSpacing: -0.4,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' Mbps',
-                              style: AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                                height: 1.05,
-                                letterSpacing: 0,
-                              ),
-                            ),
-                          ],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        child: Text(
-                          item.durationKey.tr(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                            height: AppTheme.lineHeightMyanmarSafe,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                _FactLine(
-                  label: 'home.pkg_price'.tr(),
-                  value: '$price ${'topup.pts'.tr()}',
-                  valueSize: 14,
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'home.pkg_install'.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted,
-                          height: AppTheme.lineHeightMyanmarSafe,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        child: Text(
-                          'home.install_fee_free'.tr(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            height: AppTheme.lineHeightMyanmarSafe,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 28,
-                  child: FilledButton(
-                    onPressed: openDetail,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      minimumSize: const Size.fromHeight(28),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'home.buy_now'.tr(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.english(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onPrimary,
-                        height: AppTheme.lineHeightMyanmarSafe,
-                        letterSpacing: 0,
+                        shape: BoxShape.circle,
+                        color: AppColors.onPrimary.withValues(alpha: 0.08),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    left: -20,
+                    bottom: 36,
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.onPrimary.withValues(alpha: 0.06),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.onPrimary,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            child: Text(
+                              item.durationKey.tr().toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.english(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                                height: AppTheme.lineHeightMyanmarSafe,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          price,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.english(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.onPrimary,
+                            height: 1.05,
+                            letterSpacing: -0.6,
+                          ),
+                        ),
+                        Text(
+                          'topup.pts'.tr(),
+                          style: AppTheme.english(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onPrimary.withValues(alpha: 0.78),
+                            height: AppTheme.lineHeightMyanmarSafe,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        for (final feature in features) _FeatureLine(text: feature),
+                        const Spacer(),
+                        SizedBox(
+                          height: 28,
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: openDetail,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.accent,
+                              foregroundColor: AppColors.onAccent,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              minimumSize: const Size.fromHeight(28),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                            ),
+                            child: Text(
+                              'home.buy_now'.tr(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.english(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onAccent,
+                                height: AppTheme.lineHeightMyanmarSafe,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -290,52 +265,43 @@ class _CgPackageCard extends StatelessWidget {
   }
 }
 
-class _FactLine extends StatelessWidget {
-  const _FactLine({
-    required this.label,
-    required this.value,
-    this.valueColor = AppColors.textPrimary,
-    this.valueSize = 13,
-  });
+class _FeatureLine extends StatelessWidget {
+  const _FeatureLine({required this.text});
 
-  final String label;
-  final String value;
-  final Color valueColor;
-  final double valueSize;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.english(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textMuted,
-            height: AppTheme.lineHeightMyanmarSafe,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.end,
-            style: AppTheme.english(
-              fontSize: valueSize,
-              fontWeight: FontWeight.w700,
-              color: valueColor,
-              height: AppTheme.lineHeightMyanmarSafe,
-              letterSpacing: 0,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(
+              LucideIcons.circle_check,
+              size: 12,
+              color: AppColors.accent,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 5),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.english(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onPrimary,
+                height: AppTheme.lineHeightMyanmarSafe,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

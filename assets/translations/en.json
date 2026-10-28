@@ -217,6 +217,10 @@
     "pkg_month": "Month",
     "pkg_install": "Install",
     "install_fee_free": "Free",
+    "feat_dedicated": "Dedicated",
+    "feat_bandwidth": "Bandwidth up to {speed} Mbps",
+    "feat_unlimited": "24 hour unlimited",
+    "feat_fiber": "Fiber optics connectivity",
     "offer_month": "/ month",
     "popular": "HOT",
     "buy_now": "Buy now"

@@ -10,11 +10,13 @@ import '../../../data/profile/profile_repository.dart';
 import 'components/home_cg_package_section.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
+import 'components/home_plan_card.dart';
 import 'components/home_promo_alert.dart';
 import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
 import 'components/home_services_section.dart';
+import 'home_controller.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -74,6 +76,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final displayProfile = profile.valueOrNull ?? cachedProfile.valueOrNull;
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
+    final dashboard = ref.watch(homeControllerProvider);
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
     final pinnedH = HomePinnedBar.heightOf(context);
@@ -122,6 +125,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: SizedBox(height: HomeSectionHeader.sectionGap),
                 ),
                 const SliverToBoxAdapter(child: HomeServicesSection()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: HomeSectionHeader.sectionGap),
+                ),
+                SliverToBoxAdapter(
+                  child: HomePlanCard(
+                    packageId: dashboard.packageId,
+                    titleKey: dashboard.planTitleKey,
+                    expiry: dashboard.planExpiry,
+                    username: dashboard.username,
+                    password: dashboard.password,
+                    validityDays: dashboard.validityDays,
+                  ),
+                ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: HomeSectionHeader.sectionGap),
                 ),
