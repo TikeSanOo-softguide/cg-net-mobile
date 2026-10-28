@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/core/network/idempotency_key.dart';
+import 'package:cg_net_mobile/core/network/message_codes.dart';
 import 'package:cg_net_mobile/data/change_password/change_password_repository.dart';
 import 'package:cg_net_mobile/data/inbox/inbox_repository.dart';
 import 'package:cg_net_mobile/data/top_up/top_up_repository.dart';
@@ -12,6 +13,36 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('deactivated login response maps to its localized error message', () {
+    final error = ApiException.fromDio(
+      DioException(
+        requestOptions: RequestOptions(path: '/auth/otp/request'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/auth/otp/request'),
+          statusCode: 403,
+          data: {
+            'code': MessageCodes.authAccountDeactivated,
+            'message': 'Account is deactivated.',
+            'level': 'error',
+          },
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(error.code, MessageCodes.authAccountDeactivated);
+    expect(MessageCodes.isKnown(error.code), isTrue);
+    expect(
+      MessageCodes.locKey(error.code!),
+      'msg.auth_020',
+    );
+  });
+
+  test('password changed code maps to its localized snackbar message', () {
+    expect(MessageCodes.isKnown(MessageCodes.pwdChanged), isTrue);
+    expect(MessageCodes.locKey(MessageCodes.pwdChanged), 'msg.pwd_001');
+  });
+
   test('idempotency keys are opaque UUIDs', () {
     final first = IdempotencyKey.generate();
     final second = IdempotencyKey.generate();

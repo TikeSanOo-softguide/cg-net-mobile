@@ -23,6 +23,7 @@ class MessageCodes {
   static const authSessionExpired = 'MSG-AUTH-017';
   static const authTooManyRequests = 'MSG-AUTH-018';
   static const authLoggedOut = 'MSG-AUTH-019';
+  static const authAccountDeactivated = 'MSG-AUTH-020';
 
   static const apiNetworkFailed = 'MSG-API-001';
   static const apiTimeout = 'MSG-API-002';
@@ -94,6 +95,7 @@ class MessageCodes {
     authSessionExpired,
     authTooManyRequests,
     authLoggedOut,
+    authAccountDeactivated,
     apiNetworkFailed,
     apiTimeout,
     apiCancelled,

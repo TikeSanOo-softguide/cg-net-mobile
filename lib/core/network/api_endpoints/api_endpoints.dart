@@ -11,7 +11,7 @@ class ApiEndpoints {
   /// `--dart-define=API_BASE_URL=http://127.0.0.1:8080/api`.
   static const _devBaseUrl = String.fromEnvironment(
     'DEV_API_BASE_URL',
-    defaultValue: 'http://192.168.10.254:8080/api',
+    defaultValue: 'http://192.168.10.240:8080/api',
   );
   static const _healthOverride =
       String.fromEnvironment('API_HEALTHCHECK_PATH', defaultValue: '');
@@ -54,8 +54,10 @@ class ApiEndpoints {
   static const String transactions = '/customer/transactions';
   static const String profile = '/customer/profile';
   static const String language = '/customer/language';
+  static const String deactivateAccount = '/customer/deactivate';
   static const String updateProfile = '/customer/profile';
-  static const String notificationPreferences = '/customer/notification-preferences';
+  static const String notificationPreferences =
+      '/customer/notification-preferences';
   static const String changeWifiPassword = '/change-password-requests/create';
   static const String changeWifiPasswordRequests = '/change-password-requests';
   static String cancelChangeWifiPasswordRequest(String requestId) =>

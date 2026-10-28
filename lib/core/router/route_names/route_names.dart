@@ -32,6 +32,7 @@ class RouteNames {
 
   static const profile = 'profile';
   static const editProfile = 'editProfile';
+  static const deactivateAccount = 'deactivateAccount';
   static const changePassword = 'changePassword';
   static const verifyChangePasswordOtp = 'verifyChangePasswordOtp';
   static const notificationPreferences = 'notificationPreferences';
@@ -76,6 +77,7 @@ class RoutePaths {
 
   static const profile = '/profile';
   static const editProfile = '/profile/edit';
+  static const deactivateAccount = '/profile/deactivate-account';
   static const changePassword = '/profile/change-password';
   static const verifyChangePasswordOtp = '/profile/change-password/verify-otp';
   static const notificationPreferences = '/profile/notifications';

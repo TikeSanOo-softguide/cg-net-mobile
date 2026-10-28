@@ -523,12 +523,20 @@
     "general": "General settings",
     "edit": "Edit profile",
     "account_settings": "Account Setting",
+    "deactivate_account": "Deactivate account",
+    "deactivate_account_title": "Deactivate account",
+    "deactivate_account_message": "Deactivation happens immediately after you confirm your password. You will be signed out and will no longer be able to use this account.",
+    "confirm_password": "Confirm your password",
+    "enter_password": "Enter your current password",
+    "password_required": "Please enter your password",
+    "deactivate_account_confirm": "Deactivate Account",
     "language": "Language",
     "change_password": "Change password",
     "notifications": "Notification preferences",
-    "about": "About App",
+    "about": "About",
     "edit_title": "Edit profile",
     "full_name": "Full name",
+    "full_name_required": "Full name is required.",
     "email": "Email",
     "phone": "Phone",
     "language_title": "Language settings",
@@ -716,6 +724,7 @@
     "auth_016": "Registration is already in progress.",
     "auth_017": "Your session has ended. Please sign in again.",
     "auth_018": "Too many requests. Please wait and try again.",
+    "auth_020": "This account has been deactivated. Please contact the administrator for assistance.",
     "api_001": "Network connection failed",
     "api_002": "The request timed out. Try again.",
     "api_003": "The request was cancelled.",
@@ -764,4 +773,3 @@
     "dev_002": "Device token removed."
   }
 }
-

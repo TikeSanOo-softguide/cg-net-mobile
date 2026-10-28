@@ -32,6 +32,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _newPasswordFieldKey = GlobalKey<FormFieldState<String>>();
   final _confirmFieldKey = GlobalKey<FormFieldState<String>>();
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -96,11 +99,20 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     label: 'profile.current_password'.tr(),
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
-                    obscureText: true,
+                    obscureText: _obscureCurrentPassword,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     textInputAction: TextInputAction.next,
+                    suffix: AppInput.iconChip(
+                      icon: _obscureCurrentPassword
+                          ? LucideIcons.eye_off
+                          : LucideIcons.eye,
+                      onTap: () => setState(
+                        () =>
+                            _obscureCurrentPassword = !_obscureCurrentPassword,
+                      ),
+                    ),
                     onChanged: (_) {
                       if (_newPasswordFieldKey
                               .currentState?.hasInteractedByUser ??
@@ -125,11 +137,19 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     label: 'profile.new_password'.tr(),
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
-                    obscureText: true,
+                    obscureText: _obscureNewPassword,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     textInputAction: TextInputAction.next,
+                    suffix: AppInput.iconChip(
+                      icon: _obscureNewPassword
+                          ? LucideIcons.eye_off
+                          : LucideIcons.eye,
+                      onTap: () => setState(
+                        () => _obscureNewPassword = !_obscureNewPassword,
+                      ),
+                    ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'profile.new_password_required'.tr();
@@ -156,11 +176,20 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     label: 'set_credentials.confirm_password'.tr(),
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     textInputAction: TextInputAction.done,
+                    suffix: AppInput.iconChip(
+                      icon: _obscureConfirmPassword
+                          ? LucideIcons.eye_off
+                          : LucideIcons.eye,
+                      onTap: () => setState(
+                        () =>
+                            _obscureConfirmPassword = !_obscureConfirmPassword,
+                      ),
+                    ),
                     validator: (value) {
                       final confirmation = value?.trim() ?? '';
                       if (confirmation.isEmpty) {
@@ -181,44 +210,45 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     onPressed: loading
                         ? null
                         : () async {
-                      if (!_formKey.currentState!.validate()) return;
+                            if (!_formKey.currentState!.validate()) return;
 
-                      final model = ChangePasswordModel(
-                        currentPassword: _current.text,
-                        newPassword: _next.text,
-                        newPasswordConfirmation: _confirm.text,
-                      );
+                            final model = ChangePasswordModel(
+                              currentPassword: _current.text,
+                              newPassword: _next.text,
+                              newPasswordConfirmation: _confirm.text,
+                            );
 
-                      try {
-                        final challenge = await ref
-                            .read(changePasswordControllerProvider.notifier)
-                            .changePassword(password: model);
+                            try {
+                              final challenge = await ref
+                                  .read(
+                                      changePasswordControllerProvider.notifier)
+                                  .changePassword(password: model);
 
-                        if (!context.mounted) return;
+                              if (!context.mounted) return;
 
-                        _current.clear();
-                        _next.clear();
-                        _confirm.clear();
-                        context.pushNamed(
-                          RouteNames.verifyChangePasswordOtp,
-                          queryParameters: {
-                            'challenge_id': challenge.challengeId,
+                              _current.clear();
+                              _next.clear();
+                              _confirm.clear();
+                              context.pushNamed(
+                                RouteNames.verifyChangePasswordOtp,
+                                queryParameters: {
+                                  'challenge_id': challenge.challengeId,
+                                },
+                                extra: ChangePasswordOtpSession(
+                                  challenge: challenge,
+                                  password: model,
+                                ),
+                              );
+                            } catch (error) {
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(apiErrorText(error)),
+                                ),
+                              );
+                            }
                           },
-                          extra: ChangePasswordOtpSession(
-                            challenge: challenge,
-                            password: model,
-                          ),
-                        );
-                      } catch (error) {
-                        if (!context.mounted) return;
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(apiErrorText(error)),
-                          ),
-                        );
-                      }
-                    },
                   ),
                 ],
               ),

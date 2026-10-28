@@ -16,6 +16,7 @@ import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_message_modal.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -36,6 +37,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _phoneController = TextEditingController();
   late final TapGestureRecognizer _termsTap;
   bool _sessionExpiredNoticeShown = false;
+  bool _deactivationNoticeShown = false;
   bool _autovalidate = false;
 
   @override
@@ -115,12 +117,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _showLoginError() async {
     final error = ref.read(loginControllerProvider).error;
     if (error == null) return;
+
+    if (error.code == MessageCodes.authAccountDeactivated) {
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: MessageCodes.locKey(error.code!).tr(),
+      );
+      return;
+    }
+
     await showApiMessageModal(context, error);
   }
 
   @override
   Widget build(BuildContext context) {
-    final reason = GoRouterState.of(context).uri.queryParameters['reason'];
+    final queryParameters = GoRouterState.of(context).uri.queryParameters;
+    final reason = queryParameters['reason'];
     if (!_sessionExpiredNoticeShown && reason == 'session_expired') {
       _sessionExpiredNoticeShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -130,6 +143,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ..showSnackBar(
             SnackBar(content: Text('api.unauthorized'.tr())),
           );
+      });
+    }
+    final successMessage = queryParameters['message'];
+    if (!_deactivationNoticeShown &&
+        successMessage != null &&
+        successMessage.isNotEmpty) {
+      _deactivationNoticeShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await showAppSuccessModal(
+          context,
+          title: 'common.success'.tr(),
+          body: successMessage,
+        );
       });
     }
 
