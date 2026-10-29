@@ -533,8 +533,8 @@
     "deactivate_account_confirm": "Deactivate Account",
     "language": "Language",
     "change_password": "Change password",
-    "notifications": "Notification preferences",
-    "about": "About",
+    "notifications": "Notification Preferences",
+    "about": "About App",
     "edit_title": "Edit profile",
     "full_name": "Full name",
     "full_name_required": "Full name is required.",
@@ -572,10 +572,10 @@
     "download_unavailable": "Could not open the download link.",
     "version_load_failed": "Could not load app version information.",
     "icon_credits": "Icons from Flaticon",
-    "announcements_notifications": "Announcements notifications",
-    "system_notifications": "System notifications",
-    "promotion_notifications": "Promotion notifications",
-    "general_notifications": "General notifications"
+    "announcements_notifications": "Announcements",
+    "system_notifications": "System Notifications",
+    "promotion_notifications": "Promotion Notifications",
+    "general_notifications": "General Notifications"
   },
   "requests": {
     "broadband_account": "Broadband account number",
