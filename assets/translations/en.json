@@ -526,6 +526,7 @@
     "deactivate_account": "Deactivate account",
     "deactivate_account_title": "Deactivate account",
     "deactivate_account_message": "Deactivation happens immediately after you confirm your password. You will be signed out and will no longer be able to use this account.",
+    "deactivate_account_confirm_message": "Are you sure you want to deactivate your account?",
     "confirm_password": "Confirm your password",
     "enter_password": "Enter your current password",
     "password_required": "Please enter your password",

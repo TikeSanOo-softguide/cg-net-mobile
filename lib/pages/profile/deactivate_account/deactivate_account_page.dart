@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -40,25 +41,12 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
     if (ref.read(deactivateAccountControllerProvider)) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('profile.deactivate_account_title'.tr()),
-        content: Text('profile.deactivate_account_message'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('common.cancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
-            child: Text('profile.deactivate_account_confirm'.tr()),
-          ),
-        ],
-      ),
+    final confirmed = await showAppConfirmModal(
+      context,
+      title: 'profile.deactivate_account_title'.tr(),
+      body: 'profile.deactivate_account_confirm_message'.tr(),
+      confirmLabel: 'profile.deactivate_account_confirm'.tr(),
+      cancelLabel: 'common.cancel'.tr(),
     );
 
     if (confirmed != true || !mounted) return;
