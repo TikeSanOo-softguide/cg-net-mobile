@@ -36,6 +36,7 @@ import '../../../pages/package/package_list/package_list_page.dart';
 import '../../../pages/profile/about_app/about_app_page.dart';
 import '../../../pages/profile/change_password/change_password_page.dart';
 import '../../../pages/profile/change_password/verify_change_password_otp_page.dart';
+import '../../../pages/profile/deactivate_account/deactivate_account_page.dart';
 import '../../../pages/profile/edit_profile/edit_profile_page.dart';
 import '../../../pages/profile/notification_preferences/notification_preferences_page.dart';
 import '../../../pages/profile/profile/profile_page.dart';
@@ -413,6 +414,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     name: RouteNames.editProfile,
                     parentNavigatorKey: _rootNavigatorKey,
                     builder: (context, state) => const EditProfilePage(),
+                  ),
+                  GoRoute(
+                    path: 'deactivate-account',
+                    name: RouteNames.deactivateAccount,
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const DeactivateAccountPage(),
                   ),
                   GoRoute(
                     path: 'change-password',

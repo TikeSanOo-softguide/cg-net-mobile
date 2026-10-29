@@ -522,12 +522,21 @@
     "general": "通用设置",
     "edit": "编辑资料",
     "account_settings": "账户设置",
+    "deactivate_account": "停用账户",
+    "deactivate_account_title": "停用账户",
+    "deactivate_account_message": "确认密码后，账户将立即停用。您将退出登录，并且无法继续使用此账户。",
+    "deactivate_account_confirm_message": "确定要停用您的账户吗？",
+    "confirm_password": "确认密码",
+    "enter_password": "请输入当前密码",
+    "password_required": "请输入密码。",
+    "deactivate_account_confirm": "停用账户",
     "language": "语言",
     "change_password": "修改密码",
     "notifications": "通知偏好",
     "about": "关于应用",
     "edit_title": "编辑资料",
     "full_name": "姓名",
+    "full_name_required": "请输入姓名。",
     "email": "邮箱",
     "phone": "手机",
     "language_title": "语言设置",
@@ -761,6 +770,8 @@
     "pwd_001": "密码已修改。",
     "pwd_002": "修改密码请求无效或已过期。",
     "dev_001": "设备令牌已登记。",
-    "dev_002": "设备令牌已移除。"
+    "dev_002": "设备令牌已移除。",
+    "user_003": "此账户已停用。请联系管理员寻求帮助。",
+    "user_004": "此账户已暂停使用。请联系管理员寻求帮助。"
   }
 }

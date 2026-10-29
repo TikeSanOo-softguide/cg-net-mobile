@@ -523,12 +523,21 @@
     "general": "General settings",
     "edit": "Edit profile",
     "account_settings": "Account Setting",
+    "deactivate_account": "Deactivate account",
+    "deactivate_account_title": "Deactivate account",
+    "deactivate_account_message": "Deactivation happens immediately after you confirm your password. You will be signed out and will no longer be able to use this account.",
+    "deactivate_account_confirm_message": "Are you sure you want to deactivate your account?",
+    "confirm_password": "Confirm your password",
+    "enter_password": "Enter your current password",
+    "password_required": "Please enter your password",
+    "deactivate_account_confirm": "Deactivate Account",
     "language": "Language",
     "change_password": "Change password",
-    "notifications": "Notification preferences",
+    "notifications": "Notification Preferences",
     "about": "About App",
     "edit_title": "Edit profile",
     "full_name": "Full name",
+    "full_name_required": "Full name is required.",
     "email": "Email",
     "phone": "Phone",
     "language_title": "Language settings",
@@ -563,10 +572,10 @@
     "download_unavailable": "Could not open the download link.",
     "version_load_failed": "Could not load app version information.",
     "icon_credits": "Icons from Flaticon",
-    "announcements_notifications": "Announcements notifications",
-    "system_notifications": "System notifications",
-    "promotion_notifications": "Promotion notifications",
-    "general_notifications": "General notifications"
+    "announcements_notifications": "Announcement Notifications",
+    "system_notifications": "System Notifications",
+    "promotion_notifications": "Promotion Notifications",
+    "general_notifications": "General Notifications"
   },
   "requests": {
     "broadband_account": "Broadband account number",
@@ -761,7 +770,8 @@
     "pwd_001": "Password changed successfully.",
     "pwd_002": "The password change request is invalid or expired.",
     "dev_001": "Device token registered.",
-    "dev_002": "Device token removed."
+    "dev_002": "Device token removed.",
+    "user_003": "This account has been deactivated. Please contact the administrator for assistance.",
+    "user_004": "This account has been suspended. Please contact the administrator for assistance."
   }
 }
-

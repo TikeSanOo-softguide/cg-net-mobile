@@ -11,6 +11,7 @@ import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -225,7 +226,9 @@ class _VerifyChangePasswordOtpPageState
       widget.session.clearPassword();
       TextInput.finishAutofillContext(shouldSave: false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('profile.password_changed'.tr())),
+        SnackBar(
+          content: Text(MessageCodes.locKey(MessageCodes.pwdChanged).tr()),
+        ),
       );
       Navigator.of(context).pop();
     } catch (error) {

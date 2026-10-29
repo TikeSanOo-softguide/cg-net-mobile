@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/core/network/idempotency_key.dart';
+import 'package:cg_net_mobile/core/network/message_codes.dart';
 import 'package:cg_net_mobile/data/change_password/change_password_repository.dart';
 import 'package:cg_net_mobile/data/inbox/inbox_repository.dart';
 import 'package:cg_net_mobile/data/top_up/top_up_repository.dart';
@@ -12,6 +13,39 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  for (final (code, expectedKey) in [
+    (MessageCodes.userDeactivated, 'msg.user_003'),
+    (MessageCodes.userSuspended, 'msg.user_004'),
+  ]) {
+    test('$code maps to its localized session error message', () {
+      final error = ApiException.fromDio(
+        DioException(
+          requestOptions: RequestOptions(path: '/auth/session/check'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/auth/session/check'),
+            statusCode: 403,
+            data: {
+              'code': code,
+              'message': 'Account status prevents login.',
+              'level': 'error',
+              'show_alert': true,
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      expect(error.code, code);
+      expect(MessageCodes.isKnown(error.code), isTrue);
+      expect(MessageCodes.locKey(error.code!), expectedKey);
+    });
+  }
+
+  test('password changed code maps to its localized snackbar message', () {
+    expect(MessageCodes.isKnown(MessageCodes.pwdChanged), isTrue);
+    expect(MessageCodes.locKey(MessageCodes.pwdChanged), 'msg.pwd_001');
+  });
+
   test('idempotency keys are opaque UUIDs', () {
     final first = IdempotencyKey.generate();
     final second = IdempotencyKey.generate();
