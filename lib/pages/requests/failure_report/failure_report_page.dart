@@ -1,16 +1,18 @@
-import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../components/app_photo_picker/app_photo_picker.dart';
+import '../../../components/app_select/app_select_dropdown.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -41,6 +43,7 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(profileControllerProvider.notifier).fetchProfile();
       ref.read(failureReportControllerProvider.notifier).fetchReports();
     });
@@ -101,15 +104,8 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
       showBack: true,
       floatingActionButton: hasUnderReviewReport
           ? null
-          : FloatingActionButton(
+          : AppAddFloatingActionButton(
               onPressed: () => _openNewReportPage(),
-              backgroundColor: AppColors.primary,
-              elevation: 4,
-              child: const Icon(
-                LucideIcons.plus,
-                color: Colors.white,
-                size: 26,
-              ),
             ),
       body: RefreshIndicator(
         onRefresh: _fetchReports,
@@ -180,18 +176,12 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
             ),
             child: Column(
               children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    LucideIcons.circle_alert,
-                    color: AppColors.primary,
-                    size: 28,
-                  ),
+                const QuickActionIconChip(
+                  asset: 'assets/images/services/complaint.png',
+                  background: AppColors.primaryLight,
+                  tint: Color(0xFFFF0000),
+                  size: 54,
+                  iconSize: 36,
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
@@ -509,7 +499,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(FormFieldState<int> field) async {
     if (_selectedPhotos.length >= 3) return;
 
     final source = await showModalBottomSheet<ImageSource>(
@@ -561,16 +551,20 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
         setState(() {
           _selectedPhotos.add(photo);
         });
+        field.didChange(_selectedPhotos.length);
+        if (field.hasError) field.validate();
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
     }
   }
 
-  void _removePhoto(int index) {
+  void _removePhoto(int index, FormFieldState<int> field) {
     setState(() {
       _selectedPhotos.removeAt(index);
     });
+    field.didChange(_selectedPhotos.length);
+    if (field.hasError) field.validate();
   }
 
   Future<void> _submitForm() async {
@@ -636,151 +630,179 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
-      body: Container(
-        color: AppColors.background,
-        padding: const EdgeInsets.all(AppStyle.spaceLg),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AppCard(
-                  elevated: false,
-                  bordered: false,
-                  padding: const EdgeInsets.all(AppStyle.spaceLg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'failure_report.form_desc'.tr(),
-                        style: AppTheme.body(
-                          color: AppColors.textSecondary,
-                          weight: FontWeight.w400,
-                        ).copyWith(fontSize: 13),
-                      ),
-                      const SizedBox(height: AppStyle.spaceLg),
-
-                      // 1. Broadband Account Number
-                      AppInput(
-                        controller: _broadbandAccountController,
-                        label: 'failure_report.broadband_account'.tr(),
-                        readOnly: profile.accountNumber.isNotEmpty,
-                        enabled: profile.accountNumber.isEmpty,
-                        prefixIcon: LucideIcons.id_card,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceLg),
-
-                      // 2. Contact Name
-                      AppInput(
-                        controller: _contactNameController,
-                        label: 'failure_report.contact_name'.tr(),
-                        prefixIcon: LucideIcons.user,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceLg),
-
-                      // 3. Contact Phone
-                      AppInput(
-                        controller: _phoneController,
-                        label: 'failure_report.contact_phone'.tr(),
-                        hint: '09 xxx xxx xxx',
-                        keyboardType: TextInputType.phone,
-                        prefixIcon: LucideIcons.phone,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceLg),
-
-                      // 4. Failure Type Dropdown
-                      _buildFailureTypeDropdown(context),
-                      const SizedBox(height: AppStyle.spaceLg),
-
-                      // 5. Problem Description
-                      AppInput(
-                        controller: _descriptionController,
-                        label: 'failure_report.description'.tr(),
-                        hint: 'failure_report.description_hint'.tr(),
-                        prefixIcon: LucideIcons.file_text,
-                        maxLines: 3,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceLg),
-
-                      // 6. Failure Photos
-                      _buildPhotosSection(context),
-                    ],
-                  ),
-                ),
-                if (errorMessage != null) ...[
-                  const SizedBox(height: AppStyle.spaceMd),
-                  Container(
-                    padding: const EdgeInsets.all(AppStyle.spaceMd),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
+      body: SafeArea(
+        top: false,
+        child: Container(
+          color: AppColors.background,
+          padding: const EdgeInsets.all(AppStyle.spaceLg),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppCard(
+                    elevated: false,
+                    bordered: false,
+                    padding: const EdgeInsets.all(AppStyle.spaceLg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          LucideIcons.circle_alert,
-                          color: AppColors.error,
-                          size: 18,
+                        Text(
+                          'failure_report.form_desc'.tr(),
+                          style: AppTheme.body(
+                            color: AppColors.textSecondary,
+                            weight: FontWeight.w400,
+                          ).copyWith(fontSize: 13),
                         ),
-                        const SizedBox(width: AppStyle.spaceSm),
-                        Expanded(
-                          child: Text(
-                            errorMessage.startsWith('failure_report.') ||
-                                    errorMessage.startsWith('change_wifi.') ||
-                                    errorMessage.startsWith('api.') ||
-                                    errorMessage.startsWith('common.')
-                                ? errorMessage.tr()
-                                : errorMessage,
-                            style: const TextStyle(
-                              color: AppColors.error,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        const SizedBox(height: AppStyle.spaceLg),
+
+                        // 1. Broadband Account Number
+                        AppInput(
+                          controller: _broadbandAccountController,
+                          label: 'failure_report.broadband_account'.tr(),
+                          readOnly: profile.accountNumber.isNotEmpty,
+                          enabled: profile.accountNumber.isEmpty,
+                          prefixIcon: LucideIcons.id_card,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'requests.required'.tr();
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppStyle.spaceXs),
+
+                        // 2. Contact Name
+                        AppInput(
+                          controller: _contactNameController,
+                          label: 'failure_report.contact_name'.tr(),
+                          prefixIcon: LucideIcons.user,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'requests.required'.tr();
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppStyle.spaceXs),
+
+                        // 3. Contact Phone
+                        AppInput(
+                          controller: _phoneController,
+                          label: 'failure_report.contact_phone'.tr(),
+                          hint: '09 xxx xxx xxx',
+                          keyboardType: TextInputType.phone,
+                          prefixIcon: LucideIcons.phone,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'requests.required'.tr();
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppStyle.spaceXs),
+
+                        // 4. Failure Type Dropdown
+                        _buildFailureTypeDropdown(context),
+                        const SizedBox(height: AppStyle.spaceXxl),
+
+                        // 5. Problem Description
+                        AppInput(
+                          controller: _descriptionController,
+                          label: 'failure_report.description'.tr(),
+                          hint: 'failure_report.description_hint'.tr(),
+                          prefixIcon: LucideIcons.file_text,
+                          maxLines: 3,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'requests.required'.tr();
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppStyle.spaceXs),
+
+                        // 6. Failure Photos
+                        FormField<int>(
+                          initialValue: _selectedPhotos.length,
+                          validator: (_) =>
+                              widget.initialReport != null ||
+                                      _selectedPhotos.length == 3
+                                  ? null
+                                  : 'failure_report.photos_required'.tr(),
+                          builder: (field) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppPhotoPicker(
+                                selectedPhotos: _selectedPhotos,
+                                onPickImage: () => _pickImage(field),
+                                onRemovePhoto: (index) =>
+                                    _removePhoto(index, field),
+                              ),
+                              if (field.hasError) ...[
+                                const SizedBox(height: AppStyle.spaceXs),
+                                Text(
+                                  field.errorText!,
+                                  style: AppTheme.fieldError(),
+                                ),
+                              ],
+                            ],
                           ),
+                        ),
+                        const SizedBox(height: AppStyle.spaceXxl),
+                        AppButton(
+                          label: 'common.submit'.tr() != 'common.submit'
+                              ? 'common.submit'.tr()
+                              : 'Submit',
+                          isLoading: controllerState.isSubmitting,
+                          onPressed: _submitForm,
                         ),
                       ],
                     ),
                   ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: AppStyle.spaceMd),
+                    Container(
+                      padding: const EdgeInsets.all(AppStyle.spaceMd),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            LucideIcons.circle_alert,
+                            color: AppColors.error,
+                            size: 18,
+                          ),
+                          const SizedBox(width: AppStyle.spaceSm),
+                          Expanded(
+                            child: Text(
+                              errorMessage.startsWith('failure_report.') ||
+                                      errorMessage.startsWith('change_wifi.') ||
+                                      errorMessage.startsWith('api.') ||
+                                      errorMessage.startsWith('common.')
+                                  ? errorMessage.tr()
+                                  : errorMessage,
+                              style: const TextStyle(
+                                color: AppColors.error,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: AppStyle.spaceMd),
                 ],
-                const SizedBox(height: AppStyle.spaceLg),
-                AppButton(
-                  label: 'common.submit'.tr() != 'common.submit'
-                      ? 'common.submit'.tr()
-                      : 'Submit',
-                  isLoading: controllerState.isSubmitting,
-                  onPressed: _submitForm,
-                ),
-                const SizedBox(height: AppStyle.spaceMd),
-              ],
+              ),
             ),
           ),
         ),
@@ -789,175 +811,22 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
   }
 
   Widget _buildFailureTypeDropdown(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.tr('failure_report.failure_type'),
-          style: AppTheme.english(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.paperBorder),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<FailureType>(
-              value: FailureType.fromKey(_selectedType),
-              isExpanded: true,
-              icon: const Icon(
-                LucideIcons.chevron_down,
-                size: 20,
-                color: AppColors.textSecondary,
-              ),
-              items: FailureType.values.map((type) {
-                return DropdownMenuItem<FailureType>(
-                  value: type,
-                  child: Row(
-                    children: [
-                      Icon(
-                        type.icon,
-                        size: 18,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          context.tr('failure_report.${type.localizationKey}'),
-                          style: AppTheme.english(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedType = val.apiKey);
-                }
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+    final options = FailureType.values.map((type) {
+      return AppSelectOption<FailureType>(
+        value: type,
+        label: context.tr('failure_report.${type.localizationKey}'),
+      );
+    }).toList();
 
-  Widget _buildPhotosSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.tr('failure_report.upload_photos'),
-          style: AppTheme.english(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textMuted,
-          ),
-        ),
-        const SizedBox(height: AppStyle.spaceSm),
-        Row(
-          children: [
-            for (int i = 0; i < 3; i++) ...[
-              if (i > 0) const SizedBox(width: 10),
-              Expanded(
-                child: i < _selectedPhotos.length
-                    ? Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              height: 72,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.primary),
-                              ),
-                              child: Image.file(
-                                File(_selectedPhotos[i].path),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Center(
-                                  child: Icon(
-                                    LucideIcons.image,
-                                    color: AppColors.primary,
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: -6,
-                            right: -6,
-                            child: InkWell(
-                              onTap: () => _removePhoto(i),
-                              child: Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.error,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  LucideIcons.x,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : InkWell(
-                        onTap: _pickImage,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundAlt,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                LucideIcons.camera,
-                                color: AppColors.textMuted,
-                                size: 22,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${i + 1}/3',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.textMuted,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ],
-        ),
-      ],
+    return AppSelectDropdown<FailureType>(
+      label: context.tr('failure_report.failure_type'),
+      value: FailureType.fromKey(_selectedType),
+      options: options,
+      onChanged: (val) {
+        if (val != null) {
+          setState(() => _selectedType = val.apiKey);
+        }
+      },
     );
   }
 }

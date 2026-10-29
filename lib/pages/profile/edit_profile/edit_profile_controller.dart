@@ -23,6 +23,10 @@ class EditProfileController extends StateNotifier<EditProfileState> {
 
   final Ref _ref;
 
+  void clearError() {
+    state = state.copyWith(isLoading: false);
+  }
+
   Future<bool> save({required String fullName}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {

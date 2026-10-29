@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -250,77 +252,80 @@ class FailureReportDetailPage extends ConsumerWidget {
     BuildContext context,
     AsyncValue<FailureReportModel> reportDetails,
   ) {
-    return reportDetails.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(AppStyle.spaceLg),
-        child: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-      ),
-      error: (error, _) => AppCard(
-        elevated: false,
-        bordered: false,
-        child: Text(
-          error is ApiException
-              ? (error.detail ?? error.messageKey).tr()
-              : error.toString(),
-          style: AppTheme.body(color: AppColors.error),
-        ),
-      ),
-      data: (details) {
-        if (details.photos.isEmpty) return const SizedBox.shrink();
+    final fallbackPhotos = report.photos;
 
-        return AppCard(
-          elevated: false,
-          bordered: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.tr('failure_report.upload_photos'),
-                style: AppTheme.english(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+    return reportDetails.when(
+      loading: () => fallbackPhotos.isNotEmpty
+          ? _buildPhotosCard(context, fallbackPhotos)
+          : const Padding(
+              padding: EdgeInsets.all(AppStyle.spaceLg),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
               ),
-              const SizedBox(height: AppStyle.spaceMd),
-              Wrap(
-                spacing: AppStyle.spaceSm,
-                runSpacing: AppStyle.spaceSm,
-                children: [
-                  for (final photo in details.photos)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _photoUri(photo.imageUrl),
-                        width: 96,
-                        height: 96,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 96,
-                          height: 96,
-                          color: AppColors.background,
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.broken_image_outlined,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+            ),
+      error: (error, _) => fallbackPhotos.isNotEmpty
+          ? _buildPhotosCard(context, fallbackPhotos)
+          : AppCard(
+              elevated: false,
+              bordered: false,
+              child: Text(
+                error is ApiException
+                    ? (error.detail ?? error.messageKey).tr()
+                    : error.toString(),
+                style: AppTheme.body(color: AppColors.error),
               ),
-            ],
-          ),
-        );
+            ),
+      data: (details) {
+        final photos =
+            details.photos.isNotEmpty ? details.photos : fallbackPhotos;
+        if (photos.isEmpty) return const SizedBox.shrink();
+
+        return _buildPhotosCard(context, photos);
       },
     );
   }
 
+  Widget _buildPhotosCard(
+    BuildContext context,
+    List<FailurePhotoModel> photos,
+  ) {
+    return AppCard(
+      elevated: false,
+      bordered: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('failure_report.upload_photos'),
+            style: AppTheme.english(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppStyle.spaceMd),
+          Wrap(
+            spacing: AppStyle.spaceSm,
+            runSpacing: AppStyle.spaceSm,
+            children: [
+              for (final photo in photos)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _AuthenticatedFailureReportImage(
+                    imageUrl: _photoUri(photo.imageUrl),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   String _photoUri(String imageUrl) {
-    final uri = Uri.parse(imageUrl);
-    if (uri.hasScheme) return imageUrl;
+    final trimmedImageUrl = imageUrl.trim();
+    final uri = Uri.tryParse(trimmedImageUrl);
+    if (uri != null && uri.hasScheme) return trimmedImageUrl;
 
     final baseUri = Uri.parse(ApiEndpoints.baseUrl);
     final origin = Uri(
@@ -328,9 +333,11 @@ class FailureReportDetailPage extends ConsumerWidget {
       host: baseUri.host,
       port: baseUri.hasPort ? baseUri.port : null,
     );
-    return origin
-        .resolve(imageUrl.startsWith('/') ? imageUrl : '/$imageUrl')
-        .toString();
+    final relativePath = trimmedImageUrl.replaceFirst(RegExp(r'^/+'), '');
+    final storagePath = relativePath.startsWith('storage/')
+        ? relativePath
+        : 'storage/$relativePath';
+    return origin.resolve('/$storagePath').toString();
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -357,6 +364,100 @@ class FailureReportDetailPage extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AuthenticatedFailureReportImage extends ConsumerStatefulWidget {
+  const _AuthenticatedFailureReportImage({
+    required this.imageUrl,
+  });
+
+  final String imageUrl;
+
+  @override
+  ConsumerState<_AuthenticatedFailureReportImage> createState() =>
+      _AuthenticatedFailureReportImageState();
+}
+
+class _AuthenticatedFailureReportImageState
+    extends ConsumerState<_AuthenticatedFailureReportImage> {
+  late Future<String?> _tokenFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _tokenFuture = ref.read(secureStorageProvider).readToken();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuthenticatedFailureReportImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.imageUrl != oldWidget.imageUrl) {
+      _tokenFuture = ref.read(secureStorageProvider).readToken();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _tokenFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            width: 96,
+            height: 96,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        }
+
+        final token = snapshot.data;
+        final imageUri = Uri.parse(widget.imageUrl);
+        final apiUri = Uri.parse(ApiEndpoints.baseUrl);
+        final headers = token != null &&
+                token.isNotEmpty &&
+                imageUri.scheme == apiUri.scheme &&
+                imageUri.host == apiUri.host &&
+                imageUri.port == apiUri.port
+            ? {'Authorization': 'Bearer $token'}
+            : null;
+
+        return Image.network(
+          widget.imageUrl,
+          headers: headers,
+          width: 96,
+          height: 96,
+          fit: BoxFit.cover,
+          errorBuilder: (_, error, ___) {
+            if (kDebugMode) {
+              final safeUri =
+                  Uri.parse(widget.imageUrl).replace(query: '', fragment: '');
+              final status = error is NetworkImageLoadException
+                  ? ', status ${error.statusCode}'
+                  : '';
+              debugPrint(
+                '[failure-reports] image load failed: '
+                '$safeUri (${error.runtimeType}$status)',
+              );
+            }
+            return Container(
+              width: 96,
+              height: 96,
+              color: AppColors.background,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: AppColors.textMuted,
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

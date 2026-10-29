@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -30,6 +32,7 @@ class _ChangeWifiPasswordPageState
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(profileControllerProvider.notifier).fetchProfile();
       ref.read(changeWifiPasswordControllerProvider.notifier).fetchRequests();
     });
@@ -92,15 +95,8 @@ class _ChangeWifiPasswordPageState
       showBack: true,
       floatingActionButton: hasUnderReviewRequest
           ? null
-          : FloatingActionButton(
+          : AppAddFloatingActionButton(
               onPressed: _openNewRequestPage,
-              backgroundColor: AppColors.primary,
-              elevation: 4,
-              child: const Icon(
-                LucideIcons.plus,
-                color: Colors.white,
-                size: 26,
-              ),
             ),
       body: RefreshIndicator(
         onRefresh: _fetchRequests,
@@ -132,18 +128,12 @@ class _ChangeWifiPasswordPageState
             ),
             child: Column(
               children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    LucideIcons.wifi,
-                    color: AppColors.primary,
-                    size: 28,
-                  ),
+                const QuickActionIconChip(
+                  asset: 'assets/images/services/change_wifi.png',
+                  background: AppColors.primaryLight,
+                  tint: Color(0xFFF25912),
+                  size: 54,
+                  iconSize: 36,
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
@@ -489,24 +479,24 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                         prefixIcon: LucideIcons.id_card,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
+                            return 'requests.required'.tr();
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: AppStyle.spaceLg),
+                      const SizedBox(height: AppStyle.spaceXs),
                       AppInput(
                         controller: _contactNameController,
                         label: 'change_wifi.contact_name'.tr(),
                         prefixIcon: LucideIcons.user,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
+                            return 'requests.required'.tr();
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: AppStyle.spaceLg),
+                      const SizedBox(height: AppStyle.spaceXs),
                       AppInput(
                         controller: _phoneController,
                         label: 'change_wifi.contact_phone'.tr(),
@@ -515,12 +505,12 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                         prefixIcon: LucideIcons.phone,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
+                            return 'requests.required'.tr();
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: AppStyle.spaceLg),
+                      const SizedBox(height: AppStyle.spaceXs),
                       Text(
                         'change_wifi.checkbox_desc'.tr(),
                         style: AppTheme.body(
@@ -579,12 +569,12 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                           validator: (v) {
                             if (_isChangingWifiName &&
                                 (v == null || v.trim().isEmpty)) {
-                              return 'This field is required';
+                              return 'requests.required'.tr();
                             }
                             return null;
                           },
                         ),
-                        const SizedBox(height: AppStyle.spaceLg),
+                        const SizedBox(height: AppStyle.spaceXs),
                       ],
                       AppInput(
                         controller: _passwordController,
@@ -604,13 +594,21 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                         ),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'This field is required';
+                            return 'requests.required'.tr();
                           }
-                          if (v.trim().length < 8) {
-                            return 'Password must be at least 8 characters';
+                          if (v.trim().length < 6) {
+                            return 'change_wifi.password_min_length'.tr();
                           }
                           return null;
                         },
+                      ),
+                      const SizedBox(height: AppStyle.spaceXxl),
+                      AppButton(
+                        label: 'common.submit'.tr() != 'common.submit'
+                            ? 'common.submit'.tr()
+                            : 'Submit',
+                        isLoading: controllerState.isSubmitting,
+                        onPressed: _submitForm,
                       ),
                     ],
                   ),
@@ -652,14 +650,6 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                     ),
                   ),
                 ],
-                const SizedBox(height: AppStyle.spaceLg),
-                AppButton(
-                  label: 'common.submit'.tr() != 'common.submit'
-                      ? 'common.submit'.tr()
-                      : 'Submit',
-                  isLoading: controllerState.isSubmitting,
-                  onPressed: _submitForm,
-                ),
                 const SizedBox(height: AppStyle.spaceMd),
               ],
             ),
