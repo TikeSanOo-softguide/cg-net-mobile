@@ -13,30 +13,33 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('deactivated login response maps to its localized error message', () {
-    final error = ApiException.fromDio(
-      DioException(
-        requestOptions: RequestOptions(path: '/auth/otp/request'),
-        response: Response(
-          requestOptions: RequestOptions(path: '/auth/otp/request'),
-          statusCode: 403,
-          data: {
-            'code': MessageCodes.authAccountDeactivated,
-            'message': 'Account is deactivated.',
-            'level': 'error',
-          },
+  for (final (code, expectedKey) in [
+    (MessageCodes.userDeactivated, 'msg.user_003'),
+    (MessageCodes.userSuspended, 'msg.user_004'),
+  ]) {
+    test('$code maps to its localized session error message', () {
+      final error = ApiException.fromDio(
+        DioException(
+          requestOptions: RequestOptions(path: '/auth/session/check'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/auth/session/check'),
+            statusCode: 403,
+            data: {
+              'code': code,
+              'message': 'Account status prevents login.',
+              'level': 'error',
+              'show_alert': true,
+            },
+          ),
+          type: DioExceptionType.badResponse,
         ),
-        type: DioExceptionType.badResponse,
-      ),
-    );
+      );
 
-    expect(error.code, MessageCodes.authAccountDeactivated);
-    expect(MessageCodes.isKnown(error.code), isTrue);
-    expect(
-      MessageCodes.locKey(error.code!),
-      'msg.auth_020',
-    );
-  });
+      expect(error.code, code);
+      expect(MessageCodes.isKnown(error.code), isTrue);
+      expect(MessageCodes.locKey(error.code!), expectedKey);
+    });
+  }
 
   test('password changed code maps to its localized snackbar message', () {
     expect(MessageCodes.isKnown(MessageCodes.pwdChanged), isTrue);

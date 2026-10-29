@@ -118,7 +118,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final error = ref.read(loginControllerProvider).error;
     if (error == null) return;
 
-    if (error.code == MessageCodes.authAccountDeactivated) {
+    if (error.code == MessageCodes.userDeactivated ||
+        error.code == MessageCodes.userSuspended) {
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),

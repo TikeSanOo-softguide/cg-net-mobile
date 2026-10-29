@@ -724,7 +724,6 @@
     "auth_016": "Registration is already in progress.",
     "auth_017": "Your session has ended. Please sign in again.",
     "auth_018": "Too many requests. Please wait and try again.",
-    "auth_020": "This account has been deactivated. Please contact the administrator for assistance.",
     "api_001": "Network connection failed",
     "api_002": "The request timed out. Try again.",
     "api_003": "The request was cancelled.",
@@ -770,6 +769,8 @@
     "pwd_001": "Password changed successfully.",
     "pwd_002": "The password change request is invalid or expired.",
     "dev_001": "Device token registered.",
-    "dev_002": "Device token removed."
+    "dev_002": "Device token removed.",
+    "user_003": "This account has been deactivated. Please contact the administrator for assistance.",
+    "user_004": "This account has been suspended. Please contact the administrator for assistance."
   }
 }

@@ -23,7 +23,6 @@ class MessageCodes {
   static const authSessionExpired = 'MSG-AUTH-017';
   static const authTooManyRequests = 'MSG-AUTH-018';
   static const authLoggedOut = 'MSG-AUTH-019';
-  static const authAccountDeactivated = 'MSG-AUTH-020';
 
   static const apiNetworkFailed = 'MSG-API-001';
   static const apiTimeout = 'MSG-API-002';
@@ -77,6 +76,9 @@ class MessageCodes {
   static const devRegistered = 'MSG-DEV-001';
   static const devRemoved = 'MSG-DEV-002';
 
+  static const userDeactivated = 'MSG-USER-003';
+  static const userSuspended = 'MSG-USER-004';
+
   static const Set<String> known = {
     authIncorrectPassword,
     authAccountLocked,
@@ -95,7 +97,6 @@ class MessageCodes {
     authSessionExpired,
     authTooManyRequests,
     authLoggedOut,
-    authAccountDeactivated,
     apiNetworkFailed,
     apiTimeout,
     apiCancelled,
@@ -141,6 +142,8 @@ class MessageCodes {
     pwdChangeExpired,
     devRegistered,
     devRemoved,
+    userDeactivated,
+    userSuspended,
   };
 
   /// `MSG-AUTH-001` → `msg.auth_001`
