@@ -14,6 +14,7 @@ void main() {
     final model = InstallationApplicationModel.fromJson({
       'id': 13,
       'user_id': 8,
+      'service_type': 'FTTH',
       'package_id': 4,
       'area_id': 2,
       'id_type': 'NRC',
@@ -31,6 +32,7 @@ void main() {
     });
 
     expect(model.id, '13');
+    expect(model.serviceType, 'FTTH');
     expect(model.packageId, 4);
     expect(model.areaId, 2);
     expect(model.photos, [
@@ -38,6 +40,7 @@ void main() {
     ]);
     expect(model.toJson(), {
       'user_id': 8,
+      'service_type': 'FTTH',
       'package_id': 4,
       'area_id': 2,
       'id_type': 'NRC',
@@ -86,6 +89,7 @@ void main() {
     const request = InstallationApplicationModel(
       id: '',
       userId: 8,
+      serviceType: 'FTTH',
       packageId: 4,
       areaId: 2,
       idType: 'NRC',
@@ -124,6 +128,7 @@ void main() {
     expect(
       Map.fromEntries(formData.fields),
       {
+        'service_type': 'FTTH',
         'package_id': '4',
         'area_id': '2',
         'id_type': 'NRC',
@@ -151,6 +156,7 @@ void main() {
     const request = InstallationApplicationModel(
       id: '',
       userId: 8,
+      serviceType: 'FTTH',
       packageId: 4,
       areaId: 2,
       idType: 'NRC',
@@ -187,6 +193,7 @@ void main() {
     const request = InstallationApplicationModel(
       id: '',
       userId: 8,
+      serviceType: 'FTTH',
       packageId: 4,
       areaId: 2,
       idType: 'NRC',
@@ -240,6 +247,7 @@ void main() {
     final options = await repository.fetchRequestOptions();
 
     expect(options.packages.map((option) => option.id), [4]);
+    expect(options.packages.single.serviceType, isNull);
     expect(options.packages.single.localizedName('my'), 'အိမ်သုံး');
     expect(options.areas.single.id, 2);
     expect(options.areas.single.localizedName('en'), 'Central Area');
@@ -247,6 +255,28 @@ void main() {
       requests.map((request) => request.path).toSet(),
       {ApiEndpoints.availablePlans, ApiEndpoints.availableAreas},
     );
+  });
+
+  test('infers package service type from network names', () {
+    final ftth = InstallationApplicationOption.fromJson({
+      'id': 4,
+      'service_type': 'FTTH',
+      'network': {
+        'name': {'en': 'CG FTTH'},
+      },
+    });
+    final cg = InstallationApplicationOption.fromJson({
+      'id': 5,
+      'network': {
+        'name': {'en': 'CG Wireless'},
+      },
+    });
+
+    expect(ftth.serviceType, 'FTTH');
+    expect(cg.serviceType, 'CG');
+    expect(ftth.matchesServiceType('FTTH'), isTrue);
+    expect(ftth.matchesServiceType('CG'), isFalse);
+    expect(cg.matchesServiceType('CG'), isTrue);
   });
 }
 

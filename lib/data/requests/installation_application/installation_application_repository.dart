@@ -92,6 +92,7 @@ class InstallationApplicationRepository {
         ..remove('status')
         ..remove('photos');
       if (request.note == null) payload.remove('note');
+      if (request.serviceType == null) payload.remove('service_type');
       final formData = FormData.fromMap(payload);
       for (var index = 0; index < photos.length; index++) {
         final photo = photos[index];

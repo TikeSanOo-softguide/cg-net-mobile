@@ -321,6 +321,11 @@ class _InstallationApplicationCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppStyle.spaceMd),
+          if (request.serviceType != null)
+            _RequestDetail(
+              label: 'installationApplication.service_type'.tr(),
+              value: request.serviceType!,
+            ),
           _RequestDetail(
             label: 'installationApplication.id_name'.tr(),
             value: request.idName,
@@ -431,6 +436,7 @@ class _InstallationApplicationFormSheetState
   final List<XFile> _photos = [];
   int? _packageId;
   int? _areaId;
+  String? _serviceType;
   List<InstallationApplicationOption> _packages = const [];
   List<InstallationApplicationOption> _areas = const [];
   bool _loadingOptions = true;
@@ -445,6 +451,7 @@ class _InstallationApplicationFormSheetState
     final request = widget.request;
     _packageId = request?.packageId;
     _areaId = request?.areaId;
+    _serviceType = request?.serviceType;
     _idTypeController = TextEditingController(text: request?.idType ?? '');
     _nameController =
         TextEditingController(text: request?.idName ?? profile.fullName);
@@ -474,6 +481,18 @@ class _InstallationApplicationFormSheetState
         }
         if (!_areas.any((option) => option.id == _areaId)) {
           _areaId = null;
+        }
+        if (_serviceType == null) {
+          for (final option in _packages) {
+            if (option.id == _packageId && option.serviceType != null) {
+              _serviceType = option.serviceType;
+              break;
+            }
+          }
+        }
+        if (_serviceType != null &&
+            !_filteredPackages.any((option) => option.id == _packageId)) {
+          _packageId = null;
         }
         _loadingOptions = false;
       });
@@ -505,9 +524,12 @@ class _InstallationApplicationFormSheetState
 
     final profile = ref.read(profileControllerProvider);
 
+    if (_serviceType == null) return;
+
     final request = InstallationApplicationModel(
       id: widget.request?.id ?? '',
       userId: widget.request?.userId ?? int.tryParse(profile.id) ?? 0,
+      serviceType: _serviceType,
       packageId: _packageId,
       areaId: _areaId,
       idType: _idTypeController.text.trim(),
@@ -577,6 +599,28 @@ class _InstallationApplicationFormSheetState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  List<InstallationApplicationOption> get _filteredPackages {
+    final type = _serviceType;
+    if (type == null) return const [];
+    return _packages.where((option) => option.matchesServiceType(type)).toList();
+  }
+
+  void _selectServiceType(String type) {
+    setState(() {
+      _serviceType = type;
+      if (!_filteredPackages.any((option) => option.id == _packageId)) {
+        _packageId = null;
+      }
+    });
+  }
+
+  void _clearServiceType() {
+    setState(() {
+      _serviceType = null;
+      _packageId = null;
+    });
   }
 
   String? _requiredOption(int? value) {
@@ -655,7 +699,21 @@ class _InstallationApplicationFormSheetState
                   ],
                 ),
                 const SizedBox(height: AppStyle.spaceSm),
-                if (_loadingOptions)
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: _serviceType == null
+                      ? _NetworkTypeCards(onSelected: _selectServiceType)
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _SelectedNetworkChip(
+                              serviceType: _serviceType!,
+                              onChange: _clearServiceType,
+                            ),
+                            const SizedBox(height: AppStyle.spaceMd),
+                            if (_loadingOptions)
                   const Padding(
                     padding: EdgeInsets.all(AppStyle.spaceMd),
                     child: Center(
@@ -708,11 +766,15 @@ class _InstallationApplicationFormSheetState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         DropdownButtonFormField<int>(
-                          initialValue: _packageId,
+                          key: ValueKey('package-$_serviceType'),
+                          initialValue: _filteredPackages
+                                  .any((option) => option.id == _packageId)
+                              ? _packageId
+                              : null,
                           decoration: InputDecoration(
                             labelText: 'installationApplication.package'.tr(),
                           ),
-                          items: _packages
+                          items: _filteredPackages
                               .map(
                                 (option) => DropdownMenuItem(
                                   value: option.id,
@@ -729,6 +791,14 @@ class _InstallationApplicationFormSheetState
                           onChanged: (value) =>
                               setState(() => _packageId = value),
                         ),
+                        if (_filteredPackages.isEmpty) ...[
+                          const SizedBox(height: AppStyle.spaceXs),
+                          Text(
+                            'installationApplication.no_packages_for_type'
+                                .tr(),
+                            style: AppTheme.body(color: AppColors.textMuted),
+                          ),
+                        ],
                         const SizedBox(height: AppStyle.spaceSm),
                         DropdownButtonFormField<int>(
                           initialValue: _areaId,
@@ -871,7 +941,10 @@ class _InstallationApplicationFormSheetState
                       ],
                     ),
                   ),
-                if (state.errorMessage != null) ...[
+                          ],
+                        ),
+                ),
+                if (_serviceType != null && state.errorMessage != null) ...[
                   const SizedBox(height: AppStyle.spaceSm),
                   Text(
                     state.errorMessage!.startsWith('api.') ||
@@ -881,16 +954,18 @@ class _InstallationApplicationFormSheetState
                     style: AppTheme.body(color: AppColors.error),
                   ),
                 ],
-                const SizedBox(height: AppStyle.spaceSm),
-                AppButton(
-                  label: 'common.submit'.tr(),
-                  isLoading: state.isSubmitting || _loadingOptions,
-                  onPressed: _optionsError != null ||
-                          _packages.isEmpty ||
-                          _areas.isEmpty
-                      ? null
-                      : _submit,
-                ),
+                if (_serviceType != null) ...[
+                  const SizedBox(height: AppStyle.spaceSm),
+                  AppButton(
+                    label: 'common.submit'.tr(),
+                    isLoading: state.isSubmitting || _loadingOptions,
+                    onPressed: _optionsError != null ||
+                            _filteredPackages.isEmpty ||
+                            _areas.isEmpty
+                        ? null
+                        : _submit,
+                  ),
+                ],
               ],
             ),
           ),
@@ -899,3 +974,136 @@ class _InstallationApplicationFormSheetState
     );
   }
 }
+
+class _NetworkTypeCards extends StatelessWidget {
+  const _NetworkTypeCards({required this.onSelected});
+
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'installationApplication.choose_type'.tr(),
+          style: AppTheme.body(weight: FontWeight.w600),
+        ),
+        const SizedBox(height: AppStyle.spaceMd),
+        Row(
+          children: [
+            Expanded(
+              child: _NetworkTypeCard(
+                type: 'FTTH',
+                icon: LucideIcons.wifi,
+                body: 'installationApplication.ftth_body'.tr(),
+                onTap: () => onSelected('FTTH'),
+              ),
+            ),
+            const SizedBox(width: AppStyle.spaceMd),
+            Expanded(
+              child: _NetworkTypeCard(
+                type: 'CG',
+                icon: LucideIcons.cable,
+                body: 'installationApplication.cg_body'.tr(),
+                onTap: () => onSelected('CG'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _NetworkTypeCard extends StatelessWidget {
+  const _NetworkTypeCard({
+    required this.type,
+    required this.icon,
+    required this.body,
+    required this.onTap,
+  });
+
+  final String type;
+  final IconData icon;
+  final String body;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppStyle.borderRadiusLg,
+        child: Ink(
+          height: 148,
+          padding: const EdgeInsets.all(AppStyle.spaceMd),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppStyle.borderRadiusLg,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: AppStyle.borderRadiusMd,
+                ),
+                child: Icon(icon, color: AppColors.primary),
+              ),
+              const SizedBox(height: AppStyle.spaceSm),
+              Text(type, style: AppTheme.sectionTitle()),
+              const SizedBox(height: AppStyle.spaceXs),
+              Expanded(
+                child: Text(
+                  body,
+                  style: AppTheme.caption(),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectedNetworkChip extends StatelessWidget {
+  const _SelectedNetworkChip({
+    required this.serviceType,
+    required this.onChange,
+  });
+
+  final String serviceType;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ActionChip(
+        avatar: Icon(
+          serviceType == 'FTTH' ? LucideIcons.wifi : LucideIcons.cable,
+          size: 16,
+          color: AppColors.primary,
+        ),
+        label: Text(
+          '$serviceType · ${'installationApplication.change_type'.tr()}',
+        ),
+        onPressed: onChange,
+        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.28)),
+      ),
+    );
+  }
+}
+

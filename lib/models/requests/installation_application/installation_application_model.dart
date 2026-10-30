@@ -11,6 +11,7 @@ class InstallationApplicationModel {
     required this.phone,
     required this.photos,
     required this.note,
+    this.serviceType,
     this.status = 'under_review',
     this.createdAt,
     this.updatedAt,
@@ -18,6 +19,7 @@ class InstallationApplicationModel {
 
   final String id;
   final int userId;
+  final String? serviceType;
   final int? packageId;
   final int? areaId;
   final String idType;
@@ -43,6 +45,7 @@ class InstallationApplicationModel {
     return InstallationApplicationModel(
       id: data['id']?.toString() ?? '',
       userId: _toInt(data['user_id']) ?? 0,
+      serviceType: _normalizeServiceType(data['service_type']),
       packageId: _toInt(data['package_id']),
       areaId: _toInt(data['area_id']),
       idType: data['id_type']?.toString() ?? '',
@@ -69,6 +72,7 @@ class InstallationApplicationModel {
 
   Map<String, dynamic> toJson() => {
         'user_id': userId,
+        'service_type': serviceType,
         'package_id': packageId,
         'area_id': areaId,
         'id_type': idType,
@@ -93,10 +97,12 @@ class InstallationApplicationOption {
   const InstallationApplicationOption({
     required this.id,
     required this.names,
+    this.serviceType,
   });
 
   final int id;
   final Map<String, String> names;
+  final String? serviceType;
 
   factory InstallationApplicationOption.fromJson(
     Map<String, dynamic> json,
@@ -111,6 +117,7 @@ class InstallationApplicationOption {
     }
 
     final rawName = json['name'] ?? json['title'];
+    final network = json['network'];
 
     final Map<String, String> names;
 
@@ -129,20 +136,8 @@ class InstallationApplicationOption {
         'zh': json['name_zh']?.toString() ?? '',
         'my': json['name_my']?.toString() ?? '',
       };
-    } else if (json['network'] != null) {
-      final network = json['network'];
-
-      if (network is Map) {
-        names = {
-          'en': network['name_en']?.toString() ??
-              network['name']?.toString() ??
-              '',
-          'zh': network['name_zh']?.toString() ?? '',
-          'my': network['name_my']?.toString() ?? '',
-        };
-      } else {
-        names = {'en': network.toString()};
-      }
+    } else if (network != null) {
+      names = _namesFromNetwork(network);
     } else {
       names = {'en': rawName?.toString() ?? ''};
     }
@@ -157,7 +152,17 @@ class InstallationApplicationOption {
     return InstallationApplicationOption(
       id: id,
       names: names,
+      serviceType: _normalizeServiceType(json['service_type']) ??
+          (network is Map
+              ? _normalizeServiceType(network['service_type'])
+              : null) ??
+          _inferServiceType(names),
     );
+  }
+
+  bool matchesServiceType(String type) {
+    if (serviceType == null) return true;
+    return serviceType == type;
   }
 
   String localizedName(String locale) {
@@ -168,10 +173,39 @@ class InstallationApplicationOption {
     return names.values.first;
   }
 
+  static Map<String, String> _namesFromNetwork(Object network) {
+    if (network is! Map) return {'en': network.toString()};
+    final name = network['name'];
+    if (name is Map) {
+      return name.map(
+        (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
+      );
+    }
+    return {
+      'en': network['name_en']?.toString() ?? name?.toString() ?? '',
+      'zh': network['name_zh']?.toString() ?? '',
+      'my': network['name_my']?.toString() ?? '',
+    };
+  }
+
+  static String? _inferServiceType(Map<String, String> names) {
+    return _normalizeServiceType(names.values.join(' '));
+  }
+
   static int? _toInt(Object? value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value);
     return null;
   }
+}
+
+String? _normalizeServiceType(Object? value) {
+  final haystack = value?.toString().toUpperCase() ?? '';
+  if (haystack.contains('FTTH')) return 'FTTH';
+  if (RegExp(r'(^|[^A-Z0-9])CG([^A-Z0-9]|$)').hasMatch(haystack) ||
+      haystack.startsWith('CG')) {
+    return 'CG';
+  }
+  return null;
 }
