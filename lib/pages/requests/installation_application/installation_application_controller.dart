@@ -43,8 +43,8 @@ class InstallationApplicationController
 
   final InstallationApplicationRepository _repository;
 
-  Future<InstallationApplicationOptions> fetchRequestOptions() =>
-      _repository.fetchRequestOptions();
+  Future<InstallationApplicationOptions> fetchProducts(String serviceType) =>
+      _repository.fetchProducts(serviceType);
 
   Future<void> fetchRequests() async {
     state = state.copyWith(

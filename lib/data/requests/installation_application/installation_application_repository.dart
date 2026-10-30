@@ -8,10 +8,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 
-typedef InstallationApplicationOptions = ({
-  List<InstallationApplicationOption> packages,
-  List<InstallationApplicationOption> areas,
-});
+typedef InstallationApplicationOptions = List<InstallationApplicationOption>;
 
 class InstallationApplicationRepository {
   InstallationApplicationRepository(this._dio);
@@ -20,16 +17,15 @@ class InstallationApplicationRepository {
 
   final Dio _dio;
 
-  Future<InstallationApplicationOptions> fetchRequestOptions() async {
+  Future<InstallationApplicationOptions> fetchProducts(
+    String serviceType,
+  ) async {
     try {
-      final responses = await Future.wait([
-        _dio.get<dynamic>(ApiEndpoints.availablePlans),
-        _dio.get<dynamic>(ApiEndpoints.availableAreas),
-      ]);
-      return (
-        packages: _optionsFromResponse(responses[0].data, activeOnly: true),
-        areas: _optionsFromResponse(responses[1].data),
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.installationProducts,
+        queryParameters: {'service_type': serviceType},
       );
+      return _optionsFromResponse(response.data);
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
@@ -60,16 +56,26 @@ class InstallationApplicationRepository {
     }
   }
 
+  Map<String, dynamic> _payload(InstallationApplicationModel request) {
+    final payload = request.toJson()
+      ..remove('user_id')
+      ..remove('status')
+      ..remove('photos');
+      payload.removeWhere(
+        (key, value) =>
+            value == null ||
+            (value is String && value.trim().isEmpty) ||
+            key == 'id_type' ||
+            key == 'id_number' ||
+            key == 'package_id',
+      );
+    return payload;
+  }
+
   Future<InstallationApplicationModel> createRequest(
     InstallationApplicationModel request, {
-    required List<XFile> photos,
+    List<XFile> photos = const [],
   }) async {
-    if (photos.length != 2) {
-      throw ApiException(
-        ApiFailure.unknown,
-        detail: 'installationApplication.photos_required'.tr(),
-      );
-    }
     for (final photo in photos) {
       final extension = photo.name.split('.').last.toLowerCase();
       if (!{'jpg', 'jpeg', 'png', 'webp'}.contains(extension)) {
@@ -87,13 +93,7 @@ class InstallationApplicationRepository {
     }
 
     try {
-      final payload = request.toJson()
-        ..remove('user_id')
-        ..remove('status')
-        ..remove('photos');
-      if (request.note == null) payload.remove('note');
-      if (request.serviceType == null) payload.remove('service_type');
-      final formData = FormData.fromMap(payload);
+      final formData = FormData.fromMap(_payload(request));
       for (var index = 0; index < photos.length; index++) {
         final photo = photos[index];
         formData.files.add(
@@ -116,29 +116,25 @@ class InstallationApplicationRepository {
     }
   }
 
-  List<InstallationApplicationOption> _optionsFromResponse(
-    Object? response, {
-    bool activeOnly = false,
-  }) {
-    final items = response is Map && response['data'] is List
-        ? response['data'] as List
-        : response is List
-            ? response
-            : null;
-    if (items == null) {
-      throw const FormatException(
-        'Unexpected installation application options response',
-      );
+  List<InstallationApplicationOption> _optionsFromResponse(Object? response) {
+    Object? raw = response;
+    if (response is Map && response['data'] is List) {
+      raw = response['data'];
     }
-    return items.whereType<Map>().where((item) {
-      if (!activeOnly || item['is_active'] == null) return true;
-      final active = item['is_active'];
-      return active == true || active == 1 || active == '1';
-    }).map((item) {
-      return InstallationApplicationOption.fromJson(
-        Map<String, dynamic>.from(item),
-      );
-    }).toList();
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((item) {
+          try {
+            return InstallationApplicationOption.fromJson(
+              Map<String, dynamic>.from(item),
+            );
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<InstallationApplicationOption>()
+        .toList();
   }
 
   Future<InstallationApplicationModel> updateRequest(
@@ -154,7 +150,7 @@ class InstallationApplicationRepository {
     try {
       final response = await _dio.put<dynamic>(
         ApiEndpoints.installationApplicationRequest(request.id),
-        data: request.toJson(),
+        data: _payload(request),
       );
       return _requestFromResponse(response.data, request);
     } on DioException catch (error) {
@@ -179,23 +175,6 @@ class InstallationApplicationRepository {
     }
   }
 
-  Future<void> deleteRequest(String requestId) async {
-    if (requestId.trim().isEmpty) {
-      throw ApiException(
-        ApiFailure.unknown,
-        detail: 'requests.required_id'.tr(),
-      );
-    }
-
-    try {
-      await _dio.delete<dynamic>(
-        ApiEndpoints.installationApplicationRequest(requestId),
-      );
-    } on DioException catch (error) {
-      throw ApiException.fromDio(error);
-    }
-  }
-
   InstallationApplicationModel _requestFromResponse(
     Object? data,
     InstallationApplicationModel fallback,
@@ -214,5 +193,7 @@ class InstallationApplicationRepository {
 
 final installationApplicationRepositoryProvider =
     Provider<InstallationApplicationRepository>((ref) {
-  return InstallationApplicationRepository(ref.watch(dioProvider));
+  return InstallationApplicationRepository(
+    ref.watch(dioProvider),
+  );
 });

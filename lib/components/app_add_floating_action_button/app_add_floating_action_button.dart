@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
+import '../../core/theme/app_style/app_style.dart';
 
 /// Reusable Floating Action Button for adding new requests/complaints across services.
 class AppAddFloatingActionButton extends StatelessWidget {
@@ -37,6 +38,9 @@ class AppAddFloatingActionButton extends StatelessWidget {
       backgroundColor: backgroundColor,
       elevation: elevation,
       mini: mini,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppStyle.borderRadiusButton,
+      ),
       child: Icon(
         icon,
         color: iconColor,

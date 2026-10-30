@@ -95,6 +95,7 @@ class ApiException implements Exception {
         ),
       final int statusCode when statusCode >= 500 => ApiException(
           ApiFailure.server,
+          detail: detail,
           statusCode: statusCode,
           responseData: data,
           code: code,

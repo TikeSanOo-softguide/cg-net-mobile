@@ -91,16 +91,6 @@ class InstallationApplicationSubmittedPage extends StatelessWidget {
                         'installationApplication.id_name'.tr(),
                         request.idName,
                       ),
-                    if (request.idType.trim().isNotEmpty)
-                      _detailRow(
-                        'installationApplication.id_type'.tr(),
-                        request.idType,
-                      ),
-                    if (request.idNumber?.trim().isNotEmpty == true)
-                      _detailRow(
-                        'installationApplication.id_number'.tr(),
-                        request.idNumber!,
-                      ),
                     if (request.address?.trim().isNotEmpty == true)
                       _detailRow(
                         'installationApplication.address'.tr(),

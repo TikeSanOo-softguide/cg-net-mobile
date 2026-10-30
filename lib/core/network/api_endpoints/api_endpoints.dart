@@ -62,7 +62,9 @@ class ApiEndpoints {
   static const String changeWifiPasswordRequests = '/change-password-requests';
   static String cancelChangeWifiPasswordRequest(String requestId) =>
       '$changeWifiPasswordRequests/$requestId';
-  static const String availableAreas = '/areas';
+  static const String states = '/states';
+  static String stateRegions(int stateId) => '/states/$stateId/regions';
+  static String regionAreas(int regionId) => '/regions/$regionId/areas';
   static const String termAndCondition = '/general-settings/term-and-condition';
   static const String faq = '/general-settings/faq';
   static const String supportContact = '/general-settings/support-contact';
@@ -76,6 +78,8 @@ class ApiEndpoints {
       '/installation-application';
   static const String createInstallationApplicationRequest =
       '/installation-application/create';
+  static const String installationProducts =
+      '/installation-application/products';
   static String installationApplicationRequest(String requestId) =>
       '$installationApplicationRequests/$requestId';
   static String cancelInstallationRequest(String requestId) =>

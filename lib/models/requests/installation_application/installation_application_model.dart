@@ -2,6 +2,8 @@ class InstallationApplicationModel {
   const InstallationApplicationModel({
     required this.id,
     required this.userId,
+    this.productId,
+    this.productName,
     required this.packageId,
     required this.areaId,
     required this.idType,
@@ -20,6 +22,8 @@ class InstallationApplicationModel {
   final String id;
   final int userId;
   final String? serviceType;
+  final String? productId;
+  final String? productName;
   final int? packageId;
   final int? areaId;
   final String idType;
@@ -46,6 +50,10 @@ class InstallationApplicationModel {
       id: data['id']?.toString() ?? '',
       userId: _toInt(data['user_id']) ?? 0,
       serviceType: _normalizeServiceType(data['service_type']),
+      productId: data['product_id']?.toString() ??
+          data['productID']?.toString(),
+      productName: data['product_name']?.toString() ??
+          data['productName']?.toString(),
       packageId: _toInt(data['package_id']),
       areaId: _toInt(data['area_id']),
       idType: data['id_type']?.toString() ?? '',
@@ -73,6 +81,8 @@ class InstallationApplicationModel {
   Map<String, dynamic> toJson() => {
         'user_id': userId,
         'service_type': serviceType,
+        'product_id': productId,
+        'product_name': productName,
         'package_id': packageId,
         'area_id': areaId,
         'id_type': idType,
@@ -91,113 +101,88 @@ class InstallationApplicationModel {
     if (value is String) return int.tryParse(value);
     return null;
   }
+
+  static double _toDouble(Object? value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0;
+    return 0;
+  }
 }
 
 class InstallationApplicationOption {
   const InstallationApplicationOption({
-    required this.id,
-    required this.names,
-    this.serviceType,
+    required this.productId,
+    required this.productName,
+    this.productSpeed,
+    this.productLine = '',
+    this.productPrice = 0,
+    this.monthCycle = 1,
+    this.monthCycleUnit = '',
+    this.installationFee = 0,
   });
 
-  final int id;
-  final Map<String, String> names;
-  final String? serviceType;
+  final String productId;
+  final String productName;
+  final String? productSpeed;
+  final String productLine;
+  final double productPrice;
+  final int monthCycle;
+  final String monthCycleUnit;
+  final double installationFee;
 
   factory InstallationApplicationOption.fromJson(
     Map<String, dynamic> json,
   ) {
-    final id = _toInt(json['id']);
+    final productId = json['productID']?.toString() ??
+        json['product_id']?.toString() ??
+        json['id']?.toString();
+    final productName = json['productName']?.toString() ??
+        json['product_name']?.toString() ??
+        json['name']?.toString();
+    final productSpeed = json['productSpeed']?.toString() ??
+        json['product_speed']?.toString();
 
-    if (id == null) {
+    if (productId == null || productId.trim().isEmpty) {
       throw FormatException(
-        'Invalid installation application option: invalid id. '
-        'Received: ${json['id']}',
+        'Invalid installation product: missing productID. '
+        'Received keys: ${json.keys.toList()}',
       );
     }
-
-    final rawName = json['name'] ?? json['title'];
-    final network = json['network'];
-
-    final Map<String, String> names;
-
-    if (rawName is Map) {
-      names = rawName.map(
-        (key, value) => MapEntry(
-          key.toString(),
-          value?.toString() ?? '',
-        ),
-      );
-    } else if (json['name_en'] != null ||
-        json['name_zh'] != null ||
-        json['name_my'] != null) {
-      names = {
-        'en': json['name_en']?.toString() ?? '',
-        'zh': json['name_zh']?.toString() ?? '',
-        'my': json['name_my']?.toString() ?? '',
-      };
-    } else if (network != null) {
-      names = _namesFromNetwork(network);
-    } else {
-      names = {'en': rawName?.toString() ?? ''};
-    }
-
-    if (names.values.every((name) => name.trim().isEmpty)) {
+    if (productName == null || productName.trim().isEmpty) {
       throw FormatException(
-        'Invalid installation application option: missing name. '
+        'Invalid installation product: missing productName. '
         'Received keys: ${json.keys.toList()}',
       );
     }
 
+    final trimmedSpeed = productSpeed?.trim();
+
     return InstallationApplicationOption(
-      id: id,
-      names: names,
-      serviceType: _normalizeServiceType(json['service_type']) ??
-          (network is Map
-              ? _normalizeServiceType(network['service_type'])
-              : null) ??
-          _inferServiceType(names),
+      productId: productId,
+      productName: productName,
+      productSpeed: trimmedSpeed == null || trimmedSpeed.isEmpty
+          ? null
+          : trimmedSpeed,
+      productLine: (json['productLine'] ?? json['product_line'] ?? '')
+          .toString()
+          .trim(),
+      productPrice: InstallationApplicationModel._toDouble(
+        json['productPrice'] ?? json['product_price'],
+      ),
+      monthCycle:
+          InstallationApplicationModel._toInt(json['monthCycle'] ?? json['month_cycle']) ??
+              1,
+      monthCycleUnit:
+          (json['monthCycleUnit'] ?? json['month_cycle_unit'] ?? '')
+              .toString(),
+      installationFee: InstallationApplicationModel._toDouble(
+        json['installationFee'] ?? json['installation_fee'],
+      ),
     );
   }
 
-  bool matchesServiceType(String type) {
-    if (serviceType == null) return true;
-    return serviceType == type;
-  }
-
-  String localizedName(String locale) {
-    final localized = names[locale]?.trim();
-    if (localized?.isNotEmpty == true) return localized!;
-    final english = names['en']?.trim();
-    if (english?.isNotEmpty == true) return english!;
-    return names.values.first;
-  }
-
-  static Map<String, String> _namesFromNetwork(Object network) {
-    if (network is! Map) return {'en': network.toString()};
-    final name = network['name'];
-    if (name is Map) {
-      return name.map(
-        (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
-      );
-    }
-    return {
-      'en': network['name_en']?.toString() ?? name?.toString() ?? '',
-      'zh': network['name_zh']?.toString() ?? '',
-      'my': network['name_my']?.toString() ?? '',
-    };
-  }
-
-  static String? _inferServiceType(Map<String, String> names) {
-    return _normalizeServiceType(names.values.join(' '));
-  }
-
-  static int? _toInt(Object? value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
-  }
+  double get totalInitialPayment => productPrice + installationFee;
 }
 
 String? _normalizeServiceType(Object? value) {
