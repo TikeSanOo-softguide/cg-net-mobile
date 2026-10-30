@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 class _MockSecureStorage implements SecureStorage {
   String? _cachedProfile;
 
+  String? get cachedProfile => _cachedProfile;
+
   @override
   Future<String?> readCachedProfile() async => _cachedProfile;
 
@@ -193,6 +195,70 @@ void main() {
         'name': 'Sophia Updated',
         'full_name': 'Sophia Updated',
       });
+    });
+
+    test('cached profile round-trips the shape _cacheProfile writes', () async {
+      final adapter = _ProfileAdapter(
+        responseBody: jsonEncode({
+          'data': {
+            'user': {
+              'id': 57,
+              'name': 'Sophia',
+              'phone': '959757943906',
+              'status': 'active',
+              'username': 'sophia',
+            },
+            'account': {
+              'account': 'FTTH123456789',
+              'name': 'Myat Noe Tint',
+              'mobile': '09260484828',
+              'status': '账户正常',
+              'productName': '村_缅甸网_10M_月',
+              'productPrice': 128,
+              'starttime': '2026-10-01 16:29:45',
+              'endtime': '2030-09-09 10:35:11',
+              'productLine': '缅甸网_村',
+              'productSpeed': '10M',
+              'address': 'Mengla',
+              'area': '勐拉区',
+              'onlineStatus': '离线',
+            },
+            'broadbandAccount': {
+              'account_number': 'FTTH123456789',
+              'service_type': 'FTTH',
+            },
+            'wallet': {'balance': 25000},
+          },
+        }),
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final storage = _MockSecureStorage();
+      final repo = ProfileRepository(dio, storage);
+
+      await repo.fetchProfile();
+
+      final cached =
+          jsonDecode(storage.cachedProfile!) as Map<String, dynamic>;
+      expect(cached.containsKey('wallet'), isFalse);
+      expect(cached.containsKey('broadbandAccount'), isFalse);
+
+      final data = Map<String, dynamic>.from(cached['data'] as Map);
+      expect(data['wallet'], {'balance': '25000'});
+      expect(data['broadbandAccount'], {
+        'account_number': 'FTTH123456789',
+        'service_type': 'FTTH',
+      });
+
+      final restored = await repo.readCachedProfile();
+      expect(restored, isNotNull);
+      expect(restored!.walletBalance, '25000');
+      expect(restored.serviceType, 'FTTH');
+      expect(restored.accountNumber, 'FTTH123456789');
+      expect(restored.fullName, 'Sophia');
+      expect(restored.id, '57');
+      expect(restored.username, 'sophia');
+      expect(restored.accountName, 'Myat Noe Tint');
+      expect(restored.productPrice, '128');
     });
   });
 

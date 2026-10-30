@@ -76,6 +76,19 @@ class UserProfileModel {
     this.status = 'active',
     this.username,
     this.walletBalance = '',
+    this.serviceType,
+    this.productName = '',
+    this.productPrice = '',
+    this.startTime = '',
+    this.endTime = '',
+    this.accountName = '',
+    this.accountPhone = '',
+    this.accountStatus = '',
+    this.address = '',
+    this.area = '',
+    this.onlineStatus = '',
+    this.productLine = '',
+    this.productSpeed = '',
   });
 
   final String id;
@@ -85,6 +98,19 @@ class UserProfileModel {
   final String status;
   final String? username;
   final String walletBalance;
+  final String? serviceType;
+  final String accountName;
+  final String accountPhone;
+  final String accountStatus;
+  final String productName;
+  final String startTime;
+  final String endTime;
+  final String productPrice;
+  final String onlineStatus;
+  final String address;
+  final String area;
+  final String productLine;
+  final String productSpeed;
 
   String get displayPhone => formatLocalPhone(phone);
 
@@ -109,43 +135,43 @@ class UserProfileModel {
   }
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
-    Map<String, dynamic> rawData = json;
-    if (json['data'] is Map) {
-      rawData = Map<String, dynamic>.from(json['data'] as Map);
-      if (rawData['user'] is Map) {
-        rawData = Map<String, dynamic>.from(rawData['user'] as Map);
-      }
-    } else if (json['user'] is Map) {
-      rawData = Map<String, dynamic>.from(json['user'] as Map);
-    }
     final data = json['data'] is Map
         ? Map<String, dynamic>.from(json['data'] as Map)
         : json;
-    final wallet = data['wallet'] is Map
-        ? Map<String, dynamic>.from(data['wallet'] as Map)
-        : <String, dynamic>{};
+    final userData = data['user'] is Map
+        ? Map<String, dynamic>.from(data['user'] as Map)
+        : data['account'] is Map
+            ? Map<String, dynamic>.from(data['account'] as Map)
+            : data;
+    final accountData = data['account'] is Map
+        ? Map<String, dynamic>.from(data['account'] as Map)
+        : userData;
+    final wallet = _readMap(data, json, 'wallet');
+    final broadbandAccount = _readMap(data, json, 'broadbandAccount');
 
-    final id = (rawData['id'] ?? rawData['user_id'] ?? '').toString();
-    final fullName = rawData['name']?.toString() ??
-        rawData['full_name']?.toString() ??
-        rawData['fullName']?.toString() ??
+    final id = (userData['id'] ?? userData['user_id'] ?? '').toString();
+    final fullName = userData['name']?.toString() ??
+        userData['full_name']?.toString() ??
+        userData['fullName']?.toString() ??
         '';
-    final rawPhone = rawData['phone']?.toString() ??
-        rawData['phone_number']?.toString() ??
-        rawData['mobile']?.toString() ??
+    final rawPhone = userData['phone']?.toString() ??
+        userData['phone_number']?.toString() ??
+        userData['mobile']?.toString() ??
         '';
     final phone = formatLocalPhone(rawPhone);
-    final accountNumber = rawData['broadband_account_number']?.toString() ??
-        rawData['broadband_account']?.toString() ??
-        rawData['account_number']?.toString() ??
-        rawData['account_no']?.toString() ??
-        rawData['account']?.toString() ??
-        rawData['accountNumber']?.toString() ??
-        rawData['customer_id']?.toString() ??
-        rawData['user_code']?.toString() ??
+    final accountNumber = broadbandAccount['account_number']?.toString() ??
+        accountData['account']?.toString() ??
+        userData['broadband_account_number']?.toString() ??
+        userData['broadband_account']?.toString() ??
+        userData['account_number']?.toString() ??
+        userData['account_no']?.toString() ??
+        userData['account']?.toString() ??
+        userData['accountNumber']?.toString() ??
+        userData['customer_id']?.toString() ??
+        userData['user_code']?.toString() ??
         '';
-    final status = rawData['status']?.toString() ?? 'active';
-    final username = rawData['username']?.toString();
+    final status = userData['status']?.toString() ?? 'active';
+    final username = userData['username']?.toString();
 
     return UserProfileModel(
       id: id,
@@ -155,6 +181,21 @@ class UserProfileModel {
       status: status,
       username: username,
       walletBalance: wallet['balance']?.toString().trim() ?? '',
+      serviceType: broadbandAccount['service_type']?.toString(),
+      productName: accountData['productName']?.toString() ?? '',
+      startTime: accountData['starttime']?.toString() ?? '',
+      endTime: accountData['endtime']?.toString() ?? '',
+      accountName: accountData['name']?.toString() ?? '',
+      accountPhone: accountData['mobile']?.toString() ?? '',
+      accountStatus: (accountData['account_status'] ?? accountData['status'])
+              ?.toString() ??
+          '',
+      address: accountData['address']?.toString() ?? '',
+      area: accountData['area']?.toString() ?? '',
+      onlineStatus: accountData['onlineStatus']?.toString() ?? '',
+      productLine: accountData['productLine']?.toString() ?? '',
+      productSpeed: accountData['productSpeed']?.toString() ?? '',
+      productPrice: accountData['productPrice']?.toString() ?? '',
     );
   }
 
@@ -166,6 +207,19 @@ class UserProfileModel {
     String? status,
     String? username,
     String? walletBalance,
+    String? serviceType,
+    String? productName,
+    String? startTime,
+    String? endTime,
+    String? accountName,
+    String? accountPhone,
+    String? accountStatus,
+    String? address,
+    String? area,
+    String? onlineStatus,
+    String? productLine,
+    String? productSpeed,
+    String? productPrice,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -175,6 +229,31 @@ class UserProfileModel {
       status: status ?? this.status,
       username: username ?? this.username,
       walletBalance: walletBalance ?? this.walletBalance,
+      serviceType: serviceType ?? this.serviceType,
+      productName: productName ?? this.productName,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      accountName: accountName ?? this.accountName,
+      accountPhone: accountPhone ?? this.accountPhone,
+      accountStatus: accountStatus ?? this.accountStatus,
+      onlineStatus: onlineStatus ?? this.onlineStatus,
+      productLine: productLine ?? this.productLine,
+      productSpeed: productSpeed ?? this.productSpeed,
+      productPrice: productPrice ?? this.productPrice,
+      address: address ?? this.address,
+      area: area ?? this.area,
     );
   }
+}
+
+Map<String, dynamic> _readMap(
+  Map<String, dynamic> data,
+  Map<String, dynamic> json,
+  String key,
+) {
+  final nested = data[key];
+  if (nested is Map) return Map<String, dynamic>.from(nested);
+  final root = json[key];
+  if (root is Map) return Map<String, dynamic>.from(root);
+  return <String, dynamic>{};
 }
