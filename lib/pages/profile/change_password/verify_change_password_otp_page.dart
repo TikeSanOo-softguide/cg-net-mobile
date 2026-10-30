@@ -16,6 +16,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/change_password_model/change_password_otp_session.dart';
+import '../../auth/otp_verification/otp_success_drawer.dart';
 import 'change_password_controller.dart';
 
 class VerifyChangePasswordOtpPage extends ConsumerStatefulWidget {
@@ -225,11 +226,14 @@ class _VerifyChangePasswordOtpPageState
       setState(() => _submitting = false);
       widget.session.clearPassword();
       TextInput.finishAutofillContext(shouldSave: false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(MessageCodes.locKey(MessageCodes.pwdChanged).tr()),
-        ),
+      await showOtpSuccessDrawer(
+        context,
+        title: 'common.success'.tr(),
+        body: MessageCodes.locKey(MessageCodes.pwdChanged).tr(),
+        continueLabel: 'common.continue'.tr(),
+        onContinue: () async => Navigator.of(context).pop(),
       );
+      if (!mounted) return;
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;

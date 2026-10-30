@@ -15,6 +15,9 @@ import '../../../core/theme/app_theme/app_theme.dart';
 Future<void> showOtpSuccessDrawer(
   BuildContext context, {
   required Future<void> Function() onContinue,
+  String? title,
+  String? body,
+  String? continueLabel,
 }) {
   const iconBox = 45.0;
   const iconSize = 26.0;
@@ -78,7 +81,7 @@ Future<void> showOtpSuccessDrawer(
                 ),
                 const SizedBox(height: AppStyle.spaceLg),
                 Text(
-                  'otp.success_title'.tr(),
+                  title ?? 'otp.success_title'.tr(),
                   textAlign: TextAlign.center,
                   style: AppTheme.english(
                     fontSize: titleSize,
@@ -90,7 +93,7 @@ Future<void> showOtpSuccessDrawer(
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'otp.success_body'.tr(),
+                  body ?? 'otp.success_body'.tr(),
                   textAlign: TextAlign.center,
                   style: AppTheme.english(
                     fontSize: subtitleSize,
@@ -101,7 +104,10 @@ Future<void> showOtpSuccessDrawer(
                   ),
                 ),
                 const SizedBox(height: AppStyle.spaceXl),
-                _ContinueButton(onContinue: onContinue),
+                _ContinueButton(
+                  onContinue: onContinue,
+                  label: continueLabel ?? 'otp.continue_setup'.tr(),
+                ),
               ],
             ),
           ),
@@ -112,9 +118,13 @@ Future<void> showOtpSuccessDrawer(
 }
 
 class _ContinueButton extends StatefulWidget {
-  const _ContinueButton({required this.onContinue});
+  const _ContinueButton({
+    required this.onContinue,
+    required this.label,
+  });
 
   final Future<void> Function() onContinue;
+  final String label;
 
   @override
   State<_ContinueButton> createState() => _ContinueButtonState();
@@ -136,11 +146,15 @@ class _ContinueButtonState extends State<_ContinueButton> {
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      label: 'otp.continue_setup'.tr(),
+      label: widget.label,
       height: 44,
       fontSize: 14,
       isLoading: _busy,
-      onPressed: _busy ? null : () { _handle(); },
+      onPressed: _busy
+          ? null
+          : () {
+              _handle();
+            },
     );
   }
 }
