@@ -9,11 +9,12 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_input/app_input.dart';
-import '../../../core/network/api_error_text.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../models/change_password_model/change_password_model.dart';
 import '../../../models/change_password_model/change_password_otp_session.dart';
 import 'change_password_controller.dart';
@@ -25,11 +26,13 @@ class ChangePasswordPage extends ConsumerStatefulWidget {
   ConsumerState<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
-class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
+class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
+    with ApiFieldErrorsMixin<ChangePasswordPage> {
   final _current = TextEditingController();
   final _next = TextEditingController();
   final _confirm = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _currentPasswordFieldKey = GlobalKey<FormFieldState<String>>();
   final _newPasswordFieldKey = GlobalKey<FormFieldState<String>>();
   final _confirmFieldKey = GlobalKey<FormFieldState<String>>();
   bool _obscureCurrentPassword = true;
@@ -99,6 +102,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     label: 'profile.current_password'.tr(),
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
+                    formFieldKey: _currentPasswordFieldKey,
                     obscureText: _obscureCurrentPassword,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
@@ -113,13 +117,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                             _obscureCurrentPassword = !_obscureCurrentPassword,
                       ),
                     ),
-                    onChanged: (_) {
-                      if (_newPasswordFieldKey
-                              .currentState?.hasInteractedByUser ??
-                          false) {
-                        _newPasswordFieldKey.currentState?.validate();
-                      }
-                    },
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'profile.current_password_required'.tr();
@@ -127,7 +124,18 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       if (!RegExp(r'^\d{6}$').hasMatch(value.trim())) {
                         return 'profile.current_password_digits'.tr();
                       }
-                      return null;
+                      return apiFieldError('current_password');
+                    },
+                    onChanged: (_) {
+                      clearApiFieldError(
+                        'current_password',
+                        key: _currentPasswordFieldKey,
+                      );
+                      if (_newPasswordFieldKey
+                              .currentState?.hasInteractedByUser ??
+                          false) {
+                        _newPasswordFieldKey.currentState?.validate();
+                      }
                     },
                   ),
                   const SizedBox(height: 4),
@@ -160,9 +168,13 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       if (value.trim() == _current.text.trim()) {
                         return 'profile.new_password_different'.tr();
                       }
-                      return null;
+                      return apiFieldError('new_password');
                     },
                     onChanged: (_) {
+                      clearApiFieldError(
+                        'new_password',
+                        key: _newPasswordFieldKey,
+                      );
                       if (_confirmFieldKey.currentState?.hasInteractedByUser ??
                           false) {
                         _confirmFieldKey.currentState?.validate();
@@ -195,6 +207,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       if (confirmation.isEmpty) {
                         return 'set_credentials.confirm_required'.tr();
                       }
+                      if (!RegExp(r'^\d{6}$').hasMatch(confirmation)) {
+                        return 'set_credentials.password_digits'.tr();
+                      }
                       if (confirmation != _next.text.trim()) {
                         return 'set_credentials.password_mismatch'.tr();
                       }
@@ -210,6 +225,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                     onPressed: loading
                         ? null
                         : () async {
+                            clearAllApiFieldErrors();
                             if (!_formKey.currentState!.validate()) return;
 
                             final model = ChangePasswordModel(
@@ -229,6 +245,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                               _current.clear();
                               _next.clear();
                               _confirm.clear();
+                              clearAllApiFieldErrors();
+                              _currentPasswordFieldKey.currentState?.reset();
+                              _newPasswordFieldKey.currentState?.reset();
                               context.pushNamed(
                                 RouteNames.verifyChangePasswordOtp,
                                 queryParameters: {
@@ -241,11 +260,16 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                               );
                             } catch (error) {
                               if (!context.mounted) return;
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(apiErrorText(error)),
-                                ),
+                              handleApiError(
+                                error,
+                                fields: {
+                                  'current_password': _currentPasswordFieldKey,
+                                  'new_password': _newPasswordFieldKey,
+                                },
+                                messageCodeFields: {
+                                  MessageCodes.userPasswordIncorrect:
+                                      'current_password',
+                                },
                               );
                             }
                           },

@@ -76,6 +76,7 @@ class MessageCodes {
   static const devRegistered = 'MSG-DEV-001';
   static const devRemoved = 'MSG-DEV-002';
 
+  static const userPasswordIncorrect = 'MSG-USER-002';
   static const userDeactivated = 'MSG-USER-003';
   static const userSuspended = 'MSG-USER-004';
 
@@ -142,6 +143,7 @@ class MessageCodes {
     pwdChangeExpired,
     devRegistered,
     devRemoved,
+    userPasswordIncorrect,
     userDeactivated,
     userSuspended,
   };

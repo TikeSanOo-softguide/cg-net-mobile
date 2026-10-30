@@ -15,8 +15,9 @@ import '../../../core/network/offline_navigation.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/date_time_format.dart';
 import '../../../data/broadband/broadband_repository.dart';
-import '../../../data/customer_profile/customer_profile_repository.dart';
+import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import '../home/bound_broadband.dart';
 import '../home/bound_broadband_provider.dart';
@@ -33,8 +34,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
   final _formKey = GlobalKey<FormState>();
   String _serviceType = 'FTTH';
   bool _isSubmitting = false;
-  bool _isFormValid = false;
-  String? _accountError;
+  bool get _isFormValid => _validateAccount(_account.text) == null;
 
   @override
   void dispose() {
@@ -42,34 +42,24 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     super.dispose();
   }
 
-  void _validateAccount(String value) {
-    final text = value.trim();
-
-    setState(() {
-      if (text.isEmpty) {
-        _accountError = 'broadband.validation.account_required'.tr();
-      } else if (text.length > 32) {
-        _accountError = 'broadband.validation.account_max_length'.tr();
-      } else {
-        _accountError = null;
-      }
-
-      _updateFormValidity();
-      _formKey.currentState?.validate();
-    });
-  }
-
   void _updateServiceType(String value) {
     setState(() {
       _serviceType = value;
-      _updateFormValidity();
     });
   }
 
-  void _updateFormValidity() {
-    _isFormValid = _account.text.trim().isNotEmpty &&
-        _account.text.trim().length <= 32 &&
-        _accountError == null;
+  String? _validateAccount(String? value) {
+    final account = value?.trim() ?? '';
+
+    if (account.isEmpty) {
+      return 'broadband.validation.account_required'.tr();
+    }
+
+    if (account.length > 25) {
+      return 'broadband.validation.account_max_length'.tr();
+    }
+
+    return null;
   }
 
   String _broadbandMessage(ApiException error) {
@@ -83,12 +73,15 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
   }
 
   Future<void> _submit() async {
-    if (_isSubmitting || !(_formKey.currentState?.validate() ?? false)) return;
+    if (_isSubmitting || !(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
     final bound = BoundBroadband(
       serviceType: _serviceType,
       account: _account.text.trim(),
     );
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -100,17 +93,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
               );
 
           debugPrint('BROADBAND CONNECT RESPONSE: $response');
-          await ref.read(profileControllerProvider.notifier).fetchProfile();
-
-          if (!mounted) return;
-
-          ref.read(boundBroadbandProvider.notifier).state = bound;
-          await showAppSuccessModal(
-            context,
-            title: 'home.bind_success_title'.tr(),
-            body: 'home.bind_success_body'.tr(),
-          );
-          return;
+          break;
         } on ApiException catch (error) {
           if (!mounted) return;
 
@@ -120,16 +103,18 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
             continue;
           }
 
-          final message = _broadbandMessage(error);
-
           await showAppFailureModal(
             context,
             title: 'broadband.validation.bind_fail_title'.tr(),
-            body: message,
+            body: _broadbandMessage(error),
           );
           return;
-        } catch (_) {
+        } catch (error, stackTrace) {
+          debugPrint('Broadband bind failed: $error');
+          debugPrintStack(stackTrace: stackTrace);
+
           if (!mounted) return;
+
           await showAppFailureModal(
             context,
             title: 'broadband.validation.bind_fail_title'.tr(),
@@ -138,6 +123,25 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
           return;
         }
       }
+
+      if (!mounted) return;
+
+      ref.read(boundBroadbandProvider.notifier).state = bound;
+
+      try {
+        await ref.read(profileControllerProvider.notifier).fetchProfile();
+      } catch (error, stackTrace) {
+        debugPrint('Profile refresh after broadband binding failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+
+      if (!mounted) return;
+
+      await showAppSuccessModal(
+        context,
+        title: 'home.bind_success_title'.tr(),
+        body: 'home.bind_success_body'.tr(),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -168,7 +172,20 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
           if (!mounted) return;
 
           ref.read(boundBroadbandProvider.notifier).state = null;
-          ref.invalidate(customerProfileProvider);
+
+          setState(() {
+            _account.clear();
+            _serviceType = 'FTTH';
+            _formKey.currentState?.reset();
+          });
+
+          try {
+            await ref.read(profileControllerProvider.notifier).fetchProfile();
+          } catch (error, stackTrace) {
+            debugPrint('Profile refresh after unbinding failed: $error');
+            debugPrintStack(stackTrace: stackTrace);
+          }
+
           return;
         } on ApiException catch (error) {
           if (!mounted) return;
@@ -225,15 +242,15 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
               serviceType: _serviceType,
               isSubmitting: _isSubmitting,
               isFormValid: _isFormValid,
-              onAccountChanged: _validateAccount,
+              onAccountChanged: (_) => setState(() {}),
               onServiceTypeChanged: _updateServiceType,
-              accountError: () => _accountError,
+              validateAccount: _validateAccount,
               onSubmit: _submit,
             )
           else
             _BoundAccountCard(
               bound: bound,
-              name: profile.fullName.trim(),
+              profile: profile,
               isSubmitting: _isSubmitting,
               onRemove: () => _onRemove(bound),
             ),
@@ -252,7 +269,7 @@ class _BindForm extends StatelessWidget {
     required this.isFormValid,
     required this.onAccountChanged,
     required this.onServiceTypeChanged,
-    required this.accountError,
+    required this.validateAccount,
     required this.onSubmit,
   });
 
@@ -263,50 +280,47 @@ class _BindForm extends StatelessWidget {
   final bool isFormValid;
   final ValueChanged<String> onAccountChanged;
   final ValueChanged<String> onServiceTypeChanged;
-  final String? Function() accountError;
+  final String? Function(String?) validateAccount;
   final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
     return Form(
       key: formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: AppCard(
-        elevated: false,
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+        padding: const EdgeInsets.all(16),
         borderRadius: AppStyle.borderRadiusLg,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const _ConnectLead(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             AppInput(
               controller: account,
               label: 'home.broadband_account'.tr(),
               hint: 'home.broadband_account_hint'.tr(),
               prefixIcon: LucideIcons.router,
               textInputAction: TextInputAction.done,
-              reserveErrorSpace: false,
+              reserveErrorSpace: true,
               onChanged: onAccountChanged,
               onSubmitted: (_) {
                 if (isFormValid && !isSubmitting) onSubmit();
               },
-              validator: (_) => accountError(),
+              validator: validateAccount,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             _ServiceTypeRadios(
               value: serviceType,
               onChanged: onServiceTypeChanged,
             ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: AppButton(
-                label: 'Bind Account',
-                height: 42,
-                fontSize: 14,
-                isLoading: isSubmitting,
-                onPressed: isFormValid && !isSubmitting ? onSubmit : null,
-              ),
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'broadband.bind_now'.tr(),
+              height: 44,
+              fontSize: 14,
+              isLoading: isSubmitting,
+              onPressed: isFormValid && !isSubmitting ? onSubmit : null,
             ),
           ],
         ),
@@ -318,19 +332,33 @@ class _BindForm extends StatelessWidget {
 class _BoundAccountCard extends StatelessWidget {
   const _BoundAccountCard({
     required this.bound,
-    required this.name,
+    required this.profile,
     required this.isSubmitting,
     required this.onRemove,
   });
 
   final BoundBroadband bound;
-  final String name;
+  final UserProfileModel profile;
   final bool isSubmitting;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final plan = bound.serviceType.trim().isEmpty ? '-' : bound.serviceType;
+    final productName = profile.productName.trim();
+    final match = RegExp(r'_(\d*)个?月$').firstMatch(productName);
+    final durationNumber = match?.group(1);
+    final duration = match == null
+        ? ''
+        : '${durationNumber?.isNotEmpty == true ? durationNumber : '1'}月';
+    final plan = [
+      profile.productLine,
+      profile.productSpeed,
+      duration.isNotEmpty
+          ? duration
+          : productName.isNotEmpty
+              ? productName
+              : bound.serviceType,
+    ].where((value) => value.trim().isNotEmpty).join(' ');
 
     return AppCard(
       elevated: false,
@@ -374,59 +402,48 @@ class _BoundAccountCard extends StatelessWidget {
                   label: context.tr('broadband.detail_account'),
                   value: bound.account,
                 ),
-                _DetailRow(
-                  label: context.tr('broadband.detail_name'),
-                  value: name.isEmpty ? '-' : name,
-                ),
-                _DetailRow(
-                  label: context.tr('broadband.detail_price'),
-                  value: '-',
-                ),
+                if (profile.accountName.trim().isNotEmpty)
+                  _DetailRow(
+                      label: context.tr('broadband.detail_name'),
+                      value: profile.accountName.trim()),
+                if (profile.accountPhone.trim().isNotEmpty)
+                  _DetailRow(
+                    label: context.tr('broadband.detail_mobile'),
+                    value: profile.accountPhone,
+                  ),
                 _DetailRow(
                   label: context.tr('broadband.detail_plan'),
                   value: plan,
-                  showDivider: false,
                 ),
+                if (profile.productPrice.trim().isNotEmpty)
+                  _DetailRow(
+                    label: context.tr('broadband.detail_price'),
+                    value: '${profile.productPrice.trim()} Pts',
+                  ),
+                if (profile.startTime.trim().isNotEmpty)
+                  _DetailRow(
+                    label: context.tr('broadband.detail_start_time'),
+                    value: formatDate(profile.startTime),
+                  ),
+                if (profile.endTime.trim().isNotEmpty)
+                  _DetailRow(
+                    label: context.tr('broadband.detail_end_time'),
+                    value: formatDate(profile.endTime),
+                  ),
+                if (profile.status.trim().isNotEmpty)
+                  _DetailRow(
+                    label: context.tr('broadband.detail_status'),
+                    value: profile.status,
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SizedBox(
-              height: 42,
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: isSubmitting ? null : onRemove,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFFF0000),
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  side: const BorderSide(color: Color(0xFFFF0000), width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppStyle.radiusButton),
-                  ),
-                ),
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFFFF0000),
-                        ),
-                      )
-                    : Text(
-                        context.tr('broadband.remove_account'),
-                        style: AppTheme.english(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFF0000),
-                          height: AppTheme.lineHeightMyanmarSafe,
-                        ),
-                      ),
-              ),
-            ),
+          AppButton(
+            label: context.tr('broadband.remove_account'),
+            onPressed: isSubmitting ? null : onRemove,
+            backgroundColor: AppColors.error,
+            isLoading: isSubmitting,
           ),
         ],
       ),
@@ -438,12 +455,10 @@ class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
     required this.value,
-    this.showDivider = true,
   });
 
   final String label;
   final String value;
-  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
@@ -454,12 +469,11 @@ class _DetailRow extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                '$label:',
+                '$label',
                 style: AppTheme.english(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
                   color: AppColors.textSecondary,
-                  height: AppTheme.lineHeightMyanmarSafe,
                 ),
               ),
               const SizedBox(width: 12),
@@ -468,18 +482,16 @@ class _DetailRow extends StatelessWidget {
                   value,
                   textAlign: TextAlign.end,
                   style: AppTheme.english(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
-                    height: AppTheme.lineHeightMyanmarSafe,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        if (showDivider)
-          const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
+        const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
       ],
     );
   }
@@ -493,21 +505,29 @@ class _ConnectLead extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const QuickActionIconChip(
-          asset: QuickActionIconChip.bindAsset,
-          background: QuickActionIconChip.bindSoft,
-          tint: AppColors.success,
-          size: 36,
-          iconSize: 20,
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: const QuickActionIconChip(
+            asset: QuickActionIconChip.bindAsset,
+            background: QuickActionIconChip.bindSoft,
+            tint: AppColors.success,
+            iconSize: 20,
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            context.tr('broadband.connect_here'),
+            'broadband.connect_here'.tr(),
             style: AppTheme.english(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: AppColors.textPrimary,
               height: AppStyle.lineHeightTitle,
               letterSpacing: -0.15,
             ),
@@ -521,11 +541,11 @@ class _ConnectLead extends StatelessWidget {
 class _ServiceTypeRadios extends StatelessWidget {
   const _ServiceTypeRadios({
     required this.value,
-    this.onChanged,
+    required this.onChanged,
   });
 
   final String value;
-  final ValueChanged<String>? onChanged;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -549,7 +569,7 @@ class _ServiceTypeRadios extends StatelessWidget {
                 label: 'FTTH',
                 icon: LucideIcons.wifi,
                 selected: value == 'FTTH',
-                onTap: onChanged == null ? null : () => onChanged!('FTTH'),
+                onTap: () => onChanged('FTTH'),
               ),
             ),
             const SizedBox(width: 8),
@@ -558,7 +578,7 @@ class _ServiceTypeRadios extends StatelessWidget {
                 label: 'CG',
                 icon: LucideIcons.cable,
                 selected: value == 'CG',
-                onTap: onChanged == null ? null : () => onChanged!('CG'),
+                onTap: () => onChanged('CG'),
               ),
             ),
           ],

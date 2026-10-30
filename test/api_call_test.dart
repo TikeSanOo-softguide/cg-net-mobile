@@ -46,6 +46,31 @@ void main() {
     expect(MessageCodes.locKey(MessageCodes.pwdChanged), 'msg.pwd_001');
   });
 
+  test('incorrect password validation code maps to its localized message', () {
+    final error = ApiException.fromDio(
+      DioException(
+        requestOptions: RequestOptions(path: '/profile/password'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/profile/password'),
+          statusCode: 422,
+          data: {
+            'code': 'MSG-USER-002',
+            'message': 'The current password is incorrect.',
+            'errors': {
+              'current_password': ['The current password is incorrect.'],
+            },
+          },
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(error.failure, ApiFailure.validation);
+    expect(error.code, MessageCodes.userPasswordIncorrect);
+    expect(MessageCodes.isKnown(error.code), isTrue);
+    expect(MessageCodes.locKey(error.code!), 'msg.user_002');
+  });
+
   test('idempotency keys are opaque UUIDs', () {
     final first = IdempotencyKey.generate();
     final second = IdempotencyKey.generate();
