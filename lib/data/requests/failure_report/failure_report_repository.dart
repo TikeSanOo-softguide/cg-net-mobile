@@ -30,6 +30,21 @@ List<dynamic> _reportItemsFromResponse(Object? payload) {
   return const [];
 }
 
+void _debugPrintReportPhotos(List<dynamic> reports) {
+  if (!kDebugMode) return;
+
+  for (var index = 0; index < reports.length; index++) {
+    final report = reports[index];
+    if (report is! Map) continue;
+
+    final rawPhotos = report['photos'] ?? report['failure_photos'];
+    if (rawPhotos is! List) {
+      debugPrint('[failure-reports] report[$index]: photos field missing');
+      continue;
+    }
+  }
+}
+
 class FailureReportRepository {
   FailureReportRepository(this._dio);
 
@@ -41,14 +56,13 @@ class FailureReportRepository {
         ApiEndpoints.failureReports,
       );
       final list = _reportItemsFromResponse(response.data);
+      _debugPrintReportPhotos(list);
 
       return list
           .whereType<Map>()
           .map(
-            (item) => FailureReportModel.fromJson(
-              Map<String, dynamic>.from(item),
-              includePhotos: false,
-            ),
+            (item) =>
+                FailureReportModel.fromJson(Map<String, dynamic>.from(item)),
           )
           .toList();
     } on DioException catch (error) {

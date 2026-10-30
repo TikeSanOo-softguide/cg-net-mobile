@@ -49,7 +49,10 @@ class ProfileController extends StateNotifier<UserProfileModel> {
     final seq = ++_fetchSeq;
     final firstLoad = !_hasIdentity(state);
     if (firstLoad) {
-      _ref.read(profileHeaderLoadingProvider.notifier).state = true;
+      Future.microtask(() {
+        if (!mounted) return;
+        _ref.read(profileHeaderLoadingProvider.notifier).state = true;
+      });
     }
     try {
       final user = await _profileRepository.fetchProfile();
@@ -59,7 +62,10 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       // Best-effort fetch; keep existing state on network error.
     } finally {
       if (seq == _fetchSeq) {
-        _ref.read(profileHeaderLoadingProvider.notifier).state = false;
+        Future.microtask(() {
+          if (!mounted) return;
+          _ref.read(profileHeaderLoadingProvider.notifier).state = false;
+        });
       }
     }
   }
