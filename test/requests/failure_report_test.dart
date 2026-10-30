@@ -53,7 +53,11 @@ void main() {
       expect(reports.single.id, '15');
       expect(reports.single.status, 'under_review');
       expect(reports.single.contactName, 'Sophia');
-      expect(reports.single.photos, isEmpty);
+      expect(reports.single.photos, hasLength(1));
+      expect(
+        reports.single.photos.single.imageUrl,
+        'https://example.test/report-photo.jpg',
+      );
     });
 
     test('fetchReports returns approved reports for history', () async {
