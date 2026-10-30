@@ -9,6 +9,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -224,6 +225,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                     onPressed: loading
                         ? null
                         : () async {
+                            clearAllApiFieldErrors();
                             if (!_formKey.currentState!.validate()) return;
 
                             final model = ChangePasswordModel(
@@ -263,6 +265,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                                 fields: {
                                   'current_password': _currentPasswordFieldKey,
                                   'new_password': _newPasswordFieldKey,
+                                },
+                                messageCodeFields: {
+                                  MessageCodes.userPasswordIncorrect:
+                                      'current_password',
                                 },
                               );
                             }
