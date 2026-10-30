@@ -71,13 +71,49 @@ class ProfileRepository {
   }
 
   Future<void> _cacheProfile(UserProfileModel profile) {
+    final hasBroadbandAccount = profile.accountNumber.trim().isNotEmpty;
+
     return _secureStorage.writeCachedProfile(
-      jsonEncode({
-        'data': {
-          'user': {'phone': profile.phone},
+      jsonEncode(
+        {
+          'data': {
+            'user': {
+              'id': profile.id,
+              'phone': profile.phone,
+              'name': profile.fullName,
+              'status': profile.status,
+              if (profile.username != null) 'username': profile.username,
+            },
+            'account': hasBroadbandAccount
+                ? {
+                    'id': profile.id,
+                    'account': profile.accountNumber,
+                    'name': profile.accountName,
+                    'mobile': profile.accountPhone,
+                    'account_status': profile.accountStatus,
+                    'status': profile.accountStatus,
+                    'productName': profile.productName,
+                    'productPrice': profile.productPrice,
+                    'starttime': profile.startTime,
+                    'endtime': profile.endTime,
+                    'productLine': profile.productLine,
+                    'productSpeed': profile.productSpeed,
+                    'address': profile.address,
+                    'area': profile.area,
+                    'onlineStatus': profile.onlineStatus,
+                  }
+                : {},
+          },
+          'broadbandAccount': hasBroadbandAccount
+              ? {
+                  'account_number': profile.accountNumber,
+                  if (profile.serviceType != null)
+                    'service_type': profile.serviceType,
+                }
+              : null,
           'wallet': {'balance': profile.walletBalance},
         },
-      }),
+      ),
     );
   }
 

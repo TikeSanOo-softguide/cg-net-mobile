@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/auth_api/auth_api.dart';
@@ -29,7 +30,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
             username: '',
           ),
         ) {
-    fetchProfile();
+    _restoreCachedProfile();
   }
 
   final Ref _ref;
@@ -43,6 +44,26 @@ class ProfileController extends StateNotifier<UserProfileModel> {
     return profile.fullName.isNotEmpty ||
         profile.phone.isNotEmpty ||
         profile.accountNumber.isNotEmpty;
+  }
+
+  Future<void> _restoreCachedProfile() async {
+    try {
+      final cachedProfile = await _profileRepository.readCachedProfile();
+      if (cachedProfile != null && !_hasIdentity(state)) {
+        state = cachedProfile;
+      }
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'profile controller',
+          context: ErrorDescription('while restoring the cached profile'),
+        ),
+      );
+    }
+
+    await fetchProfile();
   }
 
   Future<void> fetchProfile() async {
