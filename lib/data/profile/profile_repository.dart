@@ -103,15 +103,15 @@ class ProfileRepository {
                     'onlineStatus': profile.onlineStatus,
                   }
                 : {},
+            'broadbandAccount': hasBroadbandAccount
+                ? {
+                    'account_number': profile.accountNumber,
+                    if (profile.serviceType != null)
+                      'service_type': profile.serviceType,
+                  }
+                : null,
+            'wallet': {'balance': profile.walletBalance},
           },
-          'broadbandAccount': hasBroadbandAccount
-              ? {
-                  'account_number': profile.accountNumber,
-                  if (profile.serviceType != null)
-                    'service_type': profile.serviceType,
-                }
-              : null,
-          'wallet': {'balance': profile.walletBalance},
         },
       ),
     );

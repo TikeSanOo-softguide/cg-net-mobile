@@ -140,5 +140,35 @@ void main() {
     expect(profile.startTime, '2026-10-01 16:29:45');
     expect(profile.endTime, '2030-09-09 10:35:11');
     expect(profile.onlineStatus, '离线');
+    expect(profile.walletBalance, '0');
+    expect(profile.serviceType, 'FTTH');
+  });
+
+  test('restores wallet and service type when cache keeps them beside data',
+      () {
+    final profile = UserProfileModel.fromJson({
+      'data': {
+        'user': {
+          'id': '57',
+          'phone': '09757943906',
+          'name': 'Sophia',
+          'status': 'active',
+        },
+        'account': {
+          'account': 'FTTH123456789',
+          'name': 'Myat Noe Tint',
+        },
+      },
+      'broadbandAccount': {
+        'account_number': 'FTTH123456789',
+        'service_type': 'FTTH',
+      },
+      'wallet': {'balance': '25000'},
+    });
+
+    expect(profile.walletBalance, '25000');
+    expect(profile.serviceType, 'FTTH');
+    expect(profile.accountNumber, 'FTTH123456789');
+    expect(profile.fullName, 'Sophia');
   });
 }

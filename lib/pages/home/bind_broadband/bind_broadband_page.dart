@@ -288,44 +288,41 @@ class _BindForm extends StatelessWidget {
     return Form(
       key: formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: AppCard(
-          padding: const EdgeInsets.all(16),
-          borderRadius: AppStyle.borderRadiusLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _ConnectLead(),
-              const SizedBox(height: 12),
-              AppInput(
-                controller: account,
-                label: 'home.broadband_account'.tr(),
-                hint: 'home.broadband_account_hint'.tr(),
-                prefixIcon: LucideIcons.router,
-                textInputAction: TextInputAction.done,
-                reserveErrorSpace: true,
-                onChanged: onAccountChanged,
-                onSubmitted: (_) {
-                  if (isFormValid && !isSubmitting) onSubmit();
-                },
-                validator: validateAccount,
-              ),
-              const SizedBox(height: 4),
-              _ServiceTypeRadios(
-                value: serviceType,
-                onChanged: onServiceTypeChanged,
-              ),
-              const SizedBox(height: 24),
-              AppButton(
-                label: 'broadband.bind_now'.tr(),
-                height: 44,
-                fontSize: 14,
-                isLoading: isSubmitting,
-                onPressed: isFormValid && !isSubmitting ? onSubmit : null,
-              ),
-            ],
-          ),
+      child: AppCard(
+        padding: const EdgeInsets.all(16),
+        borderRadius: AppStyle.borderRadiusLg,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _ConnectLead(),
+            const SizedBox(height: 12),
+            AppInput(
+              controller: account,
+              label: 'home.broadband_account'.tr(),
+              hint: 'home.broadband_account_hint'.tr(),
+              prefixIcon: LucideIcons.router,
+              textInputAction: TextInputAction.done,
+              reserveErrorSpace: true,
+              onChanged: onAccountChanged,
+              onSubmitted: (_) {
+                if (isFormValid && !isSubmitting) onSubmit();
+              },
+              validator: validateAccount,
+            ),
+            const SizedBox(height: 4),
+            _ServiceTypeRadios(
+              value: serviceType,
+              onChanged: onServiceTypeChanged,
+            ),
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'broadband.bind_now'.tr(),
+              height: 44,
+              fontSize: 14,
+              isLoading: isSubmitting,
+              onPressed: isFormValid && !isSubmitting ? onSubmit : null,
+            ),
+          ],
         ),
       ),
     );

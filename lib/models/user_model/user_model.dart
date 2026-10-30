@@ -146,12 +146,8 @@ class UserProfileModel {
     final accountData = data['account'] is Map
         ? Map<String, dynamic>.from(data['account'] as Map)
         : userData;
-    final wallet = data['wallet'] is Map
-        ? Map<String, dynamic>.from(data['wallet'] as Map)
-        : <String, dynamic>{};
-    final broadbandAccount = data['broadbandAccount'] is Map
-        ? Map<String, dynamic>.from(data['broadbandAccount'] as Map)
-        : <String, dynamic>{};
+    final wallet = _readMap(data, json, 'wallet');
+    final broadbandAccount = _readMap(data, json, 'broadbandAccount');
 
     final id = (userData['id'] ?? userData['user_id'] ?? '').toString();
     final fullName = userData['name']?.toString() ??
@@ -248,4 +244,16 @@ class UserProfileModel {
       area: area ?? this.area,
     );
   }
+}
+
+Map<String, dynamic> _readMap(
+  Map<String, dynamic> data,
+  Map<String, dynamic> json,
+  String key,
+) {
+  final nested = data[key];
+  if (nested is Map) return Map<String, dynamic>.from(nested);
+  final root = json[key];
+  if (root is Map) return Map<String, dynamic>.from(root);
+  return <String, dynamic>{};
 }
