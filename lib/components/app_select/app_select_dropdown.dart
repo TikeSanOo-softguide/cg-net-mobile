@@ -45,6 +45,7 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
   final _focusNode = FocusNode();
   final _layerLink = LayerLink();
   final _triggerKey = GlobalKey();
+  final _fieldKey = GlobalKey<FormFieldState<T>>();
   OverlayEntry? _overlay;
   bool _open = false;
   bool _openUpward = false;
@@ -67,6 +68,13 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
   void didUpdateWidget(covariant AppSelectDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_open) _rebuildOverlay();
+    if (widget.value == oldWidget.value) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final field = _fieldKey.currentState;
+      if (field == null || field.value == widget.value) return;
+      field.didChange(widget.value);
+    });
   }
 
   @override
@@ -255,7 +263,8 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
     final labelColor = focused ? AppColors.primary : AppColors.textSecondary;
 
     return FormField<T>(
-      validator: (_) => widget.validator?.call(widget.value),
+      key: _fieldKey,
+      validator: widget.validator,
       initialValue: widget.value,
       builder: (field) {
         final hasError = field.hasError;
@@ -283,8 +292,7 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                       isDense: true,
                       labelText: widget.label,
                       hintText: selected == null ? widget.hint : null,
-                      errorStyle: const TextStyle(height: 0, fontSize: 0),
-                      errorText: hasError ? '' : null,
+                      errorText: null,
                       hintStyle: AppTheme.english(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -354,11 +362,12 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                 height: AppStyle.errorSlotHeight,
                 child: (hasError && errorText != null && errorText.isNotEmpty)
                     ? Align(
-                        alignment: Alignment.bottomLeft,
+                        alignment: Alignment.topLeft,
                         child: Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             errorText,
+                            textAlign: TextAlign.left,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.fieldError(),
@@ -369,9 +378,10 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
               )
             else if (hasError && errorText != null && errorText.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 2, bottom: 2),
+                padding: const EdgeInsets.only(top: 4, bottom: 2),
                 child: Text(
                   errorText,
+                  textAlign: TextAlign.left,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.fieldError(),

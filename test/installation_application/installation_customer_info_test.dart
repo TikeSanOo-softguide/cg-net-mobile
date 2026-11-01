@@ -59,9 +59,9 @@ void main() {
     ).toRequest();
 
     expect(request, isA<InstallationApplicationModel>());
-    expect(request.idName, 'Maung Maung');
+    expect(request.name, 'Maung Maung');
     expect(request.phone, '09987654321');
     expect(request.address, 'Inya Road');
-    expect(request.productId, '249');
+    expect(request.packageDetail?['product_id'], '249');
   });
 }

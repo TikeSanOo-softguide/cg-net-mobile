@@ -301,9 +301,9 @@ class _AppInputState extends State<AppInput> {
                 height: _errorSlotHeight,
                 child: (hasError && errorText != null && errorText.isNotEmpty)
                     ? Align(
-                        alignment: Alignment.bottomLeft,
+                        alignment: Alignment.topLeft,
                         child: Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             errorText,
                             textAlign: TextAlign.left,
@@ -317,7 +317,7 @@ class _AppInputState extends State<AppInput> {
               )
             else if (hasError && errorText != null && errorText.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 2, bottom: 2),
+                padding: const EdgeInsets.only(top: 4, bottom: 2),
                 child: Text(
                   errorText,
                   textAlign: TextAlign.left,

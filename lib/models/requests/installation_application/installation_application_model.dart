@@ -4,16 +4,15 @@ class InstallationApplicationModel {
     required this.userId,
     this.productId,
     this.productName,
-    required this.packageId,
+    this.packageDetail,
     required this.areaId,
-    required this.idType,
-    required this.idName,
-    required this.idNumber,
+    required this.name,
     required this.address,
     required this.phone,
     required this.photos,
     required this.note,
     this.serviceType,
+    this.ticketNumber,
     this.status = 'under_review',
     this.createdAt,
     this.updatedAt,
@@ -22,13 +21,12 @@ class InstallationApplicationModel {
   final String id;
   final int userId;
   final String? serviceType;
+  final String? ticketNumber;
   final String? productId;
   final String? productName;
-  final int? packageId;
+  final Map<String, dynamic>? packageDetail;
   final int? areaId;
-  final String idType;
-  final String idName;
-  final String? idNumber;
+  final String name;
   final String? address;
   final String phone;
   final List<Map<String, dynamic>> photos;
@@ -45,20 +43,24 @@ class InstallationApplicationModel {
         : json;
 
     final rawPhotos = data['photos'];
+    final detail = data['package_detail'] is Map
+        ? Map<String, dynamic>.from(data['package_detail'] as Map)
+        : null;
 
     return InstallationApplicationModel(
       id: data['id']?.toString() ?? '',
       userId: _toInt(data['user_id']) ?? 0,
       serviceType: _normalizeServiceType(data['service_type']),
-      productId: data['product_id']?.toString() ??
+      ticketNumber: data['ticket_number']?.toString(),
+      productId: detail?['product_id']?.toString() ??
+          data['product_id']?.toString() ??
           data['productID']?.toString(),
-      productName: data['product_name']?.toString() ??
+      productName: detail?['product_name']?.toString() ??
+          data['product_name']?.toString() ??
           data['productName']?.toString(),
-      packageId: _toInt(data['package_id']),
+      packageDetail: detail,
       areaId: _toInt(data['area_id']),
-      idType: data['id_type']?.toString() ?? '',
-      idName: data['id_name']?.toString() ?? '',
-      idNumber: data['id_number']?.toString(),
+      name: data['name']?.toString() ?? '',
       address: data['address']?.toString(),
       phone: data['phone']?.toString() ?? '',
       photos: rawPhotos is List
@@ -81,13 +83,9 @@ class InstallationApplicationModel {
   Map<String, dynamic> toJson() => {
         'user_id': userId,
         'service_type': serviceType,
-        'product_id': productId,
-        'product_name': productName,
-        'package_id': packageId,
+        'name': name,
+        'package_detail': packageDetail,
         'area_id': areaId,
-        'id_type': idType,
-        'id_name': idName,
-        'id_number': idNumber,
         'address': address,
         'phone': phone,
         'photos': photos,

@@ -5,16 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
 import '../../../components/app_card/app_card.dart';
-import '../../../components/app_circle_icon_button/app_circle_icon_button.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'installation_application_controller.dart';
-import 'installation_application_submitted_page.dart';
 import 'installation_application_form_page.dart';
 import 'installation_request_draft.dart';
 
@@ -49,26 +48,12 @@ class _InstallationApplicationPageState
           request: request,
           profile: profile,
         );
-    final savedRequest =
-        await Navigator.of(context).push<InstallationApplicationModel>(
+    await Navigator.of(context).push<InstallationApplicationModel>(
       MaterialPageRoute(
         builder: (_) => const InstallationApplicationFormPage(),
       ),
     );
     ref.read(installationRequestDraftProvider.notifier).reset();
-    if (!mounted || savedRequest == null) return;
-    if (request != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('installationApplication.update_success'.tr())),
-      );
-      return;
-    }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            InstallationApplicationSubmittedPage(request: savedRequest),
-      ),
-    );
   }
 
   Future<void> _confirmAction({
@@ -78,26 +63,32 @@ class _InstallationApplicationPageState
       context,
       title: 'installationApplication.cancel_title'.tr(),
       body: 'installationApplication.cancel_confirm'.tr(),
-      confirmLabel: 'installationApplication.cancel_action'.tr(),
+      confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true) return;
 
     final controller =
         ref.read(installationApplicationControllerProvider.notifier);
-    final success = await controller.cancelRequest(request.id);
+    final code = await controller.cancelRequest(request.id);
     if (!mounted) return;
 
-    final state = ref.read(installationApplicationControllerProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'installationApplication.cancel_success'.tr()
-              : _localizedError(state.errorMessage),
-        ),
-        backgroundColor: success ? null : AppColors.error,
-      ),
+    if (code == null) {
+      final state = ref.read(installationApplicationControllerProvider);
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: _localizedError(state.errorMessage),
+      );
+      return;
+    }
+
+    await showAppSuccessModal(
+      context,
+      title: 'common.success'.tr(),
+      body: MessageCodes.isKnown(code)
+          ? MessageCodes.locKey(code).tr()
+          : 'installationApplication.cancel_success'.tr(),
     );
   }
 
@@ -175,15 +166,23 @@ class _InstallationApplicationPageState
             padding: const EdgeInsets.all(AppStyle.spaceXxl),
             child: Column(
               children: [
-                const Icon(
-                  LucideIcons.map_pin,
-                  color: AppColors.primary,
-                  size: AppStyle.iconSizeLg,
+                ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFDA0C81),
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(
+                    'assets/images/services/installation.png',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
                   'installationApplication.no_requests'.tr(),
-                  style: AppTheme.sectionTitle(),
+                  style: AppTheme.sectionTitle(color: AppColors.primary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
@@ -289,95 +288,270 @@ class _InstallationApplicationCard extends StatelessWidget {
         ? null
         : DateFormat('yyyy.MM.dd HH:mm').format(request.createdAt!.toLocal());
     final canManage = _canManageRequest(request);
+    final detail = request.packageDetail;
 
     return AppCard(
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.all(AppStyle.spaceMd),
+      padding: EdgeInsets.zero,
+      borderRadius: AppStyle.borderRadiusLg,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppStyle.spaceSm,
-                  vertical: AppStyle.spaceXs,
-                ),
-                decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.12),
-                  borderRadius: AppStyle.borderRadiusInput,
-                ),
-                child: Text(
-                  _statusLabel,
-                  style: AppTheme.caption(
-                    color: _statusColor,
-                    weight: FontWeight.w600,
-                  ),
-                ),
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: _statusColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppStyle.radiusLg),
               ),
-              const Spacer(),
-              if (createdAt != null) Text(createdAt, style: AppTheme.caption()),
-            ],
-          ),
-          const SizedBox(height: AppStyle.spaceMd),
-          if (request.serviceType != null)
-            _RequestDetail(
-              label: 'installationApplication.service_type'.tr(),
-              value: request.serviceType!,
             ),
-          if (request.productId != null || request.productName != null)
-            _RequestDetail(
-              label: 'installationApplication.package'.tr(),
-              value: [
-                request.productId,
-                request.productName,
-              ].whereType<String>().where((part) => part.trim().isNotEmpty).join('  '),
-            ),
-          _RequestDetail(
-            label: 'installationApplication.id_name'.tr(),
-            value: request.idName,
           ),
-          _RequestDetail(
-            label: 'installationApplication.address'.tr(),
-            value: request.address ?? '',
-          ),
-          _RequestDetail(
-            label: 'requests.phone'.tr(),
-            value: request.phone,
-          ),
-          if (request.note?.trim().isNotEmpty == true)
-            _RequestDetail(
-              label: 'installationApplication.note'.tr(),
-              value: request.note!,
-            ),
-          if (canManage) ...[
-            const Divider(height: AppStyle.spaceXxl),
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: AppStyle.spaceXs,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppCircleIconButton(
-                  onPressed: onEdit,
-                  icon: LucideIcons.pencil,
-                  backgroundColor: AppColors.primary,
-                  iconSize: AppStyle.iconSizeSm,
-                  borderRadius: AppStyle.radiusButton,
+                Row(
+                  children: [
+                    Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _statusLabel,
+                        textHeightBehavior: const TextHeightBehavior(
+                          applyHeightToFirstAscent: false,
+                          applyHeightToLastDescent: false,
+                        ),
+                        style: AppTheme.caption(
+                          color: _statusColor,
+                          weight: FontWeight.w600,
+                        ).copyWith(
+                          fontSize: 10,
+                          height: 1,
+                          leadingDistribution: TextLeadingDistribution.even,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (createdAt != null)
+                      Text(
+                        createdAt,
+                        style: AppTheme.caption(color: AppColors.textPrimary)
+                            .copyWith(fontSize: 11),
+                      ),
+                  ],
                 ),
-                Tooltip(
-                  message: 'installationApplication.cancel_action'.tr(),
-                  child: AppCircleIconButton(
-                    onPressed: onCancel,
-                    icon: LucideIcons.trash,
-                    backgroundColor: AppColors.error,
-                    iconSize: AppStyle.iconSizeSm,
-                    borderRadius: AppStyle.radiusButton,
+                const SizedBox(height: 14),
+                if (request.ticketNumber?.trim().isNotEmpty == true)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 108,
+                          child: Text(
+                            'installationApplication.ticket_number'.tr(),
+                            style: AppTheme.caption(),
+                          ),
+                        ),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                request.ticketNumber!,
+                                textAlign: TextAlign.right,
+                                style: AppTheme.body(
+                                  weight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                ).copyWith(fontSize: 13),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                _RequestDetail(
+                  label: 'installationApplication.package'.tr(),
+                  value: request.productName ?? '',
                 ),
+                _RequestDetail(
+                  label: 'installationApplication.service_type'.tr(),
+                  value: _serviceLabel(request.serviceType),
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.billing_period'.tr(),
+                  value: _periodLabel(detail),
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.network_provider'.tr(),
+                  value: detail?['product_line']?.toString() ?? '',
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.internet_speed'.tr(),
+                  value: _speedLabel(detail?['product_speed']),
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.package_price'.tr(),
+                  value: _pointsLabel(detail?['product_price']),
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.installation_fee'.tr(),
+                  value: _pointsLabel(detail?['installation_fee']),
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.id_name'.tr(),
+                  value: request.name,
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.address'.tr(),
+                  value: request.address ?? '',
+                ),
+                _RequestDetail(
+                  label: 'installationApplication.phone'.tr(),
+                  value: request.phone,
+                ),
+                if (request.note?.trim().isNotEmpty == true)
+                  _RequestDetail(
+                    label: 'installationApplication.note'.tr(),
+                    value: request.note!,
+                  ),
+                if (canManage) ...[
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4, bottom: 12),
+                    child: Divider(height: 1, color: AppColors.borderLight),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Material(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                        child: InkWell(
+                          onTap: onEdit,
+                          borderRadius: BorderRadius.circular(6),
+                          splashColor: AppColors.primary.withValues(alpha: 0.08),
+                          highlightColor:
+                              AppColors.primary.withValues(alpha: 0.04),
+                          child: const SizedBox(
+                            width: 26,
+                            height: 24,
+                            child: Center(
+                              child: Image(
+                                image: AssetImage(
+                                  'assets/images/profile/edit.png',
+                                ),
+                                width: 14,
+                                height: 14,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: 'installationApplication.cancel_action'.tr(),
+                        child: _CardActionButton(
+                          onPressed: onCancel,
+                          icon: LucideIcons.trash,
+                          color: AppColors.error,
+                          background: const Color(0xFFF8E8E6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
-          ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+String _serviceLabel(String? type) {
+  if (type == null || type.trim().isEmpty) return '';
+  if (type == 'CG') return 'installationApplication.cg_router'.tr();
+  return type;
+}
+
+String _periodLabel(Map<String, dynamic>? detail) {
+  final cycle = int.tryParse('${detail?['month_cycle']}') ?? 0;
+  if (cycle <= 0) return '';
+  final unit = detail?['month_cycle_unit']?.toString() ?? '';
+  final isDay = unit.contains('天');
+  if (isDay) {
+    return cycle == 1
+        ? 'installationApplication.period_day_1'.tr()
+        : 'installationApplication.period_day_n'.tr(
+            namedArgs: {'count': '$cycle'},
+          );
+  }
+  if (cycle == 1) return 'installationApplication.period_1'.tr();
+  return 'installationApplication.period_n'.tr(
+    namedArgs: {'count': '$cycle'},
+  );
+}
+
+String _speedLabel(Object? speed) {
+  final match = RegExp(r'\d+').firstMatch(speed?.toString() ?? '');
+  final mbps = match?.group(0);
+  if (mbps == null || mbps.isEmpty) return '';
+  return 'installationApplication.speed_mbps'.tr(namedArgs: {'speed': mbps});
+}
+
+String _pointsLabel(Object? value) {
+  if (value == null) return '';
+  final amount = value is num ? value.toDouble() : double.tryParse('$value');
+  if (amount == null) return '';
+  return '${NumberFormat('#,##0').format(amount)} ${'topup.pts'.tr()}';
+}
+
+class _CardActionButton extends StatelessWidget {
+  const _CardActionButton({
+    required this.icon,
+    required this.onPressed,
+    required this.color,
+    required this.background,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(6),
+        child: SizedBox(
+          width: 26,
+          height: 24,
+          child: Icon(icon, size: 14, color: color),
+        ),
       ),
     );
   }
@@ -396,15 +570,22 @@ class _RequestDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppStyle.spaceSm),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$label : ', style: AppTheme.caption()),
+          SizedBox(
+            width: 108,
+            child: Text(label, style: AppTheme.caption()),
+          ),
           Expanded(
             child: Text(
               value,
-              style: AppTheme.body(color: AppColors.textPrimary),
+              textAlign: TextAlign.right,
+              style: AppTheme.body(
+                weight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ).copyWith(fontSize: 13),
             ),
           ),
         ],

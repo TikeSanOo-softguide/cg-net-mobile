@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
@@ -12,8 +11,6 @@ typedef InstallationApplicationOptions = List<InstallationApplicationOption>;
 
 class InstallationApplicationRepository {
   InstallationApplicationRepository(this._dio);
-
-  static const _maxPhotoBytes = 2 * 1024 * 1024;
 
   final Dio _dio;
 
@@ -63,54 +60,23 @@ class InstallationApplicationRepository {
       ..remove('photos');
       payload.removeWhere(
         (key, value) =>
-            value == null ||
-            (value is String && value.trim().isEmpty) ||
-            key == 'id_type' ||
-            key == 'id_number' ||
-            key == 'package_id',
+            value == null || (value is String && value.trim().isEmpty),
       );
     return payload;
   }
 
-  Future<InstallationApplicationModel> createRequest(
-    InstallationApplicationModel request, {
-    List<XFile> photos = const [],
-  }) async {
-    for (final photo in photos) {
-      final extension = photo.name.split('.').last.toLowerCase();
-      if (!{'jpg', 'jpeg', 'png', 'webp'}.contains(extension)) {
-        throw ApiException(
-          ApiFailure.unknown,
-          detail: 'installationApplication.photo_type_error'.tr(),
-        );
-      }
-      if (await photo.length() > _maxPhotoBytes) {
-        throw ApiException(
-          ApiFailure.unknown,
-          detail: 'installationApplication.photo_size_error'.tr(),
-        );
-      }
-    }
-
+  Future<InstallationApplicationSaveResult> createRequest(
+    InstallationApplicationModel request,
+  ) async {
     try {
-      final formData = FormData.fromMap(_payload(request));
-      for (var index = 0; index < photos.length; index++) {
-        final photo = photos[index];
-        formData.files.add(
-          MapEntry(
-            'photos[$index]',
-            MultipartFile.fromBytes(
-              await photo.readAsBytes(),
-              filename: photo.name,
-            ),
-          ),
-        );
-      }
       final response = await _dio.post<dynamic>(
         ApiEndpoints.createInstallationApplicationRequest,
-        data: formData,
+        data: _payload(request),
       );
-      return _requestFromResponse(response.data, request);
+      return InstallationApplicationSaveResult(
+        request: _requestFromResponse(response.data, request),
+        code: _messageCode(response.data),
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
@@ -137,7 +103,7 @@ class InstallationApplicationRepository {
         .toList();
   }
 
-  Future<InstallationApplicationModel> updateRequest(
+  Future<InstallationApplicationSaveResult> updateRequest(
     InstallationApplicationModel request,
   ) async {
     if (request.id.trim().isEmpty) {
@@ -152,13 +118,16 @@ class InstallationApplicationRepository {
         ApiEndpoints.installationApplicationRequest(request.id),
         data: _payload(request),
       );
-      return _requestFromResponse(response.data, request);
+      return InstallationApplicationSaveResult(
+        request: _requestFromResponse(response.data, request),
+        code: _messageCode(response.data),
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
 
-  Future<void> cancelRequest(String requestId) async {
+  Future<String?> cancelRequest(String requestId) async {
     if (requestId.trim().isEmpty) {
       throw ApiException(
         ApiFailure.unknown,
@@ -167,9 +136,14 @@ class InstallationApplicationRepository {
     }
 
     try {
-      await _dio.patch<dynamic>(
+      final response = await _dio.patch<dynamic>(
         ApiEndpoints.cancelInstallationRequest(requestId),
       );
+      final data = response.data;
+      if (data is Map && data['code'] is String) {
+        return data['code'] as String;
+      }
+      return null;
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
@@ -189,6 +163,23 @@ class InstallationApplicationRepository {
     }
     return fallback;
   }
+
+  String? _messageCode(Object? data) {
+    if (data is Map && data['code'] is String) {
+      return data['code'] as String;
+    }
+    return null;
+  }
+}
+
+class InstallationApplicationSaveResult {
+  const InstallationApplicationSaveResult({
+    required this.request,
+    this.code,
+  });
+
+  final InstallationApplicationModel request;
+  final String? code;
 }
 
 final installationApplicationRepositoryProvider =

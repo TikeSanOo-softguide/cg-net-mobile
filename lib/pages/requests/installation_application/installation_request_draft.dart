@@ -16,7 +16,7 @@ class InstallationRequestDraft {
     this.productSpeed,
     this.monthCycle,
     this.productLine,
-    this.packageId,
+    this.monthCycleUnit,
     this.fullName = '',
     this.phone = '',
     this.address = '',
@@ -27,10 +27,9 @@ class InstallationRequestDraft {
     this.stateName,
     this.regionName,
     this.areaName,
-    this.idType = '',
-    this.idNumber,
     this.photos = const [],
     this.status = 'under_review',
+    this.ticketNumber,
   });
 
   final String existingId;
@@ -43,7 +42,7 @@ class InstallationRequestDraft {
   final String? productSpeed;
   final int? monthCycle;
   final String? productLine;
-  final int? packageId;
+  final String? monthCycleUnit;
   final String fullName;
   final String phone;
   final String address;
@@ -54,10 +53,9 @@ class InstallationRequestDraft {
   final String? stateName;
   final String? regionName;
   final String? areaName;
-  final String idType;
-  final String? idNumber;
   final List<Map<String, dynamic>> photos;
   final String status;
+  final String? ticketNumber;
 
   bool get isEditing => existingId.isNotEmpty;
 
@@ -73,7 +71,7 @@ class InstallationRequestDraft {
     String? productSpeed,
     int? monthCycle,
     String? productLine,
-    int? packageId,
+    String? monthCycleUnit,
     String? fullName,
     String? phone,
     String? address,
@@ -86,10 +84,9 @@ class InstallationRequestDraft {
     String? areaName,
     bool clearRegion = false,
     bool clearArea = false,
-    String? idType,
-    String? idNumber,
     List<Map<String, dynamic>>? photos,
     String? status,
+    String? ticketNumber,
   }) {
     return InstallationRequestDraft(
       existingId: existingId ?? this.existingId,
@@ -103,7 +100,8 @@ class InstallationRequestDraft {
       productSpeed: clearProduct ? null : productSpeed ?? this.productSpeed,
       monthCycle: clearProduct ? null : monthCycle ?? this.monthCycle,
       productLine: clearProduct ? null : productLine ?? this.productLine,
-      packageId: packageId ?? this.packageId,
+      monthCycleUnit:
+          clearProduct ? null : monthCycleUnit ?? this.monthCycleUnit,
       fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
       address: address ?? this.address,
@@ -114,10 +112,9 @@ class InstallationRequestDraft {
       stateName: stateName ?? this.stateName,
       regionName: clearRegion ? null : regionName ?? this.regionName,
       areaName: clearArea || clearRegion ? null : areaName ?? this.areaName,
-      idType: idType ?? this.idType,
-      idNumber: idNumber ?? this.idNumber,
       photos: photos ?? this.photos,
       status: status ?? this.status,
+      ticketNumber: ticketNumber ?? this.ticketNumber,
     );
   }
 
@@ -126,17 +123,27 @@ class InstallationRequestDraft {
       id: existingId,
       userId: userId,
       serviceType: serviceType,
+      ticketNumber: ticketNumber,
       productId: productId,
       productName: productName,
-      packageId: packageId,
+      packageDetail: productId == null
+          ? null
+          : {
+              'product_id': productId,
+              'product_name': productName ?? '',
+              'product_line': productLine ?? '',
+              'product_speed': productSpeed ?? '',
+              'product_price': productPrice ?? 0,
+              'installation_fee': installationFee ?? 0,
+              'month_cycle': monthCycle ?? 1,
+              'month_cycle_unit': monthCycleUnit ?? '',
+            },
       areaId: areaId,
-      idType: idType,
-      idName: fullName.trim(),
-      idNumber: idNumber,
+      name: fullName.trim(),
       address: address.trim(),
       phone: phone.trim(),
       photos: photos,
-      note: note,
+      note: note?.trim().isEmpty == true ? null : note?.trim(),
       status: status,
     );
   }
@@ -150,22 +157,29 @@ class InstallationRequestDraftNotifier
     InstallationApplicationModel? request,
     required UserProfileModel profile,
   }) {
+    final detail = request?.packageDetail;
     state = InstallationRequestDraft(
       existingId: request?.id ?? '',
       userId: request?.userId ?? int.tryParse(profile.id) ?? 0,
       serviceType: request?.serviceType ?? 'FTTH',
       productId: request?.productId,
       productName: request?.productName,
-      packageId: request?.packageId,
-      fullName: request?.idName ?? profile.fullName,
+      productPrice: _detailDouble(detail?['product_price']),
+      installationFee: _detailDouble(detail?['installation_fee']),
+      productSpeed: detail?['product_speed']?.toString(),
+      monthCycle: int.tryParse('${detail?['month_cycle']}'),
+      productLine: detail?['product_line']?.toString(),
+      monthCycleUnit: detail?['month_cycle_unit']?.toString(),
+      fullName: request == null || request.name.trim().isEmpty
+          ? profile.fullName
+          : request.name,
       phone: request?.phone ?? profile.displayPhone,
       address: request?.address ?? '',
       note: request?.note,
       areaId: request?.areaId,
-      idType: request?.idType ?? '',
-      idNumber: request?.idNumber,
       photos: request?.photos ?? const [],
       status: request?.status ?? 'under_review',
+      ticketNumber: request?.ticketNumber,
     );
   }
 
@@ -182,6 +196,7 @@ class InstallationRequestDraftNotifier
       installationFee: product.installationFee,
       productSpeed: product.productSpeed,
       monthCycle: product.monthCycle,
+      monthCycleUnit: product.monthCycleUnit,
       productLine: product.productLine,
     );
   }
@@ -203,6 +218,11 @@ class InstallationRequestDraftNotifier
   void setAddress(String value) {
     if (state.address == value) return;
     state = state.copyWith(address: value);
+  }
+
+  void setNote(String value) {
+    if (state.note == value) return;
+    state = state.copyWith(note: value);
   }
 
   void setStatePlace(int id, String name) {
@@ -236,6 +256,12 @@ final installationRequestDraftProvider = StateNotifierProvider<
   (ref) => InstallationRequestDraftNotifier(),
 );
 
+double? _detailDouble(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
 String? installationFullNameError(String? value) {
   if (value == null || value.trim().isEmpty) {
     return 'requests.required';
@@ -251,6 +277,13 @@ String? installationAddressError(String? value) {
     return 'requests.required';
   }
   if (value.trim().runes.length > 5000) {
+    return 'requests.max_length';
+  }
+  return null;
+}
+
+String? installationNoteError(String? value) {
+  if (value != null && value.trim().runes.length > 5000) {
     return 'requests.max_length';
   }
   return null;

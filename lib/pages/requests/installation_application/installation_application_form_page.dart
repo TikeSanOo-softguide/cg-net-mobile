@@ -5,9 +5,11 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
+import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
-import '../../../core/network/api_exception.dart';
+import '../../../core/network/api_message_modal.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -33,10 +35,11 @@ class _InstallationApplicationFormPageState
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _addressController;
+  late final TextEditingController _noteController;
   int _step = 1;
   List<InstallationApplicationOption> _packages = const [];
   bool _loadingOptions = true;
-  String? _optionsError;
+  bool _optionsFailed = false;
   String _serviceType = 'FTTH';
   String? _productLine;
   int? _speedMbps;
@@ -50,6 +53,7 @@ class _InstallationApplicationFormPageState
   bool _loadingStates = true;
   bool _loadingRegions = false;
   bool _loadingAreas = false;
+  AutovalidateMode _customerAutovalidate = AutovalidateMode.disabled;
 
   @override
   void initState() {
@@ -58,6 +62,7 @@ class _InstallationApplicationFormPageState
     _nameController = TextEditingController(text: draft.fullName);
     _phoneController = TextEditingController(text: draft.phone);
     _addressController = TextEditingController(text: draft.address);
+    _noteController = TextEditingController(text: draft.note ?? '');
     _stateId = draft.stateId;
     _regionId = draft.regionId;
     _areaId = draft.areaId;
@@ -72,6 +77,7 @@ class _InstallationApplicationFormPageState
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -157,7 +163,7 @@ class _InstallationApplicationFormPageState
     _serviceType = serviceType == 'CG' ? 'CG' : 'FTTH';
     setState(() {
       _loadingOptions = true;
-      _optionsError = null;
+      _optionsFailed = false;
     });
     try {
       final options = await ref
@@ -167,7 +173,7 @@ class _InstallationApplicationFormPageState
       setState(() {
         _packages = options;
         _loadingOptions = false;
-        _optionsError = null;
+        _optionsFailed = false;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -177,11 +183,10 @@ class _InstallationApplicationFormPageState
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _optionsError = error is ApiException
-            ? error.detail ?? error.messageKey
-            : error.toString();
+        _optionsFailed = true;
         _loadingOptions = false;
       });
+      await showApiMessageModal(context, error);
     }
   }
 
@@ -305,25 +310,54 @@ class _InstallationApplicationFormPageState
       return;
     }
     if (_step == 2) {
-      if (!(_formKey.currentState?.validate() ?? false)) return;
-      if (_areaId == null) return;
+      final valid = _formKey.currentState?.validate() ?? false;
+      if (!valid) {
+        setState(
+          () => _customerAutovalidate = AutovalidateMode.onUserInteraction,
+        );
+        return;
+      }
       ref.read(installationRequestDraftProvider.notifier)
         ..setFullName(_nameController.text)
         ..setPhone(_phoneController.text)
-        ..setAddress(_addressController.text);
+        ..setAddress(_addressController.text)
+        ..setNote(_noteController.text);
       setState(() => _step = 3);
       return;
     }
     final request = ref.read(installationRequestDraftProvider).toRequest();
-    final saved = await ref
-        .read(installationApplicationControllerProvider.notifier)
-        .saveRequest(request);
-    if (!mounted || saved == null) return;
-    Navigator.of(context).pop(saved);
+    final editing = ref.read(installationRequestDraftProvider).isEditing;
+    try {
+      final saved = await ref
+          .read(installationApplicationControllerProvider.notifier)
+          .saveRequest(request);
+      if (!mounted) return;
+      await showAppSuccessModal(
+        context,
+        title: 'common.success'.tr(),
+        body: MessageCodes.isKnown(saved.code)
+            ? MessageCodes.locKey(saved.code!).tr()
+            : editing
+                ? 'installationApplication.update_success'.tr()
+                : 'requests.submitted_title'.tr(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(saved.request);
+    } catch (error) {
+      if (!mounted) return;
+      await showApiMessageModal(context, error);
+    }
   }
 
-  String? _translateError(String? key) {
+  String _requiredMessage(String fieldKey) {
+    return 'requests.required_field'.tr(namedArgs: {'field': fieldKey.tr()});
+  }
+
+  String? _translateError(String? key, {String? fieldKey}) {
     if (key == null) return null;
+    if (key == 'requests.required' && fieldKey != null) {
+      return _requiredMessage(fieldKey);
+    }
     if (key == 'requests.max_length') {
       return 'requests.max_length'.tr(namedArgs: {'max': '255'});
     }
@@ -333,10 +367,19 @@ class _InstallationApplicationFormPageState
   String? _addressError(String? value) {
     final key = installationAddressError(value);
     if (key == null) return null;
+    if (key == 'requests.required') {
+      return _requiredMessage('installationApplication.address');
+    }
     if (key == 'requests.max_length') {
       return 'requests.max_length'.tr(namedArgs: {'max': '5000'});
     }
     return key.tr();
+  }
+
+  String? _noteError(String? value) {
+    final key = installationNoteError(value);
+    if (key == null) return null;
+    return 'requests.max_length'.tr(namedArgs: {'max': '5000'});
   }
 
   String _serviceLabel(String type) {
@@ -344,10 +387,8 @@ class _InstallationApplicationFormPageState
     return 'FTTH';
   }
 
-  String _money(double amount) {
-    return 'installationApplication.amount_mmk'.tr(
-      namedArgs: {'amount': NumberFormat('#,##0').format(amount)},
-    );
+  String _points(double amount) {
+    return '${NumberFormat('#,##0').format(amount)} ${'topup.pts'.tr()}';
   }
 
   String _periodLabel(int cycle, String unit) {
@@ -401,11 +442,11 @@ class _InstallationApplicationFormPageState
         actionLabel: _step == 3
             ? 'common.submit'.tr()
             : 'common.continue'.tr(),
-        actionEnabled: _step == 1
-            ? !_loadingOptions && product != null
-            : _step == 2
-                ? _areaId != null
-                : !submitting,
+        actionEnabled: switch (_step) {
+          1 => !_loadingOptions && product != null,
+          2 => true,
+          _ => !submitting,
+        },
         actionLoading: _step == 3 && submitting,
         onAction: _continue,
         onBack: _goBack,
@@ -415,7 +456,7 @@ class _InstallationApplicationFormPageState
         child: switch (_step) {
           1 => _buildPackageStep(product),
           2 => _buildCustomerStep(),
-          _ => _buildReviewStep(),
+          _ => _buildReviewStep(product),
         },
       ),
     );
@@ -469,10 +510,12 @@ class _InstallationApplicationFormPageState
                   ),
                 ),
               )
-            else if (_optionsError != null)
-              _ErrorState(
-                message: _optionsError!,
-                onRetry: _loadProducts,
+            else if (_optionsFailed)
+              Center(
+                child: TextButton(
+                  onPressed: _loadProducts,
+                  child: Text('common.retry'.tr()),
+                ),
               )
             else if (_packages.isEmpty)
               _EmptyCatalog(
@@ -596,9 +639,9 @@ class _InstallationApplicationFormPageState
                                   'speed': '${productSpeedMbps(product)}',
                                 },
                               ),
-                              price: _money(product.productPrice),
-                              installationFee: _money(product.installationFee),
-                              total: _money(product.totalInitialPayment),
+                              price: _points(product.productPrice),
+                              installationFee: _points(product.installationFee),
+                              total: _points(product.totalInitialPayment),
                             ),
                           ],
             ],
@@ -614,7 +657,7 @@ class _InstallationApplicationFormPageState
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Form(
         key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
+        autovalidateMode: _customerAutovalidate,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -625,8 +668,10 @@ class _InstallationApplicationFormPageState
               prefixIcon: LucideIcons.user,
               textInputAction: TextInputAction.next,
               maxLength: 255,
-              validator: (value) =>
-                  _translateError(installationFullNameError(value)),
+              validator: (value) => _translateError(
+                installationFullNameError(value),
+                fieldKey: 'installationApplication.full_name',
+              ),
               onChanged: (value) => ref
                   .read(installationRequestDraftProvider.notifier)
                   .setFullName(value),
@@ -657,7 +702,7 @@ class _InstallationApplicationFormPageState
               enabled: !_loadingStates,
               options: _locationOptions(_states),
               validator: (value) => value == null
-                  ? 'requests.required'.tr()
+                  ? _requiredMessage('installationApplication.location_state')
                   : null,
               onChanged: (id) {
                 if (id != null) _selectState(id);
@@ -673,7 +718,7 @@ class _InstallationApplicationFormPageState
               enabled: _stateId != null && !_loadingRegions,
               options: _locationOptions(_regions),
               validator: (value) => value == null
-                  ? 'requests.required'.tr()
+                  ? _requiredMessage('installationApplication.location_region')
                   : null,
               onChanged: (id) {
                 if (id != null) _selectRegion(id);
@@ -689,7 +734,7 @@ class _InstallationApplicationFormPageState
               enabled: _regionId != null && !_loadingAreas,
               options: _locationOptions(_areas),
               validator: (value) => value == null
-                  ? 'requests.required'.tr()
+                  ? _requiredMessage('installationApplication.location_area')
                   : null,
               onChanged: (id) {
                 if (id != null) _selectArea(id);
@@ -701,13 +746,29 @@ class _InstallationApplicationFormPageState
               label: '${'installationApplication.address'.tr()} *',
               hint: 'installationApplication.address_hint'.tr(),
               prefixIcon: LucideIcons.map_pin,
-              textInputAction: TextInputAction.newline,
-              maxLines: 4,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.next,
+              maxLines: 2,
               maxLength: 5000,
               validator: _addressError,
               onChanged: (value) => ref
                   .read(installationRequestDraftProvider.notifier)
                   .setAddress(value),
+            ),
+            const SizedBox(height: AppStyle.spaceXs),
+            AppInput(
+              controller: _noteController,
+              label: 'installationApplication.note'.tr(),
+              hint: 'installationApplication.note_hint'.tr(),
+              prefixIcon: LucideIcons.notebook_pen,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.done,
+              maxLines: 2,
+              maxLength: 5000,
+              validator: _noteError,
+              onChanged: (value) => ref
+                  .read(installationRequestDraftProvider.notifier)
+                  .setNote(value),
             ),
           ],
         ),
@@ -715,14 +776,8 @@ class _InstallationApplicationFormPageState
     );
   }
 
-  Widget _buildReviewStep() {
+  Widget _buildReviewStep(InstallationApplicationOption? product) {
     final draft = ref.watch(installationRequestDraftProvider);
-    final errorMessage =
-        ref.watch(installationApplicationControllerProvider).errorMessage;
-    final packageLabel = [
-      draft.productName,
-      draft.productSpeed,
-    ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' · ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -732,13 +787,40 @@ class _InstallationApplicationFormPageState
           title: 'installationApplication.step_package'.tr(),
           children: [
             _ReviewRow(
+              label: 'installationApplication.ticket_number'.tr(),
+              value: draft.ticketNumber ?? '',
+            ),
+            _ReviewRow(
               label: 'installationApplication.service_type'.tr(),
               value: _serviceLabel(draft.serviceType),
             ),
-            _ReviewRow(
-              label: 'installationApplication.package'.tr(),
-              value: packageLabel,
-            ),
+            if (product != null) ...[
+              _ReviewRow(
+                label: 'installationApplication.billing_period'.tr(),
+                value: _periodLabel(
+                  product.monthCycle,
+                  product.monthCycleUnit,
+                ),
+              ),
+              _ReviewRow(
+                label: 'installationApplication.network_provider'.tr(),
+                value: providerLineOf(product),
+              ),
+              _ReviewRow(
+                label: 'installationApplication.internet_speed'.tr(),
+                value: 'installationApplication.speed_mbps'.tr(
+                  namedArgs: {'speed': '${productSpeedMbps(product)}'},
+                ),
+              ),
+              _ReviewRow(
+                label: 'installationApplication.package_price'.tr(),
+                value: _points(product.productPrice),
+              ),
+              _ReviewRow(
+                label: 'installationApplication.installation_fee'.tr(),
+                value: _points(product.installationFee),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 12),
@@ -770,18 +852,12 @@ class _InstallationApplicationFormPageState
               label: 'installationApplication.address'.tr(),
               value: draft.address,
             ),
+            _ReviewRow(
+              label: 'installationApplication.note'.tr(),
+              value: draft.note ?? '',
+            ),
           ],
         ),
-        if (errorMessage != null) ...[
-          const SizedBox(height: AppStyle.spaceMd),
-          Text(
-            errorMessage.startsWith('api.') ||
-                    errorMessage.startsWith('common.')
-                ? errorMessage.tr()
-                : errorMessage,
-            style: AppTheme.body(color: AppColors.error),
-          ),
-        ],
       ],
     );
   }
@@ -841,7 +917,7 @@ class _ReviewRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -854,7 +930,7 @@ class _ReviewRow extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               style: AppTheme.body(
-                weight: FontWeight.w600,
+                weight: FontWeight.w500,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -879,29 +955,6 @@ class _EmptyCatalog extends StatelessWidget {
           message,
           textAlign: TextAlign.center,
           style: AppTheme.body(color: AppColors.textMuted),
-        ),
-        TextButton(onPressed: onRetry, child: Text('common.retry'.tr())),
-      ],
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          message.startsWith('api.') || message.startsWith('common.')
-              ? message.tr()
-              : message,
-          textAlign: TextAlign.center,
-          style: AppTheme.body(color: AppColors.error),
         ),
         TextButton(onPressed: onRetry, child: Text('common.retry'.tr())),
       ],
@@ -1126,14 +1179,14 @@ class _SelectedPackageSummary extends StatelessWidget {
     required this.speed,
     required this.price,
     required this.installationFee,
-    required this.total,
+    this.total,
   });
 
   final String provider;
   final String speed;
   final String price;
   final String installationFee;
-  final String total;
+  final String? total;
 
   @override
   Widget build(BuildContext context) {
@@ -1165,15 +1218,17 @@ class _SelectedPackageSummary extends StatelessWidget {
             label: 'installationApplication.installation_fee'.tr(),
             value: installationFee,
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1),
-          ),
-          _PriceLine(
-            label: 'installationApplication.total_initial'.tr(),
-            value: total,
-            emphasize: true,
-          ),
+          if (total != null) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1),
+            ),
+            _PriceLine(
+              label: 'installationApplication.total_initial'.tr(),
+              value: total!,
+              emphasize: true,
+            ),
+          ],
         ],
       ),
     );
@@ -1206,7 +1261,7 @@ class _PriceLine extends StatelessWidget {
         Text(
           value,
           style: AppTheme.body(
-            weight: FontWeight.w700,
+            weight: FontWeight.w500,
             color: AppColors.primary,
           ),
         ),

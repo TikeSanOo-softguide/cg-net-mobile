@@ -80,6 +80,10 @@ class MessageCodes {
   static const userDeactivated = 'MSG-USER-003';
   static const userSuspended = 'MSG-USER-004';
 
+  static const reqCancelled = 'MSG-REQ-001';
+  static const reqSubmitted = 'MSG-REQ-002';
+  static const reqUpdated = 'MSG-REQ-003';
+
   static const Set<String> known = {
     authIncorrectPassword,
     authAccountLocked,
@@ -146,6 +150,9 @@ class MessageCodes {
     userPasswordIncorrect,
     userDeactivated,
     userSuspended,
+    reqCancelled,
+    reqSubmitted,
+    reqUpdated,
   };
 
   /// `MSG-AUTH-001` → `msg.auth_001`

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../data/requests/installation_application/installation_application_repository.dart';
@@ -71,35 +70,45 @@ class InstallationApplicationController
     }
   }
 
-  Future<InstallationApplicationModel?> saveRequest(
+  Future<InstallationApplicationSaveResult> saveRequest(
     InstallationApplicationModel request,
-    {List<XFile> photos = const []}
   ) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      final savedRequest = request.id.isEmpty
-          ? await _repository.createRequest(request, photos: photos)
+      final saved = request.id.isEmpty
+          ? await _repository.createRequest(request)
           : await _repository.updateRequest(request);
       state = state.copyWith(isSubmitting: false, clearError: true);
       await fetchRequests();
-      return savedRequest;
+      return saved;
     } on ApiException catch (error) {
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: error.detail ?? error.messageKey,
       );
-      return null;
+      rethrow;
     } catch (error) {
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: error.toString(),
       );
-      return null;
+      rethrow;
     }
   }
 
-  Future<bool> cancelRequest(String requestId) async {
-    return _runMutation(() => _repository.cancelRequest(requestId));
+  Future<String?> cancelRequest(String requestId) async {
+    state = state.copyWith(clearError: true);
+    try {
+      final code = await _repository.cancelRequest(requestId);
+      await fetchRequests();
+      return code;
+    } on ApiException catch (error) {
+      state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
+      return null;
+    } catch (error) {
+      state = state.copyWith(errorMessage: error.toString());
+      return null;
+    }
   }
 
   Future<bool> _runMutation(Future<void> Function() mutation) async {
