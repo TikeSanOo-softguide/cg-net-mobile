@@ -76,28 +76,24 @@ class InstallationWizardScaffold extends StatelessWidget {
               ),
             ),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border(
-                top: BorderSide(color: AppColors.paperBorder.withValues(alpha: 0.9)),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, -2),
+          Container(
+            color: AppColors.background,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(24),
                 ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                child: AppButton(
-                  label: actionLabel,
-                  isLoading: actionLoading,
-                  onPressed: actionEnabled ? onAction : null,
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  child: AppButton(
+                    label: actionLabel,
+                    isLoading: actionLoading,
+                    onPressed: actionEnabled ? onAction : null,
+                  ),
                 ),
               ),
             ),

@@ -315,7 +315,7 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                       fillColor: !widget.enabled
                           ? AppColors.backgroundAlt
                           : AppColors.surface,
-                      contentPadding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
+                      contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                       suffixIcon: Icon(
                         _open
                             ? LucideIcons.chevron_up
@@ -326,8 +326,8 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                             : AppColors.textMuted,
                       ),
                       suffixIconConstraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 40,
+                        minWidth: 40,
+                        minHeight: 48,
                       ),
                       border: border,
                       enabledBorder: border,
@@ -346,8 +346,8 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.english(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.textPrimary,
                           letterSpacing: 0.2,
                         ),

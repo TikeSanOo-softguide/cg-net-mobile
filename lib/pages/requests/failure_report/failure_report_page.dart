@@ -12,14 +12,13 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_photo_picker/app_photo_picker.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
-import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/requests/failure_report/failure_report_model.dart';
+import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'failure_report_controller.dart';
-import 'failure_report_detail_page.dart';
 
 String _normalizedReportStatus(String status) =>
     status.toLowerCase().trim().replaceAll(' ', '_').replaceAll('-', '_');
@@ -76,16 +75,36 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     });
   }
 
-  void _openReportDetails(FailureReportModel report) {
-    Navigator.of(context)
-        .push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => FailureReportDetailPage(report: report),
-      ),
-    )
-        .then((_) {
-      if (mounted) _fetchReports();
-    });
+  Future<void> _confirmCancel(FailureReportModel report) async {
+    final confirmed = await showAppConfirmModal(
+      context,
+      title: 'failure_report.cancel_title'.tr(),
+      body: 'failure_report.cancel_confirm'.tr(),
+      confirmLabel: 'common.confirm'.tr(),
+      cancelLabel: 'common.no'.tr(),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final success = await ref
+        .read(failureReportControllerProvider.notifier)
+        .cancelReport(report);
+    if (!mounted) return;
+
+    if (!success) {
+      final message = ref.read(failureReportControllerProvider).errorMessage;
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: _loadErrorMessage(message),
+      );
+      return;
+    }
+
+    await showAppSuccessModal(
+      context,
+      title: 'common.success'.tr(),
+      body: 'failure_report.cancel_success'.tr(),
+    );
   }
 
   @override
@@ -93,7 +112,7 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     final title = 'failure_report.title'.tr();
     final reportState = ref.watch(failureReportControllerProvider);
     final hasUnderReviewReport = reportState.reports.any(
-      (report) => _normalizedReportStatus(report.status) == 'under_review',
+      (report) => _isUnderReviewReport(report.status),
     );
 
     return AppCurvedScaffold(
@@ -170,36 +189,33 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
           AppCard(
             elevated: false,
             bordered: false,
-            padding: const EdgeInsets.symmetric(
-              vertical: AppStyle.spaceXxl,
-              horizontal: AppStyle.spaceLg,
-            ),
+            padding: const EdgeInsets.all(AppStyle.spaceXxl),
             child: Column(
               children: [
-                const QuickActionIconChip(
-                  asset: 'assets/images/services/complaint.png',
-                  background: AppColors.primaryLight,
-                  tint: Color(0xFFFF0000),
-                  size: 54,
-                  iconSize: 36,
+                ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFFF0000),
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(
+                    'assets/images/services/complaint.png',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
                   'failure_report.no_reports'.tr(),
-                  style: AppTheme.english(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppTheme.sectionTitle(color: AppColors.primary),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 Text(
                   'failure_report.no_reports_desc'.tr(),
                   textAlign: TextAlign.center,
-                  style: AppTheme.body(
-                    color: AppColors.textMuted,
-                    weight: FontWeight.w400,
-                  ).copyWith(fontSize: 13),
+                  style: AppTheme.bodySecondary(),
                 ),
               ],
             ),
@@ -208,66 +224,45 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
       );
     }
 
-    final underReviewReports =
-        reports.where((report) => _isUnderReviewReport(report.status)).toList();
-    final historyReports = reports
-        .where((report) => !_isUnderReviewReport(report.status))
-        .toList();
+    final hasError = state.status == FailureReportStatus.error &&
+        state.errorMessage != null;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppStyle.spaceLg,
-        AppStyle.spaceLg,
-        AppStyle.spaceLg,
-        80, // Clearance for FAB
-      ),
-      children: [
-        if (state.status == FailureReportStatus.error) ...[
-          AppCard(
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppStyle.spaceLg),
+      itemCount: reports.length + (hasError ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
+      itemBuilder: (context, index) {
+        if (hasError && index == 0) {
+          return AppCard(
             elevated: false,
             bordered: false,
-            padding: const EdgeInsets.all(AppStyle.spaceMd),
-            child: Column(
+            child: Row(
               children: [
-                Text(
-                  _loadErrorMessage(state.errorMessage),
-                  textAlign: TextAlign.center,
-                  style: AppTheme.body(
-                    color: AppColors.textMuted,
-                    weight: FontWeight.w400,
-                  ).copyWith(fontSize: 13),
+                Expanded(
+                  child: Text(
+                    _loadErrorMessage(state.errorMessage),
+                    style: AppTheme.body(color: AppColors.error),
+                  ),
                 ),
-                const SizedBox(height: AppStyle.spaceSm),
-                AppButton(
-                  label: 'common.retry'.tr(),
+                TextButton(
                   onPressed: _fetchReports,
+                  child: Text('common.retry'.tr()),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: AppStyle.spaceMd),
-        ],
-        if (underReviewReports.isNotEmpty) ...[
-          _buildSectionTitle('change_wifi.status_under_review'.tr()),
-          for (final report in underReviewReports) ...[
-            _ReportItemCard(
-              item: report,
-              onTap: () => _openReportDetails(report),
-            ),
-            const SizedBox(height: AppStyle.spaceMd),
-          ],
-        ],
-        if (historyReports.isNotEmpty) ...[
-          _buildSectionTitle('home.service_history'.tr()),
-          for (final report in historyReports) ...[
-            _ReportItemCard(
-              item: report,
-              onTap: () => _openReportDetails(report),
-            ),
-            const SizedBox(height: AppStyle.spaceMd),
-          ],
-        ],
-      ],
+          );
+        }
+
+        final report = reports[index - (hasError ? 1 : 0)];
+        final canManage = _isUnderReviewReport(report.status);
+        return _FailureReportCard(
+          report: report,
+          onEdit: canManage
+              ? () => _openNewReportPage(initialReport: report)
+              : null,
+          onCancel: canManage ? () => _confirmCancel(report) : null,
+        );
+      },
     );
   }
 
@@ -280,33 +275,28 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     }
     return errorMessage;
   }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppStyle.spaceMd),
-      child: Text(
-        title,
-        style: AppTheme.english(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-        ),
-      ),
-    );
-  }
 }
 
-class _ReportItemCard extends StatelessWidget {
-  const _ReportItemCard({
-    required this.item,
-    required this.onTap,
+class _FailureReportCard extends StatefulWidget {
+  const _FailureReportCard({
+    required this.report,
+    this.onEdit,
+    this.onCancel,
   });
 
-  final FailureReportModel item;
-  final VoidCallback onTap;
+  final FailureReportModel report;
+  final VoidCallback? onEdit;
+  final VoidCallback? onCancel;
 
-  Color _statusColor(String status) {
-    switch (_normalizedReportStatus(status)) {
+  @override
+  State<_FailureReportCard> createState() => _FailureReportCardState();
+}
+
+class _FailureReportCardState extends State<_FailureReportCard> {
+  bool _expanded = false;
+
+  Color get _statusColor {
+    switch (_normalizedReportStatus(widget.report.status)) {
       case 'under_review':
       case 'pending':
       case 'review':
@@ -326,117 +316,309 @@ class _ReportItemCard extends StatelessWidget {
     }
   }
 
-  String _statusLabel(String status) {
-    switch (_normalizedReportStatus(status)) {
+  String get _statusLabel {
+    switch (_normalizedReportStatus(widget.report.status)) {
       case 'under_review':
       case 'pending':
       case 'review':
       case 'processing':
       case 'in_progress':
       case 'submitted':
-        return 'change_wifi.status_under_review'.tr();
+        return 'requests.status_under_review'.tr();
       case 'approved':
       case 'completed':
-        return 'change_wifi.status_approved'.tr();
+      case 'active':
+        return 'requests.status_approved'.tr();
       case 'cancelled':
-        return 'change_wifi.status_cancelled'.tr();
       case 'rejected':
-        return 'change_wifi.status_rejected'.tr();
+        return 'requests.status_cancelled'.tr();
       default:
-        return status;
+        return widget.report.status;
     }
   }
 
-  String _failureTypeLabel(BuildContext context, String type) {
-    final enumType = FailureType.fromKey(type);
-    return context.tr('failure_report.${enumType.localizationKey}');
+  String _displayAccount(String? account) {
+    final value = account?.trim() ?? '';
+    if (value.startsWith('FTTH')) return value.substring(4);
+    if (value.startsWith('CG')) return value.substring(2);
+    return value;
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(item.status);
-
-    final dateStr = item.createdAt != null
-        ? DateFormat('yyyy.MM.dd HH:mm').format(item.createdAt!)
-        : null;
+    final report = widget.report;
+    final createdAt = report.createdAt == null
+        ? null
+        : DateFormat('yyyy.MM.dd HH:mm').format(report.createdAt!.toLocal());
+    final failureType = FailureType.fromKey(report.failureType);
+    final canManage = widget.onEdit != null || widget.onCancel != null;
 
     return AppCard(
-      onTap: onTap,
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.all(AppStyle.spaceMd),
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: _statusColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _statusLabel,
+                        textHeightBehavior: const TextHeightBehavior(
+                          applyHeightToFirstAscent: false,
+                          applyHeightToLastDescent: false,
+                        ),
+                        style: AppTheme.caption(
+                          color: _statusColor,
+                          weight: FontWeight.w600,
+                        ).copyWith(
+                          fontSize: 10,
+                          height: 1,
+                          leadingDistribution: TextLeadingDistribution.even,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (createdAt != null)
+                      Text(
+                        createdAt,
+                        style: AppTheme.caption(color: AppColors.textPrimary)
+                            .copyWith(fontSize: 11),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const _TicketRow(),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: _expanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Column(
+                            children: [
+                              _ReportDetail(
+                                label: 'failure_report.failure_type'.tr(),
+                                value:
+                                    'failure_report.${failureType.localizationKey}'
+                                        .tr(),
+                              ),
+                              _ReportDetail(
+                                label: 'failure_report.card_account'.tr(),
+                                value: _displayAccount(
+                                  report.broadbandAccountNumber,
+                                ),
+                              ),
+                              _ReportDetail(
+                                label: 'failure_report.contact_name'.tr(),
+                                value: report.contactName,
+                              ),
+                              _ReportDetail(
+                                label: 'failure_report.contact_phone'.tr(),
+                                value: report.contactPhone,
+                              ),
+                              _ReportDetail(
+                                label: 'failure_report.card_description'.tr(),
+                                value: report.description,
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+                const SizedBox(height: 4),
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: InkWell(
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _expanded
+                                  ? 'common.see_less'.tr()
+                                  : 'common.see_more'.tr(),
+                              style: AppTheme.caption(
+                                color: AppColors.primary,
+                                weight: FontWeight.w600,
+                              ).copyWith(fontSize: 10),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              _expanded
+                                  ? LucideIcons.chevron_up
+                                  : LucideIcons.chevron_down,
+                              size: 12,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (canManage) ...[
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: 10),
+                    child: Divider(height: 1, color: AppColors.borderLight),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (widget.onEdit != null)
+                        Material(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                          child: InkWell(
+                            onTap: widget.onEdit,
+                            borderRadius: BorderRadius.circular(6),
+                            splashColor:
+                                AppColors.primary.withValues(alpha: 0.08),
+                            highlightColor:
+                                AppColors.primary.withValues(alpha: 0.04),
+                            child: const SizedBox(
+                              width: 26,
+                              height: 24,
+                              child: Center(
+                                child: Image(
+                                  image: AssetImage(
+                                    'assets/images/profile/edit.png',
+                                  ),
+                                  width: 14,
+                                  height: 14,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (widget.onEdit != null && widget.onCancel != null)
+                        const SizedBox(width: 8),
+                      if (widget.onCancel != null)
+                        Material(
+                          color: const Color(0xFFF8E8E6),
+                          borderRadius: BorderRadius.circular(6),
+                          child: InkWell(
+                            onTap: widget.onCancel,
+                            borderRadius: BorderRadius.circular(6),
+                            child: const SizedBox(
+                              width: 26,
+                              height: 24,
+                              child: Icon(
+                                LucideIcons.trash,
+                                size: 14,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketRow extends StatelessWidget {
+  const _TicketRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  _statusLabel(item.status),
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              if (dateStr != null)
-                Text(
-                  dateStr,
-                  style: AppTheme.english(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-            ],
+          SizedBox(
+            width: 108,
+            child: Text(
+              'installationApplication.ticket_number'.tr(),
+              style: AppTheme.caption(),
+            ),
           ),
-          const SizedBox(height: 10),
-          if (item.broadbandAccountNumber != null &&
-              item.broadbandAccountNumber!.isNotEmpty) ...[
-            Text(
-              'A/C: ${item.broadbandAccountNumber}',
-              style: AppTheme.english(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '—',
+                style: AppTheme.body(
+                  weight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ).copyWith(fontSize: 12),
               ),
             ),
-            const SizedBox(height: 2),
-          ],
-          Text(
-            '${item.contactName} (${item.contactPhone})',
-            style: AppTheme.english(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            _failureTypeLabel(context, item.failureType),
-            style: AppTheme.english(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppColors.primary,
-            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReportDetail extends StatelessWidget {
+  const _ReportDetail({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    if (value.trim().isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 108,
+            child: Text(label, style: AppTheme.caption()),
           ),
-          if (item.description.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              item.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
               style: AppTheme.body(
-                color: AppColors.textMuted,
-                weight: FontWeight.w400,
+                weight: FontWeight.w500,
+                color: AppColors.textPrimary,
               ).copyWith(fontSize: 12),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -460,6 +642,29 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
   late final TextEditingController _contactNameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _descriptionController;
+
+  String _storedAccountNumber(UserProfileModel profile) {
+    final typed = _broadbandAccountController.text.trim();
+    final account = typed.isNotEmpty ? typed : profile.accountNumber.trim();
+    final serviceType = profile.serviceType?.trim() ?? '';
+    if (account.isEmpty ||
+        (serviceType != 'CG' && serviceType != 'FTTH') ||
+        account.startsWith(serviceType)) {
+      return account;
+    }
+    return '$serviceType$account';
+  }
+
+  String _requiredMessage(String fieldKey) {
+    return 'requests.required_field'.tr(namedArgs: {'field': fieldKey.tr()});
+  }
+
+  String? _requiredText(String? value, String fieldKey) {
+    if (value == null || value.trim().isEmpty) {
+      return _requiredMessage(fieldKey);
+    }
+    return null;
+  }
 
   String _selectedType = 'no_internet';
   final ImagePicker _picker = ImagePicker();
@@ -502,8 +707,13 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
   Future<void> _pickImage(FormFieldState<int> field) async {
     if (_selectedPhotos.length >= 3) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
@@ -571,9 +781,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     final profile = ref.read(profileControllerProvider);
-    final inputAccount = _broadbandAccountController.text.trim();
-    final boundAccount =
-        inputAccount.isNotEmpty ? inputAccount : profile.accountNumber;
+    final boundAccount = _storedAccountNumber(profile);
     final userId = int.tryParse(profile.id) ?? 0;
 
     final photos = _selectedPhotos
@@ -593,6 +801,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
               contactPhone: _phoneController.text.trim(),
               photos: photos,
               userId: userId,
+              reportId: widget.initialReport?.id,
             );
 
     if (!mounted) return;
@@ -624,188 +833,192 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
 
     final errorMessage = controllerState.errorMessage;
 
+    final submitting = controllerState.isSubmitting;
+
     return AppCurvedScaffold(
       title: Text(
         'failure_report.title'.tr(),
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
-      body: SafeArea(
-        top: false,
-        child: Container(
-          color: AppColors.background,
-          padding: const EdgeInsets.all(AppStyle.spaceLg),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppCard(
-                    elevated: false,
-                    bordered: false,
-                    padding: const EdgeInsets.all(AppStyle.spaceLg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'failure_report.form_desc'.tr(),
-                          style: AppTheme.body(
-                            color: AppColors.textSecondary,
-                            weight: FontWeight.w400,
-                          ).copyWith(fontSize: 13),
-                        ),
-                        const SizedBox(height: AppStyle.spaceLg),
-
-                        // 1. Broadband Account Number
-                        AppInput(
-                          controller: _broadbandAccountController,
-                          label: 'failure_report.broadband_account'.tr(),
-                          readOnly: profile.accountNumber.isNotEmpty,
-                          enabled: profile.accountNumber.isEmpty,
-                          prefixIcon: LucideIcons.id_card,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'requests.required'.tr();
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppStyle.spaceXs),
-
-                        // 2. Contact Name
-                        AppInput(
-                          controller: _contactNameController,
-                          label: 'failure_report.contact_name'.tr(),
-                          prefixIcon: LucideIcons.user,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'requests.required'.tr();
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppStyle.spaceXs),
-
-                        // 3. Contact Phone
-                        AppInput(
-                          controller: _phoneController,
-                          label: 'failure_report.contact_phone'.tr(),
-                          hint: '09 xxx xxx xxx',
-                          keyboardType: TextInputType.phone,
-                          prefixIcon: LucideIcons.phone,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'requests.required'.tr();
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppStyle.spaceXs),
-
-                        // 4. Failure Type Dropdown
-                        _buildFailureTypeDropdown(context),
-                        const SizedBox(height: AppStyle.spaceXxl),
-
-                        // 5. Problem Description
-                        AppInput(
-                          controller: _descriptionController,
-                          label: 'failure_report.description'.tr(),
-                          hint: 'failure_report.description_hint'.tr(),
-                          prefixIcon: LucideIcons.file_text,
-                          maxLines: 3,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'requests.required'.tr();
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppStyle.spaceXs),
-
-                        // 6. Failure Photos
-                        FormField<int>(
-                          initialValue: _selectedPhotos.length,
-                          validator: (_) =>
-                              widget.initialReport != null ||
-                                      _selectedPhotos.length == 3
-                                  ? null
-                                  : 'failure_report.photos_required'.tr(),
-                          builder: (field) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppPhotoPicker(
-                                selectedPhotos: _selectedPhotos,
-                                onPickImage: () => _pickImage(field),
-                                onRemovePhoto: (index) =>
-                                    _removePhoto(index, field),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              color: AppColors.background,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppCard(
+                        elevated: false,
+                        bordered: false,
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.fromLTRB(8, 6, 10, 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              if (field.hasError) ...[
-                                const SizedBox(height: AppStyle.spaceXs),
-                                Text(
-                                  field.errorText!,
-                                  style: AppTheme.fieldError(),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: AppStyle.spaceXxl),
-                        AppButton(
-                          label: 'common.submit'.tr() != 'common.submit'
-                              ? 'common.submit'.tr()
-                              : 'Submit',
-                          isLoading: controllerState.isSubmitting,
-                          onPressed: _submitForm,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: AppStyle.spaceMd),
-                    Container(
-                      padding: const EdgeInsets.all(AppStyle.spaceMd),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.error.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            LucideIcons.circle_alert,
-                            color: AppColors.error,
-                            size: 18,
-                          ),
-                          const SizedBox(width: AppStyle.spaceSm),
-                          Expanded(
-                            child: Text(
-                              errorMessage.startsWith('failure_report.') ||
-                                      errorMessage.startsWith('change_wifi.') ||
-                                      errorMessage.startsWith('api.') ||
-                                      errorMessage.startsWith('common.')
-                                  ? errorMessage.tr()
-                                  : errorMessage,
-                              style: const TextStyle(
-                                color: AppColors.error,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 22,
+                                    height: 22,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.circle_alert,
+                                      size: 13,
+                                      color: AppColors.onPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'failure_report.form_desc'.tr(),
+                                      style: AppTheme.caption().copyWith(
+                                        height: 1.3,
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            AppInput(
+                              controller: _broadbandAccountController,
+                              label:
+                                  '${'failure_report.broadband_account'.tr()} *',
+                              readOnly: profile.accountNumber.isNotEmpty,
+                              enabled: profile.accountNumber.isEmpty,
+                              prefixIcon: LucideIcons.id_card,
+                              validator: (value) => _requiredText(
+                                value,
+                                'failure_report.broadband_account',
+                              ),
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
+                              controller: _contactNameController,
+                              label: '${'failure_report.contact_name'.tr()} *',
+                              prefixIcon: LucideIcons.user,
+                              validator: (value) => _requiredText(
+                                value,
+                                'failure_report.contact_name',
+                              ),
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
+                              controller: _phoneController,
+                              label: '${'failure_report.contact_phone'.tr()} *',
+                              hint: '09 xxx xxx xxx',
+                              keyboardType: TextInputType.phone,
+                              prefixIcon: LucideIcons.phone,
+                              validator: (value) => _requiredText(
+                                value,
+                                'failure_report.contact_phone',
+                              ),
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            _buildFailureTypeDropdown(context),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
+                              controller: _descriptionController,
+                              label: '${'failure_report.description'.tr()} *',
+                              hint: 'failure_report.description_hint'.tr(),
+                              prefixIcon: LucideIcons.file_text,
+                              maxLines: 3,
+                              validator: (value) => _requiredText(
+                                value,
+                                'failure_report.description',
+                              ),
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            FormField<int>(
+                              initialValue: _selectedPhotos.length,
+                              validator: (_) =>
+                                  widget.initialReport != null ||
+                                          _selectedPhotos.length == 3
+                                      ? null
+                                      : 'failure_report.photos_required'.tr(),
+                              builder: (field) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppPhotoPicker(
+                                    selectedPhotos: _selectedPhotos,
+                                    label: widget.initialReport == null
+                                        ? '${'failure_report.upload_photos'.tr()} *'
+                                        : null,
+                                    onPickImage: () => _pickImage(field),
+                                    onRemovePhoto: (index) =>
+                                        _removePhoto(index, field),
+                                  ),
+                                  if (field.hasError) ...[
+                                    const SizedBox(height: AppStyle.spaceXs),
+                                    Text(
+                                      field.errorText!,
+                                      style: AppTheme.fieldError(),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (errorMessage != null) ...[
+                              const SizedBox(height: AppStyle.spaceXs),
+                              Text(
+                                errorMessage.startsWith('failure_report.') ||
+                                        errorMessage.startsWith('change_wifi.') ||
+                                        errorMessage.startsWith('api.') ||
+                                        errorMessage.startsWith('common.')
+                                    ? errorMessage.tr()
+                                    : errorMessage,
+                                style: AppTheme.fieldError(),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: AppStyle.spaceMd),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          Container(
+            color: AppColors.background,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  child: AppButton(
+                    label: 'common.submit'.tr(),
+                    isLoading: submitting,
+                    onPressed: submitting ? null : _submitForm,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -819,9 +1032,12 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
     }).toList();
 
     return AppSelectDropdown<FailureType>(
-      label: context.tr('failure_report.failure_type'),
+      label: '${context.tr('failure_report.failure_type')} *',
       value: FailureType.fromKey(_selectedType),
       options: options,
+      validator: (value) => value == null
+          ? _requiredMessage('failure_report.failure_type')
+          : null,
       onChanged: (val) {
         if (val != null) {
           setState(() => _selectedType = val.apiKey);

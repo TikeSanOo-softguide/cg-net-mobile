@@ -180,15 +180,70 @@ class FailureReportRepository {
       throw ApiException.fromDio(error);
     }
   }
+
+  Future<FailureReportModel> updateReport(FailureReportModel report) async {
+    try {
+      final payload = report.toJson()
+        ..remove('photos')
+        ..remove('user_id')
+        ..remove('status');
+      final localPhotos = report.photos
+          .where(
+            (photo) =>
+                photo.imageUrl.trim().isNotEmpty &&
+                !photo.imageUrl.trim().startsWith('http'),
+          )
+          .toList();
+
+      final Response<dynamic> response;
+      if (localPhotos.length != 3) {
+        response = await _dio.put<dynamic>(
+          ApiEndpoints.failureReportDetail(report.id),
+          data: payload,
+        );
+      } else {
+        final formData = FormData();
+        formData.fields.add(const MapEntry('_method', 'PUT'));
+        payload.forEach((key, value) {
+          if (value != null) {
+            formData.fields.add(MapEntry(key, value.toString()));
+          }
+        });
+        for (var i = 0; i < localPhotos.length; i++) {
+          final path = localPhotos[i].imageUrl.trim();
+          final rawFilename = path.split('/').last.toLowerCase();
+          final ext = rawFilename.endsWith('.png')
+              ? 'png'
+              : (rawFilename.endsWith('.webp') ? 'webp' : 'jpeg');
+          formData.files.add(
+            MapEntry(
+              'photos[]',
+              await MultipartFile.fromFile(
+                path,
+                filename: 'photo_${i + 1}.$ext',
+                contentType: DioMediaType('image', ext),
+              ),
+            ),
+          );
+        }
+        response = await _dio.post<dynamic>(
+          ApiEndpoints.failureReportDetail(report.id),
+          data: formData,
+        );
+      }
+
+      final data = response.data;
+      if (data is Map) {
+        return FailureReportModel.fromJson(Map<String, dynamic>.from(data));
+      }
+      return report;
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
 }
 
 final failureReportRepositoryProvider =
     Provider<FailureReportRepository>((ref) {
   return FailureReportRepository(ref.watch(dioProvider));
 });
-
-final failureReportDetailProvider =
-    FutureProvider.autoDispose.family<FailureReportModel, String>(
-  (ref, reportId) =>
-      ref.watch(failureReportRepositoryProvider).fetchReport(reportId),
-);

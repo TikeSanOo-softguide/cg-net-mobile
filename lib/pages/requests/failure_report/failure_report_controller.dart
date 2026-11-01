@@ -89,13 +89,15 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     required String contactPhone,
     required int userId,
     List<FailurePhotoModel> photos = const [],
+    String? reportId,
   }) async {
     state = state.copyWith(
       isSubmitting: true,
       errorMessage: null,
     );
 
-    final hasPending = state.reports.any((r) {
+    final editing = reportId != null && reportId.isNotEmpty;
+    final hasPending = !editing && state.reports.any((r) {
       final status = r.status.toLowerCase().trim();
 
       final isPending = status == 'under_review' ||
@@ -118,7 +120,7 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     }
 
     final model = FailureReportModel(
-      id: '',
+      id: reportId ?? '',
       userId: userId,
       broadbandAccountNumber: broadbandAccount,
       failureType: failureType,
@@ -129,7 +131,9 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     );
 
     try {
-      final savedModel = await _repository.submitReport(model);
+      final savedModel = editing
+          ? await _repository.updateReport(model)
+          : await _repository.submitReport(model);
       final reports = [...state.reports];
       final savedIndex = reports.indexWhere(
         (report) => report.id.isNotEmpty && report.id == savedModel.id,

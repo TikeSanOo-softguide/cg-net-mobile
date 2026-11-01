@@ -6,7 +6,6 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
-import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
 /// Reusable photo picker component supporting camera/gallery picking,
@@ -37,103 +36,116 @@ class AppPhotoPicker extends StatelessWidget {
         Text(
           titleLabel,
           style: AppTheme.english(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppColors.textMuted,
+            color: AppColors.textSecondary,
+            letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(height: AppStyle.spaceSm),
+        const SizedBox(height: 8),
         Row(
           children: [
             for (int i = 0; i < maxPhotos; i++) ...[
               if (i > 0) const SizedBox(width: 10),
-              Expanded(
-                child: i < selectedPhotos.length
-                    ? Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              height: 72,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.primary),
-                              ),
-                              child: Image.file(
-                                File(selectedPhotos[i].path),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Center(
-                                  child: Icon(
-                                    LucideIcons.image,
-                                    color: AppColors.primary,
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: -6,
-                            right: -6,
-                            child: InkWell(
-                              onTap: () => onRemovePhoto(i),
-                              child: Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.error,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  LucideIcons.x,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : InkWell(
-                        onTap: onPickImage,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundAlt,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                LucideIcons.camera,
-                                color: AppColors.textMuted,
-                                size: 22,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${i + 1}/$maxPhotos',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.textMuted,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
+              Expanded(child: _slot(i)),
             ],
           ],
         ),
       ],
+    );
+  }
+
+  Widget _slot(int index) {
+    const radius = BorderRadius.all(Radius.circular(12));
+    if (index < selectedPhotos.length) {
+      return SizedBox(
+        height: 100,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: radius,
+                child: Image.file(
+                  File(selectedPhotos[index].path),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const ColoredBox(
+                    color: AppColors.primaryLight,
+                    child: Center(
+                      child: Icon(
+                        LucideIcons.image,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Material(
+                color: AppColors.surface,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => onRemovePhoto(index),
+                  child: const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: Icon(
+                      LucideIcons.x,
+                      size: 12,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Material(
+      color: AppColors.primarySoft,
+      borderRadius: radius,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPickImage,
+        child: Container(
+          height: 100,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: AppColors.primaryLight),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.camera,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${index + 1}/$maxPhotos',
+                style: AppTheme.captionSm(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

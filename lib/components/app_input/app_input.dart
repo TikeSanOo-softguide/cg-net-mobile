@@ -243,7 +243,11 @@ class _AppInputState extends State<AppInput> {
                 field.didChange(value);
                 widget.onChanged?.call(value);
               },
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              onTapOutside: (_) {
+                if (_effectiveFocus.hasFocus) {
+                  _effectiveFocus.unfocus();
+                }
+              },
               onTap: widget.onTap,
               onSubmitted: widget.onSubmitted,
               maxLength: widget.maxLength,
@@ -254,8 +258,10 @@ class _AppInputState extends State<AppInput> {
               autofocus: widget.autofocus,
               autofillHints: widget.autofillHints,
               style: AppTheme.english(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontSize: widget.keyboardType == TextInputType.phone ? 15 : 14,
+                fontWeight: widget.keyboardType == TextInputType.phone
+                    ? FontWeight.w600
+                    : FontWeight.w500,
                 color: AppColors.textPrimary,
                 letterSpacing: 0.2,
               ),

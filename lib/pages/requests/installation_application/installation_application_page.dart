@@ -203,7 +203,7 @@ class _InstallationApplicationPageState
     return ListView.separated(
       padding: const EdgeInsets.all(AppStyle.spaceLg),
       itemCount: state.requests.length + (hasError ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceMd),
+      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
       itemBuilder: (context, index) {
         if (hasError && index == 0) {
           return AppCard(
@@ -240,7 +240,7 @@ bool _canManageRequest(InstallationApplicationModel request) {
   return status == 'pending' || status == 'under_review';
 }
 
-class _InstallationApplicationCard extends StatelessWidget {
+class _InstallationApplicationCard extends StatefulWidget {
   const _InstallationApplicationCard({
     required this.request,
     required this.onEdit,
@@ -251,8 +251,17 @@ class _InstallationApplicationCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onCancel;
 
+  @override
+  State<_InstallationApplicationCard> createState() =>
+      _InstallationApplicationCardState();
+}
+
+class _InstallationApplicationCardState
+    extends State<_InstallationApplicationCard> {
+  bool _expanded = false;
+
   Color get _statusColor {
-    switch (request.status.toLowerCase().replaceAll(' ', '_')) {
+    switch (widget.request.status.toLowerCase().replaceAll(' ', '_')) {
       case 'under_review':
       case 'pending':
         return AppColors.warning;
@@ -267,7 +276,7 @@ class _InstallationApplicationCard extends StatelessWidget {
   }
 
   String get _statusLabel {
-    switch (request.status.toLowerCase().replaceAll(' ', '_')) {
+    switch (widget.request.status.toLowerCase().replaceAll(' ', '_')) {
       case 'under_review':
       case 'pending':
         return 'requests.status_under_review'.tr();
@@ -278,12 +287,13 @@ class _InstallationApplicationCard extends StatelessWidget {
       case 'rejected':
         return 'requests.status_rejected'.tr();
       default:
-        return request.status;
+        return widget.request.status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
         : DateFormat('yyyy.MM.dd HH:mm').format(request.createdAt!.toLocal());
@@ -294,7 +304,7 @@ class _InstallationApplicationCard extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusLg,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -303,7 +313,7 @@ class _InstallationApplicationCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: _statusColor,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppStyle.radiusLg),
+                top: Radius.circular(12),
               ),
             ),
           ),
@@ -347,91 +357,107 @@ class _InstallationApplicationCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                if (request.ticketNumber?.trim().isNotEmpty == true)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 108,
-                          child: Text(
-                            'installationApplication.ticket_number'.tr(),
-                            style: AppTheme.caption(),
+                const SizedBox(height: 8),
+                _TicketRow(ticketNumber: request.ticketNumber),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: _expanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Column(
+                            children: [
+                              _RequestDetail(
+                                label: 'installationApplication.service_type'.tr(),
+                                value: _serviceLabel(request.serviceType),
+                              ),
+                              _RequestDetail(
+                                label: 'installationApplication.package'.tr(),
+                                value: request.productName ?? '',
+                              ),
+                              _RequestDetail(
+                                label:
+                                    'installationApplication.internet_speed'.tr(),
+                                value: _speedLabel(detail?['product_speed']),
+                              ),
+                              if (request.note?.trim().isNotEmpty == true)
+                                _RequestDetail(
+                                  label: 'installationApplication.note'.tr(),
+                                  value: request.note!,
+                                ),
+                              _RequestDetail(
+                                label:
+                                    'installationApplication.billing_period'.tr(),
+                                value: _periodLabel(detail),
+                              ),
+                              _RequestDetail(
+                                label: 'installationApplication.network_provider'
+                                    .tr(),
+                                value: detail?['product_line']?.toString() ?? '',
+                              ),
+                              _RequestDetail(
+                                label:
+                                    'installationApplication.package_price'.tr(),
+                                value: _pointsLabel(detail?['product_price']),
+                              ),
+                              _RequestDetail(
+                                label: 'installationApplication.installation_fee'
+                                    .tr(),
+                                value: _pointsLabel(detail?['installation_fee']),
+                              ),
+                              _RequestDetail(
+                                label: 'installationApplication.id_name'.tr(),
+                                value: request.name,
+                              ),
+                              _RequestDetail(
+                                label: 'installationApplication.address'.tr(),
+                                value: request.address ?? '',
+                              ),
+                              _RequestDetail(
+                                label: 'installationApplication.phone'.tr(),
+                                value: request.phone,
+                              ),
+                            ],
                           ),
-                        ),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                request.ticketNumber!,
-                                textAlign: TextAlign.right,
-                                style: AppTheme.body(
-                                  weight: FontWeight.w500,
-                                  color: AppColors.primary,
-                                ).copyWith(fontSize: 13),
-                              ),
-                            ),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: InkWell(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    borderRadius: BorderRadius.circular(8),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _expanded
+                                ? 'common.see_less'.tr()
+                                : 'common.see_more'.tr(),
+                            style: AppTheme.caption(
+                              color: AppColors.primary,
+                              weight: FontWeight.w600,
+                            ).copyWith(fontSize: 10),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 2),
+                          Icon(
+                            _expanded
+                                ? LucideIcons.chevron_up
+                                : LucideIcons.chevron_down,
+                            size: 12,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                _RequestDetail(
-                  label: 'installationApplication.package'.tr(),
-                  value: request.productName ?? '',
                 ),
-                _RequestDetail(
-                  label: 'installationApplication.service_type'.tr(),
-                  value: _serviceLabel(request.serviceType),
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.billing_period'.tr(),
-                  value: _periodLabel(detail),
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.network_provider'.tr(),
-                  value: detail?['product_line']?.toString() ?? '',
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.internet_speed'.tr(),
-                  value: _speedLabel(detail?['product_speed']),
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.package_price'.tr(),
-                  value: _pointsLabel(detail?['product_price']),
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.installation_fee'.tr(),
-                  value: _pointsLabel(detail?['installation_fee']),
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.id_name'.tr(),
-                  value: request.name,
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.address'.tr(),
-                  value: request.address ?? '',
-                ),
-                _RequestDetail(
-                  label: 'installationApplication.phone'.tr(),
-                  value: request.phone,
-                ),
-                if (request.note?.trim().isNotEmpty == true)
-                  _RequestDetail(
-                    label: 'installationApplication.note'.tr(),
-                    value: request.note!,
-                  ),
                 if (canManage) ...[
                   const Padding(
                     padding: EdgeInsets.only(top: 4, bottom: 12),
@@ -444,7 +470,7 @@ class _InstallationApplicationCard extends StatelessWidget {
                         color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(6),
                         child: InkWell(
-                          onTap: onEdit,
+                          onTap: widget.onEdit,
                           borderRadius: BorderRadius.circular(6),
                           splashColor: AppColors.primary.withValues(alpha: 0.08),
                           highlightColor:
@@ -470,7 +496,7 @@ class _InstallationApplicationCard extends StatelessWidget {
                       Tooltip(
                         message: 'installationApplication.cancel_action'.tr(),
                         child: _CardActionButton(
-                          onPressed: onCancel,
+                          onPressed: widget.onCancel,
                           icon: LucideIcons.trash,
                           color: AppColors.error,
                           background: const Color(0xFFF8E8E6),
@@ -557,6 +583,63 @@ class _CardActionButton extends StatelessWidget {
   }
 }
 
+class _TicketRow extends StatelessWidget {
+  const _TicketRow({required this.ticketNumber});
+
+  final String? ticketNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final ticket = ticketNumber?.trim() ?? '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 108,
+            child: Text(
+              'installationApplication.ticket_number'.tr(),
+              style: AppTheme.caption(),
+            ),
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ticket.isEmpty
+                  ? Text(
+                      '—',
+                      style: AppTheme.body(
+                        weight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ).copyWith(fontSize: 12),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        ticket,
+                        textAlign: TextAlign.right,
+                        style: AppTheme.body(
+                          weight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RequestDetail extends StatelessWidget {
   const _RequestDetail({
     required this.label,
@@ -570,7 +653,7 @@ class _RequestDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -585,7 +668,7 @@ class _RequestDetail extends StatelessWidget {
               style: AppTheme.body(
                 weight: FontWeight.w500,
                 color: AppColors.textPrimary,
-              ).copyWith(fontSize: 13),
+              ).copyWith(fontSize: 12),
             ),
           ),
         ],
