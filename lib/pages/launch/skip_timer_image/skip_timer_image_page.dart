@@ -40,12 +40,7 @@ class _SkipTimerImagePageState extends ConsumerState<SkipTimerImagePage> {
     final asyncPromo = ref.watch(skipTimerPromoProvider);
 
     return asyncPromo.when(
-      loading: () => const Scaffold(
-        backgroundColor: AppColors.primary,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.onPrimary),
-        ),
-      ),
+      loading: () => const Scaffold(backgroundColor: AppColors.primary),
       error: (_, __) {
         _scheduleContinue();
         return const Scaffold(backgroundColor: AppColors.primary);

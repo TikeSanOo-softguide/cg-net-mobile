@@ -10,11 +10,13 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
-import '../../../core/network/api_error_text.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../profile/profile_controller.dart';
 import 'deactivate_account_controller.dart';
 
@@ -26,9 +28,11 @@ class DeactivateAccountPage extends ConsumerStatefulWidget {
       _DeactivateAccountPageState();
 }
 
-class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
+class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
+    with ApiFieldErrorsMixin<DeactivateAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
+  final _passwordFieldKey = GlobalKey<FormFieldState<String>>();
   bool _obscurePassword = true;
 
   @override
@@ -39,6 +43,7 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
 
   Future<void> _confirmDeactivation() async {
     if (ref.read(deactivateAccountControllerProvider)) return;
+    clearAllApiFieldErrors();
     if (!_formKey.currentState!.validate()) return;
 
     final confirmed = await showAppConfirmModal(
@@ -52,14 +57,16 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
     if (confirmed != true || !mounted) return;
 
     try {
-      final message = await ref
-          .read(deactivateAccountControllerProvider.notifier)
-          .deactivate(password: _passwordController.text);
+      final message = await LoadingHelper.runWithLoading(() async {
+        final responseMessage = await ref
+            .read(deactivateAccountControllerProvider.notifier)
+            .deactivate(password: _passwordController.text);
+        await ref.read(profileControllerProvider.notifier).logout();
+        return responseMessage;
+      });
       if (!mounted) return;
 
       _passwordController.clear();
-      await ref.read(profileControllerProvider.notifier).logout();
-      if (!mounted) return;
       context.goNamed(
         RouteNames.login,
         queryParameters: {
@@ -68,10 +75,12 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(apiErrorText(error)),
-        ),
+      handleApiError(
+        error,
+        fields: {'password': _passwordFieldKey},
+        messageCodeFields: {
+          MessageCodes.userPasswordIncorrect: 'password',
+        },
       );
     }
   }
@@ -132,6 +141,7 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
                     AppInput(
                       controller: _passwordController,
                       label: 'profile.enter_password'.tr(),
+                      formFieldKey: _passwordFieldKey,
                       prefixIcon: LucideIcons.lock,
                       obscureText: _obscurePassword,
                       autofillHints: const [AutofillHints.password],
@@ -155,8 +165,12 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage> {
                         if (!RegExp(r'^\d{6}$').hasMatch(value.trim())) {
                           return 'profile.current_password_digits'.tr();
                         }
-                        return null;
+                        return apiFieldError('password');
                       },
+                      onChanged: (_) => clearApiFieldError(
+                        'password',
+                        key: _passwordFieldKey,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     AppButton(

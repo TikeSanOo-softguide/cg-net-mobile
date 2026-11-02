@@ -32,6 +32,7 @@ dependencies:
   pusher_reverb_flutter: ^0.0.10
   web_socket_channel: ^3.0.3
   image_picker: ^1.2.4
+  flutter_easyloading: ^4.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
