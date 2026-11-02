@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/utils/image_url_helper.dart';
+
 enum FailureType {
   noInternet('no_internet', 'type_no_internet', LucideIcons.wifi_off),
   slow('slow', 'type_slow_speed', LucideIcons.gauge),
@@ -42,7 +44,7 @@ class FailurePhotoModel {
     return FailurePhotoModel(
       id: (json['id'] ?? '').toString(),
       failureReportId: (json['failure_report_id'] ?? '').toString(),
-      imageUrl: json['image_url']?.toString() ?? '',
+      imageUrl: ImageUrlHelper.resolve({'image_url': json['image_url']}) ?? '',
       label: json['label']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
@@ -64,6 +66,7 @@ class FailureReportModel {
     required this.contactName,
     required this.contactPhone,
     this.broadbandAccountNumber,
+    this.ticketNumber,
     this.status = 'under_review',
     this.photos = const [],
     this.adminId,
@@ -78,6 +81,7 @@ class FailureReportModel {
   final String contactName;
   final String contactPhone;
   final String? broadbandAccountNumber;
+  final String? ticketNumber;
   final String status;
   final List<FailurePhotoModel> photos;
   final int? adminId;
@@ -93,6 +97,7 @@ class FailureReportModel {
       description: description,
       contactName: contactName,
       contactPhone: contactPhone,
+      ticketNumber: ticketNumber,
       status: status ?? this.status,
       photos: photos,
       adminId: adminId,
@@ -125,6 +130,7 @@ class FailureReportModel {
       userId: _toInt(rawData['user_id'] ?? rawData['id']) ?? 0,
       broadbandAccountNumber:
           rawData['broadband_account_number']?.toString(),
+      ticketNumber: rawData['ticket_number']?.toString(),
       failureType: rawData['failure_type']?.toString() ?? 'other',
       description: rawData['description']?.toString() ?? '',
       contactName: rawData['contact_name']?.toString() ?? '',

@@ -12,9 +12,12 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_photo_picker/app_photo_picker.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/date_time_format.dart';
+import '../../../data/requests/failure_report/failure_report_repository.dart';
 import '../../../models/requests/failure_report/failure_report_model.dart';
 import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
@@ -63,11 +66,16 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
         .then((result) async {
       if (!mounted || result == null || result == false) return;
 
-      if (result is FailureReportModel && initialReport == null) {
+      if (result is FailureReportSaveResult) {
+        final fallbackMessage = initialReport == null
+            ? 'failure_report.submitted_desc'.tr()
+            : 'failure_report.update_success'.tr();
         await showAppSuccessModal(
           context,
-          title: 'failure_report.submitted_title'.tr(),
-          body: 'failure_report.submitted_desc'.tr(),
+          title: 'common.success'.tr(),
+          body: MessageCodes.isKnown(result.code)
+              ? MessageCodes.locKey(result.code!).tr()
+              : fallbackMessage,
         );
       }
 
@@ -85,12 +93,12 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     );
     if (confirmed != true || !mounted) return;
 
-    final success = await ref
+    final result = await ref
         .read(failureReportControllerProvider.notifier)
         .cancelReport(report);
     if (!mounted) return;
 
-    if (!success) {
+    if (result == null) {
       final message = ref.read(failureReportControllerProvider).errorMessage;
       await showAppFailureModal(
         context,
@@ -103,7 +111,9 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     await showAppSuccessModal(
       context,
       title: 'common.success'.tr(),
-      body: 'failure_report.cancel_success'.tr(),
+      body: MessageCodes.isKnown(result.code)
+          ? MessageCodes.locKey(result.code!).tr()
+          : 'failure_report.cancel_success'.tr(),
     );
   }
 
@@ -224,8 +234,8 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
       );
     }
 
-    final hasError = state.status == FailureReportStatus.error &&
-        state.errorMessage != null;
+    final hasError =
+        state.status == FailureReportStatus.error && state.errorMessage != null;
 
     return ListView.separated(
       padding: const EdgeInsets.all(AppStyle.spaceLg),
@@ -349,7 +359,7 @@ class _FailureReportCardState extends State<_FailureReportCard> {
     final report = widget.report;
     final createdAt = report.createdAt == null
         ? null
-        : DateFormat('yyyy.MM.dd HH:mm').format(report.createdAt!.toLocal());
+        : formatDate(report.createdAt!.toLocal().toIso8601String());
     final failureType = FailureType.fromKey(report.failureType);
     final canManage = widget.onEdit != null || widget.onCancel != null;
 
@@ -411,7 +421,7 @@ class _FailureReportCardState extends State<_FailureReportCard> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const _TicketRow(),
+                _TicketRow(ticketNumber: report.ticketNumber),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOut,
@@ -451,9 +461,10 @@ class _FailureReportCardState extends State<_FailureReportCard> {
                       : const SizedBox(width: double.infinity),
                 ),
                 const SizedBox(height: 4),
-                Align(
-                    alignment: Alignment.centerLeft,
-                    child: InkWell(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    InkWell(
                       onTap: () => setState(() => _expanded = !_expanded),
                       borderRadius: BorderRadius.circular(8),
                       splashColor: Colors.transparent,
@@ -484,15 +495,8 @@ class _FailureReportCardState extends State<_FailureReportCard> {
                         ),
                       ),
                     ),
-                  ),
-                if (canManage) ...[
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8, bottom: 10),
-                    child: Divider(height: 1, color: AppColors.borderLight),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
+                    if (canManage) ...[
+                      const Spacer(),
                       if (widget.onEdit != null)
                         Material(
                           color: AppColors.primaryLight,
@@ -542,8 +546,8 @@ class _FailureReportCardState extends State<_FailureReportCard> {
                           ),
                         ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -554,10 +558,13 @@ class _FailureReportCardState extends State<_FailureReportCard> {
 }
 
 class _TicketRow extends StatelessWidget {
-  const _TicketRow();
+  const _TicketRow({required this.ticketNumber});
+
+  final String? ticketNumber;
 
   @override
   Widget build(BuildContext context) {
+    final ticket = ticketNumber?.trim() ?? '';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -573,13 +580,32 @@ class _TicketRow extends StatelessWidget {
           Expanded(
             child: Align(
               alignment: Alignment.centerRight,
-              child: Text(
-                '—',
-                style: AppTheme.body(
-                  weight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                ).copyWith(fontSize: 12),
-              ),
+              child: ticket.isEmpty
+                  ? Text(
+                      '—',
+                      style: AppTheme.body(
+                        weight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ).copyWith(fontSize: 12),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        ticket,
+                        textAlign: TextAlign.right,
+                        style: AppTheme.body(
+                          weight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    ),
             ),
           ),
         ],
@@ -684,6 +710,12 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
       _phoneController = TextEditingController(text: initial.contactPhone);
       _descriptionController = TextEditingController(text: initial.description);
       _selectedType = initial.failureType;
+      _selectedPhotos.addAll(
+        initial.photos
+            .where((photo) => photo.imageUrl.trim().isNotEmpty)
+            .take(3)
+            .map((photo) => XFile(photo.imageUrl)),
+      );
     } else {
       _broadbandAccountController =
           TextEditingController(text: profile.accountNumber);
@@ -792,7 +824,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
             ))
         .toList();
 
-    final savedModel =
+    final savedResult =
         await ref.read(failureReportControllerProvider.notifier).submitReport(
               broadbandAccount: boundAccount,
               failureType: _selectedType,
@@ -806,8 +838,8 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
 
     if (!mounted) return;
 
-    if (savedModel != null) {
-      Navigator.of(context).pop(savedModel);
+    if (savedResult != null) {
+      Navigator.of(context).pop(savedResult);
     }
   }
 
@@ -948,18 +980,13 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
                             const SizedBox(height: AppStyle.spaceXs),
                             FormField<int>(
                               initialValue: _selectedPhotos.length,
-                              validator: (_) =>
-                                  widget.initialReport != null ||
-                                          _selectedPhotos.length == 3
-                                      ? null
-                                      : 'failure_report.photos_required'.tr(),
                               builder: (field) => Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppPhotoPicker(
                                     selectedPhotos: _selectedPhotos,
                                     label: widget.initialReport == null
-                                        ? '${'failure_report.upload_photos'.tr()} *'
+                                        ? 'failure_report.upload_photos'.tr()
                                         : null,
                                     onPickImage: () => _pickImage(field),
                                     onRemovePhoto: (index) =>
@@ -979,7 +1006,8 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
                               const SizedBox(height: AppStyle.spaceXs),
                               Text(
                                 errorMessage.startsWith('failure_report.') ||
-                                        errorMessage.startsWith('change_wifi.') ||
+                                        errorMessage
+                                            .startsWith('change_wifi.') ||
                                         errorMessage.startsWith('api.') ||
                                         errorMessage.startsWith('common.')
                                     ? errorMessage.tr()

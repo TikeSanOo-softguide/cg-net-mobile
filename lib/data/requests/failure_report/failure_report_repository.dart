@@ -50,6 +50,13 @@ class FailureReportRepository {
 
   final Dio _dio;
 
+  String? _messageCode(Object? data) {
+    if (data is Map && data['code'] is String) {
+      return data['code'] as String;
+    }
+    return null;
+  }
+
   Future<List<FailureReportModel>> fetchReports() async {
     try {
       final response = await _dio.get<dynamic>(
@@ -91,7 +98,9 @@ class FailureReportRepository {
     }
   }
 
-  Future<void> cancelReport(FailureReportModel item) async {
+  Future<FailureReportCancelResult> cancelReport(
+    FailureReportModel item,
+  ) async {
     final reportId = item.id;
     if (reportId.isEmpty) {
       throw const ApiException(
@@ -101,15 +110,16 @@ class FailureReportRepository {
     }
 
     try {
-      await _dio.patch<dynamic>(
+      final response = await _dio.patch<dynamic>(
         '${ApiEndpoints.failureReports}/$reportId/cancel',
       );
+      return FailureReportCancelResult(code: _messageCode(response.data));
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
 
-  Future<FailureReportModel> submitReport(
+  Future<FailureReportSaveResult> submitReport(
     FailureReportModel report,
   ) async {
     try {
@@ -163,13 +173,12 @@ class FailureReportRepository {
 
       final data = response.data;
 
-      if (data is Map) {
-        return FailureReportModel.fromJson(
-          Map<String, dynamic>.from(data),
-        );
-      }
-
-      return report;
+      return FailureReportSaveResult(
+        report: data is Map
+            ? FailureReportModel.fromJson(Map<String, dynamic>.from(data))
+            : report,
+        code: _messageCode(data),
+      );
     } on DioException catch (error) {
       debugPrint(
         'FAILURE REPORT ERROR: '
@@ -181,22 +190,20 @@ class FailureReportRepository {
     }
   }
 
-  Future<FailureReportModel> updateReport(FailureReportModel report) async {
+  Future<FailureReportSaveResult> updateReport(
+    FailureReportModel report,
+  ) async {
     try {
       final payload = report.toJson()
         ..remove('photos')
         ..remove('user_id')
         ..remove('status');
-      final localPhotos = report.photos
-          .where(
-            (photo) =>
-                photo.imageUrl.trim().isNotEmpty &&
-                !photo.imageUrl.trim().startsWith('http'),
-          )
+      final photos = report.photos
+          .where((photo) => photo.imageUrl.trim().isNotEmpty)
           .toList();
 
       final Response<dynamic> response;
-      if (localPhotos.length != 3) {
+      if (photos.isEmpty) {
         response = await _dio.put<dynamic>(
           ApiEndpoints.failureReportDetail(report.id),
           data: payload,
@@ -209,20 +216,30 @@ class FailureReportRepository {
             formData.fields.add(MapEntry(key, value.toString()));
           }
         });
-        for (var i = 0; i < localPhotos.length; i++) {
-          final path = localPhotos[i].imageUrl.trim();
-          final rawFilename = path.split('/').last.toLowerCase();
+        for (var i = 0; i < photos.length; i++) {
+          final path = photos[i].imageUrl.trim();
+          final uri = Uri.tryParse(path);
+          final isRemote =
+              uri?.scheme == 'http' || uri?.scheme == 'https';
+          final rawFilename = (uri?.path ?? path)
+              .split('/')
+              .last
+              .toLowerCase();
           final ext = rawFilename.endsWith('.png')
               ? 'png'
               : (rawFilename.endsWith('.webp') ? 'webp' : 'jpeg');
+          final filename = 'photo_${i + 1}.$ext';
+          final multipartFile = isRemote
+              ? await _downloadPhoto(path, filename, ext)
+              : await MultipartFile.fromFile(
+                  path,
+                  filename: filename,
+                  contentType: DioMediaType('image', ext),
+                );
           formData.files.add(
             MapEntry(
               'photos[]',
-              await MultipartFile.fromFile(
-                path,
-                filename: 'photo_${i + 1}.$ext',
-                contentType: DioMediaType('image', ext),
-              ),
+              multipartFile,
             ),
           );
         }
@@ -233,14 +250,56 @@ class FailureReportRepository {
       }
 
       final data = response.data;
-      if (data is Map) {
-        return FailureReportModel.fromJson(Map<String, dynamic>.from(data));
-      }
-      return report;
+      return FailureReportSaveResult(
+        report: data is Map
+            ? FailureReportModel.fromJson(Map<String, dynamic>.from(data))
+            : report,
+        code: _messageCode(data),
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
+
+  Future<MultipartFile> _downloadPhoto(
+    String url,
+    String filename,
+    String extension,
+  ) async {
+    final response = await _dio.get<List<int>>(
+      url,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final bytes = response.data;
+    if (bytes == null || bytes.isEmpty) {
+      throw const ApiException(
+        ApiFailure.unknown,
+        detail: 'Existing failure report photo returned no image data',
+      );
+    }
+
+    return MultipartFile.fromBytes(
+      bytes,
+      filename: filename,
+      contentType: DioMediaType('image', extension),
+    );
+  }
+}
+
+class FailureReportSaveResult {
+  const FailureReportSaveResult({
+    required this.report,
+    this.code,
+  });
+
+  final FailureReportModel report;
+  final String? code;
+}
+
+class FailureReportCancelResult {
+  const FailureReportCancelResult({this.code});
+
+  final String? code;
 }
 
 final failureReportRepositoryProvider =

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../../core/network/api_exception.dart';
 import '../../../data/requests/failure_report/failure_report_repository.dart';
 import '../../../models/requests/failure_report/failure_report_model.dart';
@@ -58,9 +57,11 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     }
   }
 
-  Future<bool> cancelReport(FailureReportModel item) async {
+  Future<FailureReportCancelResult?> cancelReport(
+    FailureReportModel item,
+  ) async {
     try {
-      await _repository.cancelReport(item);
+      final result = await _repository.cancelReport(item);
       state = state.copyWith(
         reports: [
           for (final report in state.reports)
@@ -71,17 +72,17 @@ class FailureReportController extends StateNotifier<FailureReportState> {
         ],
       );
       await fetchReports();
-      return true;
+      return result;
     } on ApiException catch (e) {
       state = state.copyWith(errorMessage: e.detail ?? e.messageKey);
-      return false;
+      return null;
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
-      return false;
+      return null;
     }
   }
 
-  Future<FailureReportModel?> submitReport({
+  Future<FailureReportSaveResult?> submitReport({
     required String broadbandAccount,
     required String failureType,
     required String description,
@@ -97,19 +98,20 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     );
 
     final editing = reportId != null && reportId.isNotEmpty;
-    final hasPending = !editing && state.reports.any((r) {
-      final status = r.status.toLowerCase().trim();
+    final hasPending = !editing &&
+        state.reports.any((r) {
+          final status = r.status.toLowerCase().trim();
 
-      final isPending = status == 'under_review' ||
-          status == 'pending' ||
-          status == 'under review' ||
-          status == 'review';
+          final isPending = status == 'under_review' ||
+              status == 'pending' ||
+              status == 'under review' ||
+              status == 'review';
 
-      final isSameAccount =
-          (r.broadbandAccountNumber ?? '').trim() == broadbandAccount.trim();
+          final isSameAccount = (r.broadbandAccountNumber ?? '').trim() ==
+              broadbandAccount.trim();
 
-      return isPending && isSameAccount;
-    });
+          return isPending && isSameAccount;
+        });
 
     if (hasPending) {
       state = state.copyWith(
@@ -131,9 +133,10 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     );
 
     try {
-      final savedModel = editing
+      final saved = editing
           ? await _repository.updateReport(model)
           : await _repository.submitReport(model);
+      final savedModel = saved.report;
       final reports = [...state.reports];
       final savedIndex = reports.indexWhere(
         (report) => report.id.isNotEmpty && report.id == savedModel.id,
@@ -151,7 +154,7 @@ class FailureReportController extends StateNotifier<FailureReportState> {
       );
       await fetchReports();
 
-      return savedModel;
+      return saved;
     } on ApiException catch (e) {
       final detail = (e.detail ?? e.messageKey).toLowerCase();
 
@@ -182,7 +185,6 @@ class FailureReportController extends StateNotifier<FailureReportState> {
       return null;
     }
   }
-
 }
 
 final failureReportControllerProvider =
