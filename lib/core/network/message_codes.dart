@@ -39,6 +39,7 @@ class MessageCodes {
   static const bbDisconnected = 'MSG-BB-007';
   static const bbFound = 'MSG-BB-008';
   static const bbUpstreamFailed = 'MSG-BB-009';
+  static const bbAlreadyBound = 'MSG-BB-010';
 
   static const topupValid = 'MSG-TOPUP-001';
   static const topupAlreadyUsed = 'MSG-TOPUP-002';
@@ -115,6 +116,7 @@ class MessageCodes {
     bbDisconnected,
     bbFound,
     bbUpstreamFailed,
+    bbAlreadyBound,
     topupValid,
     topupAlreadyUsed,
     topupInvalid,

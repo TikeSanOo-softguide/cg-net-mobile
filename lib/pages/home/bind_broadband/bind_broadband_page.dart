@@ -17,6 +17,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../data/broadband/broadband_repository.dart';
+import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import '../home/bound_broadband.dart';
@@ -37,6 +38,15 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
   bool get _isFormValid => _validateAccount(_account.text) == null;
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(profileControllerProvider.notifier).fetchProfile();
+    });
+  }
+
+  @override
   void dispose() {
     _account.dispose();
     super.dispose();
@@ -55,7 +65,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
       return 'broadband.validation.account_required'.tr();
     }
 
-    if (account.length > 25) {
+    if (account.length > 32) {
       return 'broadband.validation.account_max_length'.tr();
     }
 
@@ -127,6 +137,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
       if (!mounted) return;
 
       ref.read(boundBroadbandProvider.notifier).state = bound;
+      ref.invalidate(userProfileProvider);
 
       try {
         await ref.read(profileControllerProvider.notifier).fetchProfile();
@@ -166,12 +177,14 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
       while (true) {
         try {
           await ref.read(broadbandRepositoryProvider).unbindAccount(
+                serviceType: bound.serviceType,
                 accountNumber: bound.account,
               );
 
           if (!mounted) return;
 
           ref.read(boundBroadbandProvider.notifier).state = null;
+          ref.invalidate(userProfileProvider);
 
           setState(() {
             _account.clear();
@@ -350,15 +363,6 @@ class _BoundAccountCard extends StatelessWidget {
     final duration = match == null
         ? ''
         : '${durationNumber?.isNotEmpty == true ? durationNumber : '1'}月';
-    final plan = [
-      profile.productLine,
-      profile.productSpeed,
-      duration.isNotEmpty
-          ? duration
-          : productName.isNotEmpty
-              ? productName
-              : bound.serviceType,
-    ].where((value) => value.trim().isNotEmpty).join(' ');
 
     return AppCard(
       elevated: false,
@@ -413,7 +417,15 @@ class _BoundAccountCard extends StatelessWidget {
                   ),
                 _DetailRow(
                   label: context.tr('broadband.detail_plan'),
-                  value: plan,
+                  value: profile.productLine.trim(),
+                ),
+                _DetailRow(
+                  label: context.tr('package.speed'),
+                  value: profile.productSpeed.trim(),
+                ),
+                _DetailRow(
+                  label: context.tr('broadband.duration'),
+                  value: duration.trim(),
                 ),
                 if (profile.productPrice.trim().isNotEmpty)
                   _DetailRow(

@@ -46,6 +46,27 @@ void main() {
     expect(MessageCodes.locKey(MessageCodes.pwdChanged), 'msg.pwd_001');
   });
 
+  test('already-bound broadband code maps to its localized message', () {
+    final error = ApiException.fromDio(
+      DioException(
+        requestOptions: RequestOptions(path: '/customer/broadband/bind'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/customer/broadband/bind'),
+          statusCode: 409,
+          data: {
+            'code': 'MSG-BB-010',
+            'message': 'MSG-BB-010',
+          },
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(error.code, MessageCodes.bbAlreadyBound);
+    expect(MessageCodes.isKnown(error.code), isTrue);
+    expect(MessageCodes.locKey(error.code!), 'msg.bb_010');
+  });
+
   test('incorrect password validation code maps to its localized message', () {
     final error = ApiException.fromDio(
       DioException(
