@@ -22,6 +22,7 @@ class InstallationWizardScaffold extends StatelessWidget {
     this.actionLoading = false,
     this.onBack,
     this.onStepSelected,
+    this.stepLabels,
   });
 
   final int step;
@@ -29,6 +30,7 @@ class InstallationWizardScaffold extends StatelessWidget {
   final String barTitle;
   final String title;
   final String description;
+  final List<String>? stepLabels;
   final Widget child;
   final String actionLabel;
   final VoidCallback? onAction;
@@ -57,18 +59,23 @@ class InstallationWizardScaffold extends StatelessWidget {
                     _InstallationStepIndicator(
                       step: step,
                       totalSteps: totalSteps,
+                      labels: stepLabels,
                       onStepSelected: onStepSelected,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      title,
-                      style: AppTheme.cardTitle(),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: AppTheme.caption().copyWith(height: 1.35),
-                    ),
+                    if (title.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        title,
+                        style: AppTheme.cardTitle(),
+                      ),
+                    ],
+                    if (description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: AppTheme.caption().copyWith(height: 1.35),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     child,
                   ],
@@ -109,11 +116,13 @@ class _InstallationStepIndicator extends StatelessWidget {
     required this.step,
     required this.totalSteps,
     this.onStepSelected,
+    this.labels,
   });
 
   final int step;
   final int totalSteps;
   final ValueChanged<int>? onStepSelected;
+  final List<String>? labels;
 
   static const _labels = [
     'installationApplication.step_package',
@@ -149,7 +158,7 @@ class _InstallationStepIndicator extends StatelessWidget {
                   ),
                 _StepNode(
                   number: index + 1,
-                  label: _labels[index].tr(),
+                  label: (labels ?? _labels)[index].tr(),
                   state: step > index + 1
                       ? _StepState.done
                       : step == index + 1

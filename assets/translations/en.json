@@ -645,6 +645,23 @@
     "cancel_success": "Relocation request cancelled.",
     "required_id": "Request ID is missing"
   },
+  "changePlan": {
+    "no_requests": "No change plan requests",
+    "no_requests_desc": "Tap the + button to submit a change plan request.",
+    "current_plan": "Current plan",
+    "select_plan": "Select a new plan",
+    "no_current_plan": "No current package on this account.",
+    "contact": "Contact",
+    "contact_name": "Contact name",
+    "contact_phone": "Contact phone",
+    "preferred_date": "Preferred date",
+    "note": "Note",
+    "detail": "Change plan detail",
+    "submitted_desc": "Your change plan request has been submitted.",
+    "cancel_title": "Cancel change plan request",
+    "cancel_confirm": "Are you sure you want to cancel this change plan request?",
+    "cancel_success": "Change plan request cancelled."
+  },
   "installationApplication": {
     "no_requests": "No installation applications",
     "no_requests_desc": "Tap the + button to submit an installation application.",
@@ -819,8 +836,8 @@
     "user_002": "The current password is incorrect.",
     "user_003": "This account has been deactivated. Please contact the administrator for assistance.",
     "user_004": "This account has been suspended. Please contact the administrator for assistance.",
-    "req_001": "Installation application cancelled.",
-    "req_002": "Installation application submitted.",
-    "req_003": "Installation application updated."
+    "req_001": "Request cancelled.",
+    "req_002": "Request submitted.",
+    "req_003": "Request updated."
   }
 }

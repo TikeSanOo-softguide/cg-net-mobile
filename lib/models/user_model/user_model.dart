@@ -67,6 +67,59 @@ class InboxMessageModel {
   }
 }
 
+class UserPackageSnapshot {
+  const UserPackageSnapshot({
+    this.packageId,
+    this.price,
+    this.networkName = const {},
+    this.speedMbps,
+    this.termMonths,
+  });
+
+  final int? packageId;
+  final num? price;
+  final Map<String, String> networkName;
+  final String? speedMbps;
+  final int? termMonths;
+
+  factory UserPackageSnapshot.fromJson(Map<String, dynamic> json) {
+    final details = json['details'] is Map
+        ? Map<String, dynamic>.from(json['details'] as Map)
+        : json;
+    final names = details['network_name'] is Map
+        ? Map<String, dynamic>.from(details['network_name'] as Map)
+        : const <String, dynamic>{};
+    final speed = details['speed'] is Map
+        ? Map<String, dynamic>.from(details['speed'] as Map)
+        : const <String, dynamic>{};
+    final term = details['term'] is Map
+        ? Map<String, dynamic>.from(details['term'] as Map)
+        : const <String, dynamic>{};
+
+    return UserPackageSnapshot(
+      packageId: int.tryParse('${json['package_id'] ?? ''}'),
+      price: details['price'] is num
+          ? details['price'] as num
+          : num.tryParse('${details['price'] ?? ''}'),
+      networkName: {
+        for (final entry in names.entries)
+          if (entry.value != null && '${entry.value}'.trim().isNotEmpty)
+            entry.key: '${entry.value}',
+      },
+      speedMbps: speed['mbps']?.toString(),
+      termMonths: int.tryParse('${term['months'] ?? ''}'),
+    );
+  }
+
+  String networkLabel(String locale) {
+    return networkName[locale] ??
+        networkName['en'] ??
+        networkName['my'] ??
+        networkName['zh'] ??
+        '';
+  }
+}
+
 class UserProfileModel {
   const UserProfileModel({
     required this.id,
@@ -89,6 +142,7 @@ class UserProfileModel {
     this.onlineStatus = '',
     this.productLine = '',
     this.productSpeed = '',
+    this.packages = const [],
   });
 
   final String id;
@@ -111,6 +165,10 @@ class UserProfileModel {
   final String area;
   final String productLine;
   final String productSpeed;
+  final List<UserPackageSnapshot> packages;
+
+  UserPackageSnapshot? get currentPackage =>
+      packages.isEmpty ? null : packages.first;
 
   String get displayPhone => formatLocalPhone(phone);
 
@@ -172,6 +230,16 @@ class UserProfileModel {
         '';
     final status = userData['status']?.toString() ?? 'active';
     final username = userData['username']?.toString();
+    final packages = data['packages'] is List
+        ? (data['packages'] as List)
+            .whereType<Map>()
+            .map(
+              (item) => UserPackageSnapshot.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            )
+            .toList()
+        : const <UserPackageSnapshot>[];
 
     return UserProfileModel(
       id: id,
@@ -196,6 +264,7 @@ class UserProfileModel {
       productLine: accountData['productLine']?.toString() ?? '',
       productSpeed: accountData['productSpeed']?.toString() ?? '',
       productPrice: accountData['productPrice']?.toString() ?? '',
+      packages: packages,
     );
   }
 
@@ -220,6 +289,7 @@ class UserProfileModel {
     String? productLine,
     String? productSpeed,
     String? productPrice,
+    List<UserPackageSnapshot>? packages,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -242,6 +312,7 @@ class UserProfileModel {
       productPrice: productPrice ?? this.productPrice,
       address: address ?? this.address,
       area: area ?? this.area,
+      packages: packages ?? this.packages,
     );
   }
 }

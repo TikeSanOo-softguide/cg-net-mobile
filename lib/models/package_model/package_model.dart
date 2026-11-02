@@ -39,10 +39,14 @@ class PackageModel {
       Map value => int.tryParse(value['months']?.toString() ?? ''),
       _ => null,
     };
-    final localizedName = switch (json['name']) {
+    final network = json['network'];
+    final nestedName = json['name'] ??
+        (network is Map ? network['name'] : null);
+    final localizedName = switch (nestedName) {
       Map value => value.map(
           (key, item) => MapEntry(key.toString(), item?.toString() ?? ''),
         ),
+      String value => {'en': value},
       _ => null,
     };
     final defaultName = localizedName?['en'] ??
@@ -55,7 +59,9 @@ class PackageModel {
       id: json['id'].toString(),
       name: defaultName,
       speed: speedValue,
-      price: json['price'] as num,
+      price: json['price'] is num
+          ? json['price'] as num
+          : num.tryParse('${json['price'] ?? 0}') ?? 0,
       currency: json['currency']?.toString() ?? 'Pts',
       billingCycle: json['billing_cycle']?.toString() ?? 'month',
       dataLimit: json['data_limit']?.toString() ?? '',
@@ -86,4 +92,17 @@ class PackageModel {
       };
 
   String get formattedPrice => '$currency ${price.toStringAsFixed(0)}';
+
+  String labelFor(String locale) {
+    final network = localizedName?[locale] ??
+        localizedName?['en'] ??
+        name;
+    final speedLabel = speed.trim().isEmpty ? '' : '$speed Mbps';
+    final termLabel = termMonths == null ? '' : '${termMonths}m';
+    return [
+      network,
+      speedLabel,
+      termLabel,
+    ].where((part) => part.isNotEmpty).join(' · ');
+  }
 }

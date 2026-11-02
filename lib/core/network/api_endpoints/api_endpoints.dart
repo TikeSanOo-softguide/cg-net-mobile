@@ -68,6 +68,10 @@ class ApiEndpoints {
   static const String termAndCondition = '/general-settings/term-and-condition';
   static const String faq = '/general-settings/faq';
   static const String supportContact = '/general-settings/support-contact';
+  static const String changePlanRequests = '/change-plan-requests';
+  static const String createChangePlanRequest = '/change-plan-requests/create';
+  static String changePlanRequest(String requestId) =>
+      '$changePlanRequests/$requestId';
   static const String relocationRequests = '/relocation-requests';
   static const String createRelocationRequest = '/relocation-requests/create';
   static String relocationRequest(String requestId) =>

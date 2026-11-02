@@ -646,6 +646,23 @@
     "cancel_success": "迁移申请已取消。",
     "required_id": "缺少请求 ID。"
   },
+  "changePlan": {
+    "no_requests": "暂无更换套餐申请",
+    "no_requests_desc": "点击 + 按钮提交更换套餐申请。",
+    "current_plan": "当前套餐",
+    "select_plan": "请选择新套餐",
+    "no_current_plan": "此账户暂无当前套餐。",
+    "contact": "联系信息",
+    "contact_name": "联系人",
+    "contact_phone": "电话",
+    "preferred_date": "希望日期",
+    "note": "备注",
+    "detail": "更换套餐详情",
+    "submitted_desc": "更换套餐申请已提交。",
+    "cancel_title": "取消更换套餐申请",
+    "cancel_confirm": "确定要取消此更换套餐申请吗？",
+    "cancel_success": "更换套餐申请已取消。"
+  },
   "installationApplication": {
     "no_requests": "暂无安装申请",
     "no_requests_desc": "点击 + 按钮提交安装申请。",
@@ -820,8 +837,8 @@
     "user_002": "当前密码不正确。",
     "user_003": "此账户已停用。请联系管理员寻求帮助。",
     "user_004": "此账户已暂停使用。请联系管理员寻求帮助。",
-    "req_001": "安装申请已取消。",
-    "req_002": "安装申请已提交。",
-    "req_003": "安装申请已更新。"
+    "req_001": "申请已取消。",
+    "req_002": "申请已提交。",
+    "req_003": "申请已更新。"
   }
 }
