@@ -200,43 +200,80 @@ class _InstallationApplicationPageState
 
     final hasError = state.status == InstallationApplicationStatus.error &&
         state.errorMessage != null;
-    return ListView.separated(
-      padding: const EdgeInsets.all(AppStyle.spaceLg),
-      itemCount: state.requests.length + (hasError ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
-      itemBuilder: (context, index) {
-        if (hasError && index == 0) {
-          return AppCard(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _localizedError(state.errorMessage),
-                    style: AppTheme.body(color: AppColors.error),
+    final underReview = state.requests
+        .where((item) => _statusKey(item) == 'pending' || _statusKey(item) == 'under_review')
+        .toList();
+    final approved = state.requests
+        .where((item) => _statusKey(item) == 'approved')
+        .toList();
+    final cancelled = state.requests
+        .where((item) =>
+            _statusKey(item) == 'cancelled' || _statusKey(item) == 'rejected')
+        .toList();
+
+    Widget cardFor(InstallationApplicationModel request) {
+      return _InstallationApplicationCard(
+        request: request,
+        onEdit: () => _openForm(request),
+        onCancel: () => _confirmAction(request: request),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        80,
+      ),
+      children: [
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppStyle.spaceMd),
+            child: AppCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _localizedError(state.errorMessage),
+                      style: AppTheme.body(color: AppColors.error),
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: _refresh,
-                  child: Text('common.retry'.tr()),
-                ),
-              ],
+                  TextButton(
+                    onPressed: _refresh,
+                    child: Text('common.retry'.tr()),
+                  ),
+                ],
+              ),
             ),
-          );
-        }
-        final requestIndex = index - (hasError ? 1 : 0);
-        final request = state.requests[requestIndex];
-        return _InstallationApplicationCard(
-          request: request,
-          onEdit: () => _openForm(request),
-          onCancel: () => _confirmAction(request: request),
-        );
-      },
+          ),
+        ..._requestCards(
+          [...underReview, ...approved, ...cancelled],
+          cardFor,
+        ),
+      ],
     );
   }
 }
 
+String _statusKey(InstallationApplicationModel request) {
+  return request.status.toLowerCase().replaceAll(' ', '_');
+}
+
+List<Widget> _requestCards(
+  List<InstallationApplicationModel> requests,
+  Widget Function(InstallationApplicationModel request) cardFor,
+) {
+  return [
+    for (var i = 0; i < requests.length; i++) ...[
+      cardFor(requests[i]),
+      if (i != requests.length - 1) const SizedBox(height: AppStyle.spaceSm),
+    ],
+  ];
+}
+
 bool _canManageRequest(InstallationApplicationModel request) {
-  final status = request.status.toLowerCase().replaceAll(' ', '_');
+  final status = _statusKey(request);
   return status == 'pending' || status == 'under_review';
 }
 
@@ -424,55 +461,50 @@ class _InstallationApplicationCardState
                       : const SizedBox(width: double.infinity),
                 ),
                 const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: InkWell(
-                    onTap: () => setState(() => _expanded = !_expanded),
-                    borderRadius: BorderRadius.circular(8),
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _expanded
-                                ? 'common.see_less'.tr()
-                                : 'common.see_more'.tr(),
-                            style: AppTheme.caption(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _expanded
+                                  ? 'common.see_less'.tr()
+                                  : 'common.see_more'.tr(),
+                              style: AppTheme.caption(
+                                color: AppColors.primary,
+                                weight: FontWeight.w600,
+                              ).copyWith(fontSize: 10),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              _expanded
+                                  ? LucideIcons.chevron_up
+                                  : LucideIcons.chevron_down,
+                              size: 12,
                               color: AppColors.primary,
-                              weight: FontWeight.w600,
-                            ).copyWith(fontSize: 10),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(
-                            _expanded
-                                ? LucideIcons.chevron_up
-                                : LucideIcons.chevron_down,
-                            size: 12,
-                            color: AppColors.primary,
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                if (canManage) ...[
-                  const Padding(
-                    padding: EdgeInsets.only(top: 4, bottom: 12),
-                    child: Divider(height: 1, color: AppColors.borderLight),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
+                    if (canManage) ...[
+                      const Spacer(),
                       Material(
                         color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(6),
                         child: InkWell(
                           onTap: widget.onEdit,
                           borderRadius: BorderRadius.circular(6),
-                          splashColor: AppColors.primary.withValues(alpha: 0.08),
+                          splashColor:
+                              AppColors.primary.withValues(alpha: 0.08),
                           highlightColor:
                               AppColors.primary.withValues(alpha: 0.04),
                           child: const SizedBox(
@@ -503,8 +535,8 @@ class _InstallationApplicationCardState
                         ),
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
