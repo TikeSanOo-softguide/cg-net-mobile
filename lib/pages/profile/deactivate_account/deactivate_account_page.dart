@@ -75,13 +75,16 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
       );
     } catch (error) {
       if (!mounted) return;
-      handleApiError(
+      final handledInline = handleApiError(
         error,
         fields: {'password': _passwordFieldKey},
         messageCodeFields: {
           MessageCodes.userPasswordIncorrect: 'password',
         },
       );
+      if (!handledInline) {
+        await showApiErrorModal(context, error);
+      }
     }
   }
 

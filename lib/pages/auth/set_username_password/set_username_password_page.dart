@@ -14,6 +14,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/utils/loading_helper.dart';
 import 'set_username_password_controller.dart';
 
 class SetUsernamePasswordPage extends ConsumerStatefulWidget {
@@ -104,10 +105,12 @@ class _SetUsernamePasswordPageState
     if (!_formKey.currentState!.validate()) return;
 
     final controller = ref.read(setUsernamePasswordControllerProvider.notifier);
-    final ok = await controller.submit(
-      verificationToken: widget.verificationToken,
-      username: _username.text.trim(),
-      password: _password.text,
+    final ok = await LoadingHelper.runWithLoading(
+      () => controller.submit(
+        verificationToken: widget.verificationToken,
+        username: _username.text.trim(),
+        password: _password.text,
+      ),
     );
     if (!mounted) return;
     if (ok) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cg_net_mobile/core/network/api_error_text.dart';
 import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -84,11 +86,14 @@ mixin ApiFieldErrorsMixin<T extends StatefulWidget> on State<T> {
       return true;
     }
 
-    showAppFailureModal(
-      context,
-      title: 'common.error'.tr(),
-      body: apiErrorText(error),
-    );
     return false;
   }
+}
+
+Future<void> showApiErrorModal(BuildContext context, Object error) {
+  return showAppFailureModal(
+    context,
+    title: 'common.error'.tr(),
+    body: apiErrorText(error),
+  );
 }

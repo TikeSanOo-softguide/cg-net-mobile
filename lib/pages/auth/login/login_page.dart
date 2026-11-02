@@ -21,6 +21,7 @@ import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/utils/phone_number.dart';
 import 'components/login_help_footer.dart';
 import 'login_controller.dart';
@@ -68,7 +69,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final controller = ref.read(loginControllerProvider.notifier);
-    final session = await controller.checkSession(_phoneController.text);
+    final session = await LoadingHelper.runWithLoading(
+      () => controller.checkSession(_phoneController.text),
+    );
     if (!mounted) return;
 
     if (session == null) {
@@ -90,7 +93,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _requestOtp(String phone) async {
     final controller = ref.read(loginControllerProvider.notifier);
-    final requestedPhone = await controller.requestOtp(phone);
+    final requestedPhone = await LoadingHelper.runWithLoading(
+      () => controller.requestOtp(phone),
+    );
     if (!mounted) return;
 
     final challengeId = controller.challengeId;

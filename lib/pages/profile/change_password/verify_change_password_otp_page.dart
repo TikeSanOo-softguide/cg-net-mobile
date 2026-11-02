@@ -15,6 +15,7 @@ import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../models/change_password_model/change_password_otp_session.dart';
 import '../../auth/otp_verification/otp_success_drawer.dart';
 import 'change_password_controller.dart';
@@ -179,9 +180,11 @@ class _VerifyChangePasswordOtpPageState
     });
 
     try {
-      final nextChallenge = await ref
-          .read(changePasswordControllerProvider.notifier)
-          .changePassword(password: password);
+      final nextChallenge = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(changePasswordControllerProvider.notifier)
+            .changePassword(password: password),
+      );
       if (!mounted) return;
 
       _clearDigits();
@@ -217,10 +220,12 @@ class _VerifyChangePasswordOtpPageState
     });
 
     try {
-      await ref.read(changePasswordControllerProvider.notifier).verifyOtp(
-            challengeId: _challenge.challengeId,
-            otp: _code,
-          );
+      await LoadingHelper.runWithLoading(
+        () => ref.read(changePasswordControllerProvider.notifier).verifyOtp(
+              challengeId: _challenge.challengeId,
+              otp: _code,
+            ),
+      );
       if (!mounted) return;
 
       setState(() => _submitting = false);

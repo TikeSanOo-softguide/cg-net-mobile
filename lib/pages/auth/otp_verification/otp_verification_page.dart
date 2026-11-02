@@ -20,6 +20,7 @@ import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/loading_helper.dart';
 import 'otp_success_drawer.dart';
 import 'otp_verification_controller.dart';
 
@@ -235,9 +236,11 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     });
 
     final controller = ref.read(otpVerificationControllerProvider.notifier);
-    final verifyResult = await controller.verify(
-      challengeId: _challengeId,
-      code: _code,
+    final verifyResult = await LoadingHelper.runWithLoading(
+      () => controller.verify(
+        challengeId: _challengeId,
+        code: _code,
+      ),
     );
 
     if (!mounted) return;
@@ -351,7 +354,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     setState(() => _inlineError = null);
 
     final controller = ref.read(otpVerificationControllerProvider.notifier);
-    final next = await controller.resend(widget.phone);
+    final next = await LoadingHelper.runWithLoading(
+      () => controller.resend(widget.phone),
+    );
     if (!mounted) return;
 
     if (next != null) {

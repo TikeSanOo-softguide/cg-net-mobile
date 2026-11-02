@@ -1,15 +1,14 @@
-import 'package:cg_net_mobile/components/app_dialog/app_dialog.dart';
 import 'package:cg_net_mobile/pages/profile/language_settings/language_settings_controller.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
 
 const _languageOptions = [
@@ -78,11 +77,7 @@ Future<void> showLanguagePickerModal({
                       }
                     } on ApiException catch (error) {
                       if (!sheetContext.mounted) return;
-                      await showAppFailureModal(
-                        sheetContext,
-                        title: 'common.error'.tr(),
-                        body: apiErrorOrFallback(error),
-                      );
+                      await showApiErrorModal(sheetContext, error);
                     }
                   },
                 ),

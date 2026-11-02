@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
@@ -108,8 +109,9 @@ class ProfileController extends StateNotifier<UserProfileModel> {
   Future<void> logout() async {
     try {
       await _authApi.logout();
-    } catch (_) {
-      // Best-effort revoke; local session cleanup must still continue.
+    } on ApiException catch (error) {
+      if (error.failure == ApiFailure.unauthorized) clearProfile();
+      rethrow;
     }
     try {
       await _push.unregister();

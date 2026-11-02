@@ -264,7 +264,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                               );
                             } catch (error) {
                               if (!context.mounted) return;
-                              handleApiError(
+                              final handledInline = handleApiError(
                                 error,
                                 fields: {
                                   'current_password': _currentPasswordFieldKey,
@@ -275,6 +275,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                                       'current_password',
                                 },
                               );
+                              if (!handledInline) {
+                                await showApiErrorModal(context, error);
+                              }
                             }
                           },
                   ),

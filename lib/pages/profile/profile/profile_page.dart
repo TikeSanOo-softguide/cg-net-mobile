@@ -10,10 +10,13 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/utils/version_check/version_check.dart';
 import 'profile_controller.dart';
 
@@ -215,9 +218,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               titleColor: AppColors.error,
               chevronColor: AppColors.error,
               onTap: () async {
-                await ref.read(profileControllerProvider.notifier).logout();
-                if (context.mounted) {
-                  context.goNamed(RouteNames.login);
+                try {
+                  await LoadingHelper.runWithLoading(
+                    () => ref
+                        .read(profileControllerProvider.notifier)
+                        .logout(),
+                  );
+                  if (context.mounted) {
+                    context.goNamed(RouteNames.login);
+                  }
+                } on ApiException catch (error) {
+                  if (!context.mounted) return;
+                  await showApiErrorModal(context, error);
+                } catch (error) {
+                  if (!context.mounted) return;
+                  await showApiErrorModal(context, error);
                 }
               },
             ),
