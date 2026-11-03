@@ -39,6 +39,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -50,7 +51,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(changePasswordControllerProvider);
+    final loading = ref.watch(changePasswordControllerProvider) || _submitting;
 
     return AppCurvedScaffold(
       title: Text('profile.password_title'.tr()),
@@ -226,9 +227,11 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                     onPressed: loading
                         ? null
                         : () async {
+                            if (_submitting) return;
                             clearAllApiFieldErrors();
                             if (!_formKey.currentState!.validate()) return;
 
+                            setState(() => _submitting = true);
                             final model = ChangePasswordModel(
                               currentPassword: _current.text,
                               newPassword: _next.text,
@@ -242,6 +245,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                                     .read(changePasswordControllerProvider
                                         .notifier)
                                     .changePassword(password: model),
+                                dismissAnimation: false,
                               );
 
                               if (!context.mounted) return;
@@ -277,6 +281,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                               );
                               if (!handledInline) {
                                 await showApiErrorModal(context, error);
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() => _submitting = false);
                               }
                             }
                           },

@@ -9,13 +9,30 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
-import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
-import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
 import 'set_username_password_controller.dart';
+
+String? usernameValidationErrorKey(String? value) {
+  final raw = value ?? '';
+  if (raw.trim().isEmpty) {
+    return 'set_credentials.username_required';
+  }
+
+  final username = raw.trim();
+  if (username.length < 4) {
+    return 'set_credentials.username_min';
+  }
+
+  if (!RegExp(r'^[A-Za-z0-9_ ]+$').hasMatch(username)) {
+    return 'set_credentials.username_chars';
+  }
+
+  return null;
+}
 
 class SetUsernamePasswordPage extends ConsumerStatefulWidget {
   const SetUsernamePasswordPage({
@@ -39,6 +56,7 @@ class _SetUsernamePasswordPageState
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   String? _usernameServerError;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -49,19 +67,9 @@ class _SetUsernamePasswordPageState
   }
 
   String? _validateUsername(String? value) {
-    final raw = value ?? '';
-    if (raw.trim().isEmpty) {
-      return 'set_credentials.username_required'.tr();
-    }
-    if (raw.contains(' ')) {
-      return 'set_credentials.username_spaces'.tr();
-    }
-    final username = raw.trim();
-    if (username.length < 4) {
-      return 'set_credentials.username_min'.tr();
-    }
-    if (!RegExp(r'^[A-Za-z0-9_]+$').hasMatch(username)) {
-      return 'set_credentials.username_chars'.tr();
+    final errorKey = usernameValidationErrorKey(value);
+    if (errorKey != null) {
+      return errorKey.tr();
     }
     return _usernameServerError;
   }
@@ -101,17 +109,29 @@ class _SetUsernamePasswordPageState
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     setState(() => _usernameServerError = null);
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _submitting = true);
     final controller = ref.read(setUsernamePasswordControllerProvider.notifier);
-    final ok = await LoadingHelper.runWithLoading(
-      () => controller.submit(
-        verificationToken: widget.verificationToken,
-        username: _username.text.trim(),
-        password: _password.text,
-      ),
-    );
+    var ok = false;
+    try {
+      ok = await LoadingHelper.runWithLoading(
+        () => controller.submit(
+          verificationToken: widget.verificationToken,
+          username: _username.text.trim(),
+          password: _password.text,
+        ),
+        dismissAnimation: false,
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      await showApiErrorModal(context, error);
+      return;
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
     if (!mounted) return;
     if (ok) {
       context.goNamed(RouteNames.home);
@@ -119,10 +139,6 @@ class _SetUsernamePasswordPageState
     }
 
     final error = ref.read(setUsernamePasswordControllerProvider).error;
-    if (isOfflineError(error)) {
-      await openNoInternetPage(context);
-      return;
-    }
     if (_isUsernameTaken(error)) {
       setState(() {
         _usernameServerError = 'set_credentials.username_taken'.tr();
@@ -130,16 +146,15 @@ class _SetUsernamePasswordPageState
       _formKey.currentState?.validate();
       return;
     }
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(apiErrorOrFallback(error))),
-      );
+    if (error != null) {
+      await showApiErrorModal(context, error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(setUsernamePasswordControllerProvider);
+    final isSubmitting = state.isLoading || _submitting;
     final _ = context.locale;
     final titleSize = authTitleFontSize(context);
     final subtitleSize = authSubtitleFontSize(context);
@@ -169,8 +184,8 @@ class _SetUsernamePasswordPageState
           label: 'set_credentials.create'.tr(),
           height: 44,
           fontSize: 14,
-          isLoading: state.isLoading,
-          onPressed: state.isLoading ? null : _submit,
+          isLoading: isSubmitting,
+          onPressed: isSubmitting ? null : _submit,
         ),
         child: Form(
           key: _formKey,

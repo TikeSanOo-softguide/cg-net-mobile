@@ -37,10 +37,14 @@ class AppTheme {
   /// Bundled Burmese typeface (assets/fonts, declared in pubspec.yaml).
   /// Same family/weights (400, 600) as greenwaymyanmar.com.
   static const String myanmarFontFamily = 'NotoSansMyanmar';
+  static const String chineseFontFamily = 'NotoSansSC';
 
-  /// Latin renders with Plus Jakarta Sans; Myanmar script falls back to
-  /// [myanmarFontFamily] so Burmese looks the same on every device.
-  static const List<String> fontFamilyFallback = [myanmarFontFamily];
+  /// Latin renders with Plus Jakarta Sans; Myanmar and Chinese scripts use
+  /// bundled fonts so their appearance is consistent across devices.
+  static const List<String> fontFamilyFallback = [
+    myanmarFontFamily,
+    chineseFontFamily,
+  ];
 
   /// Minimum line height that keeps Burmese stacked marks from clipping.
   static const double lineHeightMyanmarSafe = 1.4;

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cg_net_mobile/core/utils/api_field_error.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,10 +11,8 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
-import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
-import '../../../core/network/offline_navigation.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
@@ -142,7 +141,8 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     final node = _focusNodes[index];
     if (!node.hasFocus) node.requestFocus();
     final text = _controllers[index].text;
-    _controllers[index].selection = TextSelection.collapsed(offset: text.length);
+    _controllers[index].selection =
+        TextSelection.collapsed(offset: text.length);
   }
 
   /// SMS autofill / paste — fill boxes only; user taps Verify to submit.
@@ -174,10 +174,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
         return;
       }
 
-      // Stay on the filled box so the next backspace always has a digit to
-      // delete. The next keystroke is routed into the following box.
       if (digits.length == 1) {
         _writeBox(index, digits);
+        if (index < _length - 1) _focusBox(index + 1);
         setState(() => _inlineError = null);
         return;
       }
@@ -236,44 +235,42 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     });
 
     final controller = ref.read(otpVerificationControllerProvider.notifier);
-    final verifyResult = await LoadingHelper.runWithLoading(
-      () => controller.verify(
-        challengeId: _challengeId,
-        code: _code,
-      ),
-    );
+    OtpVerifyResult? verifyResult;
+    try {
+      verifyResult = await LoadingHelper.runWithLoading(
+        () => controller.verify(
+          challengeId: _challengeId,
+          code: _code,
+        ),
+        dismissAnimation: false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      await showApiErrorModal(context, error);
+      return;
+    }
 
     if (!mounted) return;
 
-    if (verifyResult == null) {
+    final result = verifyResult;
+    if (result == null) {
       final error = ref.read(otpVerificationControllerProvider).error;
-      setState(() {
-        _submitting = false;
-        _inlineError = OtpVerificationController.localizedError(error);
-      });
-      _playErrorFeedback();
-      if (isOfflineError(error)) {
-        await openNoInternetPage(context);
+      setState(() => _submitting = false);
+      if (error != null) {
+        await showApiErrorModal(context, error);
       }
       // Keep entered OTP for retry; refocus first box.
-      _focusNodes.first.requestFocus();
+      if (mounted) _focusNodes.first.requestFocus();
       return;
     }
 
     TextInput.finishAutofillContext(shouldSave: false);
     setState(() => _submitting = false);
 
-    if (kDebugMode) {
-      debugPrint(
-        '[otp] verify next_step=${verifyResult.nextStep} '
-        'hasVerificationToken=${verifyResult.verificationToken != null} '
-        'hasAccessToken=${verifyResult.accessToken != null}',
-      );
-    }
-
     await showOtpSuccessDrawer(
       context,
-      onContinue: () => _continueAfterOtpSuccess(verifyResult),
+      onContinue: () => _continueAfterOtpSuccess(result),
     );
   }
 
@@ -295,11 +292,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
         await ref.read(authApiProvider).syncCurrentLanguage();
       } on ApiException catch (error) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text(apiErrorOrFallback(error))),
-          );
+        await showApiErrorModal(context, error);
       }
       if (!mounted) return;
       context.goNamed(RouteNames.home);
@@ -356,6 +349,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     final controller = ref.read(otpVerificationControllerProvider.notifier);
     final next = await LoadingHelper.runWithLoading(
       () => controller.resend(widget.phone),
+      dismissAnimation: false,
     );
     if (!mounted) return;
 
@@ -378,12 +372,8 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     if (retryAfter != null) {
       _startCountdown(retryAfter);
     }
-    setState(() {
-      _inlineError = OtpVerificationController.localizedError(error);
-    });
-    _playErrorFeedback();
-    if (isOfflineError(error)) {
-      await openNoInternetPage(context);
+    if (error != null) {
+      await showApiErrorModal(context, error);
     }
   }
 

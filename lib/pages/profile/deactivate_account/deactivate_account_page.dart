@@ -34,6 +34,7 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
   final _passwordController = TextEditingController();
   final _passwordFieldKey = GlobalKey<FormFieldState<String>>();
   bool _obscurePassword = true;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -42,7 +43,7 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
   }
 
   Future<void> _confirmDeactivation() async {
-    if (ref.read(deactivateAccountControllerProvider)) return;
+    if (_submitting || ref.read(deactivateAccountControllerProvider)) return;
     clearAllApiFieldErrors();
     if (!_formKey.currentState!.validate()) return;
 
@@ -56,23 +57,18 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
 
     if (confirmed != true || !mounted) return;
 
+    setState(() => _submitting = true);
     try {
-      final message = await LoadingHelper.runWithLoading(() async {
-        final responseMessage = await ref
+      await LoadingHelper.runWithLoading(() async {
+        await ref
             .read(deactivateAccountControllerProvider.notifier)
             .deactivate(password: _passwordController.text);
         await ref.read(profileControllerProvider.notifier).logout();
-        return responseMessage;
-      });
+      }, dismissAnimation: false);
       if (!mounted) return;
 
       _passwordController.clear();
-      context.goNamed(
-        RouteNames.login,
-        queryParameters: {
-          if (message != null) 'message': message,
-        },
-      );
+      context.goNamed(RouteNames.login);
     } catch (error) {
       if (!mounted) return;
       final handledInline = handleApiError(
@@ -85,12 +81,15 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
       if (!handledInline) {
         await showApiErrorModal(context, error);
       }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(deactivateAccountControllerProvider);
+    final isLoading =
+        ref.watch(deactivateAccountControllerProvider) || _submitting;
 
     return AppCurvedScaffold(
       title: Text('profile.deactivate_account_title'.tr()),

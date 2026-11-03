@@ -10,6 +10,7 @@ class LoadingHelper {
     String? loadingMessage,
     String? successMessage,
     String? errorMessage,
+    bool dismissAnimation = true,
   }) async {
     try {
       await EasyLoading.show(
@@ -37,7 +38,7 @@ class LoadingHelper {
       }
       rethrow;
     } finally {
-      await EasyLoading.dismiss();
+      await EasyLoading.dismiss(animation: dismissAnimation);
     }
   }
 }

@@ -1,12 +1,14 @@
 import 'package:cg_net_mobile/components/language_setting/language_picker_modal.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:share_plus/share_plus.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
@@ -28,6 +30,9 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
+  static const _shareUrl = 'https://yno-cms.chocobot.site/';
+  bool _loggingOut = false;
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +51,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       default:
         return context.tr('language.english');
     }
+  }
+
+  Future<void> _shareApp() async {
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Download Yaung Ni Oo mobile app now! $_shareUrl',
+        subject: 'Share Yaung Ni Oo mobile app',
+      ),
+    );
   }
 
   @override
@@ -212,17 +226,32 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             const SizedBox(height: 5),
             _SettingsCard(
+              asset: 'assets/images/profile/about.png',
+              title: 'profile.share_app'.tr(),
+              onTap: _shareApp,
+            ),
+            const SizedBox(height: 5),
+            _SettingsCard(
               asset: 'assets/images/profile/logout.png',
               tint: const Color(0xFFFFEBEE),
               title: 'common.logout'.tr(),
               titleColor: AppColors.error,
               chevronColor: AppColors.error,
               onTap: () async {
+                if (_loggingOut) return;
+                final confirmed = await showAppConfirmModal(
+                  context,
+                  title: 'common.logout_confirm_title'.tr(),
+                  body: 'common.logout_confirm_message'.tr(),
+                  confirmLabel: 'common.logout'.tr(),
+                  cancelLabel: 'common.cancel'.tr(),
+                );
+                if (confirmed != true || !mounted) return;
+                setState(() => _loggingOut = true);
                 try {
                   await LoadingHelper.runWithLoading(
-                    () => ref
-                        .read(profileControllerProvider.notifier)
-                        .logout(),
+                    () => ref.read(profileControllerProvider.notifier).logout(),
+                    dismissAnimation: false,
                   );
                   if (context.mounted) {
                     context.goNamed(RouteNames.login);
@@ -233,6 +262,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 } catch (error) {
                   if (!context.mounted) return;
                   await showApiErrorModal(context, error);
+                } finally {
+                  if (mounted) setState(() => _loggingOut = false);
                 }
               },
             ),

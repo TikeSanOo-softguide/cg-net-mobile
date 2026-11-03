@@ -49,8 +49,11 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
       state = state.copyWith(isLoading: false);
       return true;
     } on ApiException catch (error) {
-      if (!mounted || error.failure == ApiFailure.cancelled) return false;
-      state = state.copyWith(isLoading: false, error: error);
+      if (!mounted) return false;
+      state = state.copyWith(
+        isLoading: false,
+        error: error.failure == ApiFailure.cancelled ? null : error,
+      );
       return false;
     }
   }
