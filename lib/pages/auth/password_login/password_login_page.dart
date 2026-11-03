@@ -15,6 +15,7 @@ import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/loading_helper.dart';
 import 'password_login_controller.dart';
 
 class PasswordLoginPage extends ConsumerStatefulWidget {
@@ -65,8 +66,20 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
   bool get _isComplete => _password.length == _length;
 
+  int _maxLengthForDigit(int index) {
+    final otherDigits = _controllers
+        .asMap()
+        .entries
+        .where((entry) => entry.key != index)
+        .fold<int>(0, (total, entry) => total + entry.value.text.length);
+    return (_length - otherDigits).clamp(1, _length);
+  }
+
   void _applyDigits(String raw) {
-    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    final rawDigits = raw.replaceAll(RegExp(r'\D'), '');
+    final digits = rawDigits.length > _length
+        ? rawDigits.substring(0, _length)
+        : rawDigits;
     if (digits.isEmpty) return;
 
     for (var i = 0; i < _length; i++) {
@@ -128,10 +141,12 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
       _inlineError = null;
     });
 
-    final ok = await ref.read(passwordLoginControllerProvider.notifier).submit(
-          verificationToken: widget.verificationToken,
-          password: _password,
-        );
+    final ok = await LoadingHelper.runWithLoading(
+      () => ref.read(passwordLoginControllerProvider.notifier).submit(
+            verificationToken: widget.verificationToken,
+            password: _password,
+          ),
+    );
 
     if (!mounted) return;
 
@@ -215,6 +230,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
                       if (index > 0) const SizedBox(width: _gap),
                       _PasswordDigit(
                         size: size,
+                        maxLength: _maxLengthForDigit(index),
                         controller: _controllers[index],
                         focusNode: _focusNodes[index],
                         enabled: !signingIn,
@@ -254,6 +270,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 class _PasswordDigit extends StatefulWidget {
   const _PasswordDigit({
     required this.size,
+    required this.maxLength,
     required this.controller,
     required this.focusNode,
     required this.onChanged,
@@ -264,6 +281,7 @@ class _PasswordDigit extends StatefulWidget {
   });
 
   final double size;
+  final int maxLength;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -360,8 +378,8 @@ class _PasswordDigitState extends State<_PasswordDigit> {
                 keyboardType: TextInputType.number,
                 textInputAction:
                     widget.isLast ? TextInputAction.done : TextInputAction.next,
-                // Allow multi-digit paste; parent distributes across boxes.
-                maxLength: 6,
+                // Reserve space used by the other boxes to keep the total at six.
+                maxLength: widget.maxLength,
                 showCursor: false,
                 enableInteractiveSelection: false,
                 style: AppTheme.english(

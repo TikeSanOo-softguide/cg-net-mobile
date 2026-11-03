@@ -27,77 +27,80 @@ class AboutAppPage extends ConsumerWidget {
     return AppCurvedScaffold(
       title: Text('profile.about_title'.tr()),
       showBack: true,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        children: [
-          const _AboutLogo(),
-          const SizedBox(height: 20),
-          appVersion.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(color: AppColors.primary),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+          children: [
+            const _AboutLogo(),
+            const SizedBox(height: 20),
+            appVersion.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              ),
+              error: (error, _) => _LoadError(
+                message: error is ApiException
+                    ? apiErrorOrFallback(error)
+                    : 'profile.version_load_failed'.tr(),
+                onRetry: () => ref.refresh(aboutAppVersionProvider),
+              ),
+              data: (info) => _VersionContent(
+                info: info,
+                installedVersion: installedVersion.valueOrNull?.version,
+                languageCode: languageCode,
               ),
             ),
-            error: (error, _) => _LoadError(
-              message: error is ApiException
-                  ? apiErrorOrFallback(error)
-                  : 'profile.version_load_failed'.tr(),
-              onRetry: () => ref.refresh(aboutAppVersionProvider),
+            const SizedBox(height: 24),
+            Text(
+              'profile.icon_credits'.tr(),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-            data: (info) => _VersionContent(
-              info: info,
-              installedVersion: installedVersion.valueOrNull?.version,
-              languageCode: languageCode,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'profile.icon_credits'.tr(),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 6),
-          Center(
-            child: InkWell(
-              onTap: () async {
-                final uri = Uri.parse('https://www.flaticon.com/legal');
-                await launchUrl(
-                  uri,
-                  mode: LaunchMode.externalApplication,
-                );
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Flaticon - Receipt icons',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              decoration: TextDecoration.underline,
-                            ),
+            const SizedBox(height: 6),
+            Center(
+              child: InkWell(
+                onTap: () async {
+                  final uri = Uri.parse('https://www.flaticon.com/legal');
+                  await launchUrl(
+                    uri,
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Flaticon - Receipt icons',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                              ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.open_in_new,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.open_in_new,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

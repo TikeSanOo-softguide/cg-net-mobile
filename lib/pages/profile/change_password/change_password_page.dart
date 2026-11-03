@@ -15,6 +15,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../models/change_password_model/change_password_model.dart';
 import '../../../models/change_password_model/change_password_otp_session.dart';
 import 'change_password_controller.dart';
@@ -235,10 +236,13 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                             );
 
                             try {
-                              final challenge = await ref
-                                  .read(
-                                      changePasswordControllerProvider.notifier)
-                                  .changePassword(password: model);
+                              final challenge =
+                                  await LoadingHelper.runWithLoading(
+                                () => ref
+                                    .read(changePasswordControllerProvider
+                                        .notifier)
+                                    .changePassword(password: model),
+                              );
 
                               if (!context.mounted) return;
 
@@ -260,7 +264,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                               );
                             } catch (error) {
                               if (!context.mounted) return;
-                              handleApiError(
+                              final handledInline = handleApiError(
                                 error,
                                 fields: {
                                   'current_password': _currentPasswordFieldKey,
@@ -271,6 +275,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                                       'current_password',
                                 },
                               );
+                              if (!handledInline) {
+                                await showApiErrorModal(context, error);
+                              }
                             }
                           },
                   ),

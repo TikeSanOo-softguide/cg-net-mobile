@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 
 const _languageOptions = [
   ('en', 'language.english', 'assets/images/flags/en.png'),
@@ -68,17 +69,15 @@ Future<void> showLanguagePickerModal({
                   selected: selected == option.$1,
                   onTap: () async {
                     try {
-                      await controller.change(context, option.$1);
+                      await LoadingHelper.runWithLoading(
+                        () => controller.change(context, option.$1),
+                      );
                       if (sheetContext.mounted) {
                         Navigator.pop(sheetContext);
                       }
                     } on ApiException catch (error) {
                       if (!sheetContext.mounted) return;
-                      ScaffoldMessenger.of(sheetContext)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          SnackBar(content: Text(apiErrorOrFallback(error))),
-                        );
+                      await showApiErrorModal(sheetContext, error);
                     }
                   },
                 ),

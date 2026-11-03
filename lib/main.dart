@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,9 +70,11 @@ class _CgNetAppState extends ConsumerState<CgNetApp> {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      builder: (context, child) => GlassNotificationHost(
-        onTap: ref.read(pushNotificationServiceProvider).openInbox,
-        child: child ?? const SizedBox.shrink(),
+      builder: EasyLoading.init(
+        builder: (context, child) => GlassNotificationHost(
+          onTap: ref.read(pushNotificationServiceProvider).openInbox,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }
