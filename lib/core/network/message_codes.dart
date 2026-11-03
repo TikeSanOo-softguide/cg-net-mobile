@@ -166,6 +166,25 @@ class MessageCodes {
     return 'msg.sys_001';
   }
 
+  /// Shared `MSG-REQ-*` codes mapped to a screen-specific loc key.
+  static String featureReqKey({
+    required String feature,
+    String? code,
+    required String fallbackKey,
+  }) {
+    switch (code?.trim().toUpperCase()) {
+      case reqCancelled:
+        return '$feature.req_cancelled';
+      case reqSubmitted:
+        return '$feature.req_submitted';
+      case reqUpdated:
+        return '$feature.req_updated';
+      default:
+        if (isKnown(code)) return locKey(code!);
+        return fallbackKey;
+    }
+  }
+
   static bool isKnown(String? code) {
     if (code == null || code.trim().isEmpty) return false;
     return known.contains(code.trim().toUpperCase());

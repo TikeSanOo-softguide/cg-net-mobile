@@ -327,7 +327,7 @@ void main() {
 
       final waitingError = await _sendFailure(waitingDio);
 
-      expect(waitingError.failure, ApiFailure.unknown);
+      expect(waitingError.failure, ApiFailure.validation);
     });
   });
 

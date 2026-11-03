@@ -75,9 +75,11 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
     await showAppSuccessModal(
       context,
       title: 'common.success'.tr(),
-      body: MessageCodes.isKnown(code)
-          ? MessageCodes.locKey(code!).tr()
-          : 'changePlan.cancel_success'.tr(),
+      body: MessageCodes.featureReqKey(
+        feature: 'changePlan',
+        code: code,
+        fallbackKey: 'changePlan.req_cancelled',
+      ).tr(),
     );
   }
 

@@ -46,6 +46,25 @@ void main() {
     expect(MessageCodes.locKey(MessageCodes.pwdChanged), 'msg.pwd_001');
   });
 
+  test('shared request codes map to feature-specific loc keys', () {
+    expect(
+      MessageCodes.featureReqKey(
+        feature: 'installationApplication',
+        code: MessageCodes.reqSubmitted,
+        fallbackKey: 'installationApplication.req_submitted',
+      ),
+      'installationApplication.req_submitted',
+    );
+    expect(
+      MessageCodes.featureReqKey(
+        feature: 'changePlan',
+        code: MessageCodes.reqCancelled,
+        fallbackKey: 'changePlan.req_cancelled',
+      ),
+      'changePlan.req_cancelled',
+    );
+  });
+
   test('already-bound broadband code maps to its localized message', () {
     final error = ApiException.fromDio(
       DioException(

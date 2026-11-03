@@ -205,9 +205,11 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
       await showAppSuccessModal(
         context,
         title: 'common.success'.tr(),
-        body: MessageCodes.isKnown(saved.code)
-            ? MessageCodes.locKey(saved.code!).tr()
-            : 'changePlan.submitted_desc'.tr(),
+        body: MessageCodes.featureReqKey(
+          feature: 'changePlan',
+          code: saved.code,
+          fallbackKey: 'changePlan.req_submitted',
+        ).tr(),
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);

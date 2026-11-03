@@ -335,11 +335,13 @@ class _InstallationApplicationFormPageState
       await showAppSuccessModal(
         context,
         title: 'common.success'.tr(),
-        body: MessageCodes.isKnown(saved.code)
-            ? MessageCodes.locKey(saved.code!).tr()
-            : editing
-                ? 'installationApplication.update_success'.tr()
-                : 'requests.submitted_title'.tr(),
+        body: MessageCodes.featureReqKey(
+          feature: 'installationApplication',
+          code: saved.code,
+          fallbackKey: editing
+              ? 'installationApplication.req_updated'
+              : 'installationApplication.req_submitted',
+        ).tr(),
       );
       if (!mounted) return;
       Navigator.of(context).pop(saved.request);

@@ -86,9 +86,11 @@ class _InstallationApplicationPageState
     await showAppSuccessModal(
       context,
       title: 'common.success'.tr(),
-      body: MessageCodes.isKnown(code)
-          ? MessageCodes.locKey(code).tr()
-          : 'installationApplication.cancel_success'.tr(),
+      body: MessageCodes.featureReqKey(
+        feature: 'installationApplication',
+        code: code,
+        fallbackKey: 'installationApplication.req_cancelled',
+      ).tr(),
     );
   }
 
