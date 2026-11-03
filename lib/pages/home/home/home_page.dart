@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
 import '../../../data/profile/profile_repository.dart';
+import '../../profile/profile/profile_controller.dart';
 import 'components/home_cg_package_section.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
@@ -35,6 +36,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeShowLaunchPromotion();
     });
+  }
+
+  Future<void> _refreshSession() {
+    return ref.read(profileControllerProvider.notifier).fetchProfile();
   }
 
   Future<void> _maybeShowLaunchPromotion() async {
@@ -71,9 +76,13 @@ class _HomePageState extends ConsumerState<HomePage> {
       });
     });
 
-    final profile = ref.watch(userProfileProvider);
+    final liveProfile = ref.watch(profileControllerProvider);
     final cachedProfile = ref.watch(cachedUserProfileProvider);
-    final displayProfile = profile.valueOrNull ?? cachedProfile.valueOrNull;
+    final hasLiveProfile = liveProfile.fullName.isNotEmpty ||
+        liveProfile.phone.isNotEmpty ||
+        liveProfile.accountNumber.isNotEmpty;
+    final displayProfile =
+        hasLiveProfile ? liveProfile : cachedProfile.valueOrNull;
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
     final dashboard = ref.watch(homeControllerProvider);
@@ -88,9 +97,14 @@ class _HomePageState extends ConsumerState<HomePage> {
         color: AppColors.background,
         child: Stack(
           children: [
-            CustomScrollView(
-              key: ValueKey('home-$localeCode'),
-              slivers: [
+            RefreshIndicator(
+              color: AppColors.primary,
+              edgeOffset: pinnedH,
+              onRefresh: _refreshSession,
+              child: CustomScrollView(
+                key: ValueKey('home-$localeCode'),
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
                 SliverToBoxAdapter(
                   child: SizedBox(height: pinnedH - 2),
                 ),
@@ -156,6 +170,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SliverToBoxAdapter(child: HomePromoBanner()),
                 const SliverToBoxAdapter(child: SizedBox(height: 10)),
               ],
+            ),
             ),
             Positioned(
               top: 0,

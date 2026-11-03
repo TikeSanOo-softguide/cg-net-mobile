@@ -7,6 +7,8 @@ import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
+import '../../home/home/bound_broadband.dart';
+import '../../home/home/bound_broadband_provider.dart';
 
 final profileHeaderLoadingProvider = StateProvider<bool>((ref) => false);
 
@@ -80,6 +82,8 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       final user = await _profileRepository.fetchProfile();
       if (seq != _fetchSeq) return;
       state = user;
+      _syncBoundBroadband(user);
+      _ref.invalidate(cachedUserProfileProvider);
     } catch (_) {
       // Best-effort fetch; keep existing state on network error.
     } finally {
@@ -103,6 +107,22 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       phone: '',
       accountNumber: '',
       username: '',
+    );
+    _ref.read(boundBroadbandProvider.notifier).state = null;
+    _ref.invalidate(userProfileProvider);
+    _ref.invalidate(cachedUserProfileProvider);
+  }
+
+  void _syncBoundBroadband(UserProfileModel profile) {
+    final account = profile.accountNumber.trim();
+    final serviceType = profile.serviceType?.trim();
+    if (account.isEmpty || serviceType == null || serviceType.isEmpty) {
+      _ref.read(boundBroadbandProvider.notifier).state = null;
+      return;
+    }
+    _ref.read(boundBroadbandProvider.notifier).state = BoundBroadband(
+      account: account,
+      serviceType: serviceType,
     );
   }
 

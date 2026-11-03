@@ -185,6 +185,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           ref.read(boundBroadbandProvider.notifier).state = null;
           ref.invalidate(userProfileProvider);
+          ref.invalidate(cachedUserProfileProvider);
 
           setState(() {
             _account.clear();

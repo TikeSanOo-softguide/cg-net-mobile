@@ -11,6 +11,7 @@ import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 import '../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../pages/inbox/inbox_list/inbox_list_controller.dart';
+import '../../pages/profile/profile/profile_controller.dart';
 
 /// Common bottom navigation — light surface + soft glass selected pill.
 class BottomNavBar extends ConsumerWidget {
@@ -143,10 +144,14 @@ class BottomNavBar extends ConsumerWidget {
     );
   }
 
+  static const _homeIndex = 0;
   static const _inboxIndex = 2;
 
   void _go(WidgetRef ref, int index) {
-    // Branches stay mounted, so the inbox would otherwise never refetch.
+    // Branches stay mounted, so Home/inbox would otherwise keep stale data.
+    if (index == _homeIndex) {
+      ref.read(profileControllerProvider.notifier).fetchProfile();
+    }
     if (index == _inboxIndex) {
       ref.read(inboxListControllerProvider.notifier).load(silent: true);
     }

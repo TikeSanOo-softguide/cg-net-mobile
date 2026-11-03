@@ -4,6 +4,8 @@ import 'package:cg_net_mobile/core/push/push_notification_service.dart';
 import 'package:cg_net_mobile/core/storage/secure_storage/secure_storage.dart';
 import 'package:cg_net_mobile/data/profile/profile_repository.dart';
 import 'package:cg_net_mobile/models/user_model/user_model.dart';
+import 'package:cg_net_mobile/pages/home/home/bound_broadband.dart';
+import 'package:cg_net_mobile/pages/home/home/bound_broadband_provider.dart';
 import 'package:cg_net_mobile/pages/profile/profile/profile_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -116,11 +118,16 @@ void main() {
           username: 'test',
         ),
       );
+    container.read(boundBroadbandProvider.notifier).state = const BoundBroadband(
+      account: '456',
+      serviceType: 'CG',
+    );
 
     await controller.logout();
 
     expect(storage.clearTokenCalls, 1);
     expect(push.unregisterCalls, 1);
     expect(container.read(profileControllerProvider).fullName, isEmpty);
+    expect(container.read(boundBroadbandProvider), isNull);
   });
 }
