@@ -58,6 +58,10 @@ class AppPhotoPicker extends StatelessWidget {
   Widget _slot(int index) {
     const radius = BorderRadius.all(Radius.circular(12));
     if (index < selectedPhotos.length) {
+      final path = selectedPhotos[index].path;
+      final ImageProvider<Object> image = path.startsWith('http')
+          ? NetworkImage(path)
+          : FileImage(File(path));
       return SizedBox(
         height: 100,
         child: Stack(
@@ -65,8 +69,8 @@ class AppPhotoPicker extends StatelessWidget {
             Positioned.fill(
               child: ClipRRect(
                 borderRadius: radius,
-                child: Image.file(
-                  File(selectedPhotos[index].path),
+                child: Image(
+                  image: image,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const ColoredBox(
                     color: AppColors.primaryLight,
