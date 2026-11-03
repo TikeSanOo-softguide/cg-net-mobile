@@ -38,12 +38,14 @@ class BroadbandRepository {
   }
 
   Future<Map<String, dynamic>> unbindAccount({
+    required String serviceType,
     required String accountNumber,
   }) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         ApiEndpoints.broadbandUnbind,
         data: {
+          'service_type': serviceType,
           'account_number': accountNumber,
         },
       );
