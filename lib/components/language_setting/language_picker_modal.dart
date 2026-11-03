@@ -68,6 +68,11 @@ Future<void> showLanguagePickerModal({
                   label: option.$2.tr(),
                   selected: selected == option.$1,
                   onTap: () async {
+                    if (selected == option.$1) {
+                      Navigator.pop(sheetContext);
+                      return;
+                    }
+
                     try {
                       await LoadingHelper.runWithLoading(
                         () => controller.change(context, option.$1),

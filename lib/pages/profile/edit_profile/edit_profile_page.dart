@@ -12,6 +12,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../models/user_model/user_model.dart';
 import '../profile/profile_controller.dart';
 import 'edit_profile_controller.dart';
@@ -27,6 +28,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
   final _formKey = GlobalKey<FormState>();
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -62,6 +64,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     });
 
     final editState = ref.watch(editProfileControllerProvider);
+    final isSubmitting = editState.isLoading || _submitting;
 
     return AppCurvedScaffold(
       title: Text('profile.account_settings'.tr()),
@@ -113,15 +116,20 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     const SizedBox(height: AppStyle.spaceMd),
                     AppInput(
                       controller: _name,
-                      label: 'profile.full_name'.tr(),
+                      label: 'profile.username'.tr(),
                       suffixIcon: LucideIcons.id_card,
                       textInputAction: TextInputAction.done,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'profile.full_name_required'.tr() !=
-                                  'profile.full_name_required'
-                              ? 'profile.full_name_required'.tr()
-                              : 'Full name is required';
+                          return 'set_credentials.username_required'.tr();
+                        }
+                        final username = value.trim();
+                        if (username.length < 4) {
+                          return 'set_credentials.username_min'.tr();
+                        }
+
+                        if (!RegExp(r'^[A-Za-z0-9_ ]+$').hasMatch(username)) {
+                          return 'set_credentials.username_chars'.tr();
                         }
                         return null;
                       },
@@ -139,19 +147,32 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       label: 'common.save'.tr(),
                       height: 44,
                       fontSize: 14,
-                      isLoading: editState.isLoading,
-                      onPressed: () async {
-                        if (!_formKey.currentState!.validate()) return;
+                      isLoading: isSubmitting,
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (_submitting) return;
+                              if (!_formKey.currentState!.validate()) return;
 
-                        final success = await ref
-                            .read(editProfileControllerProvider.notifier)
-                            .save(
-                              fullName: _name.text.trim(),
-                            );
-                        if (success && context.mounted) {
-                          context.pop();
-                        }
-                      },
+                              setState(() => _submitting = true);
+                              late final bool success;
+                              try {
+                                success = await LoadingHelper.runWithLoading(
+                                  () => ref
+                                      .read(editProfileControllerProvider
+                                          .notifier)
+                                      .save(fullName: _name.text.trim()),
+                                  dismissAnimation: false,
+                                );
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _submitting = false);
+                                }
+                              }
+                              if (success && context.mounted) {
+                                context.pop();
+                              }
+                            },
                     ),
                   ],
                 ),

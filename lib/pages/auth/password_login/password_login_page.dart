@@ -7,14 +7,13 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
-import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
-import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
 import 'password_login_controller.dart';
 
@@ -141,47 +140,48 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
       _inlineError = null;
     });
 
-    final ok = await LoadingHelper.runWithLoading(
-      () => ref.read(passwordLoginControllerProvider.notifier).submit(
-            verificationToken: widget.verificationToken,
-            password: _password,
-          ),
-    );
+    var ok = false;
+    ApiException? submitError;
+    try {
+      ok = await LoadingHelper.runWithLoading(
+        () async {
+          final success =
+              await ref.read(passwordLoginControllerProvider.notifier).submit(
+                    verificationToken: widget.verificationToken,
+                    password: _password,
+                  );
+
+          if (!success) return false;
+          await ref.read(authApiProvider).syncCurrentLanguage();
+          return true;
+        },
+        dismissAnimation: false,
+      );
+    } on ApiException catch (error) {
+      submitError = error;
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
 
     if (!mounted) return;
-
+    if (submitError != null) {
+      await showApiErrorModal(context, submitError);
+      return;
+    }
     if (ok) {
-      try {
-        await ref.read(authApiProvider).syncCurrentLanguage();
-      } on ApiException catch (error) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text(apiErrorOrFallback(error))),
-          );
-      }
-      if (!mounted) return;
-      setState(() => _submitting = false);
       context.goNamed(RouteNames.home);
       return;
     }
 
     final error = ref.read(passwordLoginControllerProvider).error;
-    setState(() {
-      _submitting = false;
-      _inlineError = PasswordLoginController.localizedError(error);
-    });
-    if (isOfflineError(error)) {
-      await openNoInternetPage(context);
+    if (error != null) {
+      await showApiErrorModal(context, error);
     }
-    _focusNodes.first.requestFocus();
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(passwordLoginControllerProvider);
-    final signingIn = state.isLoading || _submitting;
+    final signingIn = _submitting;
     final canSubmit = _isComplete && !signingIn;
     final hasError = _inlineError != null;
     final _ = context.locale;

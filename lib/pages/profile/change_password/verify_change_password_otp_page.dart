@@ -184,6 +184,7 @@ class _VerifyChangePasswordOtpPageState
         () => ref
             .read(changePasswordControllerProvider.notifier)
             .changePassword(password: password),
+        dismissAnimation: false,
       );
       if (!mounted) return;
 
@@ -225,6 +226,7 @@ class _VerifyChangePasswordOtpPageState
               challengeId: _challenge.challengeId,
               otp: _code,
             ),
+        dismissAnimation: false,
       );
       if (!mounted) return;
 

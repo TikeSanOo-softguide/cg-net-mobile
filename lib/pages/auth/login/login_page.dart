@@ -1,4 +1,5 @@
 import 'package:cg_net_mobile/components/language_setting/language_picker_modal.dart';
+import 'package:cg_net_mobile/core/utils/api_field_error.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -15,8 +16,8 @@ import '../../../components/app_input/app_input.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
-import '../../../core/network/api_message_modal.dart';
 import '../../../core/network/message_codes.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -38,8 +39,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _phoneController = TextEditingController();
   late final TapGestureRecognizer _termsTap;
   bool _sessionExpiredNoticeShown = false;
-  bool _deactivationNoticeShown = false;
   bool _autovalidate = false;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -65,21 +66,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _continueLogin() async {
+    if (_submitting) return;
     setState(() => _autovalidate = true);
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _submitting = true);
     final controller = ref.read(loginControllerProvider.notifier);
-    final session = await LoadingHelper.runWithLoading(
-      () => controller.checkSession(_phoneController.text),
-    );
+    LoginSessionCheck? session;
+    String? requestedPhone;
+    try {
+      await LoadingHelper.runWithLoading(
+        () async {
+          session = await controller.checkSession(_phoneController.text);
+          if (session == null || session!.showAlert) return;
+          requestedPhone = await controller.requestOtp(session!.phone);
+        },
+        dismissAnimation: false,
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+
     if (!mounted) return;
 
-    if (session == null) {
+    final checkedSession = session;
+    if (checkedSession == null) {
       await _showLoginError();
       return;
     }
 
-    if (session.showAlert) {
+    if (checkedSession.showAlert) {
       await showAppAlertModal(
         context,
         title: 'login.device_conflict_title'.tr(),
@@ -87,16 +103,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
       return;
     }
-
-    await _requestOtp(session.phone);
-  }
-
-  Future<void> _requestOtp(String phone) async {
-    final controller = ref.read(loginControllerProvider.notifier);
-    final requestedPhone = await LoadingHelper.runWithLoading(
-      () => controller.requestOtp(phone),
-    );
-    if (!mounted) return;
 
     final challengeId = controller.challengeId;
     if (requestedPhone != null && challengeId != null) {
@@ -133,7 +139,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
 
-    await showApiMessageModal(context, error);
+    await showApiErrorModal(context, error);
   }
 
   @override
@@ -151,22 +157,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
       });
     }
-    final successMessage = queryParameters['message'];
-    if (!_deactivationNoticeShown &&
-        successMessage != null &&
-        successMessage.isNotEmpty) {
-      _deactivationNoticeShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        await showAppSuccessModal(
-          context,
-          title: 'common.success'.tr(),
-          body: successMessage,
-        );
-      });
-    }
-
     final state = ref.watch(loginControllerProvider);
+    final isSubmitting = state.isLoading || _submitting;
     final controller = ref.read(loginControllerProvider.notifier);
     final localeCode = ref.watch(appLocaleProvider);
     final _ = context.locale;
@@ -218,8 +210,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           label: 'login.send_otp'.tr(),
           height: 44,
           fontSize: 14,
-          isLoading: state.isLoading,
-          onPressed: state.isLoading ? null : _continueLogin,
+          isLoading: isSubmitting,
+          onPressed: isSubmitting ? null : _continueLogin,
         ),
         child: Form(
           key: _formKey,
