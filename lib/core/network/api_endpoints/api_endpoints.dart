@@ -11,7 +11,8 @@ class ApiEndpoints {
   /// `--dart-define=API_BASE_URL=http://127.0.0.1:8080/api`.
   static const _devBaseUrl = String.fromEnvironment(
     'DEV_API_BASE_URL',
-    defaultValue: 'http://192.168.10.148:8080/api',
+    // defaultValue: 'http://192.168.10.148:8080/api',
+        defaultValue: 'http://192.168.100.178:8080/api',
   );
   static const _healthOverride =
       String.fromEnvironment('API_HEALTHCHECK_PATH', defaultValue: '');
@@ -40,6 +41,8 @@ class ApiEndpoints {
   static const String login = '/auth/login';
   static const String logout = '/auth/logout';
   static const String inbox = '/inbox';
+  static const String notifications = '/notifications';
+  static String notificationRead(String id) => '/notifications/$id/read';
   static const String deviceTokens = '/device-tokens';
   static const String availablePlans = '/web-app/packages';
   static const String banners = '/web-app/banners';

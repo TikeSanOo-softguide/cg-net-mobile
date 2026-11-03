@@ -42,7 +42,10 @@ class AuthInterceptor extends Interceptor {
 final authInterceptorProvider = Provider<AuthInterceptor>((ref) {
   return AuthInterceptor(
     ref.watch(secureStorageProvider),
-    () => ref.read(sessionClockProvider).expire(),
+    () {
+      ref.read(sharedPreferencesProvider).remove(LocalPrefs.inboxCacheKey);
+      ref.read(sessionClockProvider).expire();
+    },
   );
 });
 

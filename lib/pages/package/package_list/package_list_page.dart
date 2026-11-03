@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/network_recovery_controller.dart';
@@ -42,6 +43,8 @@ class PackageListPage extends ConsumerWidget {
             itemHeight: 168,
           ),
         PackageListStatus.empty => EmptyState(
+            iconAsset: QuickActionIconChip.packageAsset,
+            iconBackground: QuickActionIconChip.packageSoft,
             title: 'package.empty_title'.tr(),
             message: 'package.empty_body'.tr(),
             actionLabel: 'common.retry'.tr(),
@@ -49,6 +52,11 @@ class PackageListPage extends ConsumerWidget {
                 ref.read(packageListControllerProvider.notifier).load(),
           ),
         PackageListStatus.error => EmptyState(
+            icon: LucideIcons.wifi_off,
+            iconAsset: state.errorMessage == 'api.offline'
+                ? null
+                : QuickActionIconChip.packageAsset,
+            iconBackground: QuickActionIconChip.packageSoft,
             title: 'common.error'.tr(),
             message: apiMessageText(state.errorMessage),
             actionLabel: 'common.retry'.tr(),

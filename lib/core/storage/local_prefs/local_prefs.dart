@@ -8,6 +8,7 @@ class LocalPrefs {
 
   static const languageKey = 'selected_language';
   static const languageChosenKey = 'language_chosen';
+  static const inboxCacheKey = 'inbox_messages_v1';
 
   Future<void> setLanguageCode(String code) async {
     await _prefs.setString(languageKey, code);

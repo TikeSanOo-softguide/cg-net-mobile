@@ -69,10 +69,30 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
     }
   }
 
+  static String _emptyIconForTab(int index) {
+    switch (index) {
+      case 2:
+        return InboxCategoryIcon.settingsAsset;
+      case 3:
+        return InboxCategoryIcon.promotionAsset;
+      default:
+        return InboxCategoryIcon.messageAsset;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inboxListControllerProvider);
+    final offline = ref.watch(inboxListOfflineProvider);
     final locale = ref.watch(appLocaleProvider);
+    ref.listen(inboxListOfflineProvider, (previous, next) {
+      _syncInboxRecovery(ref, next);
+    });
+    ref.listen(inboxListControllerProvider, (previous, next) {
+      if (next.hasError && isOfflineError(next.error) && !next.hasValue) {
+        _syncInboxRecovery(ref, true);
+      }
+    });
 
     return AppCurvedScaffold(
       key: ValueKey('inbox-$locale'),
@@ -87,10 +107,19 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
               labels: _tabLabels,
             ),
           ),
+          if (offline && state.hasValue)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: _InboxOfflineLine(),
+            ),
           Expanded(
             child: state.when(
               loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
               error: (e, _) => EmptyState(
+                icon: LucideIcons.wifi_off,
+                iconAsset: isOfflineError(e)
+                    ? null
+                    : InboxCategoryIcon.messageAsset,
                 title: isOfflineError(e)
                     ? 'shared.no_internet_title'.tr()
                     : 'common.error'.tr(),
@@ -98,24 +127,8 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                     ? 'shared.no_internet_body'.tr()
                     : apiErrorText(e),
                 actionLabel: 'common.retry'.tr(),
-                onAction: () async {
-                  const recoveryKey = 'inbox-list-reload';
-                  if (isOfflineError(e)) {
-                    ref.read(networkRecoveryControllerProvider).enqueue(
-                          recoveryKey,
-                          () async =>
-                              ref.invalidate(inboxListControllerProvider),
-                        );
-                    final shouldRetry = await openNoInternetPage(context);
-                    if (shouldRetry == true && context.mounted) {
-                      ref
-                          .read(networkRecoveryControllerProvider)
-                          .clear(recoveryKey);
-                      ref.invalidate(inboxListControllerProvider);
-                    }
-                    return;
-                  }
-                  ref.invalidate(inboxListControllerProvider);
+                onAction: () {
+                  ref.read(inboxListControllerProvider.notifier).load();
                 },
               ),
               data: (messages) {
@@ -126,6 +139,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                       _InboxList(
                         key: ValueKey('inbox-list-$locale-$t'),
                         items: _itemsForTab(messages, t),
+                        emptyIcon: _emptyIconForTab(t),
                         onRefresh: () => ref
                             .read(inboxListControllerProvider.notifier)
                             .load(silent: true),
@@ -141,14 +155,56 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
   }
 }
 
+void _syncInboxRecovery(WidgetRef ref, bool waitingForNetwork) {
+  const key = 'inbox-list-reload';
+  final recovery = ref.read(networkRecoveryControllerProvider);
+  if (!waitingForNetwork) {
+    recovery.clear(key);
+    return;
+  }
+  recovery.enqueue(
+    key,
+    () => ref.read(inboxListControllerProvider.notifier).load(
+          silent: true,
+          rethrowOffline: true,
+        ),
+  );
+}
+
+class _InboxOfflineLine extends StatelessWidget {
+  const _InboxOfflineLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'shared.no_internet_title'.tr(),
+        textAlign: TextAlign.center,
+        style: AppTheme.caption(
+          color: AppColors.primary,
+          weight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
 class _InboxList extends StatelessWidget {
   const _InboxList({
     super.key,
     required this.items,
+    required this.emptyIcon,
     required this.onRefresh,
   });
 
   final List<InboxMessageModel> items;
+  final String emptyIcon;
   final Future<void> Function() onRefresh;
 
   @override
@@ -161,11 +217,7 @@ class _InboxList extends StatelessWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             child: SizedBox(
               height: constraints.maxHeight,
-              child: EmptyState(
-                title: 'inbox.empty_title'.tr(),
-                message: 'inbox.empty_body'.tr(),
-                icon: LucideIcons.mail_open,
-              ),
+              child: _InboxEmpty(iconAsset: emptyIcon),
             ),
           ),
         ),
@@ -189,6 +241,56 @@ class _InboxList extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _InboxEmpty extends StatelessWidget {
+  const _InboxEmpty({required this.iconAsset});
+
+  final String iconAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: AppStyle.borderRadiusLg,
+              ),
+              child: Image.asset(
+                iconAsset,
+                width: 40,
+                height: 40,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'inbox.empty_title'.tr(),
+              textAlign: TextAlign.center,
+              style: AppTheme.body(
+                color: AppColors.primary,
+                weight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'inbox.empty_body'.tr(),
+              textAlign: TextAlign.center,
+              style: AppTheme.caption(),
+            ),
+          ],
+        ),
       ),
     );
   }

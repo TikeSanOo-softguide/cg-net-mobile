@@ -10,12 +10,29 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/user_model/user_model.dart';
+import '../inbox_list/inbox_list_controller.dart';
 import 'inbox_detail_controller.dart';
 
-class InboxDetailPage extends ConsumerWidget {
+class InboxDetailPage extends ConsumerStatefulWidget {
   const InboxDetailPage({super.key, required this.id});
 
   final String id;
+
+  @override
+  ConsumerState<InboxDetailPage> createState() => _InboxDetailPageState();
+}
+
+class _InboxDetailPageState extends ConsumerState<InboxDetailPage> {
+  var _markedRead = false;
+
+  void _markReadIfNeeded(InboxMessageModel item) {
+    if (_markedRead || item.isRead || int.tryParse(item.id) == null) return;
+    _markedRead = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(inboxListControllerProvider.notifier).markRead(item.id);
+    });
+  }
 
   static String _categoryLabel(InboxCategory category) {
     switch (category) {
@@ -29,8 +46,9 @@ class InboxDetailPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final message = ref.watch(inboxDetailControllerProvider(id));
+  Widget build(BuildContext context) {
+    final message = ref.watch(inboxDetailControllerProvider(widget.id));
+    message.whenData(_markReadIfNeeded);
 
     return AppCurvedScaffold(
       title: Text('inbox.detail_title'.tr()),

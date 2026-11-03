@@ -25,9 +25,28 @@ class InboxMessageModel {
   final bool isRead;
   final bool isFailure;
 
+  InboxMessageModel copyWith({bool? isRead}) {
+    return InboxMessageModel(
+      id: id,
+      titleKey: titleKey,
+      bodyKey: bodyKey,
+      createdAt: createdAt,
+      category: category,
+      detailKey: detailKey,
+      titles: titles,
+      bodies: bodies,
+      isRead: isRead ?? this.isRead,
+      isFailure: isFailure,
+    );
+  }
+
   factory InboxMessageModel.fromJson(Map<String, dynamic> json) {
-    final titles = _stringMap(json['title']);
-    final bodies = _stringMap(json['body']);
+    final titleValue = json['title'];
+    final bodyValue = json['body'];
+    final titles = _stringMap(titleValue);
+    final bodies = _stringMap(bodyValue);
+    final titleText = titleValue is String ? titleValue : '';
+    final bodyText = bodyValue is String ? bodyValue : '';
     final category = switch (json['category']) {
       'announcement' => InboxCategory.announcement,
       'promotion' => InboxCategory.promotion,
@@ -36,16 +55,36 @@ class InboxMessageModel {
 
     return InboxMessageModel(
       id: json['id'].toString(),
-      titleKey: titles['en'] ?? '',
-      bodyKey: bodies['en'] ?? '',
-      titles: titles,
-      bodies: bodies,
+      titleKey: titles['en']?.isNotEmpty == true ? titles['en']! : titleText,
+      bodyKey: bodies['en']?.isNotEmpty == true ? bodies['en']! : bodyText,
+      titles: titles.isEmpty
+          ? (titleText.isEmpty ? null : {'en': titleText})
+          : titles,
+      bodies: bodies.isEmpty
+          ? (bodyText.isEmpty ? null : {'en': bodyText})
+          : bodies,
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),
       category: category,
       isRead: json['is_read'] == true,
       isFailure: json['is_failure'] == true,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': titles ?? titleKey,
+      'body': bodies ?? (detailKey ?? bodyKey),
+      'created_at': createdAt.toIso8601String(),
+      'category': switch (category) {
+        InboxCategory.announcement => 'announcement',
+        InboxCategory.promotion => 'promotion',
+        InboxCategory.system => 'system',
+      },
+      'is_read': isRead,
+      'is_failure': isFailure,
+    };
   }
 
   String titleFor(String locale) => _pick(titles, titleKey, locale);

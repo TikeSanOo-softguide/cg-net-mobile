@@ -5,6 +5,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
+import '../../../data/inbox/inbox_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
 import '../../home/home/bound_broadband.dart';
@@ -139,6 +140,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       // Push token cleanup is non-blocking for user logout.
     }
     await _secureStorage.clearToken();
+    await _ref.read(inboxRepositoryProvider).clearCache();
     clearProfile();
   }
 }

@@ -213,6 +213,26 @@ void main() {
     expect(items.single.titleFor('my'), 'မင်္ဂလာပါ');
   });
 
+  test('inbox repository reads notification read state and marks it read', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'));
+    final adapter = _NotificationAdapter();
+    dio.httpClientAdapter = adapter;
+    final repository = InboxRepository(dio);
+
+    final items = await repository.fetch();
+
+    expect(adapter.paths, ['/notifications']);
+    expect(items.single.id, '12');
+    expect(items.single.isRead, isFalse);
+    expect(items.single.category, InboxCategory.system);
+    expect(items.single.titleFor('en'), 'Bill due');
+
+    await repository.markAsRead('12');
+
+    expect(adapter.paths.last, '/notifications/12/read');
+    expect(adapter.methods.last, 'PATCH');
+  });
+
   test('serial check keeps the backend response message', () async {
     final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
       ..httpClientAdapter = _JsonAdapter(
@@ -329,6 +349,33 @@ class _ChangePasswordAdapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       response,
       202,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _NotificationAdapter implements HttpClientAdapter {
+  final paths = <String>[];
+  final methods = <String>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    paths.add(options.path);
+    methods.add(options.method);
+    const body =
+        '{"data":[{"id":12,"title":"Bill due","body":"Pay before Friday.","category":"bill_alert","is_read":false,"created_at":"2026-10-02T09:00:00.000000Z"}],"unread_count":1,"current_page":1,"last_page":1}';
+    return ResponseBody.fromString(
+      body,
+      200,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },

@@ -162,6 +162,11 @@ class _HistoryList extends ConsumerWidget {
       },
       loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
       error: (error, _) => EmptyState(
+        icon: LucideIcons.wifi_off,
+        iconAsset: isOfflineError(error)
+            ? null
+            : QuickActionIconChip.historyAsset,
+        iconBackground: QuickActionIconChip.historySoft,
         title: isOfflineError(error)
             ? 'shared.no_internet_title'.tr()
             : 'common.error'.tr(),
@@ -190,6 +195,8 @@ class _HistoryList extends ConsumerWidget {
   }
 
   Widget _emptyState() => EmptyState(
+        iconAsset: QuickActionIconChip.historyAsset,
+        iconBackground: QuickActionIconChip.historySoft,
         title: 'history.empty_title'.tr(),
         message: 'history.empty_body'.tr(),
       );
