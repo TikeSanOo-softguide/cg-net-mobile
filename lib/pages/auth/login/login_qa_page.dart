@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -35,7 +34,8 @@ class LoginQaPage extends ConsumerWidget {
   static TextStyle get _bodyStyle =>
       AppTheme.bodySecondary(color: AppColors.textMuted);
 
-  static TextStyle get _titleStyle => AppTheme.sectionTitle();
+  static TextStyle get _titleStyle =>
+      AppTheme.sectionTitle().copyWith(fontSize: 13);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,10 +192,8 @@ class _QaItemState extends State<_QaItem> {
         bottom: AppStyle.spaceSm,
       ),
       decoration: BoxDecoration(
-        color: _isExpanded
-            ? AppColors.primarySoft.withValues(alpha: 0.7)
-            : AppColors.primarySoft,
-        borderRadius: AppStyle.borderRadiusSm,
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: _isExpanded
               ? AppColors.primary.withValues(alpha: 0.3)
@@ -204,9 +202,9 @@ class _QaItemState extends State<_QaItem> {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: AppStyle.borderRadiusSm,
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: AppStyle.borderRadiusSm,
+          borderRadius: BorderRadius.circular(8),
           onTap: () => setState(() => _isExpanded = !_isExpanded),
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -268,6 +266,9 @@ class _HotlineSection extends StatelessWidget {
     required this.titleStyle,
     required this.bodyStyle,
   });
+  static const _viberIconAsset = 'assets/images/settings/viber.png';
+  static const _telegramIconAsset = 'assets/images/settings/telegram.png';
+  static const _phoneIconAsset = 'assets/images/settings/phone.png';
 
   final List<(CountryDial, String)> hotlines;
   final TextStyle titleStyle;
@@ -288,30 +289,47 @@ class _HotlineSection extends StatelessWidget {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
+        return Dialog(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: AppStyle.borderRadiusLg,
+            borderRadius: BorderRadius.circular(16),
           ),
-          title: Text('login.contact_via'.tr()),
-          content: SizedBox(
-            width: double.maxFinite,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 44),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  displayNumber,
-                  style: AppTheme.body(
-                    color: AppColors.textPrimary,
-                    weight: FontWeight.w500,
+                  'login.contact_via'.tr(),
+                  textAlign: TextAlign.center,
+                  style: AppTheme.english(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    height: 1.3,
+                    letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(height: AppStyle.spaceLg),
+                const SizedBox(height: 6),
+                Text(
+                  displayNumber,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.english(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 14),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
                       child: _ContactOption(
-                        icon: LucideIcons.phone,
+                        imageAsset: _phoneIconAsset,
                         label: 'login.contact_phone'.tr(),
                         onTap: () async {
                           Navigator.pop(dialogContext);
@@ -328,16 +346,14 @@ class _HotlineSection extends StatelessWidget {
                     ),
                     Expanded(
                       child: _ContactOption(
-                        icon: Icons.chat_bubble_rounded,
+                        imageAsset: _viberIconAsset,
                         label: 'login.contact_viber'.tr(),
                         onTap: () async {
                           Navigator.pop(dialogContext);
 
                           await _launchUri(
                             context,
-                            Uri.parse(
-                              'viber://chat?number=$telDigits',
-                            ),
+                            Uri.parse('viber://chat?number=$telDigits'),
                             fallbackUrl: 'https://www.viber.com/',
                           );
                         },
@@ -345,7 +361,7 @@ class _HotlineSection extends StatelessWidget {
                     ),
                     Expanded(
                       child: _ContactOption(
-                        icon: Icons.send_outlined,
+                        imageAsset: _telegramIconAsset,
                         label: 'login.contact_telegram'.tr(),
                         onTap: () async {
                           Navigator.pop(dialogContext);
@@ -410,7 +426,7 @@ class _HotlineSection extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.04),
-        borderRadius: AppStyle.borderRadiusSm,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.borderLight),
       ),
       child: Padding(
@@ -470,7 +486,7 @@ class _HotlineSection extends StatelessWidget {
                           entry.$1.dialCode,
                           style: bodyStyle.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primary,
                           ),
                         ),
                         const SizedBox(width: AppStyle.spaceSm),
@@ -502,12 +518,12 @@ class _HotlineSection extends StatelessWidget {
 
 class _ContactOption extends StatelessWidget {
   const _ContactOption({
-    required this.icon,
+    required this.imageAsset,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String imageAsset;
   final String label;
   final VoidCallback onTap;
 
@@ -531,10 +547,14 @@ class _ContactOption extends StatelessWidget {
                 color: AppColors.primarySoft,
                 borderRadius: AppStyle.borderRadiusSm,
               ),
-              child: Icon(
-                icon,
-                size: AppStyle.iconSize,
-                color: AppColors.primary,
+              child: Center(
+                child: Image.asset(
+                  imageAsset,
+                  width: AppStyle.iconSize,
+                  height: AppStyle.iconSize,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                ),
               ),
             ),
             const SizedBox(height: AppStyle.spaceXs),
