@@ -767,7 +767,6 @@
     "select_complaint_time": "Select Date & Time",
     "upload_photos": "Complaint Photos",
     "add_photo": "Add Photo",
-    "photos_required": "Please add exactly 3 photos.",
     "already_exists": "A complaint for this broadband account is already under review.",
     "submitted_title": "Complaint Submitted",
     "submitted_desc": "Your complaint has been received. Our support team will contact you shortly.",
