@@ -1,30 +1,30 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
-import '../../../data/requests/failure_report/failure_report_repository.dart';
-import '../../../models/requests/failure_report/failure_report_model.dart';
+import '../../../data/requests/complaint/complaint_repository.dart';
+import '../../../models/requests/complaint/complaint_model.dart';
 
-enum FailureReportStatus { initial, loading, success, error }
+enum ComplaintStatus { initial, loading, success, error }
 
-class FailureReportState {
-  const FailureReportState({
-    this.status = FailureReportStatus.initial,
+class ComplaintState {
+  const ComplaintState({
+    this.status = ComplaintStatus.initial,
     this.reports = const [],
     this.errorMessage,
     this.isSubmitting = false,
   });
 
-  final FailureReportStatus status;
-  final List<FailureReportModel> reports;
+  final ComplaintStatus status;
+  final List<ComplaintModel> reports;
   final String? errorMessage;
   final bool isSubmitting;
 
-  FailureReportState copyWith({
-    FailureReportStatus? status,
-    List<FailureReportModel>? reports,
+  ComplaintState copyWith({
+    ComplaintStatus? status,
+    List<ComplaintModel>? reports,
     String? errorMessage,
     bool? isSubmitting,
   }) {
-    return FailureReportState(
+    return ComplaintState(
       status: status ?? this.status,
       reports: reports ?? this.reports,
       errorMessage: errorMessage,
@@ -33,23 +33,23 @@ class FailureReportState {
   }
 }
 
-class FailureReportController extends StateNotifier<FailureReportState> {
-  FailureReportController(this._repository) : super(const FailureReportState());
+class ComplaintController extends StateNotifier<ComplaintState> {
+  ComplaintController(this._repository) : super(const ComplaintState());
 
-  final FailureReportRepository _repository;
+  final ComplaintRepository _repository;
 
-  Future<void> fetchReports() async {
-    state = state.copyWith(status: FailureReportStatus.loading);
+  Future<void> fetchComplaints() async {
+    state = state.copyWith(status: ComplaintStatus.loading);
     try {
-      final items = await _repository.fetchReports();
+      final items = await _repository.fetchComplaints();
       state = state.copyWith(
-        status: FailureReportStatus.success,
+        status: ComplaintStatus.success,
         reports: items,
         errorMessage: null,
       );
     } catch (error) {
       state = state.copyWith(
-        status: FailureReportStatus.error,
+        status: ComplaintStatus.error,
         errorMessage: error is ApiException
             ? error.detail ?? error.messageKey
             : error.toString(),
@@ -57,11 +57,11 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     }
   }
 
-  Future<FailureReportCancelResult?> cancelReport(
-    FailureReportModel item,
+  Future<ComplaintCancelResult?> cancelComplaint(
+    ComplaintModel item,
   ) async {
     try {
-      final result = await _repository.cancelReport(item);
+      final result = await _repository.cancelComplaint(item);
       state = state.copyWith(
         reports: [
           for (final report in state.reports)
@@ -71,10 +71,12 @@ class FailureReportController extends StateNotifier<FailureReportState> {
               report,
         ],
       );
-      await fetchReports();
+      await fetchComplaints();
       return result;
-    } on ApiException catch (e) {
-      state = state.copyWith(errorMessage: e.detail ?? e.messageKey);
+    } on ApiException catch (error) {
+      state = state.copyWith(
+        errorMessage: error.detail ?? error.messageKey,
+      );
       return null;
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
@@ -82,14 +84,14 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     }
   }
 
-  Future<FailureReportSaveResult?> submitReport({
+  Future<ComplaintSaveResult?> submitComplaint({
     required String broadbandAccount,
-    required String failureType,
+    required String complaintType,
     required String description,
     required String contactName,
     required String contactPhone,
     required int userId,
-    List<FailurePhotoModel> photos = const [],
+    List<ComplaintPhotoModel> photos = const [],
     String? reportId,
   }) async {
     state = state.copyWith(
@@ -116,16 +118,16 @@ class FailureReportController extends StateNotifier<FailureReportState> {
     if (hasPending) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: 'failure_report.already_exists',
+        errorMessage: 'complaint.already_exists',
       );
       return null;
     }
 
-    final model = FailureReportModel(
+    final model = ComplaintModel(
       id: reportId ?? '',
       userId: userId,
       broadbandAccountNumber: broadbandAccount,
-      failureType: failureType,
+      complaintType: complaintType,
       description: description,
       contactName: contactName,
       contactPhone: contactPhone,
@@ -134,8 +136,8 @@ class FailureReportController extends StateNotifier<FailureReportState> {
 
     try {
       final saved = editing
-          ? await _repository.updateReport(model)
-          : await _repository.submitReport(model);
+          ? await _repository.updateComplaint(model)
+          : await _repository.submitComplaint(model);
       final savedModel = saved.report;
       final reports = [...state.reports];
       final savedIndex = reports.indexWhere(
@@ -152,11 +154,11 @@ class FailureReportController extends StateNotifier<FailureReportState> {
         errorMessage: null,
         reports: reports,
       );
-      await fetchReports();
+      await fetchComplaints();
 
       return saved;
     } on ApiException catch (e) {
-      final detail = (e.detail ?? e.messageKey).toLowerCase();
+      final detail = (e.detail ?? e.code ?? e.messageKey).toLowerCase();
 
       final isDuplicate = detail.contains('already under review') ||
           detail.contains('already exist') ||
@@ -166,7 +168,7 @@ class FailureReportController extends StateNotifier<FailureReportState> {
       if (isDuplicate) {
         state = state.copyWith(
           isSubmitting: false,
-          errorMessage: 'failure_report.already_exists',
+          errorMessage: 'complaint.already_exists',
         );
         return null;
       }
@@ -175,21 +177,20 @@ class FailureReportController extends StateNotifier<FailureReportState> {
         isSubmitting: false,
         errorMessage: e.detail ?? e.messageKey,
       );
-
-      return null;
+      rethrow;
     } catch (e) {
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: e.toString(),
       );
-      return null;
+      rethrow;
     }
   }
 }
 
-final failureReportControllerProvider =
-    StateNotifierProvider<FailureReportController, FailureReportState>((ref) {
-  return FailureReportController(
-    ref.watch(failureReportRepositoryProvider),
+final complaintControllerProvider =
+    StateNotifierProvider<ComplaintController, ComplaintState>((ref) {
+  return ComplaintController(
+    ref.watch(complaintRepositoryProvider),
   );
 });
