@@ -18,6 +18,7 @@ import '../../../pages/home/activity_detail/activity_detail_page.dart';
 import '../../../pages/home/history/history_page.dart';
 import '../../../pages/home/bind_broadband/bind_broadband_page.dart';
 import '../../../pages/home/home/home_page.dart';
+import '../../../pages/home/subscription_detail/subscription_detail_page.dart';
 import '../../../pages/home/service_placeholder/service_placeholder_page.dart';
 import '../../../pages/home/top_up/top_up_failure_page.dart';
 import '../../../pages/home/top_up/top_up_page.dart';
@@ -292,6 +293,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id'] ?? '';
           return ServicePlaceholderPage(serviceId: id);
         },
+      ),
+      GoRoute(
+        path: RoutePaths.subscriptionDetail,
+        name: RouteNames.subscriptionDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SubscriptionDetailPage(),
       ),
       GoRoute(
         path: RoutePaths.packageDetail,

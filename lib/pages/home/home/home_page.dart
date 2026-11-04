@@ -17,7 +17,9 @@ import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
 import 'components/home_services_section.dart';
-import 'home_controller.dart';
+
+/// Special data packages stay in the project, but are not shown on Home.
+const _showSpecialDataPackages = false;
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -85,7 +87,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         hasLiveProfile ? liveProfile : cachedProfile.valueOrNull;
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
-    final dashboard = ref.watch(homeControllerProvider);
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
     final pinnedH = HomePinnedBar.heightOf(context);
@@ -105,72 +106,68 @@ class _HomePageState extends ConsumerState<HomePage> {
                 key: ValueKey('home-$localeCode'),
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                SliverToBoxAdapter(
-                  child: SizedBox(height: pinnedH - 2),
-                ),
-                SliverToBoxAdapter(
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          HomeBalanceHeader(
-                            balanceAmount:
-                                displayProfile?.walletBalance.isNotEmpty == true
-                                    ? displayProfile!.walletBalance
-                                    : cachedProfile.isLoading
-                                        ? ''
-                                        : '—',
-                          ),
-                          const SizedBox(height: HomeQuickActions.hangBelow),
-                        ],
-                      ),
-                      const Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: HomeQuickActions(),
-                      ),
-                    ],
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: pinnedH - 2),
                   ),
-                ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: HomeSectionHeader.sectionGap),
-                ),
-                const SliverToBoxAdapter(child: HomeServicesSection()),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: HomeSectionHeader.sectionGap),
-                ),
-                SliverToBoxAdapter(
-                  child: HomePlanCard(
-                    packageId: dashboard.packageId,
-                    titleKey: dashboard.planTitleKey,
-                    expiry: dashboard.planExpiry,
-                    username: dashboard.username,
-                    password: dashboard.password,
-                    validityDays: dashboard.validityDays,
+                  SliverToBoxAdapter(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            HomeBalanceHeader(
+                              balanceAmount:
+                                  displayProfile?.walletBalance.isNotEmpty ==
+                                          true
+                                      ? displayProfile!.walletBalance
+                                      : cachedProfile.isLoading
+                                          ? ''
+                                          : '—',
+                            ),
+                            const SizedBox(height: HomeQuickActions.hangBelow),
+                          ],
+                        ),
+                        const Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: HomeQuickActions(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: HomeSectionHeader.sectionGap),
-                ),
-                const SliverToBoxAdapter(child: HomePromoAlert()),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: HomeSectionHeader.sectionGap),
-                ),
-                const SliverToBoxAdapter(child: HomeOffersSection()),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: HomeSectionHeader.sectionGap),
-                ),
-                const SliverToBoxAdapter(child: HomeCgPackageSection()),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: HomeSectionHeader.sectionGap),
-                ),
-                const SliverToBoxAdapter(child: HomePromoBanner()),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              ],
-            ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
+                  SliverToBoxAdapter(
+                    child: const HomePlanCard(),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
+                  const SliverToBoxAdapter(child: HomeServicesSection()),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
+                  const SliverToBoxAdapter(child: HomePromoAlert()),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
+                  if (_showSpecialDataPackages) ...[
+                    const SliverToBoxAdapter(child: HomeOffersSection()),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: HomeSectionHeader.sectionGap),
+                    ),
+                  ],
+                  const SliverToBoxAdapter(child: HomeCgPackageSection()),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: HomeSectionHeader.sectionGap),
+                  ),
+                  const SliverToBoxAdapter(child: HomePromoBanner()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                ],
+              ),
             ),
             Positioned(
               top: 0,
