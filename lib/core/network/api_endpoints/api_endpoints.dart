@@ -62,8 +62,10 @@ class ApiEndpoints {
       '/customer/notification-preferences';
   static const String changeWifiPassword = '/change-password-requests/create';
   static const String changeWifiPasswordRequests = '/change-password-requests';
-  static String cancelChangeWifiPasswordRequest(String requestId) =>
+  static String changeWifiPasswordRequest(String requestId) =>
       '$changeWifiPasswordRequests/$requestId';
+  static String cancelChangeWifiPasswordRequest(String requestId) =>
+      changeWifiPasswordRequest(requestId);
   static const String states = '/states';
   static String stateRegions(int stateId) => '/states/$stateId/regions';
   static String regionAreas(int regionId) => '/regions/$regionId/areas';
@@ -90,10 +92,9 @@ class ApiEndpoints {
       '$installationApplicationRequests/$requestId';
   static String cancelInstallationRequest(String requestId) =>
       '${installationApplicationRequest(requestId)}/cancel';
-  static const String failureReport = '/failure-reports/create';
-  static const String failureReports = '/failure-reports';
-  static String failureReportDetail(String reportId) =>
-      '$failureReports/$reportId';
+  static const String complaintCreate = '/failure-reports/create';
+  static const String complaints = '/failure-reports';
+  static String complaintDetail(String reportId) => '$complaints/$reportId';
   static const String chatStart = '/chat/start';
   static const String chatCurrent = '/chat/current';
   static const String chatSelectOption = '/chat/select-option';
