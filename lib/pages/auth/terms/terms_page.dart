@@ -12,7 +12,13 @@ import '../../../core/locale/app_locale_provider.dart';
 class TermsPage extends ConsumerWidget {
   const TermsPage({super.key});
 
-  static const _iconAsset = 'assets/images/auth/terms.png';
+  static const _iconAsset = 'assets/images/settings/terms.png';
+
+  static const double _iconBoxSize = 50;
+  static const double _iconSize = 35;
+  static const double _iconRadius = 10;
+  static const double _cardRadius = 8;
+  static const double _contentPadding = 12;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,11 +27,11 @@ class TermsPage extends ConsumerWidget {
 
     final titleText = termsAsync.when(
       data: (items) {
-        if (items.isEmpty) return 'terms.title'.tr();
         final text = items
             .map((item) => item.titleFor(localeCode))
             .where((value) => value.trim().isNotEmpty)
             .join('\n\n');
+
         return text.isEmpty ? 'terms.title'.tr() : text;
       },
       loading: () => 'terms.title'.tr(),
@@ -34,11 +40,11 @@ class TermsPage extends ConsumerWidget {
 
     final bodyText = termsAsync.when(
       data: (items) {
-        if (items.isEmpty) return 'terms.body'.tr();
         final text = items
             .map((item) => item.descriptionFor(localeCode))
             .where((value) => value.trim().isNotEmpty)
             .join('\n\n');
+
         return text.isEmpty ? 'terms.body'.tr() : text;
       },
       loading: () => 'terms.body'.tr(),
@@ -54,17 +60,17 @@ class TermsPage extends ConsumerWidget {
         children: [
           Center(
             child: Container(
-              width: AppStyle.iconBox,
-              height: AppStyle.iconBox,
+              width: _iconBoxSize,
+              height: _iconBoxSize,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: AppStyle.borderRadiusLg,
+                color: AppColors.primary.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(_iconRadius),
               ),
               child: Center(
                 child: Image.asset(
                   _iconAsset,
-                  width: AppStyle.iconSize,
-                  height: AppStyle.iconSize,
+                  width: _iconSize,
+                  height: _iconSize,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
                 ),
@@ -75,27 +81,31 @@ class TermsPage extends ConsumerWidget {
           Text(
             titleText,
             textAlign: TextAlign.center,
-            style: AppTheme.pageTitle(color: AppColors.primary),
-          ),
-          const SizedBox(height: AppStyle.spaceXxl),
-          Container(
-            padding: AppStyle.cardPadding,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.25),
-              borderRadius: AppStyle.borderRadiusLg,
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.10),
-              ),
+            style: AppTheme.english(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+              height: 1.4,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bodyText,
-                  textAlign: TextAlign.start,
-                  style: AppTheme.body(color: AppColors.textMuted),
-                ),
-              ],
+          ),
+          const SizedBox(height: AppStyle.spaceXl),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(_contentPadding),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(_cardRadius),
+            ),
+            child: Text(
+              bodyText,
+              textAlign: TextAlign.start,
+              style: AppTheme.english(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textMuted,
+                height: 1.5,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
         ],

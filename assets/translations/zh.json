@@ -240,6 +240,7 @@
     "detail_start_time": "开始时间",
     "detail_end_time": "结束时间",
     "detail_status": "账户状态",
+    "detail_service_type": "服务类型",
     "remove_account": "解除账户",
     "duration": "使用期限",
     "validation": {

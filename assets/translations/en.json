@@ -240,6 +240,7 @@
     "detail_start_time": "Start time",
     "detail_end_time": "End time",
     "detail_status": "Account status",
+    "detail_service_type": "Service type",
     "remove_account": "Remove Account",
     "duration": "Duration",
     "validation": {

@@ -404,6 +404,10 @@ class _BoundAccountCard extends StatelessWidget {
             child: Column(
               children: [
                 _DetailRow(
+                  label: context.tr('broadband.detail_service_type'),
+                  value: bound.serviceType,
+                ),
+                _DetailRow(
                   label: context.tr('broadband.detail_account'),
                   value: bound.account,
                 ),
@@ -447,6 +451,7 @@ class _BoundAccountCard extends StatelessWidget {
                   _DetailRow(
                     label: context.tr('broadband.detail_status'),
                     value: profile.status,
+                    showDivider: false,
                   ),
               ],
             ),
@@ -468,10 +473,12 @@ class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
     required this.value,
+    this.showDivider = true,
   });
 
   final String label;
   final String value;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
@@ -504,7 +511,8 @@ class _DetailRow extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
+        if (showDivider)
+          const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
       ],
     );
   }

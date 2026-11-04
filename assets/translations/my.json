@@ -239,7 +239,8 @@
     "detail_speed": "အမြန်နှုန်း",
     "detail_start_time": "စတင်ချိန်",
     "detail_end_time": "ပြီးဆုံးချိန်",
-    "detail_status": "အကောင့်အခြေအနေ",    
+    "detail_status": "အကောင့်အခြေအနေ",
+    "detail_service_type": "ဝန်ဆောင်မှုအမျိုးအစား",    
     "remove_account": "အကောင့်ဖယ်ရှားမည်",
     "duration": "အသုံးပြုကာလ",
     "validation": {
