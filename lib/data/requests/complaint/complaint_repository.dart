@@ -1,13 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
-import '../../../models/requests/failure_report/failure_report_model.dart';
+import '../../../models/requests/complaint/complaint_model.dart';
 
-List<dynamic> _reportItemsFromResponse(Object? payload) {
+List<dynamic> _complaintItemsFromResponse(Object? payload) {
   if (payload is List) return payload;
 
   if (payload is Map) {
@@ -20,7 +19,7 @@ List<dynamic> _reportItemsFromResponse(Object? payload) {
     ]) {
       final value = payload[key];
       if (value is List || value is Map) {
-        return _reportItemsFromResponse(value);
+        return _complaintItemsFromResponse(value);
       }
     }
 
@@ -30,46 +29,33 @@ List<dynamic> _reportItemsFromResponse(Object? payload) {
   return const [];
 }
 
-void _debugPrintReportPhotos(List<dynamic> reports) {
-  if (!kDebugMode) return;
-
-  for (var index = 0; index < reports.length; index++) {
-    final report = reports[index];
-    if (report is! Map) continue;
-
-    final rawPhotos = report['photos'] ?? report['failure_photos'];
-    if (rawPhotos is! List) {
-      debugPrint('[failure-reports] report[$index]: photos field missing');
-      continue;
-    }
-  }
-}
-
-class FailureReportRepository {
-  FailureReportRepository(this._dio);
+class ComplaintRepository {
+  ComplaintRepository(this._dio);
 
   final Dio _dio;
 
   String? _messageCode(Object? data) {
-    if (data is Map && data['code'] is String) {
-      return data['code'] as String;
+    if (data is! Map) return null;
+
+    final code = data['code']?.toString().trim();
+    if (code != null && code.isNotEmpty) {
+      return code;
     }
-    return null;
+
+    return data['data'] is Map ? _messageCode(data['data']) : null;
   }
 
-  Future<List<FailureReportModel>> fetchReports() async {
+  Future<List<ComplaintModel>> fetchComplaints() async {
     try {
       final response = await _dio.get<dynamic>(
-        ApiEndpoints.failureReports,
+        ApiEndpoints.complaints,
       );
-      final list = _reportItemsFromResponse(response.data);
-      _debugPrintReportPhotos(list);
+      final list = _complaintItemsFromResponse(response.data);
 
       return list
           .whereType<Map>()
           .map(
-            (item) =>
-                FailureReportModel.fromJson(Map<String, dynamic>.from(item)),
+            (item) => ComplaintModel.fromJson(Map<String, dynamic>.from(item)),
           )
           .toList();
     } on DioException catch (error) {
@@ -77,20 +63,20 @@ class FailureReportRepository {
     }
   }
 
-  Future<FailureReportModel> fetchReport(String reportId) async {
+  Future<ComplaintModel> fetchComplaint(String complaintId) async {
     try {
       final response = await _dio.get<dynamic>(
-        ApiEndpoints.failureReportDetail(reportId),
+        ApiEndpoints.complaintDetail(complaintId),
       );
       final payload = response.data;
       if (payload is! Map) {
         throw const ApiException(
           ApiFailure.unknown,
-          detail: 'Invalid failure report detail response',
+          detail: 'Invalid complaint detail response',
         );
       }
 
-      return FailureReportModel.fromJson(
+      return ComplaintModel.fromJson(
         Map<String, dynamic>.from(payload),
       );
     } on DioException catch (error) {
@@ -98,29 +84,30 @@ class FailureReportRepository {
     }
   }
 
-  Future<FailureReportCancelResult> cancelReport(
-    FailureReportModel item,
+  Future<ComplaintCancelResult> cancelComplaint(
+    ComplaintModel item,
   ) async {
-    final reportId = item.id;
-    if (reportId.isEmpty) {
+    final complaintId = item.id;
+    if (complaintId.isEmpty) {
       throw const ApiException(
         ApiFailure.unknown,
-        detail: 'Failure report ID is missing',
+        detail: 'Complaint ID is missing',
       );
     }
 
     try {
       final response = await _dio.patch<dynamic>(
-        '${ApiEndpoints.failureReports}/$reportId/cancel',
+        '${ApiEndpoints.complaints}/$complaintId/cancel',
       );
-      return FailureReportCancelResult(code: _messageCode(response.data));
+      final code = _messageCode(response.data);
+      return ComplaintCancelResult(code: code);
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
 
-  Future<FailureReportSaveResult> submitReport(
-    FailureReportModel report,
+  Future<ComplaintSaveResult> submitComplaint(
+    ComplaintModel report,
   ) async {
     try {
       final payload = report.toJson();
@@ -167,31 +154,25 @@ class FailureReportRepository {
       }
 
       final response = await _dio.post<dynamic>(
-        ApiEndpoints.failureReport,
+        ApiEndpoints.complaintCreate,
         data: formData,
       );
-
       final data = response.data;
+      final code = _messageCode(data);
 
-      return FailureReportSaveResult(
+      return ComplaintSaveResult(
         report: data is Map
-            ? FailureReportModel.fromJson(Map<String, dynamic>.from(data))
+            ? ComplaintModel.fromJson(Map<String, dynamic>.from(data))
             : report,
-        code: _messageCode(data),
+        code: code,
       );
     } on DioException catch (error) {
-      debugPrint(
-        'FAILURE REPORT ERROR: '
-        '${error.response?.statusCode} - '
-        '${error.response?.data}',
-      );
-
       throw ApiException.fromDio(error);
     }
   }
 
-  Future<FailureReportSaveResult> updateReport(
-    FailureReportModel report,
+  Future<ComplaintSaveResult> updateComplaint(
+    ComplaintModel report,
   ) async {
     try {
       final payload = report.toJson()
@@ -205,7 +186,7 @@ class FailureReportRepository {
       final Response<dynamic> response;
       if (photos.isEmpty) {
         response = await _dio.put<dynamic>(
-          ApiEndpoints.failureReportDetail(report.id),
+          ApiEndpoints.complaintDetail(report.id),
           data: payload,
         );
       } else {
@@ -219,12 +200,8 @@ class FailureReportRepository {
         for (var i = 0; i < photos.length; i++) {
           final path = photos[i].imageUrl.trim();
           final uri = Uri.tryParse(path);
-          final isRemote =
-              uri?.scheme == 'http' || uri?.scheme == 'https';
-          final rawFilename = (uri?.path ?? path)
-              .split('/')
-              .last
-              .toLowerCase();
+          final isRemote = uri?.scheme == 'http' || uri?.scheme == 'https';
+          final rawFilename = (uri?.path ?? path).split('/').last.toLowerCase();
           final ext = rawFilename.endsWith('.png')
               ? 'png'
               : (rawFilename.endsWith('.webp') ? 'webp' : 'jpeg');
@@ -244,17 +221,18 @@ class FailureReportRepository {
           );
         }
         response = await _dio.post<dynamic>(
-          ApiEndpoints.failureReportDetail(report.id),
+          ApiEndpoints.complaintDetail(report.id),
           data: formData,
         );
       }
 
       final data = response.data;
-      return FailureReportSaveResult(
+      final code = _messageCode(data);
+      return ComplaintSaveResult(
         report: data is Map
-            ? FailureReportModel.fromJson(Map<String, dynamic>.from(data))
+            ? ComplaintModel.fromJson(Map<String, dynamic>.from(data))
             : report,
-        code: _messageCode(data),
+        code: code,
       );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
@@ -274,7 +252,7 @@ class FailureReportRepository {
     if (bytes == null || bytes.isEmpty) {
       throw const ApiException(
         ApiFailure.unknown,
-        detail: 'Existing failure report photo returned no image data',
+        detail: 'Existing complaint photo returned no image data',
       );
     }
 
@@ -286,23 +264,22 @@ class FailureReportRepository {
   }
 }
 
-class FailureReportSaveResult {
-  const FailureReportSaveResult({
+class ComplaintSaveResult {
+  const ComplaintSaveResult({
     required this.report,
     this.code,
   });
 
-  final FailureReportModel report;
+  final ComplaintModel report;
   final String? code;
 }
 
-class FailureReportCancelResult {
-  const FailureReportCancelResult({this.code});
+class ComplaintCancelResult {
+  const ComplaintCancelResult({this.code});
 
   final String? code;
 }
 
-final failureReportRepositoryProvider =
-    Provider<FailureReportRepository>((ref) {
-  return FailureReportRepository(ref.watch(dioProvider));
+final complaintRepositoryProvider = Provider<ComplaintRepository>((ref) {
+  return ComplaintRepository(ref.watch(dioProvider));
 });

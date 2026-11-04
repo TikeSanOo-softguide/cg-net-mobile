@@ -12,16 +12,18 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_photo_picker/app_photo_picker.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
+import '../../../core/network/api_message_modal.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
-import '../../../data/requests/failure_report/failure_report_repository.dart';
-import '../../../models/requests/failure_report/failure_report_model.dart';
+import '../../../core/utils/loading_helper.dart';
+import '../../../data/requests/complaint/complaint_repository.dart';
+import '../../../models/requests/complaint/complaint_model.dart';
 import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
-import 'failure_report_controller.dart';
+import 'complaint_controller.dart';
 
 String _normalizedReportStatus(String status) =>
     status.toLowerCase().trim().replaceAll(' ', '_').replaceAll('-', '_');
@@ -33,77 +35,91 @@ bool _isUnderReviewReport(String status) {
       normalized == 'review';
 }
 
-class FailureReportPage extends ConsumerStatefulWidget {
-  const FailureReportPage({super.key});
-
-  @override
-  ConsumerState<FailureReportPage> createState() => _FailureReportPageState();
+String _loadComplaintErrorMessage(String? errorMessage) {
+  if (errorMessage == null) return 'complaint.load_error'.tr();
+  if (MessageCodes.isKnown(errorMessage)) {
+    return MessageCodes.locKey(errorMessage).tr();
+  }
+  if (errorMessage.startsWith('complaint.') ||
+      errorMessage.startsWith('api.') ||
+      errorMessage.startsWith('common.')) {
+    return errorMessage.tr();
+  }
+  return errorMessage;
 }
 
-class _FailureReportPageState extends ConsumerState<FailureReportPage> {
+class ComplaintPage extends ConsumerStatefulWidget {
+  const ComplaintPage({super.key});
+
+  @override
+  ConsumerState<ComplaintPage> createState() => _ComplaintPageState();
+}
+
+class _ComplaintPageState extends ConsumerState<ComplaintPage> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
       ref.read(profileControllerProvider.notifier).fetchProfile();
-      ref.read(failureReportControllerProvider.notifier).fetchReports();
+      ref.read(complaintControllerProvider.notifier).fetchComplaints();
     });
   }
 
-  Future<void> _fetchReports() async {
+  Future<void> _fetchComplaints() async {
     await ref.read(profileControllerProvider.notifier).fetchProfile();
-    await ref.read(failureReportControllerProvider.notifier).fetchReports();
+    await ref.read(complaintControllerProvider.notifier).fetchComplaints();
   }
 
-  void _openNewReportPage({FailureReportModel? initialReport}) {
+  void _openNewComplaintPage({ComplaintModel? initialReport}) {
     Navigator.of(context)
         .push<Object?>(
       MaterialPageRoute<Object?>(
-        builder: (_) => _NewReportFormSheet(initialReport: initialReport),
+        builder: (_) => _NewComplaintFormSheet(initialReport: initialReport),
       ),
     )
         .then((result) async {
       if (!mounted || result == null || result == false) return;
 
-      if (result is FailureReportSaveResult) {
-        final fallbackMessage = initialReport == null
-            ? 'failure_report.submitted_desc'.tr()
-            : 'failure_report.update_success'.tr();
+      if (result is ComplaintSaveResult) {
         await showAppSuccessModal(
           context,
           title: 'common.success'.tr(),
-          body: MessageCodes.isKnown(result.code)
-              ? MessageCodes.locKey(result.code!).tr()
-              : fallbackMessage,
+          body: MessageCodes.featureReqKey(
+            feature: 'complaint',
+            code: result.code,
+            fallbackKey: initialReport != null
+                ? 'complaint.req_updated'
+                : 'complaint.req_submitted',
+          ).tr(),
         );
       }
 
-      if (mounted) await _fetchReports();
+      if (mounted) await _fetchComplaints();
     });
   }
 
-  Future<void> _confirmCancel(FailureReportModel report) async {
+  Future<void> _confirmCancel(ComplaintModel report) async {
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'failure_report.cancel_title'.tr(),
-      body: 'failure_report.cancel_confirm'.tr(),
+      title: 'complaint.cancel_title'.tr(),
+      body: 'complaint.cancel_confirm'.tr(),
       confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true || !mounted) return;
 
     final result = await ref
-        .read(failureReportControllerProvider.notifier)
-        .cancelReport(report);
+        .read(complaintControllerProvider.notifier)
+        .cancelComplaint(report);
     if (!mounted) return;
 
     if (result == null) {
-      final message = ref.read(failureReportControllerProvider).errorMessage;
+      final message = ref.read(complaintControllerProvider).errorMessage;
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
-        body: _loadErrorMessage(message),
+        body: _loadComplaintErrorMessage(message),
       );
       return;
     }
@@ -111,16 +127,18 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     await showAppSuccessModal(
       context,
       title: 'common.success'.tr(),
-      body: MessageCodes.isKnown(result.code)
-          ? MessageCodes.locKey(result.code!).tr()
-          : 'failure_report.cancel_success'.tr(),
+      body: MessageCodes.featureReqKey(
+        feature: 'complaint',
+        code: result.code,
+        fallbackKey: 'complaint.req_cancelled',
+      ).tr(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = 'failure_report.title'.tr();
-    final reportState = ref.watch(failureReportControllerProvider);
+    final title = 'complaint.title'.tr();
+    final reportState = ref.watch(complaintControllerProvider);
     final hasUnderReviewReport = reportState.reports.any(
       (report) => _isUnderReviewReport(report.status),
     );
@@ -134,30 +152,30 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
       floatingActionButton: hasUnderReviewReport
           ? null
           : AppAddFloatingActionButton(
-              onPressed: () => _openNewReportPage(),
+              onPressed: () => _openNewComplaintPage(),
             ),
       body: RefreshIndicator(
-        onRefresh: _fetchReports,
+        onRefresh: _fetchComplaints,
         child: _buildBody(),
       ),
     );
   }
 
   Widget _buildBody() {
-    final state = ref.watch(failureReportControllerProvider);
+    final state = ref.watch(complaintControllerProvider);
     final reports = state.reports;
 
-    if (state.status == FailureReportStatus.loading && reports.isEmpty) {
+    if (state.status == ComplaintStatus.loading && reports.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (state.status == FailureReportStatus.error && reports.isEmpty) {
+    if (state.status == ComplaintStatus.error && reports.isEmpty) {
       final errorMessage = state.errorMessage;
       final displayMessage = errorMessage == null
-          ? 'failure_report.load_error'.tr()
-          : errorMessage.startsWith('failure_report.') ||
+          ? 'complaint.load_error'.tr()
+          : errorMessage.startsWith('complaint.') ||
                   errorMessage.startsWith('api.') ||
                   errorMessage.startsWith('common.')
               ? errorMessage.tr()
@@ -183,7 +201,7 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
                 const SizedBox(height: AppStyle.spaceMd),
                 AppButton(
                   label: 'common.retry'.tr(),
-                  onPressed: _fetchReports,
+                  onPressed: _fetchComplaints,
                 ),
               ],
             ),
@@ -217,13 +235,13 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
-                  'failure_report.no_reports'.tr(),
+                  'complaint.no_reports'.tr(),
                   style: AppTheme.sectionTitle(color: AppColors.primary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 Text(
-                  'failure_report.no_reports_desc'.tr(),
+                  'complaint.no_reports_desc'.tr(),
                   textAlign: TextAlign.center,
                   style: AppTheme.bodySecondary(),
                 ),
@@ -235,10 +253,15 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
     }
 
     final hasError =
-        state.status == FailureReportStatus.error && state.errorMessage != null;
+        state.status == ComplaintStatus.error && state.errorMessage != null;
 
     return ListView.separated(
-      padding: const EdgeInsets.all(AppStyle.spaceLg),
+      padding: const EdgeInsets.fromLTRB(
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        80,
+      ),
       itemCount: reports.length + (hasError ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
       itemBuilder: (context, index) {
@@ -250,12 +273,12 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
               children: [
                 Expanded(
                   child: Text(
-                    _loadErrorMessage(state.errorMessage),
+                    _loadComplaintErrorMessage(state.errorMessage),
                     style: AppTheme.body(color: AppColors.error),
                   ),
                 ),
                 TextButton(
-                  onPressed: _fetchReports,
+                  onPressed: _fetchComplaints,
                   child: Text('common.retry'.tr()),
                 ),
               ],
@@ -265,44 +288,34 @@ class _FailureReportPageState extends ConsumerState<FailureReportPage> {
 
         final report = reports[index - (hasError ? 1 : 0)];
         final canManage = _isUnderReviewReport(report.status);
-        return _FailureReportCard(
+        return _ComplaintCard(
           report: report,
           onEdit: canManage
-              ? () => _openNewReportPage(initialReport: report)
+              ? () => _openNewComplaintPage(initialReport: report)
               : null,
           onCancel: canManage ? () => _confirmCancel(report) : null,
         );
       },
     );
   }
-
-  String _loadErrorMessage(String? errorMessage) {
-    if (errorMessage == null) return 'failure_report.load_error'.tr();
-    if (errorMessage.startsWith('failure_report.') ||
-        errorMessage.startsWith('api.') ||
-        errorMessage.startsWith('common.')) {
-      return errorMessage.tr();
-    }
-    return errorMessage;
-  }
 }
 
-class _FailureReportCard extends StatefulWidget {
-  const _FailureReportCard({
+class _ComplaintCard extends StatefulWidget {
+  const _ComplaintCard({
     required this.report,
     this.onEdit,
     this.onCancel,
   });
 
-  final FailureReportModel report;
+  final ComplaintModel report;
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
 
   @override
-  State<_FailureReportCard> createState() => _FailureReportCardState();
+  State<_ComplaintCard> createState() => _ComplaintCardState();
 }
 
-class _FailureReportCardState extends State<_FailureReportCard> {
+class _ComplaintCardState extends State<_ComplaintCard> {
   bool _expanded = false;
 
   Color get _statusColor {
@@ -360,7 +373,7 @@ class _FailureReportCardState extends State<_FailureReportCard> {
     final createdAt = report.createdAt == null
         ? null
         : formatDate(report.createdAt!.toLocal().toIso8601String());
-    final failureType = FailureType.fromKey(report.failureType);
+    final complaintType = ComplaintType.fromKey(report.complaintType);
     final canManage = widget.onEdit != null || widget.onCancel != null;
 
     return AppCard(
@@ -432,27 +445,27 @@ class _FailureReportCardState extends State<_FailureReportCard> {
                           child: Column(
                             children: [
                               _ReportDetail(
-                                label: 'failure_report.failure_type'.tr(),
+                                label: 'complaint.complaint_type'.tr(),
                                 value:
-                                    'failure_report.${failureType.localizationKey}'
+                                    'complaint.${complaintType.localizationKey}'
                                         .tr(),
                               ),
                               _ReportDetail(
-                                label: 'failure_report.card_account'.tr(),
+                                label: 'complaint.card_account'.tr(),
                                 value: _displayAccount(
                                   report.broadbandAccountNumber,
                                 ),
                               ),
                               _ReportDetail(
-                                label: 'failure_report.contact_name'.tr(),
+                                label: 'complaint.contact_name'.tr(),
                                 value: report.contactName,
                               ),
                               _ReportDetail(
-                                label: 'failure_report.contact_phone'.tr(),
+                                label: 'complaint.contact_phone'.tr(),
                                 value: report.contactPhone,
                               ),
                               _ReportDetail(
-                                label: 'failure_report.card_description'.tr(),
+                                label: 'complaint.card_description'.tr(),
                                 value: report.description,
                               ),
                             ],
@@ -651,17 +664,18 @@ class _ReportDetail extends StatelessWidget {
   }
 }
 
-class _NewReportFormSheet extends ConsumerStatefulWidget {
-  const _NewReportFormSheet({this.initialReport});
+class _NewComplaintFormSheet extends ConsumerStatefulWidget {
+  const _NewComplaintFormSheet({this.initialReport});
 
-  final FailureReportModel? initialReport;
+  final ComplaintModel? initialReport;
 
   @override
-  ConsumerState<_NewReportFormSheet> createState() =>
-      __NewReportFormSheetState();
+  ConsumerState<_NewComplaintFormSheet> createState() =>
+      __NewComplaintFormSheetState();
 }
 
-class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
+class __NewComplaintFormSheetState
+    extends ConsumerState<_NewComplaintFormSheet> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _broadbandAccountController;
@@ -671,14 +685,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
 
   String _storedAccountNumber(UserProfileModel profile) {
     final typed = _broadbandAccountController.text.trim();
-    final account = typed.isNotEmpty ? typed : profile.accountNumber.trim();
-    final serviceType = profile.serviceType?.trim() ?? '';
-    if (account.isEmpty ||
-        (serviceType != 'CG' && serviceType != 'FTTH') ||
-        account.startsWith(serviceType)) {
-      return account;
-    }
-    return '$serviceType$account';
+    return typed.isNotEmpty ? typed : profile.accountNumber.trim();
   }
 
   String _requiredMessage(String fieldKey) {
@@ -709,7 +716,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
       _contactNameController = TextEditingController(text: initial.contactName);
       _phoneController = TextEditingController(text: initial.contactPhone);
       _descriptionController = TextEditingController(text: initial.description);
-      _selectedType = initial.failureType;
+      _selectedType = initial.complaintType;
       _selectedPhotos.addAll(
         initial.photos
             .where((photo) => photo.imageUrl.trim().isNotEmpty)
@@ -817,36 +824,54 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
     final userId = int.tryParse(profile.id) ?? 0;
 
     final photos = _selectedPhotos
-        .map((file) => FailurePhotoModel(
+        .map((file) => ComplaintPhotoModel(
               id: '',
-              failureReportId: '',
+              complaintId: '',
               imageUrl: file.path,
             ))
         .toList();
 
-    final savedResult =
-        await ref.read(failureReportControllerProvider.notifier).submitReport(
+    final ComplaintSaveResult? savedResult;
+    try {
+      savedResult = await LoadingHelper.runWithLoading(
+        () => ref.read(complaintControllerProvider.notifier).submitComplaint(
               broadbandAccount: boundAccount,
-              failureType: _selectedType,
+              complaintType: _selectedType,
               description: _descriptionController.text.trim(),
               contactName: _contactNameController.text.trim(),
               contactPhone: _phoneController.text.trim(),
               photos: photos,
               userId: userId,
               reportId: widget.initialReport?.id,
-            );
+            ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      await showApiMessageModal(context, error);
+      return;
+    }
 
     if (!mounted) return;
 
     if (savedResult != null) {
       Navigator.of(context).pop(savedResult);
+      return;
+    }
+
+    final errorMessage = ref.read(complaintControllerProvider).errorMessage;
+    if (errorMessage != null && mounted) {
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: _loadComplaintErrorMessage(errorMessage),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
-    final controllerState = ref.watch(failureReportControllerProvider);
+    final controllerState = ref.watch(complaintControllerProvider);
 
     if (widget.initialReport == null) {
       if (profile.accountNumber.isNotEmpty &&
@@ -863,13 +888,11 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
       }
     }
 
-    final errorMessage = controllerState.errorMessage;
-
     final submitting = controllerState.isSubmitting;
 
     return AppCurvedScaffold(
       title: Text(
-        'failure_report.title'.tr(),
+        'complaint.title'.tr(),
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
@@ -917,7 +940,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'failure_report.form_desc'.tr(),
+                                      'complaint.form_desc'.tr(),
                                       style: AppTheme.caption().copyWith(
                                         height: 1.3,
                                         color: AppColors.primary,
@@ -931,50 +954,49 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
                             const SizedBox(height: 16),
                             AppInput(
                               controller: _broadbandAccountController,
-                              label:
-                                  '${'failure_report.broadband_account'.tr()} *',
+                              label: '${'complaint.broadband_account'.tr()} *',
                               readOnly: profile.accountNumber.isNotEmpty,
                               enabled: profile.accountNumber.isEmpty,
                               prefixIcon: LucideIcons.id_card,
                               validator: (value) => _requiredText(
                                 value,
-                                'failure_report.broadband_account',
+                                'complaint.broadband_account',
                               ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _contactNameController,
-                              label: '${'failure_report.contact_name'.tr()} *',
+                              label: '${'complaint.contact_name'.tr()} *',
                               prefixIcon: LucideIcons.user,
                               validator: (value) => _requiredText(
                                 value,
-                                'failure_report.contact_name',
+                                'complaint.contact_name',
                               ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _phoneController,
-                              label: '${'failure_report.contact_phone'.tr()} *',
+                              label: '${'complaint.contact_phone'.tr()} *',
                               hint: '09 xxx xxx xxx',
                               keyboardType: TextInputType.phone,
                               prefixIcon: LucideIcons.phone,
                               validator: (value) => _requiredText(
                                 value,
-                                'failure_report.contact_phone',
+                                'complaint.contact_phone',
                               ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
-                            _buildFailureTypeDropdown(context),
+                            _buildComplaintTypeDropdown(context),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _descriptionController,
-                              label: '${'failure_report.description'.tr()} *',
-                              hint: 'failure_report.description_hint'.tr(),
+                              label: '${'complaint.description'.tr()} *',
+                              hint: 'complaint.description_hint'.tr(),
                               prefixIcon: LucideIcons.file_text,
                               maxLines: 3,
                               validator: (value) => _requiredText(
                                 value,
-                                'failure_report.description',
+                                'complaint.description',
                               ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
@@ -985,9 +1007,7 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
                                 children: [
                                   AppPhotoPicker(
                                     selectedPhotos: _selectedPhotos,
-                                    label: widget.initialReport == null
-                                        ? 'failure_report.upload_photos'.tr()
-                                        : null,
+                                    label: 'complaint.upload_photos'.tr(),
                                     onPickImage: () => _pickImage(field),
                                     onRemovePhoto: (index) =>
                                         _removePhoto(index, field),
@@ -1002,19 +1022,6 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
                                 ],
                               ),
                             ),
-                            if (errorMessage != null) ...[
-                              const SizedBox(height: AppStyle.spaceXs),
-                              Text(
-                                errorMessage.startsWith('failure_report.') ||
-                                        errorMessage
-                                            .startsWith('change_wifi.') ||
-                                        errorMessage.startsWith('api.') ||
-                                        errorMessage.startsWith('common.')
-                                    ? errorMessage.tr()
-                                    : errorMessage,
-                                style: AppTheme.fieldError(),
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -1051,21 +1058,20 @@ class __NewReportFormSheetState extends ConsumerState<_NewReportFormSheet> {
     );
   }
 
-  Widget _buildFailureTypeDropdown(BuildContext context) {
-    final options = FailureType.values.map((type) {
-      return AppSelectOption<FailureType>(
+  Widget _buildComplaintTypeDropdown(BuildContext context) {
+    final options = ComplaintType.values.map((type) {
+      return AppSelectOption<ComplaintType>(
         value: type,
-        label: context.tr('failure_report.${type.localizationKey}'),
+        label: context.tr('complaint.${type.localizationKey}'),
       );
     }).toList();
 
-    return AppSelectDropdown<FailureType>(
-      label: '${context.tr('failure_report.failure_type')} *',
-      value: FailureType.fromKey(_selectedType),
+    return AppSelectDropdown<ComplaintType>(
+      label: '${context.tr('complaint.complaint_type')} *',
+      value: ComplaintType.fromKey(_selectedType),
       options: options,
-      validator: (value) => value == null
-          ? _requiredMessage('failure_report.failure_type')
-          : null,
+      validator: (value) =>
+          value == null ? _requiredMessage('complaint.complaint_type') : null,
       onChanged: (val) {
         if (val != null) {
           setState(() => _selectedType = val.apiKey);

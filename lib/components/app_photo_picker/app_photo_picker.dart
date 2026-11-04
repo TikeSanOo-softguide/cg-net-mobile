@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/utils/image_url_helper.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
@@ -16,25 +16,23 @@ class AppPhotoPicker extends StatelessWidget {
     required this.selectedPhotos,
     required this.onPickImage,
     required this.onRemovePhoto,
-    this.label,
+    required this.label,
     this.maxPhotos = 3,
   });
 
   final List<XFile> selectedPhotos;
   final VoidCallback onPickImage;
   final ValueChanged<int> onRemovePhoto;
-  final String? label;
+  final String label;
   final int maxPhotos;
 
   @override
   Widget build(BuildContext context) {
-    final titleLabel = label ?? context.tr('failure_report.upload_photos');
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          titleLabel,
+          label,
           style: AppTheme.english(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -59,9 +57,12 @@ class AppPhotoPicker extends StatelessWidget {
     const radius = BorderRadius.all(Radius.circular(12));
     if (index < selectedPhotos.length) {
       final path = selectedPhotos[index].path;
+      final imageUrl = ImageUrlHelper.resolve({'image_url': path});
       final ImageProvider<Object> image = path.startsWith('http')
           ? NetworkImage(path)
-          : FileImage(File(path));
+          : path.startsWith('/')
+              ? FileImage(File(path))
+              : NetworkImage(imageUrl ?? path);
       return SizedBox(
         height: 100,
         child: Stack(

@@ -3,7 +3,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/utils/image_url_helper.dart';
 
-enum FailureType {
+enum ComplaintType {
   noInternet('no_internet', 'type_no_internet', LucideIcons.wifi_off),
   slow('slow', 'type_slow_speed', LucideIcons.gauge),
   unstable('unstable', 'type_unstable_connection', LucideIcons.activity),
@@ -11,39 +11,39 @@ enum FailureType {
   equipment('equipment', 'type_equipment_failure', LucideIcons.settings),
   other('other', 'type_other', LucideIcons.ellipsis);
 
-  const FailureType(this.apiKey, this.localizationKey, this.icon);
+  const ComplaintType(this.apiKey, this.localizationKey, this.icon);
 
   final String apiKey;
   final String localizationKey;
   final IconData icon;
 
-  static FailureType fromKey(String key) {
-    return FailureType.values.firstWhere(
+  static ComplaintType fromKey(String key) {
+    return ComplaintType.values.firstWhere(
       (e) => e.apiKey == key.toLowerCase().trim(),
-      orElse: () => FailureType.other,
+      orElse: () => ComplaintType.other,
     );
   }
 }
 
-class FailurePhotoModel {
-  const FailurePhotoModel({
+class ComplaintPhotoModel {
+  const ComplaintPhotoModel({
     required this.id,
-    required this.failureReportId,
+    required this.complaintId,
     required this.imageUrl,
     this.label,
     this.createdAt,
   });
 
   final String id;
-  final String failureReportId;
+  final String complaintId;
   final String imageUrl;
   final String? label;
   final DateTime? createdAt;
 
-  factory FailurePhotoModel.fromJson(Map<String, dynamic> json) {
-    return FailurePhotoModel(
+  factory ComplaintPhotoModel.fromJson(Map<String, dynamic> json) {
+    return ComplaintPhotoModel(
       id: (json['id'] ?? '').toString(),
-      failureReportId: (json['failure_report_id'] ?? '').toString(),
+      complaintId: (json['failure_report_id'] ?? '').toString(),
       imageUrl: ImageUrlHelper.resolve({'image_url': json['image_url']}) ?? '',
       label: json['label']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
@@ -57,11 +57,11 @@ class FailurePhotoModel {
   }
 }
 
-class FailureReportModel {
-  const FailureReportModel({
+class ComplaintModel {
+  const ComplaintModel({
     required this.id,
     required this.userId,
-    required this.failureType,
+    required this.complaintType,
     required this.description,
     required this.contactName,
     required this.contactPhone,
@@ -76,24 +76,24 @@ class FailureReportModel {
 
   final String id;
   final int userId;
-  final String failureType;
+  final String complaintType;
   final String description;
   final String contactName;
   final String contactPhone;
   final String? broadbandAccountNumber;
   final String? ticketNumber;
   final String status;
-  final List<FailurePhotoModel> photos;
+  final List<ComplaintPhotoModel> photos;
   final int? adminId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  FailureReportModel copyWith({String? status}) {
-    return FailureReportModel(
+  ComplaintModel copyWith({String? status}) {
+    return ComplaintModel(
       id: id,
       userId: userId,
       broadbandAccountNumber: broadbandAccountNumber,
-      failureType: failureType,
+      complaintType: complaintType,
       description: description,
       contactName: contactName,
       contactPhone: contactPhone,
@@ -106,7 +106,7 @@ class FailureReportModel {
     );
   }
 
-  factory FailureReportModel.fromJson(
+  factory ComplaintModel.fromJson(
     Map<String, dynamic> json, {
     bool includePhotos = true,
   }) {
@@ -115,23 +115,22 @@ class FailureReportModel {
       rawData = Map<String, dynamic>.from(json['data'] as Map);
     }
 
-    final rawPhotos = includePhotos
-        ? rawData['photos'] ?? rawData['failure_photos']
-        : null;
+    final rawPhotos =
+        includePhotos ? rawData['photos'] ?? rawData['failure_photos'] : null;
     final photoList = rawPhotos is List
         ? rawPhotos
             .whereType<Map>()
-            .map((p) => FailurePhotoModel.fromJson(Map<String, dynamic>.from(p)))
+            .map((p) =>
+                ComplaintPhotoModel.fromJson(Map<String, dynamic>.from(p)))
             .toList()
-        : <FailurePhotoModel>[];
+        : <ComplaintPhotoModel>[];
 
-    return FailureReportModel(
+    return ComplaintModel(
       id: (rawData['id'] ?? '').toString(),
       userId: _toInt(rawData['user_id'] ?? rawData['id']) ?? 0,
-      broadbandAccountNumber:
-          rawData['broadband_account_number']?.toString(),
+      broadbandAccountNumber: rawData['broadband_account_number']?.toString(),
       ticketNumber: rawData['ticket_number']?.toString(),
-      failureType: rawData['failure_type']?.toString() ?? 'other',
+      complaintType: rawData['failure_type']?.toString() ?? 'other',
       description: rawData['description']?.toString() ?? '',
       contactName: rawData['contact_name']?.toString() ?? '',
       contactPhone: rawData['contact_phone']?.toString() ?? '',
@@ -148,13 +147,12 @@ class FailureReportModel {
       'user_id': userId,
       if (broadbandAccountNumber != null && broadbandAccountNumber!.isNotEmpty)
         'broadband_account_number': broadbandAccountNumber,
-      'failure_type': failureType,
+      'failure_type': complaintType,
       'description': description,
       'contact_name': contactName,
       'contact_phone': contactPhone,
       'status': status,
-      if (photos.isNotEmpty)
-        'photos': photos.map((p) => p.toJson()).toList(),
+      if (photos.isNotEmpty) 'photos': photos.map((p) => p.toJson()).toList(),
     };
   }
 

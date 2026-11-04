@@ -3,26 +3,27 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
 import 'package:cg_net_mobile/core/network/api_exception.dart';
-import 'package:cg_net_mobile/data/requests/failure_report/failure_report_repository.dart';
-import 'package:cg_net_mobile/models/requests/failure_report/failure_report_model.dart';
-import 'package:cg_net_mobile/pages/requests/failure_report/failure_report_controller.dart';
+import 'package:cg_net_mobile/data/requests/complaint/complaint_repository.dart';
+import 'package:cg_net_mobile/models/requests/complaint/complaint_model.dart';
+import 'package:cg_net_mobile/pages/requests/complaint/complaint_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late Dio dio;
-  late FailureReportRepository repository;
+  late ComplaintRepository repository;
 
   setUp(() {
     dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'))
       ..httpClientAdapter = _JsonAdapter();
-    repository = FailureReportRepository(dio);
+    repository = ComplaintRepository(dio);
   });
 
   tearDown(() => dio.close());
 
-  group('FailureReportRepository', () {
-    test('fetchReports reads records from a paginated data envelope', () async {
+  group('ComplaintRepository', () {
+    test('fetchComplaints reads records from a paginated data envelope',
+        () async {
       _setResponse(dio, '''
         {
           "data": {
@@ -50,7 +51,7 @@ void main() {
         }
       ''');
 
-      final reports = await repository.fetchReports();
+      final reports = await repository.fetchComplaints();
 
       expect(reports, hasLength(1));
       expect(reports.single.id, '15');
@@ -64,7 +65,7 @@ void main() {
       );
     });
 
-    test('fetchReports returns approved reports for history', () async {
+    test('fetchComplaints returns approved reports for history', () async {
       _setResponse(dio, '''
         {
           "data": [
@@ -81,14 +82,14 @@ void main() {
         }
       ''');
 
-      final reports = await repository.fetchReports();
+      final reports = await repository.fetchComplaints();
 
       expect(reports, hasLength(1));
       expect(reports.single.id, '16');
       expect(reports.single.status, 'approved');
     });
 
-    test('fetchReport loads photo URLs from the detail endpoint', () async {
+    test('fetchComplaint loads photo URLs from the detail endpoint', () async {
       _setResponse(dio, '''
         {
           "data": {
@@ -111,7 +112,7 @@ void main() {
         }
       ''');
 
-      final report = await repository.fetchReport('17');
+      final report = await repository.fetchComplaint('17');
 
       expect(report.id, '17');
       expect(report.ticketNumber, 'FLR-2026-0017');
@@ -122,7 +123,7 @@ void main() {
       );
     });
 
-    test('fetchReport resolves relative photo storage paths', () async {
+    test('fetchComplaint resolves relative photo storage paths', () async {
       _setResponse(dio, '''
         {
           "data": {
@@ -144,7 +145,7 @@ void main() {
         }
       ''');
 
-      final report = await repository.fetchReport('18');
+      final report = await repository.fetchComplaint('18');
       final origin = Uri.parse(ApiEndpoints.baseUrl).origin;
 
       expect(
@@ -153,15 +154,15 @@ void main() {
       );
     });
 
-    test('updateReport sends text-only edits with PUT', () async {
+    test('updateComplaint sends text-only edits with PUT', () async {
       final adapter = _JsonAdapter();
       dio.httpClientAdapter = adapter;
 
-      await repository.updateReport(
-        const FailureReportModel(
+      await repository.updateComplaint(
+        const ComplaintModel(
           id: '19',
           userId: 3,
-          failureType: 'equipment',
+          complaintType: 'equipment',
           description: 'Updated description',
           contactName: 'Aye Aye',
           contactPhone: '09770000001',
@@ -176,10 +177,10 @@ void main() {
     });
 
     test('create, update, and cancel preserve backend message codes', () async {
-      const report = FailureReportModel(
+      const report = ComplaintModel(
         id: '22',
         userId: 3,
-        failureType: 'equipment',
+        complaintType: 'equipment',
         description: 'Router is damaged',
         contactName: 'Aye Aye',
         contactPhone: '09770000001',
@@ -199,22 +200,34 @@ void main() {
         dio,
         '{"code":"MSG-REQ-002","data":$responseReport}',
       );
-      final created = await repository.submitReport(report);
+      final created = await repository.submitComplaint(report);
       expect(created.code, 'MSG-REQ-002');
 
       _setResponse(
         dio,
-        '{"code":"MSG-REQ-003","data":$responseReport}',
+        '''
+        {
+          "data": {
+            "code": "MSG-REQ-003",
+            "id": 22,
+            "user_id": 3,
+            "failure_type": "equipment",
+            "description": "Router is damaged",
+            "contact_name": "Aye Aye",
+            "contact_phone": "09770000001"
+          }
+        }
+        ''',
       );
-      final updated = await repository.updateReport(report);
+      final updated = await repository.updateComplaint(report);
       expect(updated.code, 'MSG-REQ-003');
 
-      _setResponse(dio, '{"code":"MSG-REQ-001"}');
-      final cancelled = await repository.cancelReport(report);
+      _setResponse(dio, '{"data":{"code":"MSG-REQ-001"}}');
+      final cancelled = await repository.cancelComplaint(report);
       expect(cancelled.code, 'MSG-REQ-001');
     });
 
-    test('updateReport uploads fewer than three new photos', () async {
+    test('updateComplaint uploads fewer than three new photos', () async {
       final adapter = _JsonAdapter();
       dio.httpClientAdapter = adapter;
       final tempDirectory =
@@ -226,18 +239,18 @@ void main() {
         );
         await photo.writeAsBytes([1, 2, 3]);
 
-        await repository.updateReport(
-          FailureReportModel(
+        await repository.updateComplaint(
+          ComplaintModel(
             id: '20',
             userId: 3,
-            failureType: 'equipment',
+            complaintType: 'equipment',
             description: 'Updated description',
             contactName: 'Aye Aye',
             contactPhone: '09770000001',
             photos: [
-              FailurePhotoModel(
+              ComplaintPhotoModel(
                 id: '',
-                failureReportId: '20',
+                complaintId: '20',
                 imageUrl: photo.path,
               ),
             ],
@@ -256,7 +269,7 @@ void main() {
       }
     });
 
-    test('updateReport resends existing photos with newly added photos',
+    test('updateComplaint resends existing photos with newly added photos',
         () async {
       final adapter = _JsonAdapter();
       dio.httpClientAdapter = adapter;
@@ -269,23 +282,23 @@ void main() {
         );
         await newPhoto.writeAsBytes([4, 5, 6]);
 
-        await repository.updateReport(
-          FailureReportModel(
+        await repository.updateComplaint(
+          ComplaintModel(
             id: '21',
             userId: 3,
-            failureType: 'equipment',
+            complaintType: 'equipment',
             description: 'Updated description',
             contactName: 'Aye Aye',
             contactPhone: '09770000001',
             photos: [
-              const FailurePhotoModel(
+              const ComplaintPhotoModel(
                 id: '61',
-                failureReportId: '21',
+                complaintId: '21',
                 imageUrl: 'https://example.test/storage/old-photo.jpg',
               ),
-              FailurePhotoModel(
+              ComplaintPhotoModel(
                 id: '',
-                failureReportId: '21',
+                complaintId: '21',
                 imageUrl: newPhoto.path,
               ),
             ],
@@ -315,21 +328,71 @@ void main() {
     });
   });
 
-  group('FailureReportController', () {
-    test('does not report a failed submission as saved', () async {
-      final controller = FailureReportController(_FailingRepository(dio));
+  group('ComplaintController', () {
+    test('stores offline submission failures like installation requests',
+        () async {
+      dio.httpClientAdapter = _JsonAdapter(
+        errorType: DioExceptionType.connectionError,
+      );
+      final controller = ComplaintController(repository);
       addTearDown(controller.dispose);
 
-      final result = await controller.submitReport(
-        broadbandAccount: 'CG000001',
-        failureType: 'no_internet',
-        description: 'Connection is down',
-        contactName: 'Test User',
-        contactPhone: '09700000000',
-        userId: 1,
+      await expectLater(
+        controller.submitComplaint(
+          broadbandAccount: 'CG000001',
+          complaintType: 'no_internet',
+          description: 'Connection is down',
+          contactName: 'Test User',
+          contactPhone: '09700000000',
+          userId: 1,
+        ),
+        throwsA(isA<ApiException>()),
       );
 
-      expect(result, isNull);
+      expect(controller.state.isSubmitting, isFalse);
+      expect(controller.state.errorMessage, 'api.offline');
+    });
+
+    test('preserves backend message codes on failed submission', () async {
+      _setResponse(
+        dio,
+        '{"code":"MSG-REQ-003","message":"Request rejected"}',
+        statusCode: 422,
+      );
+      final controller = ComplaintController(repository);
+      addTearDown(controller.dispose);
+
+      await expectLater(
+        controller.submitComplaint(
+          broadbandAccount: 'CG000001',
+          complaintType: 'no_internet',
+          description: 'Connection is down',
+          contactName: 'Test User',
+          contactPhone: '09700000000',
+          userId: 1,
+        ),
+        throwsA(isA<ApiException>()),
+      );
+
+      expect(controller.state.errorMessage, 'Request rejected');
+    });
+
+    test('does not report a failed submission as saved', () async {
+      final controller = ComplaintController(_FailingRepository(dio));
+      addTearDown(controller.dispose);
+
+      await expectLater(
+        controller.submitComplaint(
+          broadbandAccount: 'CG000001',
+          complaintType: 'no_internet',
+          description: 'Connection is down',
+          contactName: 'Test User',
+          contactPhone: '09700000000',
+          userId: 1,
+        ),
+        throwsA(isA<ApiException>()),
+      );
+
       expect(controller.state.reports, isEmpty);
       expect(controller.state.isSubmitting, isFalse);
       expect(controller.state.errorMessage, 'api.server');
@@ -349,10 +412,12 @@ class _JsonAdapter implements HttpClientAdapter {
   _JsonAdapter({
     this.body = '{"data":[]}',
     this.statusCode = 200,
+    this.errorType,
   });
 
   final String body;
   final int statusCode;
+  final DioExceptionType? errorType;
   final List<RequestOptions> requests = [];
   RequestOptions? lastRequestOptions;
 
@@ -362,6 +427,12 @@ class _JsonAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    if (errorType != null) {
+      throw DioException(
+        requestOptions: options,
+        type: errorType!,
+      );
+    }
     await requestStream?.drain<void>();
     requests.add(options);
     lastRequestOptions = options;
@@ -389,11 +460,11 @@ class _JsonAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-class _FailingRepository extends FailureReportRepository {
+class _FailingRepository extends ComplaintRepository {
   _FailingRepository(Dio dio) : super(dio);
 
   @override
-  Future<FailureReportSaveResult> submitReport(FailureReportModel report) {
+  Future<ComplaintSaveResult> submitComplaint(ComplaintModel report) {
     throw const ApiException(ApiFailure.server);
   }
 }
