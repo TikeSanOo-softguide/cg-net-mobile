@@ -1,6 +1,7 @@
 import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/core/network/auth_api/auth_api.dart';
 import 'package:cg_net_mobile/core/push/push_notification_service.dart';
+import 'package:cg_net_mobile/core/storage/local_prefs/local_prefs.dart';
 import 'package:cg_net_mobile/core/storage/secure_storage/secure_storage.dart';
 import 'package:cg_net_mobile/data/profile/profile_repository.dart';
 import 'package:cg_net_mobile/models/user_model/user_model.dart';
@@ -10,6 +11,7 @@ import 'package:cg_net_mobile/pages/profile/profile/profile_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _TestSecureStorage implements SecureStorage {
   int clearTokenCalls = 0;
@@ -96,6 +98,9 @@ void main() {
   });
 
   test('clears the local session after the logout API succeeds', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
     final storage = _TestSecureStorage();
     final push = _TestPushNotificationService();
     final container = ProviderContainer(
@@ -104,6 +109,7 @@ void main() {
         authApiProvider.overrideWithValue(_TestAuthApi(null)),
         pushNotificationServiceProvider.overrideWithValue(push),
         profileRepositoryProvider.overrideWithValue(_TestProfileRepository()),
+        sharedPreferencesProvider.overrideWithValue(preferences),
       ],
     );
     addTearDown(container.dispose);

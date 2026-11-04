@@ -206,11 +206,11 @@ void main() {
       {"data":[{"id":"announcement-1","category":"announcement","title":{"en":"Hello","my":"မင်္ဂလာပါ","zh":"你好"},"body":{"en":"Body","my":"စာ","zh":"内容"},"created_at":"2026-10-02T09:00:00.000000Z","is_read":false}]}
     ''');
 
-    final items = await InboxRepository(dio).fetch();
+    final result = await InboxRepository(dio).fetch();
 
-    expect(items, hasLength(1));
-    expect(items.single.category, InboxCategory.announcement);
-    expect(items.single.titleFor('my'), 'မင်္ဂလာပါ');
+    expect(result.items, hasLength(1));
+    expect(result.items.single.category, InboxCategory.announcement);
+    expect(result.items.single.titleFor('my'), 'မင်္ဂလာပါ');
   });
 
   test('inbox repository reads notification read state and marks it read', () async {
@@ -219,13 +219,13 @@ void main() {
     dio.httpClientAdapter = adapter;
     final repository = InboxRepository(dio);
 
-    final items = await repository.fetch();
+    final result = await repository.fetch();
 
     expect(adapter.paths, ['/notifications']);
-    expect(items.single.id, '12');
-    expect(items.single.isRead, isFalse);
-    expect(items.single.category, InboxCategory.system);
-    expect(items.single.titleFor('en'), 'Bill due');
+    expect(result.items.single.id, '12');
+    expect(result.items.single.isRead, isFalse);
+    expect(result.items.single.category, InboxCategory.system);
+    expect(result.items.single.titleFor('en'), 'Bill due');
 
     await repository.markAsRead('12');
 
