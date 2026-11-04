@@ -44,6 +44,7 @@ class ApiEndpoints {
   static String notificationRead(String id) => '/notifications/$id/read';
   static const String deviceTokens = '/device-tokens';
   static const String availablePlans = '/web-app/packages';
+  static const String cgNetProducts = '/web-app/cg-net-products';
   static const String banners = '/web-app/banners';
   static const String appVersion = '/app-version';
   static const String changePassword = '/change-password';
