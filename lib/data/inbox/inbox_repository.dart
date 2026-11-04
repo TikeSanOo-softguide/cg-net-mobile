@@ -19,11 +19,12 @@ class InboxRepository {
   final Dio _dio;
   final SharedPreferences? _preferences;
 
-  Future<List<InboxMessageModel>> fetch({CancelToken? cancelToken}) async {
+  Future<InboxFetchResult> fetch({CancelToken? cancelToken}) async {
     try {
       final items = <InboxMessageModel>[];
       var page = 1;
       var lastPage = 1;
+      var unreadCount = 0;
       do {
         final response = await _dio.get<dynamic>(
           ApiEndpoints.notifications,
@@ -31,6 +32,7 @@ class InboxRepository {
           cancelToken: cancelToken,
         );
         final data = response.data;
+        if (page == 1) unreadCount = unreadCountOf(data);
         final list = data is Map && data['data'] is List
             ? data['data'] as List
             : const [];
@@ -41,15 +43,33 @@ class InboxRepository {
             ),
           ),
         );
-        lastPage = data is Map
-            ? int.tryParse('${data['last_page'] ?? 1}') ?? 1
-            : 1;
+        lastPage =
+            data is Map ? int.tryParse('${data['last_page'] ?? 1}') ?? 1 : 1;
         page++;
       } while (page <= lastPage && page <= 10);
-      return items;
+      return InboxFetchResult(items: items, unreadCount: unreadCount);
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  /// Badge reconcile. Does not replace the cached message list.
+  Future<int> fetchUnreadCount({CancelToken? cancelToken}) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.notifications,
+        queryParameters: {'page': 1},
+        cancelToken: cancelToken,
+      );
+      return unreadCountOf(response.data);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  static int unreadCountOf(dynamic data) {
+    if (data is! Map) return 0;
+    return int.tryParse('${data['unread_count']}') ?? 0;
   }
 
   /// `null` means this device has never stored an inbox.
@@ -93,6 +113,13 @@ class InboxRepository {
       throw ApiException.fromDio(error);
     }
   }
+}
+
+class InboxFetchResult {
+  const InboxFetchResult({required this.items, required this.unreadCount});
+
+  final List<InboxMessageModel> items;
+  final int unreadCount;
 }
 
 final inboxRepositoryProvider = Provider<InboxRepository>((ref) {

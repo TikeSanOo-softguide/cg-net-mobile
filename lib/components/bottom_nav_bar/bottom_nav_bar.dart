@@ -11,6 +11,7 @@ import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 import '../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../pages/inbox/inbox_list/inbox_list_controller.dart';
+import '../../pages/inbox/inbox_list/inbox_unread_count.dart';
 import '../../pages/profile/profile/profile_controller.dart';
 
 /// Common bottom navigation — light surface + soft glass selected pill.
@@ -36,6 +37,7 @@ class BottomNavBar extends ConsumerWidget {
     final index = navigationShell.currentIndex;
     final locale = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
+    final unreadCount = ref.watch(inboxUnreadCountProvider);
 
     const navTopRadius = BorderRadius.vertical(
       top: Radius.circular(AppStyle.radiusCurve),
@@ -128,6 +130,8 @@ class BottomNavBar extends ConsumerWidget {
                                     icon: _items[i].$1,
                                     label: context.tr(_items[i].$2),
                                     selected: index == i,
+                                    badgeCount:
+                                        i == _inboxIndex ? unreadCount : 0,
                                     onTap: () => _go(ref, i),
                                   ),
                               ],
@@ -148,6 +152,10 @@ class BottomNavBar extends ConsumerWidget {
   static const _inboxIndex = 2;
 
   void _go(WidgetRef ref, int index) {
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
     // Branches stay mounted, so Home/inbox would otherwise keep stale data.
     if (index == _homeIndex) {
       ref.read(profileControllerProvider.notifier).fetchProfile();
@@ -155,10 +163,6 @@ class BottomNavBar extends ConsumerWidget {
     if (index == _inboxIndex) {
       ref.read(inboxListControllerProvider.notifier).load(silent: true);
     }
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
   }
 }
 
@@ -168,12 +172,14 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -191,10 +197,47 @@ class _NavItem extends StatelessWidget {
             children: [
               SizedBox(
                 height: 28,
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: AppStyle.bottomNavIconSize,
+                width: 36,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      color: color,
+                      size: AppStyle.bottomNavIconSize,
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD90000),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.surface,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            badgeCount > 99 ? '99+' : '$badgeCount',
+                            style: AppTheme.english(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onPrimary,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppStyle.bottomNavIconGap),

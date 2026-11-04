@@ -1,3 +1,5 @@
+import '../../core/utils/image_url_helper.dart';
+
 enum InboxCategory { announcement, system, promotion }
 
 class InboxMessageModel {
@@ -10,6 +12,7 @@ class InboxMessageModel {
     this.detailKey,
     this.titles,
     this.bodies,
+    this.imageUrl,
     this.isRead = false,
     this.isFailure = false,
   });
@@ -20,6 +23,7 @@ class InboxMessageModel {
   final String? detailKey;
   final Map<String, String>? titles;
   final Map<String, String>? bodies;
+  final String? imageUrl;
   final DateTime createdAt;
   final InboxCategory category;
   final bool isRead;
@@ -35,6 +39,7 @@ class InboxMessageModel {
       detailKey: detailKey,
       titles: titles,
       bodies: bodies,
+      imageUrl: imageUrl,
       isRead: isRead ?? this.isRead,
       isFailure: isFailure,
     );
@@ -63,6 +68,7 @@ class InboxMessageModel {
       bodies: bodies.isEmpty
           ? (bodyText.isEmpty ? null : {'en': bodyText})
           : bodies,
+      imageUrl: ImageUrlHelper.resolve(json),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),
       category: category,
@@ -76,6 +82,7 @@ class InboxMessageModel {
       'id': id,
       'title': titles ?? titleKey,
       'body': bodies ?? (detailKey ?? bodyKey),
+      'image_url': imageUrl,
       'created_at': createdAt.toIso8601String(),
       'category': switch (category) {
         InboxCategory.announcement => 'announcement',

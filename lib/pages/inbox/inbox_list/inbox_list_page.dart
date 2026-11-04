@@ -117,9 +117,8 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
               loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
               error: (e, _) => EmptyState(
                 icon: LucideIcons.wifi_off,
-                iconAsset: isOfflineError(e)
-                    ? null
-                    : InboxCategoryIcon.messageAsset,
+                iconAsset:
+                    isOfflineError(e) ? null : InboxCategoryIcon.messageAsset,
                 title: isOfflineError(e)
                     ? 'shared.no_internet_title'.tr()
                     : 'common.error'.tr(),
@@ -316,92 +315,103 @@ class _InboxCard extends StatelessWidget {
       bordered: false,
       padding: EdgeInsets.zero,
       borderRadius: AppStyle.borderRadiusSm,
-      child: ClipRRect(
-        borderRadius: AppStyle.borderRadiusSm,
-        child: IntrinsicHeight(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (unread)
-              Container(
-                width: 4,
-                color: AppColors.primary,
-              ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(unread ? 12 : 14, 14, 14, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    InboxCategoryIcon(
-                      category: item.category,
-                      isFailure: item.isFailure,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.titles == null
-                                      ? item.titleKey.tr()
-                                      : item.titleFor(locale.languageCode),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTheme.english(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    color: item.isFailure
-                                        ? InboxCategoryIcon.failureColor
-                                        : AppColors.primary,
-                                    height: 1.25,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                DateFormat.MMMd(locale.toString())
-                                    .format(item.createdAt),
-                                style: AppTheme.english(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: unread
-                                      ? AppColors.primary
-                                      : AppColors.textMuted,
-                                ),
-                              ),
-                            ],
+            SizedBox(
+              width: 38,
+              height: 38,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  InboxCategoryIcon(
+                    category: item.category,
+                    isFailure: item.isFailure,
+                  ),
+                  if (unread)
+                    const Positioned(
+                      top: -2,
+                      left: -2,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          border: Border.fromBorderSide(
+                            BorderSide(color: AppColors.surface, width: 1.5),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            item.bodies == null
-                                ? item.bodyKey.tr()
-                                : item.bodyFor(locale.languageCode),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.english(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0,
-                              color: AppColors.textMuted,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
+                        ),
+                        child: SizedBox(width: 10, height: 10),
                       ),
                     ),
-                  ],
-                ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.titles == null
+                              ? item.titleKey.tr()
+                              : item.titleFor(locale.languageCode),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.english(
+                            fontSize: 16,
+                            fontWeight:
+                                unread ? FontWeight.w600 : FontWeight.w400,
+                            letterSpacing:
+                                locale.languageCode == 'my' ? 0 : 0.2,
+                            color: item.isFailure
+                                ? InboxCategoryIcon.failureColor
+                                : AppColors.primary,
+                            height: locale.languageCode == 'my'
+                                ? AppTheme.lineHeightMyanmarSafe
+                                : 1.25,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat.MMMd(locale.toString())
+                            .format(item.createdAt),
+                        style: AppTheme.english(
+                          fontSize: 11,
+                          fontWeight:
+                              unread ? FontWeight.w600 : FontWeight.w500,
+                          color:
+                              unread ? AppColors.primary : AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.bodies == null
+                        ? item.bodyKey.tr()
+                        : item.bodyFor(locale.languageCode),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      fontSize: 14,
+                      fontWeight: unread ? FontWeight.w500 : FontWeight.w400,
+                      letterSpacing: 0,
+                      color: AppColors.textMuted,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ),
       ),
     );
   }

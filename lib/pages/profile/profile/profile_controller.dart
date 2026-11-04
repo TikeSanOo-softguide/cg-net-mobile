@@ -8,6 +8,7 @@ import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../data/inbox/inbox_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
+import '../../inbox/inbox_list/inbox_unread_count.dart';
 import '../../home/home/bound_broadband.dart';
 import '../../home/home/bound_broadband_provider.dart';
 
@@ -141,6 +142,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
     }
     await _secureStorage.clearToken();
     await _ref.read(inboxRepositoryProvider).clearCache();
+    _ref.read(inboxUnreadCountProvider.notifier).clear();
     clearProfile();
   }
 }

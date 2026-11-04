@@ -60,103 +60,99 @@ class _InboxDetailPageState extends ConsumerState<InboxDetailPage> {
           final dateText = DateFormat.yMMMd(context.locale.toString())
               .add_jm()
               .format(item.createdAt);
+          final isMy = context.locale.languageCode == 'my';
+          final accent = item.isFailure
+              ? InboxCategoryIcon.failureColor
+              : AppColors.primary;
+          final accentSoft = item.isFailure
+              ? InboxCategoryIcon.failureSoft
+              : AppColors.primaryLight;
+          final imageUrl = item.imageUrl?.trim();
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
             children: [
               AppCard(
-                elevated: false,
+                elevated: true,
                 bordered: false,
-                borderRadius: AppStyle.borderRadiusSm,
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+                borderRadius: AppStyle.borderRadiusMd,
+                padding: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        InboxCategoryIcon(
-                          category: item.category,
-                          isFailure: item.isFailure,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.titles == null
-                                    ? item.titleKey.tr()
-                                    : item.titleFor(
-                                        context.locale.languageCode,
-                                      ),
-                                style: AppTheme.english(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.2,
-                                  color: item.isFailure
-                                      ? InboxCategoryIcon.failureColor
-                                      : AppColors.primary,
-                                  height: 1.3,
+                    if (imageUrl != null && imageUrl.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppStyle.radiusMd),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                            filterQuality: FilterQuality.high,
+                            errorBuilder: (_, __, ___) => const ColoredBox(
+                              color: AppColors.primaryLight,
+                              child: Center(
+                                child: Icon(
+                                  LucideIcons.image,
+                                  color: AppColors.primary,
+                                  size: 28,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 6,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: item.isFailure
-                                          ? InboxCategoryIcon.failureSoft
-                                          : AppColors.primarySoft,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      _categoryLabel(item.category),
-                                      style: AppTheme.english(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: item.isFailure
-                                            ? InboxCategoryIcon.failureColor
-                                            : AppColors.primary,
-                                      ),
-                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              InboxCategoryIcon(
+                                category: item.category,
+                                isFailure: item.isFailure,
+                                size: 28,
+                                iconSize: 16,
+                              ),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: accentSoft,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  _categoryLabel(item.category),
+                                  style: AppTheme.english(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: isMy ? 0 : 0.2,
+                                    color: accent,
                                   ),
-                                  Text(
-                                    item.isRead
-                                        ? 'inbox.status_read'.tr()
-                                        : 'inbox.status_unread'.tr(),
-                                    style: AppTheme.english(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: item.isRead
-                                          ? AppColors.textMuted
-                                          : AppColors.primary,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        const Icon(
-                          LucideIcons.calendar_clock,
-                          size: 14,
-                          color: AppColors.textMuted,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
+                          const SizedBox(height: 16),
+                          Text(
+                            item.titles == null
+                                ? item.titleKey.tr()
+                                : item.titleFor(context.locale.languageCode),
+                            style: AppTheme.english(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: isMy ? 0 : 0.2,
+                              color: accent,
+                              height:
+                                  isMy ? AppTheme.lineHeightMyanmarSafe : 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
                             dateText,
                             style: AppTheme.english(
                               fontSize: 12,
@@ -164,31 +160,32 @@ class _InboxDetailPageState extends ConsumerState<InboxDetailPage> {
                               color: AppColors.textMuted,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Divider(height: 1, color: AppColors.borderLight),
-                    const SizedBox(height: 14),
-                    Text(
-                      'inbox.detail_body_label'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      item.bodies == null
-                          ? (item.detailKey ?? item.bodyKey).tr()
-                          : item.bodyFor(context.locale.languageCode),
-                      style: AppTheme.english(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 0,
-                        color: AppColors.textPrimary,
-                        height: 1.55,
+                          const SizedBox(height: 16),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundAlt,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(14, 14, 14, 16),
+                              child: Text(
+                                item.bodies == null
+                                    ? (item.detailKey ?? item.bodyKey).tr()
+                                    : item.bodyFor(
+                                        context.locale.languageCode,
+                                      ),
+                                style: AppTheme.english(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: 0,
+                                  color: AppColors.textPrimary,
+                                  height: 1.65,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

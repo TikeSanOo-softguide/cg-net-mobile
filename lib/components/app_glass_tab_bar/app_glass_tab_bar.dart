@@ -93,8 +93,8 @@ class AppGlassTabBar extends StatelessWidget {
                                         maxLines: 1,
                                         softWrap: false,
                                         style: AppTheme.english(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
                                           color: Color.lerp(
                                             AppColors.textMuted,
                                             AppColors.primary,

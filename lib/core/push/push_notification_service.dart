@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/push/device_token_repository.dart';
+import '../../pages/inbox/inbox_list/inbox_unread_count.dart';
 import '../network/auth_interceptor/auth_interceptor.dart';
 import '../router/app_router/app_router.dart';
 import '../router/route_names/route_names.dart';
@@ -115,6 +116,10 @@ class PushNotificationService {
     if (title == null || title.isEmpty) return;
     final body = message.notification?.body;
     final now = DateTime.now();
+    final unreadCount = int.tryParse(message.data['unread_count'] ?? '');
+    if (unreadCount != null) {
+      _ref.read(inboxUnreadCountProvider.notifier).setCount(unreadCount);
+    }
 
     _ref.read(inAppNoticeProvider.notifier).state = InAppNotice(
       id: message.messageId ?? '${now.microsecondsSinceEpoch}',
