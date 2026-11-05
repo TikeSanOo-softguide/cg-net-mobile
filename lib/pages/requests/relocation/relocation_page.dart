@@ -3,18 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../components/app_button/app_button.dart';
+import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
 import '../../../components/app_card/app_card.dart';
-import '../../../components/app_circle_icon_button/app_circle_icon_button.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
-import '../../../components/app_input/app_input.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/date_time_format.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
+import 'relocation_form_page.dart';
 
 class RelocationPage extends ConsumerStatefulWidget {
   const RelocationPage({super.key});
@@ -37,27 +37,25 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       ref.read(relocationControllerProvider.notifier).fetchRequests();
 
   Future<void> _openForm([RelocationRequestModel? request]) async {
-    final savedRequest = await showModalBottomSheet<RelocationRequestModel>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _RelocationFormSheet(request: request),
+    final savedRequest =
+        await Navigator.of(context).push<RelocationRequestModel>(
+      MaterialPageRoute<RelocationRequestModel>(
+        builder: (_) => RelocationFormPage(request: request),
+      ),
     );
 
     if (!mounted || savedRequest == null) return;
 
-    if (request != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('relocation.update_success'.tr())),
-      );
-      return;
-    }
-
     await showAppSuccessModal(
       context,
-      title: 'relocation.submit_success_title'.tr(),
-      body: 'relocation.submit_success_body'.tr(),
+      title: request == null
+          ? 'relocation.submit_success_title'.tr()
+          : 'common.success'.tr(),
+      body: request == null
+          ? 'relocation.submit_success_body'.tr()
+          : 'relocation.update_success'.tr(),
     );
+    if (mounted) await _refresh();
   }
 
   Future<void> _confirmAction({
@@ -67,7 +65,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       context,
       title: 'relocation.cancel_title'.tr(),
       body: 'relocation.cancel_confirm'.tr(),
-      confirmLabel: 'requests.cancel_action'.tr(),
+      confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true) return;
@@ -100,9 +98,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(relocationControllerProvider);
-    final hasRequestUnderReview = state.requests.any(
-      (request) => request.status.toLowerCase().contains('under_review'),
-    );
+    final canSubmitNewRequest = !state.requests.any(_canManageRequest);
 
     return AppCurvedScaffold(
       title: Text(
@@ -110,16 +106,9 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
-      floatingActionButton: hasRequestUnderReview
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _openForm(),
-              backgroundColor: AppColors.primary,
-              child: const Icon(
-                LucideIcons.plus,
-                color: AppColors.onPrimary,
-              ),
-            ),
+      floatingActionButton: canSubmitNewRequest
+          ? AppAddFloatingActionButton(onPressed: () => _openForm())
+          : null,
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: _buildBody(state),
@@ -168,15 +157,23 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
             padding: const EdgeInsets.all(AppStyle.spaceXxl),
             child: Column(
               children: [
-                const Icon(
-                  LucideIcons.map_pin,
-                  color: AppColors.primary,
-                  size: AppStyle.iconSizeLg,
+                ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    const Color(0xFF1B4EF5),
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(
+                    'assets/images/services/relocation.png',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
                   'relocation.no_requests'.tr(),
-                  style: AppTheme.sectionTitle(),
+                  style: AppTheme.sectionTitle(color: AppColors.primary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
@@ -192,43 +189,85 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       );
     }
 
-    final hasError = state.errorMessage != null;
-    return ListView.separated(
-      padding: const EdgeInsets.all(AppStyle.spaceLg),
-      itemCount: state.requests.length + (hasError ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceMd),
-      itemBuilder: (context, index) {
-        if (hasError && index == 0) {
-          return AppCard(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _localizedError(state.errorMessage),
-                    style: AppTheme.body(color: AppColors.error),
+    final hasError =
+        state.status == RelocationStatus.error && state.errorMessage != null;
+    final underReview = state.requests
+        .where((request) =>
+            _statusKey(request) == 'pending' ||
+            _statusKey(request) == 'under_review')
+        .toList();
+    final approved = state.requests
+        .where((request) => _statusKey(request) == 'approved')
+        .toList();
+    final closed = state.requests
+        .where((request) =>
+            _statusKey(request) == 'cancelled' ||
+            _statusKey(request) == 'rejected')
+        .toList();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        80,
+      ),
+      children: [
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppStyle.spaceMd),
+            child: AppCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _localizedError(state.errorMessage),
+                      style: AppTheme.body(color: AppColors.error),
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: _refresh,
-                  child: Text('common.retry'.tr()),
-                ),
-              ],
+                  TextButton(
+                    onPressed: _refresh,
+                    child: Text('common.retry'.tr()),
+                  ),
+                ],
+              ),
             ),
-          );
-        }
-        final requestIndex = index - (hasError ? 1 : 0);
-        final request = state.requests[requestIndex];
-        return _RelocationRequestCard(
-          request: request,
-          onEdit: () => _openForm(request),
-          onCancel: () => _confirmAction(request: request),
-        );
-      },
+          ),
+        ..._relocationCards(
+          [...underReview, ...approved, ...closed],
+          (request) => _RelocationRequestCard(
+            request: request,
+            onEdit: () => _openForm(request),
+            onCancel: () => _confirmAction(request: request),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _RelocationRequestCard extends StatelessWidget {
+String _statusKey(RelocationRequestModel request) =>
+    request.status.toLowerCase().replaceAll(' ', '_');
+
+bool _canManageRequest(RelocationRequestModel request) {
+  final status = _statusKey(request);
+  return status == 'pending' || status == 'under_review';
+}
+
+List<Widget> _relocationCards(
+  List<RelocationRequestModel> requests,
+  Widget Function(RelocationRequestModel request) cardFor,
+) {
+  return [
+    for (var index = 0; index < requests.length; index++) ...[
+      cardFor(requests[index]),
+      if (index != requests.length - 1)
+        const SizedBox(height: AppStyle.spaceSm),
+    ],
+  ];
+}
+
+class _RelocationRequestCard extends StatefulWidget {
   const _RelocationRequestCard({
     required this.request,
     required this.onEdit,
@@ -239,18 +278,26 @@ class _RelocationRequestCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onCancel;
 
+  @override
+  State<_RelocationRequestCard> createState() => _RelocationRequestCardState();
+}
+
+class _RelocationRequestCardState extends State<_RelocationRequestCard> {
+  bool _expanded = false;
+
   bool get _canManage {
-    final normalized = request.status.toLowerCase().replaceAll(' ', '_');
-    return normalized == 'pending' || normalized == 'under_review';
+    return _canManageRequest(widget.request);
   }
 
   Color get _statusColor {
-    switch (request.status.toLowerCase()) {
+    switch (_statusKey(widget.request)) {
+      case 'pending':
       case 'under_review':
         return AppColors.warning;
       case 'approved':
         return AppColors.success;
       case 'cancelled':
+      case 'rejected':
         return AppColors.error;
       default:
         return AppColors.textMuted;
@@ -258,113 +305,244 @@ class _RelocationRequestCard extends StatelessWidget {
   }
 
   String get _statusLabel {
-    switch (request.status.toLowerCase()) {
+    switch (_statusKey(widget.request)) {
+      case 'pending':
       case 'under_review':
         return 'requests.status_under_review'.tr();
       case 'approved':
         return 'requests.status_approved'.tr();
       case 'cancelled':
         return 'requests.status_cancelled'.tr();
+      case 'rejected':
+        return 'requests.status_rejected'.tr();
       default:
-        return request.status;
+        return widget.request.status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : DateFormat('yyyy.MM.dd HH:mm').format(request.createdAt!.toLocal());
+        : formatDateTime(
+            request.createdAt!.toLocal().toIso8601String(),
+          );
     final preferredDate = request.preferredDate == null
         ? null
-        : DateFormat.yMMMd(context.locale.toString())
-            .format(request.preferredDate!.toLocal());
+        : formatDate(
+            request.preferredDate!.toLocal().toIso8601String(),
+          );
 
     return AppCard(
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.all(AppStyle.spaceMd),
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppStyle.spaceSm,
-                  vertical: AppStyle.spaceXs,
-                ),
-                decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.12),
-                  borderRadius: AppStyle.borderRadiusInput,
-                ),
-                child: Text(
-                  _statusLabel,
-                  style: AppTheme.caption(
-                    color: _statusColor,
-                    weight: FontWeight.w600,
-                  ),
-                ),
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: _statusColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
               ),
-              const Spacer(),
-              if (createdAt != null)
-                Text(
-                  createdAt,
-                  style: AppTheme.caption(),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppStyle.spaceMd),
-          if (request.broadbandAccountNumber?.isNotEmpty == true)
-            _RequestDetail(
-              label: 'requests.broadband_account'.tr(),
-              value: request.broadbandAccountNumber!,
             ),
-          _RequestDetail(
-            label: 'relocation.new_address'.tr(),
-            value: request.newAddress,
           ),
-          if (preferredDate != null)
-            _RequestDetail(
-              label: 'relocation.preferred_date'.tr(),
-              value: preferredDate,
-            ),
-          if (_canManage || request.id.isNotEmpty) ...[
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: AppStyle.spaceXs,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_canManage) const Divider(height: AppStyle.spaceXxl),
-                if (_canManage)
-                  AppCircleIconButton(
-                    onPressed: onEdit,
-                    icon: LucideIcons.pencil,
-                    backgroundColor: AppColors.primary,
-                    iconSize: AppStyle.iconSizeSm,
-                    borderRadius: AppStyle.radiusButton,
-                  ),
-                if (_canManage)
-                  Tooltip(
-                    message: 'relocation.cancel_action'.tr(),
-                    child: AppCircleIconButton(
-                      onPressed: onCancel,
-                      icon: LucideIcons.trash,
-                      backgroundColor: AppColors.error,
-                      iconSize: AppStyle.iconSizeSm,
-                      borderRadius: AppStyle.radiusButton,
+                Row(
+                  children: [
+                    Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _statusLabel,
+                        style: AppTheme.caption(
+                          color: _statusColor,
+                          weight: FontWeight.w600,
+                        ).copyWith(fontSize: 10, height: 1),
+                      ),
                     ),
-                  ),
+                    const Spacer(),
+                    if (createdAt != null)
+                      Text(
+                        createdAt,
+                        style: AppTheme.caption(color: AppColors.textPrimary)
+                            .copyWith(fontSize: 11),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _RelocationTicketRow(ticketNumber: request.ticketNumber),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: _expanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Column(
+                            children: [
+                              if (request.broadbandAccountNumber
+                                      ?.trim()
+                                      .isNotEmpty ==
+                                  true)
+                                _RelocationDetail(
+                                  label: 'requests.broadband_account'.tr(),
+                                  value: request.broadbandAccountNumber!,
+                                ),
+                              _RelocationDetail(
+                                label: 'requests.phone'.tr(),
+                                value: request.phone,
+                              ),
+                              _RelocationDetail(
+                                label: 'relocation.current_address'.tr(),
+                                value: request.currentAddress,
+                              ),
+                              _RelocationDetail(
+                                label: 'relocation.new_address'.tr(),
+                                value: request.newAddress,
+                              ),
+                              if (preferredDate != null)
+                                _RelocationDetail(
+                                  label: 'relocation.preferred_date'.tr(),
+                                  value: preferredDate,
+                                ),
+                              if (request.details?.trim().isNotEmpty == true)
+                                _RelocationDetail(
+                                  label: 'relocation.details'.tr(),
+                                  value: request.details!,
+                                ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      borderRadius: BorderRadius.circular(8),
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _expanded
+                                  ? 'common.see_less'.tr()
+                                  : 'common.see_more'.tr(),
+                              style: AppTheme.caption(
+                                color: AppColors.primary,
+                                weight: FontWeight.w600,
+                              ).copyWith(fontSize: 10),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              _expanded
+                                  ? LucideIcons.chevron_up
+                                  : LucideIcons.chevron_down,
+                              size: 12,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_canManage) ...[
+                      const Spacer(),
+                      Material(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                        child: InkWell(
+                          onTap: widget.onEdit,
+                          borderRadius: BorderRadius.circular(6),
+                          child: const SizedBox(
+                            width: 26,
+                            height: 24,
+                            child: Center(
+                              child: Image(
+                                image: AssetImage(
+                                  'assets/images/profile/edit.png',
+                                ),
+                                width: 14,
+                                height: 14,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: 'relocation.cancel_action'.tr(),
+                        child: _RelocationActionButton(
+                          onPressed: widget.onCancel,
+                          icon: LucideIcons.trash,
+                          color: AppColors.error,
+                          background: const Color(0xFFF8E8E6),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _RequestDetail extends StatelessWidget {
-  const _RequestDetail({
+class _RelocationActionButton extends StatelessWidget {
+  const _RelocationActionButton({
+    required this.icon,
+    required this.onPressed,
+    required this.color,
+    required this.background,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(6),
+        child: SizedBox(
+          width: 26,
+          height: 24,
+          child: Icon(icon, size: 14, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelocationDetail extends StatelessWidget {
+  const _RelocationDetail({
     required this.label,
     required this.value,
   });
@@ -374,21 +552,24 @@ class _RequestDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppStyle.spaceSm),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label : ',
-            style: AppTheme.caption(),
+          SizedBox(
+            width: 108,
+            child: Text(label, style: AppTheme.caption()),
           ),
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.right,
               style: AppTheme.body(
+                weight: FontWeight.w500,
                 color: AppColors.textPrimary,
-              ),
+              ).copyWith(fontSize: 12),
             ),
           ),
         ],
@@ -397,285 +578,59 @@ class _RequestDetail extends StatelessWidget {
   }
 }
 
-class _RelocationFormSheet extends ConsumerStatefulWidget {
-  const _RelocationFormSheet({this.request});
+class _RelocationTicketRow extends StatelessWidget {
+  const _RelocationTicketRow({required this.ticketNumber});
 
-  final RelocationRequestModel? request;
-
-  @override
-  ConsumerState<_RelocationFormSheet> createState() =>
-      _RelocationFormSheetState();
-}
-
-class _RelocationFormSheetState extends ConsumerState<_RelocationFormSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _accountController;
-  late final TextEditingController _currentAddressController;
-  late final TextEditingController _newAddressController;
-  late final TextEditingController _phoneController;
-  late final TextEditingController _detailsController;
-  late final TextEditingController _preferredDateController;
-  DateTime? _preferredDate;
-
-  @override
-  void initState() {
-    super.initState();
-    final profile = ref.read(profileControllerProvider);
-    final request = widget.request;
-    _accountController = TextEditingController(
-      text: request == null
-          ? profile.accountNumber
-          : request.broadbandAccountNumber ?? '',
-    );
-    _currentAddressController =
-        TextEditingController(text: request?.currentAddress ?? '');
-    _newAddressController =
-        TextEditingController(text: request?.newAddress ?? '');
-    _phoneController =
-        TextEditingController(text: request?.phone ?? profile.displayPhone);
-    _detailsController = TextEditingController(text: request?.details ?? '');
-    _preferredDate = request?.preferredDate;
-    _preferredDateController = TextEditingController(
-      text: _preferredDate == null
-          ? ''
-          : DateFormat.yMMMd(context.locale.toString()).format(_preferredDate!),
-    );
-  }
-
-  @override
-  void dispose() {
-    _accountController.dispose();
-    _currentAddressController.dispose();
-    _newAddressController.dispose();
-    _phoneController.dispose();
-    _detailsController.dispose();
-    _preferredDateController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectPreferredDate() async {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final initialDate =
-        _preferredDate == null || _preferredDate!.isBefore(today)
-            ? today
-            : _preferredDate!;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: today,
-      lastDate: DateTime(today.year + 5),
-    );
-    if (picked != null && mounted) {
-      setState(() => _preferredDate = picked);
-      _preferredDateController.text =
-          DateFormat.yMMMd(context.locale.toString()).format(picked);
-    }
-  }
-
-  void _clearPreferredDate() {
-    setState(() {
-      _preferredDate = null;
-      _preferredDateController.clear();
-    });
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    final profile = ref.read(profileControllerProvider);
-    final request = RelocationRequestModel(
-      id: widget.request?.id ?? '',
-      userId: widget.request?.userId ?? int.tryParse(profile.id) ?? 0,
-      broadbandAccountNumber: _accountController.text.trim().isEmpty
-          ? null
-          : _accountController.text.trim(),
-      currentAddress: _currentAddressController.text.trim(),
-      newAddress: _newAddressController.text.trim(),
-      preferredDate: _preferredDate,
-      phone: _phoneController.text.trim(),
-      details: _detailsController.text.trim().isEmpty
-          ? null
-          : _detailsController.text.trim(),
-      status: widget.request?.status ?? 'under_review',
-    );
-    final savedRequest = await ref
-        .read(relocationControllerProvider.notifier)
-        .saveRequest(request);
-    if (savedRequest != null && mounted) {
-      Navigator.of(context).pop(savedRequest);
-    }
-  }
+  final String? ticketNumber;
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileControllerProvider);
-    final state = ref.watch(relocationControllerProvider);
-    if (profile.accountNumber.isNotEmpty &&
-        _accountController.text != profile.accountNumber &&
-        widget.request == null) {
-      _accountController.text = profile.accountNumber;
-    }
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppStyle.radiusCurve),
-        ),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppStyle.spaceLg,
-        AppStyle.spaceLg,
-        AppStyle.spaceLg,
-        MediaQuery.of(context).viewInsets.bottom + AppStyle.spaceLg,
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.request == null
-                            ? 'relocation.new_request'.tr()
-                            : 'relocation.edit_request'.tr(),
-                        style: AppTheme.sectionTitle(),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      icon: const Icon(LucideIcons.x),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppStyle.spaceSm),
-                AppCard(
-                  elevated: false,
-                  bordered: false,
-                  padding: const EdgeInsets.all(AppStyle.spaceMd),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppInput(
-                        controller: _accountController,
-                        label: 'requests.broadband_account'.tr(),
-                        readOnly: profile.accountNumber.isNotEmpty,
-                        enabled: profile.accountNumber.isEmpty,
-                        prefixIcon: LucideIcons.id_card,
-                        validator: _requiredField,
-                      ),
-                      const SizedBox(height: AppStyle.spaceSm),
-                      AppInput(
-                        controller: _phoneController,
-                        label: 'requests.phone'.tr(),
-                        keyboardType: TextInputType.phone,
-                        prefixIcon: LucideIcons.phone,
-                        maxLength: 16,
-                        validator: (value) =>
-                            _requiredMaxLengthField(value, 16),
-                      ),
-                      const SizedBox(height: AppStyle.spaceSm),
-                      AppInput(
-                        controller: _currentAddressController,
-                        label: 'relocation.current_address'.tr(),
-                        prefixIcon: LucideIcons.map_pin,
-                        maxLines: 2,
-                        maxLength: 5000,
-                        validator: (value) =>
-                            _requiredMaxLengthField(value, 5000),
-                      ),
-                      const SizedBox(height: AppStyle.spaceSm),
-                      AppInput(
-                        controller: _newAddressController,
-                        label: 'relocation.new_address'.tr(),
-                        prefixIcon: LucideIcons.map_pin,
-                        maxLines: 2,
-                        maxLength: 5000,
-                        validator: (value) =>
-                            _requiredMaxLengthField(value, 5000),
-                      ),
-                      const SizedBox(height: AppStyle.spaceSm),
-                      AppInput(
-                        controller: _preferredDateController,
-                        label: 'relocation.preferred_date'.tr(),
-                        hint: 'requests.choose_date'.tr(),
-                        readOnly: true,
-                        onTap: _selectPreferredDate,
-                        suffix: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_preferredDate != null)
-                              AppInput.iconChip(
-                                icon: LucideIcons.x,
-                                onTap: _clearPreferredDate,
-                              ),
-                            AppInput.iconChip(
-                              icon: LucideIcons.calendar_days,
-                              onTap: _selectPreferredDate,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppStyle.spaceXxxl),
-                      AppInput(
-                        controller: _detailsController,
-                        label: 'relocation.details'.tr(),
-                        prefixIcon: LucideIcons.notebook_pen,
-                        maxLines: 2,
-                        maxLength: 5000,
-                        validator: (value) => _maxLengthField(value, 5000),
-                      ),
-                    ],
-                  ),
-                ),
-                if (state.errorMessage != null) ...[
-                  const SizedBox(height: AppStyle.spaceSm),
-                  Text(
-                    state.errorMessage!.startsWith('api.')
-                        ? state.errorMessage!.tr()
-                        : state.errorMessage!,
-                    style: AppTheme.body(color: AppColors.error),
-                  ),
-                ],
-                const SizedBox(height: AppStyle.spaceSm),
-                AppButton(
-                  label: 'common.submit'.tr(),
-                  isLoading: state.isSubmitting,
-                  onPressed: _submit,
-                ),
-              ],
+    final ticket = ticketNumber?.trim() ?? '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 108,
+            child: Text(
+              'installationApplication.ticket_number'.tr(),
+              style: AppTheme.caption(),
             ),
           ),
-        ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ticket.isEmpty
+                  ? Text(
+                      '—',
+                      style: AppTheme.body(
+                        weight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ).copyWith(fontSize: 12),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        ticket,
+                        textAlign: TextAlign.right,
+                        style: AppTheme.body(
+                          weight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  String? _requiredField(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'requests.required'.tr();
-    }
-    return null;
-  }
-
-  String? _requiredMaxLengthField(String? value, int maxLength) {
-    final requiredError = _requiredField(value);
-    if (requiredError != null) return requiredError;
-    return _maxLengthField(value, maxLength);
-  }
-
-  String? _maxLengthField(String? value, int maxLength) {
-    if (value != null && value.runes.length > maxLength) {
-      return 'requests.max_length'.tr(
-        namedArgs: {'max': maxLength.toString()},
-      );
-    }
-    return null;
   }
 }

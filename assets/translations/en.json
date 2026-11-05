@@ -646,6 +646,7 @@
     "no_requests_desc": "Tap the + button to submit a broadband relocation request.",
     "new_request": "New relocation request",
     "edit_request": "Edit relocation request",
+    "form_desc": "Provide your current and new addresses to request a relocation.",
     "current_address": "Current address",
     "new_address": "New address",
     "preferred_date": "Preferred relocation date",

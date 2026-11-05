@@ -646,6 +646,7 @@
     "no_requests_desc": "点击 + 按钮提交宽带迁移申请。",
     "new_request": "新建迁移申请",
     "edit_request": "编辑迁移申请",
+    "form_desc": "请填写当前地址和新地址以申请宽带迁移。",
     "current_address": "当前地址",
     "new_address": "新地址",
     "preferred_date": "期望迁移日期",
