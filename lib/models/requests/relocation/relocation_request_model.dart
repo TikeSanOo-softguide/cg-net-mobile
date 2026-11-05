@@ -3,6 +3,7 @@ class RelocationRequestModel {
     required this.id,
     required this.userId,
     this.broadbandAccountNumber,
+    this.ticketNumber,
     required this.currentAddress,
     required this.newAddress,
     required this.phone,
@@ -16,6 +17,7 @@ class RelocationRequestModel {
   final String id;
   final int userId;
   final String? broadbandAccountNumber;
+  final String? ticketNumber;
   final String currentAddress;
   final String newAddress;
   final DateTime? preferredDate;
@@ -34,6 +36,7 @@ class RelocationRequestModel {
       id: data['id']?.toString() ?? '',
       userId: _toInt(data['user_id']) ?? 0,
       broadbandAccountNumber: data['broadband_account_number']?.toString(),
+      ticketNumber: data['ticket_number']?.toString(),
       currentAddress: data['current_address']?.toString() ?? '',
       newAddress: data['new_address']?.toString() ?? '',
       preferredDate:

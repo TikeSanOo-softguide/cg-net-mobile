@@ -16,6 +16,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../data/broadband/broadband_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
@@ -97,10 +98,12 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     try {
       while (true) {
         try {
-          final response = await ref.read(broadbandRepositoryProvider).connect(
-                accountNumber: bound.account,
-                serviceType: bound.serviceType,
-              );
+          final response = await LoadingHelper.runWithLoading(
+            () => ref.read(broadbandRepositoryProvider).connect(
+                  accountNumber: bound.account,
+                  serviceType: bound.serviceType,
+                ),
+          );
 
           debugPrint('BROADBAND CONNECT RESPONSE: $response');
           break;
@@ -176,10 +179,12 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     try {
       while (true) {
         try {
-          await ref.read(broadbandRepositoryProvider).unbindAccount(
-                serviceType: bound.serviceType,
-                accountNumber: bound.account,
-              );
+          await LoadingHelper.runWithLoading(
+            () => ref.read(broadbandRepositoryProvider).unbindAccount(
+                  serviceType: bound.serviceType,
+                  accountNumber: bound.account,
+                ),
+          );
 
           if (!mounted) return;
 
@@ -312,7 +317,7 @@ class _BindForm extends StatelessWidget {
             const SizedBox(height: 12),
             AppInput(
               controller: account,
-              label: 'home.broadband_account'.tr(),
+              label: '${'home.broadband_account'.tr()} *',
               hint: 'home.broadband_account_hint'.tr(),
               prefixIcon: LucideIcons.router,
               textInputAction: TextInputAction.done,
