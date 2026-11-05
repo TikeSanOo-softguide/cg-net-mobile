@@ -132,7 +132,13 @@ class _SetUsernamePasswordPageState
           navigated = true;
           await Future.delayed(const Duration(milliseconds: 350));
         },
-        dismissAnimation: false,  
+        dismissAnimation: false,
+        onBeforeDismiss: () async {
+          if (!navigated && mounted && _submitting) {
+            setState(() => _submitting = false);
+            await WidgetsBinding.instance.endOfFrame;
+          }
+        },  
       );
     } on ApiException catch (error) {
       submitError = error;

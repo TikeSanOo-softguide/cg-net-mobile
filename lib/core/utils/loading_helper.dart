@@ -33,18 +33,8 @@ class LoadingHelper {
       );
 
       final result = await task();
-
-      if (successMessage != null) {
-        await EasyLoading.showSuccess(successMessage);
-      }
-
       return result;
-    } catch (_) {
-      if (errorMessage != null) {
-        await EasyLoading.showError(errorMessage);
-      }
-      rethrow;
-    } finally {
+    }  finally {
       await onBeforeDismiss?.call();
       await EasyLoading.dismiss(animation: dismissAnimation);
     }

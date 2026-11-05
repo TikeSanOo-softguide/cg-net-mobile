@@ -384,16 +384,7 @@ class _SettingsCard extends StatelessWidget {
                 ).copyWith(fontSize: AppStyle.fontBody),
               ),
             ),
-            if (isLoading) ...[
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: titleColor ?? AppColors.primary,
-                ),
-              ),
-            ] else if (trailing != null) ...[
+            if (trailing != null) ...[
               trailing!,
             ] else ...[
               if (trailingText != null) ...[
