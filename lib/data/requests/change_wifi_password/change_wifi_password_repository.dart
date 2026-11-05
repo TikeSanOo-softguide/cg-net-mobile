@@ -36,9 +36,9 @@ class ChangeWifiPasswordRepository {
     }
   }
 
-  Future<void> cancelRequest(
-      ChangePasswordRequestModel item,
-      ) async {
+  Future<ChangeWifiPasswordCancelResult> cancelRequest(
+    ChangePasswordRequestModel item,
+  ) async {
     final requestId = item.id;
 
     if (requestId.isEmpty) {
@@ -48,31 +48,52 @@ class ChangeWifiPasswordRepository {
       );
     }
 
-    final payload = {
-      ...item.toJson(),
-      'status': 'cancelled',
-    };
+    try {
+      final response = await _dio.patch<dynamic>(
+        ApiEndpoints.cancelChangeWifiPasswordRequest(requestId),
+      );
+      return ChangeWifiPasswordCancelResult(code: _messageCode(response.data));
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<ChangeWifiPasswordSaveResult> updateRequest(
+    ChangePasswordRequestModel request,
+  ) async {
+    if (request.id.trim().isEmpty) {
+      throw const ApiException(
+        ApiFailure.unknown,
+        detail: 'Request ID is missing',
+      );
+    }
 
     try {
-      await _dio.put<dynamic>(
-        ApiEndpoints.cancelChangeWifiPasswordRequest(requestId),
-        data: payload,
+      final response = await _dio.put<dynamic>(
+        ApiEndpoints.changeWifiPasswordRequest(request.id),
+        data: request.toJson(),
+      );
+      final data = response.data;
+      return ChangeWifiPasswordSaveResult(
+        request: data is Map
+            ? ChangePasswordRequestModel.fromJson(
+                Map<String, dynamic>.from(data),
+              )
+            : request,
+        code: _messageCode(data),
       );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
 
-
-
-  Future<ChangePasswordRequestModel> submitWifiPasswordChange({
+  Future<ChangeWifiPasswordSaveResult> submitWifiPasswordChange({
     required String broadbandAccountNumber,
     required String contactName,
     required String contactPhone,
     required String newPassword,
     required int userId,
     String? newWifiName,
-
   }) async {
     final model = ChangePasswordRequestModel(
       id: '',
@@ -88,7 +109,7 @@ class ChangeWifiPasswordRepository {
     return await submitRequest(model);
   }
 
-  Future<ChangePasswordRequestModel> submitRequest(
+  Future<ChangeWifiPasswordSaveResult> submitRequest(
       ChangePasswordRequestModel request) async {
     final payload = request.toJson();
 
@@ -99,17 +120,43 @@ class ChangeWifiPasswordRepository {
       );
 
       final data = response.data;
-      if (data is Map) {
-        return ChangePasswordRequestModel.fromJson(
-          Map<String, dynamic>.from(data),
-        );
-      }
-
-      return request;
+      return ChangeWifiPasswordSaveResult(
+        request: data is Map
+            ? ChangePasswordRequestModel.fromJson(
+                Map<String, dynamic>.from(data),
+              )
+            : request,
+        code: _messageCode(data),
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
+
+  String? _messageCode(Object? data) {
+    if (data is! Map) return null;
+
+    final code = data['code']?.toString().trim();
+    if (code != null && code.isNotEmpty) return code;
+
+    return _messageCode(data['data']);
+  }
+}
+
+class ChangeWifiPasswordSaveResult {
+  const ChangeWifiPasswordSaveResult({
+    required this.request,
+    this.code,
+  });
+
+  final ChangePasswordRequestModel request;
+  final String? code;
+}
+
+class ChangeWifiPasswordCancelResult {
+  const ChangeWifiPasswordCancelResult({this.code});
+
+  final String? code;
 }
 
 final changeWifiPasswordRepositoryProvider =

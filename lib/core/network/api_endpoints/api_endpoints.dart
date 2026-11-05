@@ -66,7 +66,7 @@ class ApiEndpoints {
   static String changeWifiPasswordRequest(String requestId) =>
       '$changeWifiPasswordRequests/$requestId';
   static String cancelChangeWifiPasswordRequest(String requestId) =>
-      changeWifiPasswordRequest(requestId);
+      '${changeWifiPasswordRequest(requestId)}/cancel';
   static const String states = '/states';
   static String stateRegions(int stateId) => '/states/$stateId/regions';
   static String regionAreas(int regionId) => '/regions/$regionId/areas';

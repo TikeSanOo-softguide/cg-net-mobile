@@ -59,21 +59,67 @@ class ChangeWifiPasswordController
     }
   }
 
-  Future<bool> cancelRequest(ChangePasswordRequestModel item) async {
+  Future<ChangeWifiPasswordCancelResult?> cancelRequest(
+    ChangePasswordRequestModel item,
+  ) async {
     try {
-      await _repository.cancelRequest(item);
+      final result = await _repository.cancelRequest(item);
       await fetchRequests();
-      return true;
+      return result;
     } on ApiException catch (e) {
       state = state.copyWith(errorMessage: e.detail ?? e.messageKey);
-      return false;
+      return null;
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
-      return false;
+      return null;
     }
   }
 
-  Future<ChangePasswordRequestModel?> submitRequest({
+  Future<ChangeWifiPasswordSaveResult?> updateRequest({
+    required ChangePasswordRequestModel request,
+    required String broadbandAccount,
+    required String contactName,
+    required String contactPhone,
+    required String newPassword,
+    String? newWifiName,
+  }) async {
+    state = state.copyWith(isSubmitting: true, errorMessage: null);
+    final updatedRequest = ChangePasswordRequestModel(
+      id: request.id,
+      userId: request.userId,
+      broadbandAccountNumber: broadbandAccount,
+      contactName: contactName,
+      contactPhone: contactPhone,
+      newPassword: newPassword,
+      newWifiName: newWifiName,
+      ticketNumber: request.ticketNumber,
+      status: request.status,
+      adminId: request.adminId,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
+    );
+
+    try {
+      final savedRequest = await _repository.updateRequest(updatedRequest);
+      await fetchRequests();
+      state = state.copyWith(isSubmitting: false, errorMessage: null);
+      return savedRequest;
+    } on ApiException catch (error) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: error.detail ?? error.messageKey,
+      );
+      rethrow;
+    } catch (error) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: error.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  Future<ChangeWifiPasswordSaveResult?> submitRequest({
     required String broadbandAccount,
     required String contactName,
     required String contactPhone,
@@ -136,13 +182,17 @@ class ChangeWifiPasswordController
         return null;
       }
 
-      await fetchRequests();
-      state = state.copyWith(isSubmitting: false, errorMessage: null);
-      return model;
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: e.detail ?? e.messageKey,
+      );
+      rethrow;
     } catch (e) {
-      await fetchRequests();
-      state = state.copyWith(isSubmitting: false, errorMessage: null);
-      return model;
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: e.toString(),
+      );
+      rethrow;
     }
   }
 }

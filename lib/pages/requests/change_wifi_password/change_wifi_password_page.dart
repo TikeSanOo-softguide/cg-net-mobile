@@ -9,14 +9,35 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
-import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
+import '../../../core/network/api_message_modal.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/date_time_format.dart';
+import '../../../core/utils/loading_helper.dart';
+import '../../../data/requests/change_wifi_password/change_wifi_password_repository.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_wifi_password_controller.dart';
-import 'change_wifi_password_detail_page.dart';
+
+bool _isUnderReviewStatus(String status) {
+  final normalized =
+      status.toLowerCase().trim().replaceAll(' ', '_').replaceAll('-', '_');
+  return normalized == 'under_review' ||
+      normalized == 'pending' ||
+      normalized == 'review';
+}
+
+String _loadErrorMessage(String? errorMessage) {
+  if (errorMessage == null) return 'change_wifi.cancel_error'.tr();
+  if (errorMessage.startsWith('change_wifi.') ||
+      errorMessage.startsWith('api.') ||
+      errorMessage.startsWith('common.')) {
+    return errorMessage.tr();
+  }
+  return errorMessage;
+}
 
 class ChangeWifiPasswordPage extends ConsumerStatefulWidget {
   const ChangeWifiPasswordPage({super.key});
@@ -45,21 +66,29 @@ class _ChangeWifiPasswordPageState
         .fetchRequests();
   }
 
-  void _openNewRequestPage() {
+  void _openNewRequestPage({ChangePasswordRequestModel? request}) {
     Navigator.of(context)
         .push<Object?>(
       MaterialPageRoute<Object?>(
-        builder: (_) => const _NewRequestFormSheet(),
+        builder: (_) => _NewRequestFormSheet(request: request),
       ),
     )
         .then((result) async {
       if (!mounted || result == null || result == false) return;
 
-      if (result is ChangePasswordRequestModel) {
+      if (result is ChangeWifiPasswordSaveResult) {
         await showAppSuccessModal(
           context,
-          title: 'change_wifi.submitted_title'.tr(),
-          body: 'change_wifi.submitted_desc'.tr(),
+          title: request == null
+              ? 'change_wifi.submitted_title'.tr()
+              : 'common.success'.tr(),
+          body: MessageCodes.featureReqKey(
+            feature: 'change_wifi',
+            code: result.code,
+            fallbackKey: request == null
+                ? 'change_wifi.submitted_desc'
+                : 'change_wifi.update_success',
+          ).tr(),
         );
       }
 
@@ -67,25 +96,49 @@ class _ChangeWifiPasswordPageState
     });
   }
 
-  void _openRequestDetails(ChangePasswordRequestModel request) {
-    Navigator.of(context)
-        .push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => ChangeWifiPasswordDetailPage(request: request),
-      ),
-    )
-        .then((_) {
-      if (mounted) _fetchRequests();
-    });
+  Future<void> _confirmCancel(ChangePasswordRequestModel request) async {
+    final confirmed = await showAppConfirmModal(
+      context,
+      title: 'change_wifi.cancel_title'.tr(),
+      body: 'change_wifi.cancel_confirm'.tr(),
+      cancelLabel: 'common.no'.tr(),
+      confirmLabel: 'change_wifi.yes_cancel'.tr(),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final result = await ref
+        .read(changeWifiPasswordControllerProvider.notifier)
+        .cancelRequest(request);
+    if (!mounted) return;
+
+    if (result == null) {
+      final errorMessage =
+          ref.read(changeWifiPasswordControllerProvider).errorMessage;
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: _loadErrorMessage(errorMessage),
+      );
+      return;
+    }
+
+    await showAppSuccessModal(
+      context,
+      title: 'common.success'.tr(),
+      body: MessageCodes.featureReqKey(
+        feature: 'change_wifi',
+        code: result.code,
+        fallbackKey: 'change_wifi.cancel_success',
+      ).tr(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final title = 'home.service_change_wifi'.tr();
     final requests = ref.watch(changeWifiPasswordControllerProvider).requests;
-    final hasUnderReviewRequest = requests.any(
-      (request) => request.status.toLowerCase().trim() == 'under_review',
-    );
+    final hasUnderReviewRequest =
+        requests.any((request) => _isUnderReviewStatus(request.status));
 
     return AppCurvedScaffold(
       title: Text(
@@ -122,36 +175,33 @@ class _ChangeWifiPasswordPageState
           AppCard(
             elevated: false,
             bordered: false,
-            padding: const EdgeInsets.symmetric(
-              vertical: AppStyle.spaceXxl,
-              horizontal: AppStyle.spaceLg,
-            ),
+            padding: const EdgeInsets.all(AppStyle.spaceXxl),
             child: Column(
               children: [
-                const QuickActionIconChip(
-                  asset: 'assets/images/services/change_wifi.png',
-                  background: AppColors.primaryLight,
-                  tint: Color(0xFFF25912),
-                  size: 54,
-                  iconSize: 36,
+                ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFF25912),
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(
+                    'assets/images/services/change_wifi.png',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
                 const SizedBox(height: AppStyle.spaceMd),
                 Text(
                   'change_wifi.no_requests'.tr(),
-                  style: AppTheme.english(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppTheme.sectionTitle(color: AppColors.primary),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 Text(
                   'change_wifi.no_requests_desc'.tr(),
                   textAlign: TextAlign.center,
-                  style: AppTheme.body(
-                    color: AppColors.textMuted,
-                    weight: FontWeight.w400,
-                  ).copyWith(fontSize: 13),
+                  style: AppTheme.bodySecondary(),
                 ),
               ],
             ),
@@ -160,81 +210,57 @@ class _ChangeWifiPasswordPageState
       );
     }
 
-    final underReviewRequests = requests.where((request) {
-      final status = request.status.toLowerCase().trim();
-      return status == 'under_review' ||
-          status == 'under review' ||
-          status == 'pending' ||
-          status == 'review';
-    }).toList();
-    final historyRequests = requests.where((request) {
-      final status = request.status.toLowerCase().trim();
-      return status != 'under_review' &&
-          status != 'under review' &&
-          status != 'pending' &&
-          status != 'review';
-    }).toList();
-
-    return ListView(
+    return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppStyle.spaceLg,
         AppStyle.spaceLg,
         AppStyle.spaceLg,
-        80, // Clearance for FAB
+        80,
       ),
-      children: [
-        if (underReviewRequests.isNotEmpty) ...[
-          _buildSectionTitle('change_wifi.status_under_review'.tr()),
-          for (final request in underReviewRequests) ...[
-            _RequestItemCard(
-              item: request,
-              onTap: () => _openRequestDetails(request),
-            ),
-            const SizedBox(height: AppStyle.spaceMd),
-          ],
-        ],
-        if (historyRequests.isNotEmpty) ...[
-          _buildSectionTitle('home.service_history'.tr()),
-          for (final request in historyRequests) ...[
-            _RequestItemCard(
-              item: request,
-              onTap: () => _openRequestDetails(request),
-            ),
-            const SizedBox(height: AppStyle.spaceMd),
-          ],
-        ],
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppStyle.spaceMd),
-      child: Text(
-        title,
-        style: AppTheme.english(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-        ),
-      ),
+      itemCount: requests.length,
+      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
+      itemBuilder: (context, index) {
+        final request = requests[index];
+        return _RequestItemCard(
+          item: request,
+          onEdit: _isUnderReviewStatus(request.status)
+              ? () => _openNewRequestPage(request: request)
+              : null,
+          onCancel: _isUnderReviewStatus(request.status)
+              ? () => _confirmCancel(request)
+              : null,
+        );
+      },
     );
   }
 }
 
-class _RequestItemCard extends StatelessWidget {
+class _RequestItemCard extends StatefulWidget {
   const _RequestItemCard({
     required this.item,
-    required this.onTap,
+    this.onEdit,
+    this.onCancel,
   });
 
   final ChangePasswordRequestModel item;
-  final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onCancel;
+
+  @override
+  State<_RequestItemCard> createState() => _RequestItemCardState();
+}
+
+class _RequestItemCardState extends State<_RequestItemCard> {
+  bool _expanded = false;
 
   Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (_normalizeStatus(status)) {
       case 'under_review':
+      case 'review':
       case 'pending':
+      case 'processing':
+      case 'in_progress':
+      case 'submitted':
         return AppColors.warning;
       case 'approved':
       case 'completed':
@@ -249,10 +275,13 @@ class _RequestItemCard extends StatelessWidget {
   }
 
   String _statusLabel(String status) {
-    switch (status.toLowerCase()) {
+    switch (_normalizeStatus(status)) {
       case 'under_review':
-        return 'change_wifi.status_under_review'.tr();
+      case 'review':
       case 'pending':
+      case 'processing':
+      case 'in_progress':
+      case 'submitted':
         return 'change_wifi.status_under_review'.tr();
       case 'approved':
         return 'change_wifi.status_approved'.tr();
@@ -267,81 +296,249 @@ class _RequestItemCard extends StatelessWidget {
     }
   }
 
+  String _normalizeStatus(String status) =>
+      status.toLowerCase().trim().replaceAll(' ', '_').replaceAll('-', '_');
+
   @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final statusColor = _statusColor(item.status);
 
-    final dateStr = item.createdAt != null
-        ? DateFormat('yyyy.MM.dd HH:mm').format(item.createdAt!)
-        : null;
+    final dateStr = item.createdAt == null
+        ? null
+        : formatDate(item.createdAt!.toLocal().toIso8601String());
 
     return AppCard(
       elevated: false,
       bordered: false,
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppStyle.spaceMd),
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _statusLabel(item.status),
+                        style: AppTheme.caption(
+                          color: statusColor,
+                          weight: FontWeight.w600,
+                        ).copyWith(fontSize: 10),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (dateStr != null)
+                      Text(
+                        dateStr,
+                        style: AppTheme.caption(color: AppColors.textPrimary)
+                            .copyWith(fontSize: 11),
+                      ),
+                  ],
+                ),
+                _buildDetailRow(
+                  'installationApplication.ticket_number'.tr(),
+                  item.ticketNumber?.trim().isNotEmpty == true
+                      ? item.ticketNumber!.trim()
+                      : '—',
+                  ticket: item.ticketNumber?.trim().isNotEmpty == true,
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: _expanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Column(
+                            children: [
+                              if (item.broadbandAccountNumber?.isNotEmpty ==
+                                  true)
+                                _buildDetailRow(
+                                  'change_wifi.account_number'.tr(),
+                                  item.broadbandAccountNumber!,
+                                ),
+                              _buildDetailRow(
+                                'change_wifi.contact_name'.tr(),
+                                item.contactName,
+                              ),
+                              _buildDetailRow(
+                                'change_wifi.contact_phone'.tr(),
+                                item.contactPhone,
+                              ),
+                              if (item.newWifiName?.isNotEmpty == true)
+                                _buildDetailRow(
+                                  'change_wifi.new_wifi_name_hint'.tr(),
+                                  item.newWifiName!,
+                                ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _expanded
+                                  ? 'common.see_less'.tr()
+                                  : 'common.see_more'.tr(),
+                              style: AppTheme.caption(
+                                color: AppColors.primary,
+                                weight: FontWeight.w600,
+                              ).copyWith(fontSize: 10),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              _expanded
+                                  ? LucideIcons.chevron_up
+                                  : LucideIcons.chevron_down,
+                              size: 12,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (widget.onEdit != null || widget.onCancel != null) ...[
+                      const Spacer(),
+                      if (widget.onEdit != null)
+                        Material(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                          child: InkWell(
+                            onTap: widget.onEdit,
+                            borderRadius: BorderRadius.circular(6),
+                            splashColor:
+                                AppColors.primary.withValues(alpha: 0.08),
+                            highlightColor:
+                                AppColors.primary.withValues(alpha: 0.04),
+                            child: const SizedBox(
+                              width: 26,
+                              height: 24,
+                              child: Center(
+                                child: Image(
+                                  image: AssetImage(
+                                    'assets/images/profile/edit.png',
+                                  ),
+                                  width: 14,
+                                  height: 14,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (widget.onEdit != null && widget.onCancel != null)
+                        const SizedBox(width: 8),
+                      if (widget.onCancel != null)
+                        Material(
+                          color: const Color(0xFFF8E8E6),
+                          borderRadius: BorderRadius.circular(6),
+                          child: InkWell(
+                            onTap: widget.onCancel,
+                            borderRadius: BorderRadius.circular(6),
+                            child: const SizedBox(
+                              width: 26,
+                              height: 24,
+                              child: Icon(
+                                LucideIcons.trash,
+                                size: 14,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool ticket = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  _statusLabel(item.status),
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              if (dateStr != null)
-                Text(
-                  dateStr,
-                  style: AppTheme.english(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (item.broadbandAccountNumber != null &&
-              item.broadbandAccountNumber!.isNotEmpty) ...[
-            Text(
-              'A/C: ${item.broadbandAccountNumber}',
-              style: AppTheme.english(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-          ],
-          Text(
-            '${item.contactName} (${item.contactPhone})',
-            style: AppTheme.english(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+          SizedBox(
+            width: 108,
+            child: Text(
+              label,
+              style: AppTheme.caption(),
             ),
           ),
-          if (item.newWifiName != null && item.newWifiName!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              '${'change_wifi.new_wifi_name_hint'.tr()}: ${item.newWifiName}',
-              style: AppTheme.english(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.primary,
-              ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ticket
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        value,
+                        textAlign: TextAlign.right,
+                        style: AppTheme.body(
+                          weight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ).copyWith(fontSize: 12),
+                      ),
+                    )
+                  : Text(
+                      value,
+                      textAlign: TextAlign.right,
+                      style: AppTheme.body(
+                        weight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ).copyWith(fontSize: 12),
+                    ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -349,7 +546,9 @@ class _RequestItemCard extends StatelessWidget {
 }
 
 class _NewRequestFormSheet extends ConsumerStatefulWidget {
-  const _NewRequestFormSheet();
+  const _NewRequestFormSheet({this.request});
+
+  final ChangePasswordRequestModel? request;
 
   @override
   ConsumerState<_NewRequestFormSheet> createState() =>
@@ -365,21 +564,27 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
   late final TextEditingController _wifiNameController;
   late final TextEditingController _passwordController;
 
-  bool _isChangingWifiName = true;
+  late bool _isChangingWifiName;
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
     final profile = ref.read(profileControllerProvider);
-    _broadbandAccountController =
-        TextEditingController(text: profile.accountNumber);
-    _contactNameController = TextEditingController(
-      text: profile.fullName.isNotEmpty ? profile.fullName : 'Customer',
+    final request = widget.request;
+    _broadbandAccountController = TextEditingController(
+      text: request?.broadbandAccountNumber ?? profile.accountNumber,
     );
-    _phoneController = TextEditingController(text: profile.displayPhone);
-    _wifiNameController = TextEditingController();
-    _passwordController = TextEditingController();
+    _contactNameController = TextEditingController(
+      text: request?.contactName ??
+          (profile.fullName.isNotEmpty ? profile.fullName : 'Customer'),
+    );
+    _phoneController = TextEditingController(
+      text: request?.contactPhone ?? profile.displayPhone,
+    );
+    _wifiNameController = TextEditingController(text: request?.newWifiName);
+    _passwordController = TextEditingController(text: request?.newPassword);
+    _isChangingWifiName = request?.newWifiName?.isNotEmpty ?? true;
   }
 
   @override
@@ -401,22 +606,51 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
         inputAccount.isNotEmpty ? inputAccount : profile.accountNumber;
     final userId = int.tryParse(profile.id) ?? 0;
 
-    final savedModel = await ref
-        .read(changeWifiPasswordControllerProvider.notifier)
-        .submitRequest(
-          broadbandAccount: boundAccount,
-          contactName: _contactNameController.text.trim(),
-          contactPhone: _phoneController.text.trim(),
-          newPassword: _passwordController.text.trim(),
-          newWifiName:
-              _isChangingWifiName ? _wifiNameController.text.trim() : null,
-          userId: userId,
-        );
+    final notifier = ref.read(changeWifiPasswordControllerProvider.notifier);
+    final ChangeWifiPasswordSaveResult? savedResult;
+    try {
+      savedResult = await LoadingHelper.runWithLoading(
+        () => widget.request == null
+            ? notifier.submitRequest(
+                broadbandAccount: boundAccount,
+                contactName: _contactNameController.text.trim(),
+                contactPhone: _phoneController.text.trim(),
+                newPassword: _passwordController.text.trim(),
+                newWifiName:
+                    _isChangingWifiName ? _wifiNameController.text.trim() : null,
+                userId: userId,
+              )
+            : notifier.updateRequest(
+                request: widget.request!,
+                broadbandAccount: boundAccount,
+                contactName: _contactNameController.text.trim(),
+                contactPhone: _phoneController.text.trim(),
+                newPassword: _passwordController.text.trim(),
+                newWifiName:
+                    _isChangingWifiName ? _wifiNameController.text.trim() : null,
+              ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      await showApiMessageModal(context, error);
+      return;
+    }
 
     if (!mounted) return;
 
-    if (savedModel != null) {
-      Navigator.of(context).pop(savedModel);
+    if (savedResult != null) {
+      Navigator.of(context).pop(savedResult);
+      return;
+    }
+
+    final errorMessage =
+        ref.read(changeWifiPasswordControllerProvider).errorMessage;
+    if (errorMessage != null) {
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: _loadErrorMessage(errorMessage),
+      );
     }
   }
 
@@ -438,223 +672,220 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
       _phoneController.text = profile.displayPhone;
     }
 
-    final errorMessage = controllerState.errorMessage;
-
     return AppCurvedScaffold(
       title: Text(
-        'home.service_change_wifi'.tr(),
+        widget.request == null
+            ? 'home.service_change_wifi'.tr()
+            : 'change_wifi.edit_request'.tr(),
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
-      body: Container(
-        color: AppColors.background,
-        padding: const EdgeInsets.all(AppStyle.spaceLg),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AppCard(
-                  elevated: false,
-                  bordered: false,
-                  padding: const EdgeInsets.all(AppStyle.spaceLg),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              color: AppColors.background,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppStyle.spaceLg),
+                child: Form(
+                  key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'change_wifi.form_desc'.tr(),
-                        style: AppTheme.body(
-                          color: AppColors.textSecondary,
-                          weight: FontWeight.w400,
-                        ).copyWith(fontSize: 13),
-                      ),
-                      const SizedBox(height: AppStyle.spaceLg),
-                      AppInput(
-                        controller: _broadbandAccountController,
-                        label: 'change_wifi.broadband_account'.tr(),
-                        readOnly: profile.accountNumber.isNotEmpty,
-                        enabled: profile.accountNumber.isEmpty,
-                        prefixIcon: LucideIcons.id_card,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'requests.required'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceXs),
-                      AppInput(
-                        controller: _contactNameController,
-                        label: 'change_wifi.contact_name'.tr(),
-                        prefixIcon: LucideIcons.user,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'requests.required'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceXs),
-                      AppInput(
-                        controller: _phoneController,
-                        label: 'change_wifi.contact_phone'.tr(),
-                        hint: '09 xxx xxx xxx',
-                        keyboardType: TextInputType.phone,
-                        prefixIcon: LucideIcons.phone,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'requests.required'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceXs),
-                      Text(
-                        'change_wifi.checkbox_desc'.tr(),
-                        style: AppTheme.body(
-                          color: AppColors.textSecondary,
-                          weight: FontWeight.w400,
-                        ).copyWith(fontSize: 12),
-                      ),
-                      const SizedBox(height: AppStyle.spaceSm),
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isChangingWifiName = !_isChangingWifiName;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(6),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'change_wifi.wifi_name_optional'.tr(),
-                                style: AppTheme.body(
-                                  color: AppColors.textPrimary,
-                                  weight: FontWeight.w500,
-                                ).copyWith(fontSize: 13),
-                              ),
-                              const SizedBox(width: AppStyle.spaceSm),
-                              SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: Checkbox(
-                                  value: _isChangingWifiName,
-                                  activeColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _isChangingWifiName = val ?? false;
-                                    });
-                                  },
+                      AppCard(
+                        elevated: false,
+                        bordered: false,
+                        padding: const EdgeInsets.all(AppStyle.spaceLg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'change_wifi.form_desc'.tr(),
+                              style: AppTheme.body(
+                                color: AppColors.textSecondary,
+                                weight: FontWeight.w400,
+                              ).copyWith(fontSize: 13),
+                            ),
+                            const SizedBox(height: AppStyle.spaceLg),
+                            AppInput(
+                              controller: _broadbandAccountController,
+                              label: 'change_wifi.broadband_account'.tr(),
+                              readOnly: profile.accountNumber.isNotEmpty,
+                              enabled: profile.accountNumber.isEmpty,
+                              prefixIcon: LucideIcons.id_card,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'requests.required'.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
+                              controller: _contactNameController,
+                              label: 'change_wifi.contact_name'.tr(),
+                              prefixIcon: LucideIcons.user,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'requests.required'.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
+                              controller: _phoneController,
+                              label: 'change_wifi.contact_phone'.tr(),
+                              hint: '09 xxx xxx xxx',
+                              keyboardType: TextInputType.phone,
+                              prefixIcon: LucideIcons.phone,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'requests.required'.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            Text(
+                              'change_wifi.checkbox_desc'.tr(),
+                              style: AppTheme.body(
+                                color: AppColors.textSecondary,
+                                weight: FontWeight.w400,
+                              ).copyWith(fontSize: 12),
+                            ),
+                            const SizedBox(height: AppStyle.spaceSm),
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _isChangingWifiName = !_isChangingWifiName;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'change_wifi.wifi_name_optional'.tr(),
+                                      style: AppTheme.body(
+                                        color: AppColors.textPrimary,
+                                        weight: FontWeight.w500,
+                                      ).copyWith(fontSize: 13),
+                                    ),
+                                    const SizedBox(width: AppStyle.spaceSm),
+                                    SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: Checkbox(
+                                        value: _isChangingWifiName,
+                                        activeColor: AppColors.primary,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _isChangingWifiName = val ?? false;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
+                            const SizedBox(height: AppStyle.spaceLg),
+                            if (_isChangingWifiName) ...[
+                              AppInput(
+                                controller: _wifiNameController,
+                                label: 'change_wifi.req_new_wifi_name'.tr(),
+                                hint: 'change_wifi.new_wifi_name_hint'.tr(),
+                                prefixIcon: LucideIcons.wifi,
+                                validator: (v) {
+                                  if (_isChangingWifiName &&
+                                      (v == null || v.trim().isEmpty)) {
+                                    return 'requests.required'.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppStyle.spaceXs),
                             ],
-                          ),
+                            AppInput(
+                              controller: _passwordController,
+                              label: 'change_wifi.req_new_password'.tr(),
+                              hint: 'change_wifi.new_password_hint'.tr(),
+                              obscureText: _obscurePassword,
+                              prefixIcon: LucideIcons.lock,
+                              maxLength: 30,
+                              suffix: AppInput.iconChip(
+                                icon: _obscurePassword
+                                    ? LucideIcons.eye_off
+                                    : LucideIcons.eye,
+                                onTap: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              validator: (v) {
+                                final password = v?.trim() ?? '';
+                                if (password.isEmpty) {
+                                  if (_isChangingWifiName) return null;
+                                  return 'requests.required'.tr();
+                                }
+                                if (password.length < 8) {
+                                  return 'change_wifi.password_min_length'.tr();
+                                }
+                                if (password.length > 30) {
+                                  return 'change_wifi.password_max_length'.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: AppStyle.spaceXxl),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: AppStyle.spaceLg),
-                      if (_isChangingWifiName) ...[
-                        AppInput(
-                          controller: _wifiNameController,
-                          label: 'change_wifi.req_new_wifi_name'.tr(),
-                          hint: 'change_wifi.new_wifi_name_hint'.tr(),
-                          prefixIcon: LucideIcons.wifi,
-                          validator: (v) {
-                            if (_isChangingWifiName &&
-                                (v == null || v.trim().isEmpty)) {
-                              return 'requests.required'.tr();
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppStyle.spaceXs),
-                      ],
-                      AppInput(
-                        controller: _passwordController,
-                        label: 'change_wifi.req_new_password'.tr(),
-                        hint: 'change_wifi.new_password_hint'.tr(),
-                        obscureText: _obscurePassword,
-                        prefixIcon: LucideIcons.lock,
-                        suffix: AppInput.iconChip(
-                          icon: _obscurePassword
-                              ? LucideIcons.eye_off
-                              : LucideIcons.eye,
-                          onTap: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'requests.required'.tr();
-                          }
-                          if (v.trim().length < 6) {
-                            return 'change_wifi.password_min_length'.tr();
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyle.spaceXxl),
-                      AppButton(
-                        label: 'common.submit'.tr() != 'common.submit'
-                            ? 'common.submit'.tr()
-                            : 'Submit',
-                        isLoading: controllerState.isSubmitting,
-                        onPressed: _submitForm,
-                      ),
+                      const SizedBox(height: AppStyle.spaceMd),
                     ],
                   ),
                 ),
-                if (errorMessage != null) ...[
-                  const SizedBox(height: AppStyle.spaceMd),
-                  Container(
-                    padding: const EdgeInsets.all(AppStyle.spaceMd),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          LucideIcons.circle_alert,
-                          color: AppColors.error,
-                          size: 18,
-                        ),
-                        const SizedBox(width: AppStyle.spaceSm),
-                        Expanded(
-                          child: Text(
-                            errorMessage.startsWith('change_wifi.') ||
-                                    errorMessage.startsWith('api.') ||
-                                    errorMessage.startsWith('common.')
-                                ? errorMessage.tr()
-                                : errorMessage,
-                            style: const TextStyle(
-                              color: AppColors.error,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppStyle.spaceMd),
-              ],
+              ),
             ),
           ),
-        ),
+          Container(
+            color: AppColors.background,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  child: AppButton(
+                    label: widget.request != null
+                        ? 'common.save'.tr()
+                        : 'common.submit'.tr() != 'common.submit'
+                            ? 'common.submit'.tr()
+                            : 'Submit',
+                    isLoading: controllerState.isSubmitting,
+                    onPressed:
+                        controllerState.isSubmitting ? null : _submitForm,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

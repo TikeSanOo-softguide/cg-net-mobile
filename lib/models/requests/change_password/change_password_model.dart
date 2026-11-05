@@ -7,6 +7,7 @@ class ChangePasswordRequestModel {
     required this.newPassword,
     this.broadbandAccountNumber,
     this.newWifiName,
+    this.ticketNumber,
     this.status = 'under_review',
     this.adminId,
     this.createdAt,
@@ -19,6 +20,7 @@ class ChangePasswordRequestModel {
   final String contactName;
   final String contactPhone;
   final String? newWifiName;
+  final String? ticketNumber;
   final String newPassword;
   final String status;
   final int? adminId;
@@ -39,6 +41,7 @@ class ChangePasswordRequestModel {
       contactName: rawData['contact_name']?.toString() ?? '',
       contactPhone: rawData['contact_phone']?.toString() ?? '',
       newWifiName: rawData['new_wifi_name']?.toString(),
+      ticketNumber: rawData['ticket_number']?.toString(),
       newPassword: rawData['new_password']?.toString() ?? '',
       status: rawData['status']?.toString() ?? 'under_review',
       adminId: _toInt(rawData['admin_id']),
