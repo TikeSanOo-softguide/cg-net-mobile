@@ -11,7 +11,7 @@ class ApiEndpoints {
   /// `--dart-define=API_BASE_URL=http://127.0.0.1:8080/api`.
   static const _devBaseUrl = String.fromEnvironment(
     'DEV_API_BASE_URL',
-    defaultValue: 'http://192.168.10.148:8080/api',
+    defaultValue: 'http://192.168.10.240:8080/api',
   );
   static const _healthOverride =
       String.fromEnvironment('API_HEALTHCHECK_PATH', defaultValue: '');
@@ -114,6 +114,20 @@ class ApiEndpoints {
     'REVERB_SCHEME',
     defaultValue: 'http',
   );
+
+//production
+//    static const int reverbPort = int.fromEnvironment(
+//     'REVERB_PORT',
+//     defaultValue: 443,
+//   );
+//   static const String reverbAppKey = String.fromEnvironment(
+//     'REVERB_APP_KEY',
+//     defaultValue: 'cgnet-reverb-key',
+//   );
+//   static const String reverbScheme = String.fromEnvironment(
+//     'REVERB_SCHEME',
+//     defaultValue: 'https',
+//   );
 
   /// Override with:
   /// --dart-define=API_HEALTHCHECK_PATH=/health

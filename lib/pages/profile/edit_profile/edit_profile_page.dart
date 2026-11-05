@@ -62,6 +62,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         _phone.text = next.displayPhone;
       }
     });
+    ref.listen<EditProfileState>(
+      editProfileControllerProvider,
+      (previous, next) {
+        if (previous?.isLoading == true &&
+            !next.isLoading &&
+            _submitting) {
+          setState(() => _submitting = false);
+        }
+      },
+    );
 
     final editState = ref.watch(editProfileControllerProvider);
     final isSubmitting = editState.isLoading || _submitting;
@@ -116,7 +126,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     const SizedBox(height: AppStyle.spaceMd),
                     AppInput(
                       controller: _name,
-                      label: 'profile.username'.tr(),
+                      label: '${'set_credentials.username'.tr()} *',
                       suffixIcon: LucideIcons.id_card,
                       textInputAction: TextInputAction.done,
                       validator: (value) {
@@ -137,7 +147,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     const SizedBox(height: AppStyle.spaceXs),
                     AppInput(
                       controller: _phone,
-                      label: 'profile.phone'.tr(),
+                      label: '${'profile.phone'.tr()} *',
                       suffixIcon: LucideIcons.phone,
                       keyboardType: TextInputType.phone,
                       enabled: false,
@@ -163,9 +173,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                                           .notifier)
                                       .save(fullName: _name.text.trim()),
                                   dismissAnimation: false,
+                                  onBeforeDismiss: () {
+                                    if (mounted && _submitting) {
+                                      setState(() => _submitting = false);
+                                    }
+                                  },
                                 );
                               } finally {
-                                if (mounted) {
+                                if (mounted && _submitting) {
                                   setState(() => _submitting = false);
                                 }
                               }

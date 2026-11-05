@@ -115,26 +115,37 @@ class _SetUsernamePasswordPageState
 
     setState(() => _submitting = true);
     final controller = ref.read(setUsernamePasswordControllerProvider.notifier);
-    var ok = false;
+    var navigated = false;
+    ApiException? submitError;
+
     try {
-      ok = await LoadingHelper.runWithLoading(
-        () => controller.submit(
-          verificationToken: widget.verificationToken,
-          username: _username.text.trim(),
-          password: _password.text,
-        ),
-        dismissAnimation: false,
+      await LoadingHelper.runWithLoading<void>(
+        () async {
+          final success = await controller.submit(
+            verificationToken: widget.verificationToken,
+            username: _username.text.trim(),
+            password: _password.text,
+          );
+          if (!success || !mounted) return;
+
+          context.goNamed(RouteNames.home);
+          navigated = true;
+          await Future.delayed(const Duration(milliseconds: 350));
+        },
+        dismissAnimation: false,  
       );
     } on ApiException catch (error) {
-      if (!mounted) return;
-      await showApiErrorModal(context, error);
-      return;
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+      submitError = error;
+    }
+    if (navigated) return;
+
+    if (mounted && _submitting) {
+      setState(() => _submitting = false);
     }
     if (!mounted) return;
-    if (ok) {
-      context.goNamed(RouteNames.home);
+
+    if (submitError != null) {
+      await showApiErrorModal(context, submitError);
       return;
     }
 
@@ -194,7 +205,7 @@ class _SetUsernamePasswordPageState
             children: [
               AppInput(
                 controller: _username,
-                label: 'set_credentials.username'.tr(),
+                label: '${'set_credentials.username'.tr()} *',
                 hint: 'set_credentials.username'.tr(),
                 suffixIcon: LucideIcons.user,
                 textInputAction: TextInputAction.next,
@@ -208,7 +219,7 @@ class _SetUsernamePasswordPageState
               const SizedBox(height: 4),
               AppInput(
                 controller: _password,
-                label: 'set_credentials.password'.tr(),
+                label: '${'set_credentials.password'.tr()} *',
                 hint: 'set_credentials.password_hint'.tr(),
                 suffixIcon: LucideIcons.lock,
                 obscureText: true,
@@ -221,7 +232,7 @@ class _SetUsernamePasswordPageState
               const SizedBox(height: 2),
               AppInput(
                 controller: _confirm,
-                label: 'set_credentials.confirm_password'.tr(),
+                label: '${'set_credentials.confirm_password'.tr()} *',
                 hint: 'set_credentials.password_hint'.tr(),
                 suffixIcon: LucideIcons.lock,
                 obscureText: true,

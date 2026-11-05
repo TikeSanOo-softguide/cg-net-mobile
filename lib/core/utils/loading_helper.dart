@@ -1,9 +1,13 @@
+
+import 'dart:async';
+
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../theme/app_colors/app_colors.dart';
 
 class LoadingHelper {
   const LoadingHelper._();
+  static Future<void> hide() => EasyLoading.dismiss(animation: false);
 
   static Future<T> runWithLoading<T>(
     Future<T> Function() task, {
@@ -11,6 +15,7 @@ class LoadingHelper {
     String? successMessage,
     String? errorMessage,
     bool dismissAnimation = true,
+    FutureOr<void> Function()? onBeforeDismiss,
   }) async {
     try {
       await EasyLoading.show(
@@ -28,9 +33,11 @@ class LoadingHelper {
       );
 
       final result = await task();
+
       if (successMessage != null) {
         await EasyLoading.showSuccess(successMessage);
       }
+
       return result;
     } catch (_) {
       if (errorMessage != null) {
@@ -38,6 +45,7 @@ class LoadingHelper {
       }
       rethrow;
     } finally {
+      await onBeforeDismiss?.call();
       await EasyLoading.dismiss(animation: dismissAnimation);
     }
   }
