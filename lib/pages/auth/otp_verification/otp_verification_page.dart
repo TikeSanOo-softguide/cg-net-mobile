@@ -742,6 +742,11 @@ class _OtpSquareState extends State<_OtpSquare> {
                   height: 1.2,
                   forceStrutHeight: true,
                 ),
+                onTapOutside: (_) {
+                  if (widget.focusNode.hasFocus) {
+                    widget.focusNode.unfocus();
+                  }
+                },
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   isCollapsed: true,

@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -47,8 +46,8 @@ class HomeCgPackageSection extends StatelessWidget {
     ),
   ];
 
-  static const _cardWidth = 148.0;
-  static const _listHeight = 206.0;
+  static const _gap = 10.0;
+  static const _listHeight = 168.0;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +59,7 @@ class HomeCgPackageSection extends StatelessWidget {
         elevated: false,
         bordered: false,
         borderRadius: AppStyle.borderRadiusSm,
-        padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
+        padding: const EdgeInsets.fromLTRB(10, 14, 10, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -68,19 +67,27 @@ class HomeCgPackageSection extends StatelessWidget {
               title: 'home.cg_package'.tr(),
               onSeeAll: () => context.goNamed(RouteNames.packageList),
             ),
-            SizedBox(
-              height: _listHeight,
-              child: ListView.separated(
-                key: ValueKey('cg-packages-$locale'),
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: _items.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  return _CgPackageCard(item: _items[index]);
-                },
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = (constraints.maxWidth - _gap) / 2;
+                return SizedBox(
+                  height: _listHeight,
+                  child: ListView.separated(
+                    key: ValueKey('cg-packages-$locale'),
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    itemCount: _items.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: _gap),
+                    itemBuilder: (context, index) {
+                      return SizedBox(
+                        width: cardWidth,
+                        height: _listHeight,
+                        child: _HomePackageCard(item: _items[index]),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -103,20 +110,14 @@ class _CgPackage {
   final String durationKey;
 }
 
-class _CgPackageCard extends StatelessWidget {
-  const _CgPackageCard({required this.item});
+class _HomePackageCard extends StatelessWidget {
+  const _HomePackageCard({required this.item});
 
   final _CgPackage item;
 
   @override
   Widget build(BuildContext context) {
     final price = NumberFormat('#,##0').format(item.pricePoints);
-    final features = <String>[
-      'home.feat_dedicated'.tr(),
-      'home.feat_bandwidth'.tr(namedArgs: {'speed': item.speedMbps}),
-      'home.feat_unlimited'.tr(),
-      'home.feat_fiber'.tr(),
-    ];
 
     void openDetail() {
       context.pushNamed(
@@ -125,139 +126,67 @@ class _CgPackageCard extends StatelessWidget {
       );
     }
 
-    const radius = AppStyle.radiusSm;
-
-    return SizedBox(
-      width: HomeCgPackageSection._cardWidth,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: openDetail,
-          borderRadius: BorderRadius.circular(radius),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(radius),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(radius),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -28,
-                    top: -36,
-                    child: Container(
-                      width: 92,
-                      height: 92,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.onPrimary.withValues(alpha: 0.08),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: -20,
-                    bottom: 36,
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.onPrimary.withValues(alpha: 0.06),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: AppColors.onPrimary,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            child: Text(
-                              item.durationKey.tr().toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.english(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                                height: AppTheme.lineHeightMyanmarSafe,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          price,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.onPrimary,
-                            height: 1.05,
-                            letterSpacing: -0.6,
-                          ),
-                        ),
-                        Text(
-                          'topup.pts'.tr(),
-                          style: AppTheme.english(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onPrimary.withValues(alpha: 0.78),
-                            height: AppTheme.lineHeightMyanmarSafe,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        for (final feature in features) _FeatureLine(text: feature),
-                        const Spacer(),
-                        SizedBox(
-                          height: 28,
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: openDetail,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: AppColors.onAccent,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              minimumSize: const Size.fromHeight(28),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(7),
-                              ),
-                            ),
-                            child: Text(
-                              'home.buy_now'.tr(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.english(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onAccent,
-                                height: AppTheme.lineHeightMyanmarSafe,
-                                letterSpacing: 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    return Material(
+      color: AppColors.primarySoft,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: openDetail,
+        splashColor: AppColors.primary.withValues(alpha: 0.05),
+        highlightColor: AppColors.primary.withValues(alpha: 0.03),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${item.speedMbps} Mbps',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.english(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                  height: 1.1,
+                ),
               ),
-            ),
+              const SizedBox(height: 10),
+              _MetaRow(
+                label: 'home.pkg_month'.tr(),
+                value: item.durationKey.tr(),
+              ),
+              const SizedBox(height: 6),
+              _MetaRow(
+                label: 'home.pkg_price'.tr(),
+                value: '$price ${'topup.pts'.tr()}',
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: openDetail,
+                child: Container(
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'home.buy_now'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      color: AppColors.onPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: AppTheme.lineHeightMyanmarSafe,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -265,43 +194,48 @@ class _CgPackageCard extends StatelessWidget {
   }
 }
 
-class _FeatureLine extends StatelessWidget {
-  const _FeatureLine({required this.text});
+class _MetaRow extends StatelessWidget {
+  const _MetaRow({
+    required this.label,
+    required this.value,
+  });
 
-  final String text;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(
-              LucideIcons.circle_check,
-              size: 12,
-              color: AppColors.accent,
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.english(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textMuted,
+              height: AppTheme.lineHeightMyanmarSafe,
             ),
           ),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: AppColors.onPrimary,
-                height: AppTheme.lineHeightMyanmarSafe,
-                letterSpacing: 0,
-              ),
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: AppTheme.english(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+              height: AppTheme.lineHeightMyanmarSafe,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

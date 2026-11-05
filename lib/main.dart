@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'components/glass_notification_banner/glass_notification_banner.dart';
 import 'core/network/network_recovery_controller.dart';
 import 'core/push/push_notification_service.dart';
+import 'pages/inbox/inbox_list/inbox_unread_count.dart';
 import 'core/router/app_router/app_router.dart';
 import 'core/storage/local_prefs/local_prefs.dart';
 import 'core/theme/app_theme/app_theme.dart';
@@ -49,13 +50,31 @@ class CgNetApp extends ConsumerStatefulWidget {
   ConsumerState<CgNetApp> createState() => _CgNetAppState();
 }
 
-class _CgNetAppState extends ConsumerState<CgNetApp> {
+class _CgNetAppState extends ConsumerState<CgNetApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     ref.read(pushNotificationServiceProvider).start();
     // Keep lightweight reconnect polling ready for queued retry actions.
     ref.read(networkRecoveryControllerProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(inboxUnreadCountProvider.notifier).refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(inboxUnreadCountProvider.notifier).refresh();
+    }
   }
 
   @override

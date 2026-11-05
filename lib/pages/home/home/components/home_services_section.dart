@@ -59,10 +59,10 @@ class HomeServicesSection extends ConsumerWidget {
 
   List<_ServiceItem> get _extraItems => [
         _ServiceItem(
-          id: 'check_cpe',
-          asset: 'assets/images/services/check_cpe.png',
-          label: 'home.service_check_cpe'.tr(),
-          color: const Color(0xFF007880),
+          id: 'show_room',
+          asset: 'assets/images/services/show_room.png',
+          label: 'home.service_show_room'.tr(),
+          color: const Color(0xFFE11D48),
         ),
         _ServiceItem(
           id: 'change_plan',
@@ -84,7 +84,8 @@ class HomeServicesSection extends ConsumerWidget {
     _ServiceItem item, {
     bool fromSheet = false,
   }) async {
-    final requiresBoundBroadband = item.id != 'installation';
+    final requiresBoundBroadband =
+        item.id != 'installation' && item.id != 'show_room';
     if (requiresBoundBroadband) {
       final isBound = await ensureBoundBroadband(context, ref);
       if (!context.mounted || isBound == null) return;

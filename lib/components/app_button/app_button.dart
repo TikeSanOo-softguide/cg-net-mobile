@@ -19,6 +19,7 @@ class AppButton extends StatelessWidget {
     this.height = 45,
     this.fontSize = 14,
     this.backgroundColor,
+    this.foregroundColor,
   });
 
   final String label;
@@ -29,15 +30,15 @@ class AppButton extends StatelessWidget {
   final double height;
   final double fontSize;
   final Color? backgroundColor;
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
     final color = backgroundColor ?? AppColors.primary;
     final background = enabled ? color : color.withValues(alpha: 0.38);
-    final foreground = enabled
-        ? AppColors.onPrimary
-        : AppColors.onPrimary.withValues(alpha: 0.92);
+    final ink = foregroundColor ?? AppColors.onPrimary;
+    final foreground = enabled ? ink : ink.withValues(alpha: 0.92);
 
     final labelStyle = AppTheme.button(color: foreground).copyWith(
       fontSize: fontSize,

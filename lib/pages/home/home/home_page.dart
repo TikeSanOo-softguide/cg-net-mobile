@@ -6,6 +6,7 @@ import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/ui/bottom_nav_visibility_provider.dart';
 import '../../../data/launch_promo/launch_promo_repository.dart';
+import '../../../data/promotion/promotion_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'components/home_cg_package_section.dart';
@@ -17,6 +18,7 @@ import 'components/home_promo_banner.dart';
 import 'components/home_quick_actions.dart';
 import 'components/home_section_header.dart';
 import 'components/home_services_section.dart';
+import 'components/home_special_offer_section.dart';
 
 /// Special data packages stay in the project, but are not shown on Home.
 const _showSpecialDataPackages = false;
@@ -41,6 +43,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _refreshSession() {
+    ref.invalidate(homePromotionsProvider);
     return ref.read(profileControllerProvider.notifier).fetchProfile();
   }
 
@@ -165,6 +168,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: SizedBox(height: HomeSectionHeader.sectionGap),
                   ),
                   const SliverToBoxAdapter(child: HomePromoBanner()),
+                  const SliverToBoxAdapter(child: HomeSpecialOfferSection()),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                 ],
               ),
