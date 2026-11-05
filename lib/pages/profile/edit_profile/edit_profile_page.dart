@@ -212,7 +212,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'profile.deactivate_account_message'.tr(),
+                      'profile.deactivate_account_description'.tr(),
                       style: const TextStyle(
                         fontSize: 13,
                         height: 1.35,

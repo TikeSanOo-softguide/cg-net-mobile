@@ -536,6 +536,7 @@
     "account_settings": "账户设置",
     "deactivate_account": "停用账户",
     "deactivate_account_title": "停用账户",
+    "deactivate_account_description": "退出登录并停止使用此账户。确认时需要输入密码。",
     "deactivate_account_message": "确认密码后，账户将立即停用。您将退出登录，并且无法继续使用此账户。",
     "deactivate_account_confirm_message": "确定要停用您的账户吗？",
     "confirm_password": "确认密码",
