@@ -149,7 +149,8 @@ class ChatRealtimeService implements ChatRealtimeClient {
         }
         return {'Authorization': 'Bearer $token'};
       },
-      // useTLS: ApiEndpoints.reverbScheme == 'https',
+      // production
+      // useTLS: ApiEndpoints.reverbScheme == 'https', 
       onError: (error) {
         if (kDebugMode) {
           debugPrint('[Chat realtime] Reverb client error: $error');

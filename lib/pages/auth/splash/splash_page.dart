@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/core/utils/loading_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,6 +35,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      LoadingHelper.hide();
+    });
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: _totalMs),

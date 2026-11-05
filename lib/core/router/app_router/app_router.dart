@@ -54,8 +54,8 @@ import '../route_policy.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final secureStorage = ref.watch(secureStorageProvider);
-  final session = ref.watch(sessionClockProvider);
+  final secureStorage = ref.read(secureStorageProvider);
+  final session = ref.read(sessionClockProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,

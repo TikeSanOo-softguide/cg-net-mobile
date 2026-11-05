@@ -140,36 +140,45 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
       _inlineError = null;
     });
 
-    var ok = false;
+    var navigated = false;
     ApiException? submitError;
     try {
-      ok = await LoadingHelper.runWithLoading(
+      await LoadingHelper.runWithLoading<void>(
         () async {
-          final success =
-              await ref.read(passwordLoginControllerProvider.notifier).submit(
-                    verificationToken: widget.verificationToken,
-                    password: _password,
-                  );
+          final success = await ref
+              .read(passwordLoginControllerProvider.notifier)
+              .submit(
+                verificationToken: widget.verificationToken,
+                password: _password,
+              );
+          if (!success) return;
 
-          if (!success) return false;
           await ref.read(authApiProvider).syncCurrentLanguage();
-          return true;
+          if (!mounted) return;
+          context.goNamed(RouteNames.home);
+          navigated = true;
+          await Future.delayed(const Duration(milliseconds: 350));
         },
         dismissAnimation: false,
+        onBeforeDismiss: () async {
+          if (!navigated && mounted && _submitting) {
+            setState(() => _submitting = false);
+            await WidgetsBinding.instance.endOfFrame;
+          }
+        },
       );
     } on ApiException catch (error) {
       submitError = error;
-    } finally {
-      if (mounted) setState(() => _submitting = false);
     }
+    if (navigated) return;
 
+    if (mounted && _submitting) {
+      setState(() => _submitting = false);
+    }
     if (!mounted) return;
+
     if (submitError != null) {
       await showApiErrorModal(context, submitError);
-      return;
-    }
-    if (ok) {
-      context.goNamed(RouteNames.home);
       return;
     }
 

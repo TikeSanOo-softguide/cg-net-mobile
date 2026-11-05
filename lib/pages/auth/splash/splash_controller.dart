@@ -48,3 +48,5 @@ final splashControllerProvider =
     ref.watch(authApiProvider),
   );
 });
+
+final skipSplashIntroProvider = StateProvider<bool>((ref) => false);

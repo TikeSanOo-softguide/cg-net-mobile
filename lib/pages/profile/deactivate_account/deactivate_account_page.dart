@@ -14,7 +14,6 @@ import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
-import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
 import '../profile/profile_controller.dart';
@@ -131,18 +130,10 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'profile.confirm_password'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
                     const SizedBox(height: 12),
                     AppInput(
                       controller: _passwordController,
-                      label: 'profile.enter_password'.tr(),
+                      label: '${'profile.enter_password'.tr()} *',
                       formFieldKey: _passwordFieldKey,
                       prefixIcon: LucideIcons.lock,
                       obscureText: _obscurePassword,

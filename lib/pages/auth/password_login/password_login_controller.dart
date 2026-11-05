@@ -46,15 +46,17 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
       await _secureStorage.writeToken(token);
       _push.syncToken();
       if (!mounted) return true;
-      state = state.copyWith(isLoading: false);
       return true;
     } on ApiException catch (error) {
       if (!mounted) return false;
       state = state.copyWith(
-        isLoading: false,
         error: error.failure == ApiFailure.cancelled ? null : error,
       );
       return false;
+    } finally {
+      if (mounted) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 

@@ -101,7 +101,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                   const SizedBox(height: 12),
                   AppInput(
                     controller: _current,
-                    label: 'profile.current_password'.tr(),
+                    label: '${'profile.current_password'.tr()} *',
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
                     formFieldKey: _currentPasswordFieldKey,
@@ -144,7 +144,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                   AppInput(
                     formFieldKey: _newPasswordFieldKey,
                     controller: _next,
-                    label: 'profile.new_password'.tr(),
+                    label: '${'profile.new_password'.tr()} *',
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
                     obscureText: _obscureNewPassword,
@@ -187,7 +187,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                   AppInput(
                     formFieldKey: _confirmFieldKey,
                     controller: _confirm,
-                    label: 'set_credentials.confirm_password'.tr(),
+                    label: '${'set_credentials.confirm_password'.tr()} *',
                     hint: 'set_credentials.password_hint'.tr(),
                     suffixIcon: LucideIcons.lock,
                     obscureText: _obscureConfirmPassword,
