@@ -137,33 +137,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: AppStyle.spaceSm),
-                        Material(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(8),
-                          child: InkWell(
-                            onTap: () =>
-                                context.pushNamed(RouteNames.editProfile),
-                            borderRadius: BorderRadius.circular(8),
-                            splashColor:
-                                AppColors.primary.withValues(alpha: 0.08),
-                            highlightColor:
-                                AppColors.primary.withValues(alpha: 0.04),
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: Center(
-                                child: Image.asset(
-                                  'assets/images/profile/edit.png',
-                                  width: 16,
-                                  height: 16,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
