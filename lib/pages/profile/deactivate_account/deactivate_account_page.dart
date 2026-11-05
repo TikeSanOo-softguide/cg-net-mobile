@@ -95,6 +95,7 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
       title: Text('profile.deactivate_account_title'.tr()),
       showBack: true,
       body: SafeArea(
+        top: false,
         child: Form(
           key: _formKey,
           child: ListView(
@@ -103,46 +104,40 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
               AppCard(
                 padding: const EdgeInsets.all(16),
                 borderRadius: AppStyle.borderRadiusLg,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: AppColors.error,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'profile.deactivate_account_message'.tr(),
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              AppCard(
-                padding: const EdgeInsets.all(16),
-                borderRadius: AppStyle.borderRadiusLg,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'profile.confirm_password'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: AppColors.error,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'profile.deactivate_account_message'.tr(),
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppStyle.spaceMd),
                     AppInput(
                       controller: _passwordController,
-                      label: 'profile.enter_password'.tr(),
+                      label: '${'profile.enter_password'.tr()} *',
                       formFieldKey: _passwordFieldKey,
                       prefixIcon: LucideIcons.lock,
                       obscureText: _obscurePassword,
@@ -174,9 +169,11 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
                         key: _passwordFieldKey,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppStyle.spaceXxxl),
                     AppButton(
                       label: 'profile.deactivate_account_confirm'.tr(),
+                      height: 44,
+                      fontSize: 14,
                       isLoading: isLoading,
                       backgroundColor: AppColors.error,
                       onPressed: isLoading ? null : _confirmDeactivation,

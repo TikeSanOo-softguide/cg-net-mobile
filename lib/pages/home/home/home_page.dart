@@ -101,6 +101,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         color: AppColors.background,
         child: Stack(
           children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: pinnedH + 40,
+              child: const ColoredBox(color: AppColors.primary),
+            ),
             RefreshIndicator(
               color: AppColors.primary,
               edgeOffset: pinnedH,
@@ -110,7 +117,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   SliverToBoxAdapter(
-                    child: SizedBox(height: pinnedH - 2),
+                    child: ColoredBox(
+                      color: AppColors.primary,
+                      child: SizedBox(height: pinnedH),
+                    ),
                   ),
                   SliverToBoxAdapter(
                     child: Stack(
@@ -177,9 +187,13 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              child: HomePinnedBar(
-                accountNumber: displayProfile?.phone ??
-                    (cachedProfile.isLoading ? '' : '—'),
+              height: pinnedH,
+              child: ColoredBox(
+                color: AppColors.primary,
+                child: HomePinnedBar(
+                  accountNumber: displayProfile?.phone ??
+                      (cachedProfile.isLoading ? '' : '—'),
+                ),
               ),
             ),
           ],

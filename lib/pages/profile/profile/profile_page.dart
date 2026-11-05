@@ -1,7 +1,6 @@
 import 'package:cg_net_mobile/components/language_setting/language_picker_modal.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -138,33 +137,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: AppStyle.spaceSm),
-                        Material(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(8),
-                          child: InkWell(
-                            onTap: () =>
-                                context.pushNamed(RouteNames.editProfile),
-                            borderRadius: BorderRadius.circular(8),
-                            splashColor:
-                                AppColors.primary.withValues(alpha: 0.08),
-                            highlightColor:
-                                AppColors.primary.withValues(alpha: 0.04),
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: Center(
-                                child: Image.asset(
-                                  'assets/images/profile/edit.png',
-                                  width: 16,
-                                  height: 16,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -237,6 +209,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               title: 'common.logout'.tr(),
               titleColor: AppColors.error,
               chevronColor: AppColors.error,
+              isLoading: _loggingOut,
               onTap: () async {
                 if (_loggingOut) return;
                 final confirmed = await showAppConfirmModal(
@@ -250,12 +223,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 setState(() => _loggingOut = true);
                 try {
                   await LoadingHelper.runWithLoading(
-                    () => ref.read(profileControllerProvider.notifier).logout(),
+                    () async {
+                      await ref.read(profileControllerProvider.notifier).logout();
+                      if (!context.mounted) return;
+                      context.goNamed(RouteNames.login);
+                      await WidgetsBinding.instance.endOfFrame;
+                    },
                     dismissAnimation: false,
                   );
-                  if (context.mounted) {
-                    context.goNamed(RouteNames.login);
-                  }
                 } on ApiException catch (error) {
                   if (!context.mounted) return;
                   await showApiErrorModal(context, error);
@@ -279,11 +254,11 @@ class _AccountHeaderSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    return const AppCard(
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.all(AppStyle.spaceMd),
-      child: const Row(
+      padding: EdgeInsets.all(AppStyle.spaceMd),
+      child: Row(
         children: [
           ShimmerBox(width: 38, height: 38, borderRadius: 8),
           SizedBox(width: AppStyle.spaceMd),
@@ -330,6 +305,7 @@ class _SettingsCard extends StatelessWidget {
     this.trailingText,
     this.titleColor,
     this.chevronColor,
+    this.isLoading = false,
   });
 
   final String asset;
@@ -340,11 +316,12 @@ class _SettingsCard extends StatelessWidget {
   final String? trailingText;
   final Color? titleColor;
   final Color? chevronColor;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,

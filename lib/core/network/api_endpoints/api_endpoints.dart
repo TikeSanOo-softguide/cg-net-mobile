@@ -116,6 +116,20 @@ class ApiEndpoints {
     defaultValue: 'http',
   );
 
+//production
+//    static const int reverbPort = int.fromEnvironment(
+//     'REVERB_PORT',
+//     defaultValue: 443,
+//   );
+//   static const String reverbAppKey = String.fromEnvironment(
+//     'REVERB_APP_KEY',
+//     defaultValue: 'cgnet-reverb-key',
+//   );
+//   static const String reverbScheme = String.fromEnvironment(
+//     'REVERB_SCHEME',
+//     defaultValue: 'https',
+//   );
+
   /// Override with:
   /// --dart-define=API_HEALTHCHECK_PATH=/health
   static String get healthCheckPath =>

@@ -17,7 +17,6 @@ import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/message_codes.dart';
-import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -38,7 +37,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   late final TapGestureRecognizer _termsTap;
-  bool _sessionExpiredNoticeShown = false;
   bool _autovalidate = false;
   bool _submitting = false;
 
@@ -145,18 +143,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final queryParameters = GoRouterState.of(context).uri.queryParameters;
-    final reason = queryParameters['reason'];
-    if (!_sessionExpiredNoticeShown && reason == 'session_expired') {
-      _sessionExpiredNoticeShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text('api.unauthorized'.tr())),
-          );
-      });
-    }
     final state = ref.watch(loginControllerProvider);
     final isSubmitting = state.isLoading || _submitting;
     final controller = ref.read(loginControllerProvider.notifier);

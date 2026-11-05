@@ -14,6 +14,8 @@ class AppInput extends StatefulWidget {
     this.label,
     this.hint,
     this.hintLetterSpacing,
+    this.fillColor,
+    this.textColor = AppColors.textPrimary,
     this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
@@ -42,6 +44,8 @@ class AppInput extends StatefulWidget {
   final String? label;
   final String? hint;
   final double? hintLetterSpacing;
+  final Color? fillColor;
+  final Color textColor;
   final bool obscureText;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -262,7 +266,7 @@ class _AppInputState extends State<AppInput> {
                 fontWeight: widget.keyboardType == TextInputType.phone
                     ? FontWeight.w600
                     : FontWeight.w500,
-                color: AppColors.textPrimary,
+                color: widget.textColor,
                 letterSpacing: 0.2,
               ),
               cursorColor: AppColors.primary,
@@ -280,7 +284,7 @@ class _AppInputState extends State<AppInput> {
                 labelStyle: labelStyle,
                 floatingLabelStyle: labelStyle,
                 filled: true,
-                fillColor: fill,
+                fillColor: widget.fillColor ?? fill,
                 contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                 prefixIcon: widget.prefix,
                 suffixIcon: _buildTrailing(focused),
