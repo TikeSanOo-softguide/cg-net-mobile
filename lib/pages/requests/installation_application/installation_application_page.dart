@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/core/utils/date_time_format.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
@@ -203,11 +204,11 @@ class _InstallationApplicationPageState
     final hasError = state.status == InstallationApplicationStatus.error &&
         state.errorMessage != null;
     final underReview = state.requests
-        .where((item) => _statusKey(item) == 'pending' || _statusKey(item) == 'under_review')
+        .where((item) =>
+            _statusKey(item) == 'pending' || _statusKey(item) == 'under_review')
         .toList();
-    final approved = state.requests
-        .where((item) => _statusKey(item) == 'approved')
-        .toList();
+    final approved =
+        state.requests.where((item) => _statusKey(item) == 'approved').toList();
     final cancelled = state.requests
         .where((item) =>
             _statusKey(item) == 'cancelled' || _statusKey(item) == 'rejected')
@@ -335,7 +336,9 @@ class _InstallationApplicationCardState
     final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : DateFormat('yyyy.MM.dd HH:mm').format(request.createdAt!.toLocal());
+        : formatDateTime(
+            request.createdAt!.toLocal().toIso8601String(),
+          );
     final canManage = _canManageRequest(request);
     final detail = request.packageDetail;
 
@@ -408,7 +411,8 @@ class _InstallationApplicationCardState
                           child: Column(
                             children: [
                               _RequestDetail(
-                                label: 'installationApplication.service_type'.tr(),
+                                label:
+                                    'installationApplication.service_type'.tr(),
                                 value: _serviceLabel(request.serviceType),
                               ),
                               _RequestDetail(
@@ -416,8 +420,8 @@ class _InstallationApplicationCardState
                                 value: request.productName ?? '',
                               ),
                               _RequestDetail(
-                                label:
-                                    'installationApplication.internet_speed'.tr(),
+                                label: 'installationApplication.internet_speed'
+                                    .tr(),
                                 value: _speedLabel(detail?['product_speed']),
                               ),
                               if (request.note?.trim().isNotEmpty == true)
@@ -426,24 +430,28 @@ class _InstallationApplicationCardState
                                   value: request.note!,
                                 ),
                               _RequestDetail(
-                                label:
-                                    'installationApplication.billing_period'.tr(),
+                                label: 'installationApplication.billing_period'
+                                    .tr(),
                                 value: _periodLabel(detail),
                               ),
                               _RequestDetail(
-                                label: 'installationApplication.network_provider'
-                                    .tr(),
-                                value: detail?['product_line']?.toString() ?? '',
+                                label:
+                                    'installationApplication.network_provider'
+                                        .tr(),
+                                value:
+                                    detail?['product_line']?.toString() ?? '',
                               ),
                               _RequestDetail(
-                                label:
-                                    'installationApplication.package_price'.tr(),
+                                label: 'installationApplication.package_price'
+                                    .tr(),
                                 value: _pointsLabel(detail?['product_price']),
                               ),
                               _RequestDetail(
-                                label: 'installationApplication.installation_fee'
-                                    .tr(),
-                                value: _pointsLabel(detail?['installation_fee']),
+                                label:
+                                    'installationApplication.installation_fee'
+                                        .tr(),
+                                value:
+                                    _pointsLabel(detail?['installation_fee']),
                               ),
                               _RequestDetail(
                                 label: 'installationApplication.id_name'.tr(),

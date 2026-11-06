@@ -672,7 +672,7 @@
     "current_address": "当前地址",
     "new_address": "新地址",
     "preferred_date": "期望迁移日期",
-    "details": "补充说明",
+    "details": "附加备注",
     "submit_success_title": "搬迁申请提交成功",
     "submit_success_body": "您的搬迁申请已成功提交。",
     "update_success": "迁移申请已更新。",
@@ -680,7 +680,10 @@
     "cancel_title": "取消迁移申请",
     "cancel_confirm": "确定要取消此迁移申请吗？",
     "cancel_success": "迁移申请已取消。",
-    "required_id": "缺少请求 ID。"
+    "required_id": "缺少请求 ID。",
+    "req_cancelled": "搬迁申请已成功取消。",
+    "req_submitted": "您的搬迁申请已成功提交。",
+    "req_updated": "您的搬迁申请已成功更新。"
   },
   "changePlan": {
     "no_requests": "暂无更换套餐申请",
@@ -698,7 +701,7 @@
     "req_cancelled": "更换套餐申请已成功取消。",
     "req_submitted": "更换套餐申请已成功提交。\n我们的团队将尽快与您联系。",
     "req_updated": "更换套餐申请已成功更新。\n我们的团队将尽快与您联系。",
-    "cancel_title": "取消更换套餐",
+    "cancel_title": "取消更换套餐申请",
     "cancel_confirm": "确定要取消此更换套餐申请吗？",
     "cancel_success": "更换套餐申请已取消。"
   },
