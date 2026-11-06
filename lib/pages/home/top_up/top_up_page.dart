@@ -20,7 +20,9 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../data/top_up/top_up_repository.dart';
+import '../../profile/profile/profile_controller.dart';
 import 'top_up_controller.dart';
+import 'top_up_pin_parser.dart';
 
 /// Top-up screen with serial verification and backend submission flow.
 class TopUpPage extends ConsumerStatefulWidget {
@@ -233,13 +235,15 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       _closeProcessingDialog();
       if (!mounted) return;
       _unfocusInputs();
-      ref.invalidate(userProfileProvider);
+      final profileRefresh =
+          ref.read(profileControllerProvider.notifier).fetchProfile();
       await showAppSuccessModal(
         context,
         title: 'topup.redeem_success_title'.tr(),
         body: 'topup.redeem_success_body'.tr(),
       );
       if (!mounted) return;
+      await profileRefresh;
       _pin.clear();
       setState(() {});
     } on ApiException catch (error) {
@@ -398,6 +402,8 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],
+                  scanValueParser: extractPinFromQr,
+                  scanInvalidMessage: 'topup.scan_pin_not_found'.tr(),
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
                   validator: (v) {

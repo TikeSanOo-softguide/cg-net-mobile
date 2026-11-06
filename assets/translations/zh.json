@@ -314,6 +314,7 @@
     "scan_title": "扫描条码",
     "scan_hint": "请将条码放入框内",
     "scan_unavailable": "无法打开相机",
+    "scan_pin_not_found": "二维码无效，请重试。",
     "check_serial_first": "请先核对序列号",
     "details_label": "账号与 PIN",
     "details_hint": "填写充值信息",
