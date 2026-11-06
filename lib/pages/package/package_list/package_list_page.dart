@@ -4,7 +4,6 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
@@ -13,9 +12,8 @@ import '../../../core/network/api_error_text.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
-import '../../../core/theme/app_colors/app_colors.dart';
-import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/package_model/package_model.dart';
+import '../components/luxury_package_card.dart';
 import 'package_list_controller.dart';
 
 /// Packages tab — compact CG-NET product cards.
@@ -40,7 +38,7 @@ class PackageListPage extends ConsumerWidget {
       body: switch (state.status) {
         PackageListStatus.loading => const ShimmerLoading(
             itemCount: 6,
-            itemHeight: 108,
+            itemHeight: 128,
           ),
         PackageListStatus.empty => EmptyState(
             iconAsset: QuickActionIconChip.packageAsset,
@@ -83,36 +81,26 @@ class PackageListPage extends ConsumerWidget {
           ),
         PackageListStatus.data => ListView.separated(
             key: ValueKey('package-list-$locale'),
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
-            itemCount: (state.packages.length + 1) ~/ 2,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, row) {
-              final left = row * 2;
-              final right = left + 1;
-              _PackageListCard cardAt(int index) {
-                final data = _PackageListData.fromModel(
-                  state.packages[index],
-                  localeCode: locale,
-                );
-                return _PackageListCard(
-                  data: data,
-                  onOpenDetail: () => _openDetail(context, data.id),
-                );
-              }
-
-              return IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: cardAt(left)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: right < state.packages.length
-                          ? cardAt(right)
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            itemCount: state.packages.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final data = _PackageListData.fromModel(
+                state.packages[index],
+                localeCode: locale,
+              );
+              return LuxuryPackageCard(
+                title: data.title,
+                priceLabel: '${data.price} ${'topup.pts'.tr()}',
+                periodLabel: data.cycle.isEmpty
+                    ? 'home.offer_month'.tr()
+                    : '/ ${data.cycle}',
+                speedLabel: data.speed.contains('Mbps')
+                    ? data.speed
+                    : '${data.speed} Mbps',
+                popular: data.popular,
+                onTap: () => _openDetail(context, data.id),
+                onBuy: () => _openDetail(context, data.id),
               );
             },
           ),
@@ -125,18 +113,18 @@ class _PackageListData {
   const _PackageListData({
     required this.id,
     required this.title,
-    required this.line,
     required this.speed,
     required this.cycle,
     required this.price,
+    required this.popular,
   });
 
   final String id;
   final String title;
-  final String line;
   final String speed;
   final String cycle;
   final String price;
+  final bool popular;
 
   factory _PackageListData.fromModel(
     PackageModel model, {
@@ -155,154 +143,11 @@ class _PackageListData {
     return _PackageListData(
       id: model.id,
       title: title,
-      line: model.currency.trim(),
       speed: model.speed.trim(),
       cycle: cycle,
       price: price,
+      popular: model.recommended,
     );
   }
 }
 
-class _PackageListCard extends StatelessWidget {
-  const _PackageListCard({
-    required this.data,
-    required this.onOpenDetail,
-  });
-
-  final _PackageListData data;
-  final VoidCallback onOpenDetail;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      elevated: false,
-      bordered: false,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      onTap: onOpenDetail,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (data.line.isNotEmpty)
-            Text(
-              data.line,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-                height: AppTheme.lineHeightMyanmarSafe,
-                letterSpacing: 0.6,
-              ),
-            ),
-          if (data.line.isNotEmpty) const SizedBox(height: 4),
-          Text(
-            data.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.english(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              height: AppTheme.lineHeightMyanmarSafe,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, thickness: 0.5, color: AppColors.borderLight),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _LabeledValue(
-                  label: 'package.speed'.tr(),
-                  value: data.speed.isEmpty ? '—' : data.speed,
-                ),
-              ),
-              Expanded(
-                child: _LabeledValue(
-                  label: 'broadband.duration'.tr(),
-                  value: data.cycle.isEmpty ? '—' : data.cycle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                data.price,
-                style: AppTheme.english(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  height: 1,
-                  letterSpacing: 0,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'topup.pts'.tr(),
-                style: AppTheme.english(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                  height: 1,
-                  letterSpacing: 0.4,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LabeledValue extends StatelessWidget {
-  const _LabeledValue({
-    required this.label,
-    required this.value,
-    this.valueColor = AppColors.textPrimary,
-  });
-
-  final String label;
-  final String value;
-  final Color valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.english(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textMuted,
-            height: AppTheme.lineHeightMyanmarSafe,
-            letterSpacing: 0,
-          ),
-        ),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.english(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: valueColor,
-            height: AppTheme.lineHeightMyanmarSafe,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
-    );
-  }
-}

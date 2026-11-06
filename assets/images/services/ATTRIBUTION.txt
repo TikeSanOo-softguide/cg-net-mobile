@@ -7,12 +7,24 @@ Sources:
 - installation: maintenance_12313789 — https://www.flaticon.com/free-icon/maintenance_12313789
 - complaint: complaint_18392952 — https://www.flaticon.com/free-icon/complaint_18392952
 - relocation: relocation_12201646 — https://www.flaticon.com/free-icon/relocation_12201646
-- check_cpe: router_6890265 — https://www.flaticon.com/free-icon/router_6890265
+- show_room: home_3203071 — https://www.flaticon.com/free-icon/home_3203071
+- office: office_10404740 — https://www.flaticon.com/free-icon/office_10404740
+- social_media: social-media_1968666 — https://www.flaticon.com/free-icon/social-media_1968666
+- facebook: social-media_15050690 — https://www.flaticon.com/free-icon/social-media_15050690
+- verified: social-media_15050690 — https://www.flaticon.com/free-icon/social-media_15050690
+- wechat: wechat_3984261 — https://www.flaticon.com/free-icon/wechat_3984261
+- telegram: telegram_15015947 — https://www.flaticon.com/free-icon/telegram_15015947
+- viber: viber_3938039 — https://www.flaticon.com/free-icon/viber_3938039
+- social_facebook: social_13051733 — https://www.flaticon.com/free-icon/social_13051733
+- youtube: youtube_3992589 — https://www.flaticon.com/free-icon/youtube_3992589
+- tiktok: tiktok_3938055 — https://www.flaticon.com/free-icon/tiktok_3938055
+- website: web_4302080 — https://www.flaticon.com/free-icon/web_4302080
+- phone: apple_16566077 — https://www.flaticon.com/free-icon/apple_16566077
 - change_plan: exchange_5575716 — https://www.flaticon.com/free-icon/exchange_5575716
 - change_wifi: wifi_18696280 — https://www.flaticon.com/free-icon/wifi_18696280
 
 Icons by Flaticon authors — https://www.flaticon.com
 Assets stored as pure black silhouettes (128×128); app tints per-tile:
 pay_bill #0100CA, check_bill #0D9488, history #7C3AED, installation #FFC107,
-complaint #FF0000, relocation #1B4EF5, check_cpe #007880, change_plan #7A0BC0,
+complaint #FF0000, relocation #1B4EF5, show_room #E11D48, change_plan #7A0BC0,
 change_wifi #5CB338.

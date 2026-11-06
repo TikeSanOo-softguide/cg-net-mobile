@@ -10,6 +10,7 @@ import '../../requests/change_wifi_password/change_wifi_password_page.dart';
 import '../../requests/installation_application/installation_application_page.dart';
 import '../../requests/relocation/relocation_page.dart';
 import '../../requests/complaint/complaint_page.dart';
+import '../show_room/show_room_page.dart';
 
 /// Shared empty template for all Home services (until real screens exist).
 class ServicePlaceholderPage extends StatelessWidget {
@@ -34,8 +35,9 @@ class ServicePlaceholderPage extends StatelessWidget {
         return 'home.service_support'.tr();
       case 'relocation':
         return 'home.service_alerts'.tr();
+      case 'show_room':
       case 'check_cpe':
-        return 'home.service_check_cpe'.tr();
+        return 'home.service_show_room'.tr();
       case 'change_plan':
         return 'home.service_change_plan'.tr();
       case 'change_wifi':
@@ -61,6 +63,9 @@ class ServicePlaceholderPage extends StatelessWidget {
     }
     if (serviceId == 'complaint' || serviceId == 'failure_report') {
       return const ComplaintPage();
+    }
+    if (serviceId == 'show_room' || serviceId == 'check_cpe') {
+      return const ShowRoomPage();
     }
 
     final title = titleForId(serviceId);

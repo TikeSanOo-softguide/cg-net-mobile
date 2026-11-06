@@ -38,6 +38,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
   String? _inlineError;
   bool _submitting = false;
+  bool _handlingPasswordInput = false;
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _focusNodes = List.generate(_length, (_) => FocusNode());
@@ -65,58 +66,88 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
   bool get _isComplete => _password.length == _length;
 
-  int _maxLengthForDigit(int index) {
-    final otherDigits = _controllers
-        .asMap()
-        .entries
-        .where((entry) => entry.key != index)
-        .fold<int>(0, (total, entry) => total + entry.value.text.length);
-    return (_length - otherDigits).clamp(1, _length);
+  void _writeBox(int index, String digit) {
+    final value = TextEditingValue(
+      text: digit,
+      selection: TextSelection.collapsed(offset: digit.length),
+    );
+    if (_controllers[index].value != value) {
+      _controllers[index].value = value;
+    }
   }
 
+  void _focusBox(int index) {
+    final node = _focusNodes[index];
+    if (!node.hasFocus) node.requestFocus();
+    final text = _controllers[index].text;
+    _controllers[index].selection =
+        TextSelection.collapsed(offset: text.length);
+  }
+
+  /// iOS keychain / paste — fill boxes the same way as OTP.
   void _applyDigits(String raw) {
-    final rawDigits = raw.replaceAll(RegExp(r'\D'), '');
-    final digits = rawDigits.length > _length
-        ? rawDigits.substring(0, _length)
-        : rawDigits;
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return;
 
     for (var i = 0; i < _length; i++) {
-      _controllers[i].text = i < digits.length ? digits[i] : '';
+      _writeBox(i, i < digits.length ? digits[i] : '');
     }
 
-    final filled = digits.length.clamp(0, _length);
-    final focusIndex =
-        (filled >= _length ? _length - 1 : filled).clamp(0, _length - 1);
-    _focusNodes[focusIndex].requestFocus();
+    final focusIndex = (digits.length.clamp(1, _length) - 1);
+    _focusBox(focusIndex);
     setState(() => _inlineError = null);
   }
 
   void _onDigitChanged(int index, String value) {
+    if (_handlingPasswordInput) return;
     final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length > 1) {
-      _applyDigits(digits);
-      return;
-    }
 
-    _controllers[index].text = digits;
-    if (digits.isNotEmpty && index < _length - 1) {
-      _focusNodes[index + 1].requestFocus();
+    _handlingPasswordInput = true;
+    try {
+      if (digits.isEmpty) {
+        if (_controllers[index].text.isNotEmpty) {
+          _writeBox(index, '');
+        }
+        if (index > 0) _focusBox(index - 1);
+        setState(() => _inlineError = null);
+        return;
+      }
+
+      if (digits.length == 1) {
+        _writeBox(index, digits);
+        if (index < _length - 1) _focusBox(index + 1);
+        setState(() => _inlineError = null);
+        return;
+      }
+
+      if (digits.length < _length) {
+        var last = index;
+        for (var i = 0; i < digits.length && index + i < _length; i++) {
+          last = index + i;
+          _writeBox(last, digits[i]);
+        }
+        _focusBox(last);
+        setState(() => _inlineError = null);
+        return;
+      }
+
+      _applyDigits(digits);
+    } finally {
+      _handlingPasswordInput = false;
     }
-    if (digits.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
-    setState(() => _inlineError = null);
   }
 
   KeyEventResult _onKey(int index, KeyEvent event) {
+    if (_handlingPasswordInput) return KeyEventResult.ignored;
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     if (event.logicalKey != LogicalKeyboardKey.backspace) {
       return KeyEventResult.ignored;
     }
     if (_controllers[index].text.isEmpty && index > 0) {
-      _controllers[index - 1].clear();
-      _focusNodes[index - 1].requestFocus();
+      _handlingPasswordInput = true;
+      _writeBox(index - 1, '');
+      _focusBox(index - 1);
+      _handlingPasswordInput = false;
       setState(() => _inlineError = null);
       return KeyEventResult.handled;
     }
@@ -181,6 +212,11 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
       await showApiErrorModal(context, submitError);
       return;
     }
+    if (ok) {
+      TextInput.finishAutofillContext();
+      context.goNamed(RouteNames.home);
+      return;
+    }
 
     final error = ref.read(passwordLoginControllerProvider).error;
     if (error != null) {
@@ -228,30 +264,33 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final available = constraints.maxWidth - (_gap * (_length - 1));
-                final size = (available / _length).clamp(40.0, 52.0);
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var index = 0; index < _length; index++) ...[
-                      if (index > 0) const SizedBox(width: _gap),
-                      _PasswordDigit(
-                        size: size,
-                        maxLength: _maxLengthForDigit(index),
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        enabled: !signingIn,
-                        hasError: hasError,
-                        isLast: index == _length - 1,
-                        onKeyEvent: (event) => _onKey(index, event),
-                        onChanged: (value) => _onDigitChanged(index, value),
-                      ),
+            AutofillGroup(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final available =
+                      constraints.maxWidth - (_gap * (_length - 1));
+                  final size = (available / _length).clamp(40.0, 52.0);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var index = 0; index < _length; index++) ...[
+                        if (index > 0) const SizedBox(width: _gap),
+                        _PasswordDigit(
+                          size: size,
+                          controller: _controllers[index],
+                          focusNode: _focusNodes[index],
+                          enabled: !signingIn,
+                          hasError: hasError,
+                          autofill: index == 0,
+                          isLast: index == _length - 1,
+                          onKeyEvent: (event) => _onKey(index, event),
+                          onChanged: (value) => _onDigitChanged(index, value),
+                        ),
+                      ],
                     ],
-                  ],
-                );
-              },
+                  );
+                },
+              ),
             ),
             SizedBox(
               height: _errorSlotHeight,
@@ -279,24 +318,24 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 class _PasswordDigit extends StatefulWidget {
   const _PasswordDigit({
     required this.size,
-    required this.maxLength,
     required this.controller,
     required this.focusNode,
     required this.onChanged,
     required this.onKeyEvent,
     this.enabled = true,
     this.hasError = false,
+    this.autofill = false,
     this.isLast = false,
   });
 
   final double size;
-  final int maxLength;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final KeyEventResult Function(KeyEvent event) onKeyEvent;
   final bool enabled;
   final bool hasError;
+  final bool autofill;
   final bool isLast;
 
   @override
@@ -385,12 +424,18 @@ class _PasswordDigitState extends State<_PasswordDigit> {
                 textAlign: TextAlign.center,
                 textAlignVertical: TextAlignVertical.center,
                 keyboardType: TextInputType.number,
-                textInputAction:
-                    widget.isLast ? TextInputAction.done : TextInputAction.next,
-                // Reserve space used by the other boxes to keep the total at six.
-                maxLength: widget.maxLength,
-                showCursor: false,
-                enableInteractiveSelection: false,
+                textInputAction: widget.autofill
+                    ? TextInputAction.done
+                    : TextInputAction.next,
+                maxLength: 6,
+                showCursor: true,
+                cursorColor: AppColors.primary,
+                cursorWidth: 2,
+                cursorHeight: fontSize,
+                enableInteractiveSelection: true,
+                autofillHints: widget.autofill
+                    ? const [AutofillHints.password]
+                    : null,
                 style: AppTheme.english(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w700,
@@ -402,6 +447,11 @@ class _PasswordDigitState extends State<_PasswordDigit> {
                   height: AppTheme.lineHeightMyanmarSafe,
                   forceStrutHeight: true,
                 ),
+                onTapOutside: (_) {
+                  if (widget.focusNode.hasFocus) {
+                    widget.focusNode.unfocus();
+                  }
+                },
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   isCollapsed: true,
