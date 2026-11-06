@@ -186,6 +186,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
           await ref.read(authApiProvider).syncCurrentLanguage();
           if (!mounted) return;
+          TextInput.finishAutofillContext();
           context.goNamed(RouteNames.home);
           navigated = true;
           await Future.delayed(const Duration(milliseconds: 350));
@@ -210,11 +211,6 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
     if (submitError != null) {
       await showApiErrorModal(context, submitError);
-      return;
-    }
-    if (ok) {
-      TextInput.finishAutofillContext();
-      context.goNamed(RouteNames.home);
       return;
     }
 
