@@ -67,7 +67,7 @@ class ApiEndpoints {
   static String changeWifiPasswordRequest(String requestId) =>
       '$changeWifiPasswordRequests/$requestId';
   static String cancelChangeWifiPasswordRequest(String requestId) =>
-      changeWifiPasswordRequest(requestId);
+      '${changeWifiPasswordRequest(requestId)}/cancel';
   static const String states = '/states';
   static String stateRegions(int stateId) => '/states/$stateId/regions';
   static String regionAreas(int regionId) => '/regions/$regionId/areas';
@@ -97,6 +97,8 @@ class ApiEndpoints {
   static const String complaintCreate = '/failure-reports/create';
   static const String complaints = '/failure-reports';
   static String complaintDetail(String reportId) => '$complaints/$reportId';
+  static String cancelComplaint(String reportId) =>
+      '${complaintDetail(reportId)}/cancel';
   static const String chatStart = '/chat/start';
   static const String chatCurrent = '/chat/current';
   static const String chatSelectOption = '/chat/select-option';

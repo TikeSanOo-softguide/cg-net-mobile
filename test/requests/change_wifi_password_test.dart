@@ -28,6 +28,7 @@ void main() {
         'contact_name': 'Sophia',
         'contact_phone': '09757943906',
         'new_wifi_name': 'Home_WiFi',
+        'ticket_number': 'CWP11030001',
         'new_password': 'secretpassword123',
         'status': 'under_review',
         'created_at': '2026-10-08T07:00:00.000Z',
@@ -41,6 +42,7 @@ void main() {
       expect(model.contactName, 'Sophia');
       expect(model.contactPhone, '09757943906');
       expect(model.newWifiName, 'Home_WiFi');
+      expect(model.ticketNumber, 'CWP11030001');
       expect(model.newPassword, 'secretpassword123');
       expect(model.status, 'under_review');
     });
@@ -125,6 +127,7 @@ void main() {
     test('submitRequest creates new change password request', () async {
       _setResponse(dio, '''
         {
+          "code": "MSG-REQ-002",
           "id": "3",
           "user_id": 2,
           "broadband_account_number": "CG0000011",
@@ -148,8 +151,69 @@ void main() {
 
       final result = await repository.submitRequest(model);
 
-      expect(result.id, '3');
-      expect(result.broadbandAccountNumber, 'CG0000011');
+      expect(result.request.id, '3');
+      expect(result.request.broadbandAccountNumber, 'CG0000011');
+      expect(result.code, 'MSG-REQ-002');
+    });
+
+    test('updateRequest updates an existing request', () async {
+      _setResponse(dio, '''
+        {
+          "data": {
+            "code": "MSG-REQ-003",
+          "id": "15",
+          "user_id": 2,
+          "broadband_account_number": "CG0000011",
+          "contact_name": "Sophia Updated",
+          "contact_phone": "09757943906",
+          "new_wifi_name": "Updated_WiFi",
+          "ticket_number": "CWP11030001",
+          "new_password": "updatedpassword123",
+            "status": "under_review"
+          }
+        }
+      ''');
+
+      const request = ChangePasswordRequestModel(
+        id: '15',
+        userId: 2,
+        broadbandAccountNumber: 'CG0000011',
+        contactName: 'Sophia Updated',
+        contactPhone: '09757943906',
+        newWifiName: 'Updated_WiFi',
+        newPassword: 'updatedpassword123',
+        ticketNumber: 'CWP11030001',
+      );
+
+      final result = await repository.updateRequest(request);
+
+      expect(result.request.id, '15');
+      expect(result.request.contactName, 'Sophia Updated');
+      expect(result.request.ticketNumber, 'CWP11030001');
+      expect(result.code, 'MSG-REQ-003');
+    });
+
+    test('cancelRequest returns the backend message code', () async {
+      _setResponse(dio, '{"code":"MSG-REQ-001","message":"Cancelled"}');
+
+      const request = ChangePasswordRequestModel(
+        id: '15',
+        userId: 2,
+        contactName: 'Sophia',
+        contactPhone: '09757943906',
+        newPassword: 'password123',
+      );
+
+      final result = await repository.cancelRequest(request);
+
+      expect(result.code, 'MSG-REQ-001');
+      final requestOptions =
+          (dio.httpClientAdapter as _JsonAdapter).lastRequestOptions!;
+      expect(requestOptions.method, 'PATCH');
+      expect(
+        requestOptions.uri.path,
+        '/api/change-password-requests/15/cancel',
+      );
     });
   });
 
@@ -189,6 +253,7 @@ class _JsonAdapter implements HttpClientAdapter {
 
   final String body;
   final int statusCode;
+  RequestOptions? lastRequestOptions;
 
   @override
   Future<ResponseBody> fetch(
@@ -196,6 +261,7 @@ class _JsonAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    lastRequestOptions = options;
     return ResponseBody.fromString(
       body,
       statusCode,
