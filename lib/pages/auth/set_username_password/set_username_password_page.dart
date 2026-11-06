@@ -10,10 +10,13 @@ import '../../../components/app_input/app_input.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/auth_api/auth_api.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
+import '../otp_verification/otp_success_drawer.dart';
 import 'set_username_password_controller.dart';
 
 String? usernameValidationErrorKey(String? value) {
@@ -27,7 +30,7 @@ String? usernameValidationErrorKey(String? value) {
     return 'set_credentials.username_min';
   }
 
-  if (!RegExp(r'^[A-Za-z0-9_ ]+$').hasMatch(username)) {
+  if (!RegExp(r'^[\p{L}\p{M}\p{N}_ ]+$', unicode: true).hasMatch(username)) {
     return 'set_credentials.username_chars';
   }
 
@@ -115,35 +118,29 @@ class _SetUsernamePasswordPageState
 
     setState(() => _submitting = true);
     final controller = ref.read(setUsernamePasswordControllerProvider.notifier);
-    var navigated = false;
+    RegistrationResult? result;
     ApiException? submitError;
 
     try {
       await LoadingHelper.runWithLoading<void>(
         () async {
-          final success = await controller.submit(
+          result = await controller.submit(
             verificationToken: widget.verificationToken,
             username: _username.text.trim(),
             password: _password.text,
           );
-          if (!success || !mounted) return;
-
-          context.goNamed(RouteNames.home);
-          navigated = true;
-          await Future.delayed(const Duration(milliseconds: 350));
         },
         dismissAnimation: false,
         onBeforeDismiss: () async {
-          if (!navigated && mounted && _submitting) {
+          if (result == null && mounted && _submitting) {
             setState(() => _submitting = false);
             await WidgetsBinding.instance.endOfFrame;
           }
-        },  
+        },
       );
     } on ApiException catch (error) {
       submitError = error;
     }
-    if (navigated) return;
 
     if (mounted && _submitting) {
       setState(() => _submitting = false);
@@ -152,6 +149,24 @@ class _SetUsernamePasswordPageState
 
     if (submitError != null) {
       await showApiErrorModal(context, submitError);
+      return;
+    }
+
+    final registered = result;
+    if (registered != null) {
+      final code = registered.code;
+      await showOtpSuccessDrawer(
+        context,
+        title: 'common.success'.tr(),
+        body: MessageCodes.locKey(
+          MessageCodes.isKnown(code) ? code! : MessageCodes.authRegistered,
+        ).tr(),
+        continueLabel: 'common.continue'.tr(),
+        onContinue: () async {
+          if (!mounted) return;
+          context.goNamed(RouteNames.home);
+        },
+      );
       return;
     }
 

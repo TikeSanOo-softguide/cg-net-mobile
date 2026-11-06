@@ -122,6 +122,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       speedMbps: speedFromModel ?? catalog?.speedMbps ?? '20',
       periodLabel: cycle.isEmpty ? 'home.offer_month'.tr() : '/ $cycle',
       popular: model?.recommended ?? catalog?.popular ?? false,
+      features: model?.features ?? const [],
     );
   }
 
@@ -280,6 +281,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
               periodLabel: info.periodLabel,
               speedLabel: '${info.speedMbps} Mbps',
               popular: info.popular,
+              features: info.features,
               onBuy: _buyNow,
               footer: _RenewRow(
                 value: _autoRenew,
@@ -301,6 +303,7 @@ class _PackageDetailViewData {
     required this.speedMbps,
     required this.periodLabel,
     required this.popular,
+    this.features = const [],
   });
 
   final String id;
@@ -309,6 +312,7 @@ class _PackageDetailViewData {
   final String speedMbps;
   final String periodLabel;
   final bool popular;
+  final List<String> features;
 }
 
 class _RenewRow extends StatelessWidget {

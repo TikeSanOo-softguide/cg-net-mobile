@@ -47,7 +47,8 @@ class HomeCgPackageSection extends StatelessWidget {
   ];
 
   static const _gap = 10.0;
-  static const _listHeight = 168.0;
+  static const _listHeight = 214.0;
+  static const _checkAsset = 'assets/images/packages/feature_check.png';
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +163,10 @@ class _HomePackageCard extends StatelessWidget {
                 label: 'home.pkg_price'.tr(),
                 value: '$price ${'topup.pts'.tr()}',
               ),
+              const SizedBox(height: 8),
+              _HomeFeature(label: 'package.feature_unlimited'.tr()),
+              const SizedBox(height: 4),
+              _HomeFeature(label: 'package.benefit_247'.tr()),
               const Spacer(),
               GestureDetector(
                 onTap: openDetail,
@@ -231,6 +236,41 @@ class _MetaRow extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
+              height: AppTheme.lineHeightMyanmarSafe,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeFeature extends StatelessWidget {
+  const _HomeFeature({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Image.asset(
+          HomeCgPackageSection._checkAsset,
+          width: 12,
+          height: 12,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.english(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondary,
               height: AppTheme.lineHeightMyanmarSafe,
             ),
           ),

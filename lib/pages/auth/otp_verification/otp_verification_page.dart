@@ -11,8 +11,10 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
@@ -94,8 +96,14 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
   }
 
   void _playErrorFeedback() {
+    HapticFeedback.mediumImpact();
     HapticFeedback.vibrate();
     _shake.forward(from: 0);
+  }
+
+  void _clearInlineError() {
+    if (_inlineError == null) return;
+    setState(() => _inlineError = null);
   }
 
   String get _code => _controllers.map((c) => c.text).join();
@@ -166,18 +174,21 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     _handlingOtpInput = true;
     try {
       if (digits.isEmpty) {
-        if (_controllers[index].text.isNotEmpty) {
+        final hadText = _controllers[index].text.isNotEmpty;
+        if (hadText) {
           _writeBox(index, '');
         }
         if (index > 0) _focusBox(index - 1);
-        setState(() => _inlineError = null);
+        if (hadText) _clearInlineError();
         return;
       }
 
       if (digits.length == 1) {
+        final unchanged = _controllers[index].text == digits;
         _writeBox(index, digits);
+        if (unchanged) return;
         if (index < _length - 1) _focusBox(index + 1);
-        setState(() => _inlineError = null);
+        _clearInlineError();
         return;
       }
 
@@ -189,7 +200,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
           _writeBox(last, digits[i]);
         }
         _focusBox(last);
-        setState(() => _inlineError = null);
+        _clearInlineError();
         return;
       }
 
@@ -246,8 +257,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
       );
     } catch (error) {
       if (!mounted) return;
-      setState(() => _submitting = false);
-      await showApiErrorModal(context, error);
+      await _showVerifyError(error);
       return;
     }
 
@@ -256,22 +266,40 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     final result = verifyResult;
     if (result == null) {
       final error = ref.read(otpVerificationControllerProvider).error;
-      setState(() => _submitting = false);
       if (error != null) {
-        await showApiErrorModal(context, error);
+        await _showVerifyError(error);
+      } else if (mounted) {
+        setState(() => _submitting = false);
       }
-      // Keep entered OTP for retry; refocus first box.
-      if (mounted) _focusNodes.first.requestFocus();
       return;
     }
 
     TextInput.finishAutofillContext(shouldSave: false);
     setState(() => _submitting = false);
 
+    final code = result.code;
     await showOtpSuccessDrawer(
       context,
+      title: 'common.success'.tr(),
+      body: MessageCodes.locKey(
+        MessageCodes.isKnown(code) ? code! : MessageCodes.authOtpVerified,
+      ).tr(),
+      continueLabel: 'otp.continue_setup'.tr(),
       onContinue: () => _continueAfterOtpSuccess(result),
     );
+  }
+
+  Future<void> _showVerifyError(Object error) async {
+    if (isAuthInputError(error)) {
+      setState(() {
+        _submitting = false;
+        _inlineError = apiErrorText(error);
+      });
+      _playErrorFeedback();
+      return;
+    }
+    setState(() => _submitting = false);
+    await showApiErrorModal(context, error);
   }
 
   Future<void> _continueAfterOtpSuccess(OtpVerifyResult result) async {

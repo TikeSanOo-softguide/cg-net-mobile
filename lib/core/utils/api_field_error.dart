@@ -90,6 +90,12 @@ mixin ApiFieldErrorsMixin<T extends StatefulWidget> on State<T> {
   }
 }
 
+bool isAuthInputError(Object error) {
+  if (error is! ApiException) return false;
+  return error.code == MessageCodes.authOtpFailed ||
+      error.code == MessageCodes.authIncorrectPassword;
+}
+
 Future<void> showApiErrorModal(BuildContext context, Object error) {
   return showAppFailureModal(
     context,

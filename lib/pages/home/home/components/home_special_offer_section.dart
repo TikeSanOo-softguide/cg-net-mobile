@@ -162,7 +162,7 @@ class _OfferCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const Spacer(),
+                  const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
@@ -174,7 +174,7 @@ class _OfferCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'home.read_more'.tr(),

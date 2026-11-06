@@ -44,11 +44,13 @@ class OtpVerifyResult {
     required this.nextStep,
     this.verificationToken,
     this.accessToken,
+    this.code,
   });
 
   final String nextStep;
   final String? verificationToken;
   final String? accessToken;
+  final String? code;
 
   bool get isRegister => nextStep == 'register';
   bool get isPassword => nextStep == 'password';
@@ -61,6 +63,7 @@ class OtpVerifyResult {
     }
     final verificationToken = data['verification_token']?.toString();
     final accessToken = data['token']?.toString();
+    final code = data['code']?.toString().trim();
     return OtpVerifyResult(
       nextStep: nextStep,
       verificationToken: verificationToken == null || verificationToken.isEmpty
@@ -68,8 +71,16 @@ class OtpVerifyResult {
           : verificationToken,
       accessToken:
           accessToken == null || accessToken.isEmpty ? null : accessToken,
+      code: code == null || code.isEmpty ? null : code,
     );
   }
+}
+
+class RegistrationResult {
+  const RegistrationResult({required this.token, this.code});
+
+  final String token;
+  final String? code;
 }
 
 class AuthApi {
@@ -187,7 +198,7 @@ class AuthApi {
     return response.data['token'] as String;
   }
 
-  Future<String> completeRegistration({
+  Future<RegistrationResult> completeRegistration({
     required String verificationToken,
     required String name,
     required String password,
@@ -206,7 +217,19 @@ class AuthApi {
         },
       ),
     );
-    return response.data['token'] as String;
+    final raw = response.data;
+    if (raw is! Map) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    final token = raw['token']?.toString();
+    if (token == null || token.isEmpty) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    final code = raw['code']?.toString().trim();
+    return RegistrationResult(
+      token: token,
+      code: code == null || code.isEmpty ? null : code,
+    );
   }
 
   Future<void> updateLanguage({required String lang}) async {

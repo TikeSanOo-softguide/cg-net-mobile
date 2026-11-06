@@ -138,7 +138,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           return 'set_credentials.username_min'.tr();
                         }
 
-                        if (!RegExp(r'^[A-Za-z0-9_ ]+$').hasMatch(username)) {
+                        if (!RegExp(r'^[\p{L}\p{M}\p{N}_ ]+$', unicode: true)
+                            .hasMatch(username)) {
                           return 'set_credentials.username_chars'.tr();
                         }
                         return null;

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 
-/// Simple white package card — speed, title, price, buy.
+/// Package card with speed, price, and feature list.
 class LuxuryPackageCard extends StatelessWidget {
   const LuxuryPackageCard({
     super.key,
@@ -16,8 +16,11 @@ class LuxuryPackageCard extends StatelessWidget {
     this.onTap,
     this.popular = false,
     this.showBenefits = true,
+    this.features,
     this.footer,
   });
+
+  static const _checkAsset = 'assets/images/packages/feature_check.png';
 
   final String title;
   final String priceLabel;
@@ -27,7 +30,19 @@ class LuxuryPackageCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool popular;
   final bool showBenefits;
+  final List<String>? features;
   final Widget? footer;
+
+  List<String> get _featureLines {
+    if (features != null && features!.isNotEmpty) {
+      return features!.take(4).toList();
+    }
+    return [
+      'package.feature_unlimited'.tr(),
+      'package.feature_speed'.tr(),
+      'package.benefit_247'.tr(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +57,7 @@ class LuxuryPackageCard extends StatelessWidget {
         splashColor: AppColors.primary.withValues(alpha: 0.05),
         highlightColor: AppColors.primary.withValues(alpha: 0.03),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -98,7 +113,7 @@ class LuxuryPackageCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'package.unlimited_internet'.tr(),
+                          periodLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTheme.english(
@@ -126,18 +141,6 @@ class LuxuryPackageCard extends StatelessWidget {
                           height: 1.1,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        periodLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.english(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
-                          height: AppTheme.lineHeightMyanmarSafe,
-                        ),
-                      ),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: onBuy,
@@ -147,7 +150,7 @@ class LuxuryPackageCard extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primarySoft,
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -157,7 +160,7 @@ class LuxuryPackageCard extends StatelessWidget {
                             style: AppTheme.english(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.primary,
+                              color: AppColors.onPrimary,
                               height: AppTheme.lineHeightMyanmarSafe,
                             ),
                           ),
@@ -168,27 +171,55 @@ class LuxuryPackageCard extends StatelessWidget {
                 ],
               ),
               if (showBenefits) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '${'package.benefit_no_limit'.tr()}  ·  ${'package.benefit_247'.tr()}  ·  ${'package.benefit_monthly'.tr()}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
-                    height: AppTheme.lineHeightMyanmarSafe,
-                  ),
-                ),
+                const SizedBox(height: 12),
+                for (var i = 0; i < _featureLines.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 6),
+                  _FeatureLine(label: _featureLines[i]),
+                ],
               ],
               if (footer != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 footer!,
               ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FeatureLine extends StatelessWidget {
+  const _FeatureLine({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Image.asset(
+          LuxuryPackageCard._checkAsset,
+          width: 14,
+          height: 14,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.english(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondary,
+              height: AppTheme.lineHeightMyanmarSafe,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

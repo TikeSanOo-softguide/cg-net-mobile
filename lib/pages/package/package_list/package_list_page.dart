@@ -99,6 +99,7 @@ class PackageListPage extends ConsumerWidget {
                     ? data.speed
                     : '${data.speed} Mbps',
                 popular: data.popular,
+                features: data.features,
                 onTap: () => _openDetail(context, data.id),
                 onBuy: () => _openDetail(context, data.id),
               );
@@ -117,6 +118,7 @@ class _PackageListData {
     required this.cycle,
     required this.price,
     required this.popular,
+    required this.features,
   });
 
   final String id;
@@ -125,6 +127,7 @@ class _PackageListData {
   final String cycle;
   final String price;
   final bool popular;
+  final List<String> features;
 
   factory _PackageListData.fromModel(
     PackageModel model, {
@@ -147,6 +150,7 @@ class _PackageListData {
       cycle: cycle,
       price: price,
       popular: model.recommended,
+      features: model.features,
     );
   }
 }

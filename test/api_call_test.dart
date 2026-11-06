@@ -46,6 +46,16 @@ void main() {
     expect(MessageCodes.locKey(MessageCodes.pwdChanged), 'msg.pwd_001');
   });
 
+  test('registration success code maps to its localized message', () {
+    expect(MessageCodes.isKnown(MessageCodes.authRegistered), isTrue);
+    expect(MessageCodes.locKey(MessageCodes.authRegistered), 'msg.auth_020');
+  });
+
+  test('otp verify success code maps to its localized message', () {
+    expect(MessageCodes.isKnown(MessageCodes.authOtpVerified), isTrue);
+    expect(MessageCodes.locKey(MessageCodes.authOtpVerified), 'msg.auth_021');
+  });
+
   test('shared request codes map to feature-specific loc keys', () {
     expect(
       MessageCodes.featureReqKey(

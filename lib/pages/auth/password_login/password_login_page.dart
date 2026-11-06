@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -31,7 +32,8 @@ class PasswordLoginPage extends ConsumerStatefulWidget {
   ConsumerState<PasswordLoginPage> createState() => _PasswordLoginPageState();
 }
 
-class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
+class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
+    with SingleTickerProviderStateMixin {
   static const _length = 6;
   static const _gap = 12.0;
   static const _errorSlotHeight = AppStyle.errorSlotHeight;
@@ -42,10 +44,24 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _focusNodes = List.generate(_length, (_) => FocusNode());
+  late final AnimationController _shake;
+  late final Animation<double> _shakeX;
 
   @override
   void initState() {
     super.initState();
+    _shake = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _shakeX = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: -7), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -7, end: 7), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 7, end: -5), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -5, end: 5), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 5, end: -3), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -3, end: 0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shake, curve: Curves.easeOut));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNodes.first.requestFocus();
     });
@@ -53,6 +69,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
   @override
   void dispose() {
+    _shake.dispose();
     for (final c in _controllers) {
       c.dispose();
     }
@@ -60,6 +77,17 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
       f.dispose();
     }
     super.dispose();
+  }
+
+  void _playErrorFeedback() {
+    HapticFeedback.mediumImpact();
+    HapticFeedback.vibrate();
+    _shake.forward(from: 0);
+  }
+
+  void _clearInlineError() {
+    if (_inlineError == null) return;
+    setState(() => _inlineError = null);
   }
 
   String get _password => _controllers.map((c) => c.text).join();
@@ -105,18 +133,21 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
     _handlingPasswordInput = true;
     try {
       if (digits.isEmpty) {
-        if (_controllers[index].text.isNotEmpty) {
+        final hadText = _controllers[index].text.isNotEmpty;
+        if (hadText) {
           _writeBox(index, '');
         }
         if (index > 0) _focusBox(index - 1);
-        setState(() => _inlineError = null);
+        if (hadText) _clearInlineError();
         return;
       }
 
       if (digits.length == 1) {
+        final unchanged = _controllers[index].text == digits;
         _writeBox(index, digits);
+        if (unchanged) return;
         if (index < _length - 1) _focusBox(index + 1);
-        setState(() => _inlineError = null);
+        _clearInlineError();
         return;
       }
 
@@ -127,7 +158,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
           _writeBox(last, digits[i]);
         }
         _focusBox(last);
-        setState(() => _inlineError = null);
+        _clearInlineError();
         return;
       }
 
@@ -162,7 +193,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
 
     if (!_isComplete) {
       setState(() => _inlineError = 'password_login.incomplete'.tr());
-      _focusNodes.first.requestFocus();
+      _playErrorFeedback();
       return;
     }
 
@@ -210,14 +241,26 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
     if (!mounted) return;
 
     if (submitError != null) {
-      await showApiErrorModal(context, submitError);
+      await _showSignInError(submitError);
       return;
     }
 
     final error = ref.read(passwordLoginControllerProvider).error;
     if (error != null) {
-      await showApiErrorModal(context, error);
+      await _showSignInError(error);
     }
+  }
+
+  Future<void> _showSignInError(Object error) async {
+    if (isAuthInputError(error)) {
+      setState(() {
+        _submitting = false;
+        _inlineError = apiErrorText(error);
+      });
+      _playErrorFeedback();
+      return;
+    }
+    await showApiErrorModal(context, error);
   }
 
   @override
@@ -266,24 +309,31 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
                   final available =
                       constraints.maxWidth - (_gap * (_length - 1));
                   final size = (available / _length).clamp(40.0, 52.0);
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (var index = 0; index < _length; index++) ...[
-                        if (index > 0) const SizedBox(width: _gap),
-                        _PasswordDigit(
-                          size: size,
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          enabled: !signingIn,
-                          hasError: hasError,
-                          autofill: index == 0,
-                          isLast: index == _length - 1,
-                          onKeyEvent: (event) => _onKey(index, event),
-                          onChanged: (value) => _onDigitChanged(index, value),
-                        ),
+                  return AnimatedBuilder(
+                    animation: _shakeX,
+                    builder: (context, child) => Transform.translate(
+                      offset: Offset(_shakeX.value, 0),
+                      child: child,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var index = 0; index < _length; index++) ...[
+                          if (index > 0) const SizedBox(width: _gap),
+                          _PasswordDigit(
+                            size: size,
+                            controller: _controllers[index],
+                            focusNode: _focusNodes[index],
+                            enabled: !signingIn,
+                            hasError: hasError,
+                            autofill: index == 0,
+                            isLast: index == _length - 1,
+                            onKeyEvent: (event) => _onKey(index, event),
+                            onChanged: (value) => _onDigitChanged(index, value),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   );
                 },
               ),
@@ -394,7 +444,7 @@ class _PasswordDigitState extends State<_PasswordDigit> {
       height: size,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        alignment: Alignment.center,
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: AppStyle.borderRadiusInput,
@@ -403,81 +453,81 @@ class _PasswordDigitState extends State<_PasswordDigit> {
             width: focused || widget.hasError ? 1.5 : 1.2,
           ),
         ),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Center(
-            child: Focus(
-              canRequestFocus: false,
-              skipTraversal: true,
-              onKeyEvent: (node, event) => widget.onKeyEvent(event),
-              child: TextField(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                enabled: widget.enabled,
-                obscureText: true,
-                obscuringCharacter: '•',
-                textAlign: TextAlign.center,
-                textAlignVertical: TextAlignVertical.center,
-                keyboardType: TextInputType.number,
-                textInputAction: widget.autofill
-                    ? TextInputAction.done
-                    : TextInputAction.next,
-                maxLength: 6,
-                showCursor: true,
-                cursorColor: AppColors.primary,
-                cursorWidth: 2,
-                cursorHeight: fontSize,
-                enableInteractiveSelection: true,
-                autofillHints: widget.autofill
-                    ? const [AutofillHints.password]
-                    : null,
-                style: AppTheme.english(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: filled ? AppColors.textPrimary : AppColors.textMuted,
-                  height: AppTheme.lineHeightMyanmarSafe,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Opacity(
+              opacity: 0,
+              child: Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onKeyEvent: (node, event) => widget.onKeyEvent(event),
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: widget.focusNode,
+                  enabled: widget.enabled,
+                  obscureText: true,
+                  obscuringCharacter: '•',
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  textInputAction: widget.autofill
+                      ? TextInputAction.done
+                      : TextInputAction.next,
+                  maxLength: 6,
+                  showCursor: false,
+                  enableInteractiveSelection: false,
+                  autofillHints: widget.autofill
+                      ? const [AutofillHints.password]
+                      : null,
+                  style: AppTheme.english(
+                    fontSize: 1,
+                    height: 1,
+                    color: Colors.transparent,
+                  ),
+                  onTapOutside: (_) {
+                    if (widget.focusNode.hasFocus) {
+                      widget.focusNode.unfocus();
+                    }
+                  },
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    isCollapsed: true,
+                    isDense: true,
+                    border: InputBorder.none,
+                    counterText: '',
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onSubmitted: widget.isLast ? (_) {} : null,
+                  onChanged: (value) {
+                    final digits = value.replaceAll(RegExp(r'\D'), '');
+                    if (digits.length > 1) {
+                      widget.onChanged(digits);
+                      return;
+                    }
+                    final digit = digits.isEmpty ? '' : digits;
+                    if (widget.controller.text != digit) {
+                      widget.controller.value = TextEditingValue(
+                        text: digit,
+                        selection: TextSelection.collapsed(offset: digit.length),
+                      );
+                    }
+                    widget.onChanged(digit);
+                  },
                 ),
-                strutStyle: StrutStyle(
-                  fontSize: fontSize,
-                  height: AppTheme.lineHeightMyanmarSafe,
-                  forceStrutHeight: true,
-                ),
-                onTapOutside: (_) {
-                  if (widget.focusNode.hasFocus) {
-                    widget.focusNode.unfocus();
-                  }
-                },
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  isCollapsed: true,
-                  isDense: true,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  counterText: '',
-                  contentPadding: EdgeInsets.zero,
-                ),
-                onSubmitted: widget.isLast ? (_) {} : null,
-                onChanged: (value) {
-                  final digits = value.replaceAll(RegExp(r'\D'), '');
-                  if (digits.length > 1) {
-                    widget.onChanged(digits);
-                    return;
-                  }
-                  final digit = digits.isEmpty ? '' : digits;
-                  if (widget.controller.text != digit) {
-                    widget.controller.value = TextEditingValue(
-                      text: digit,
-                      selection: TextSelection.collapsed(offset: digit.length),
-                    );
-                  }
-                  widget.onChanged(digit);
-                },
               ),
             ),
-          ),
+            if (filled)
+              IgnorePointer(
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: AppColors.textPrimary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

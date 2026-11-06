@@ -18,9 +18,18 @@ void main() {
       expect(usernameValidationErrorKey('A B'), 'set_credentials.username_min');
     });
 
-    test('rejects unsupported characters', () {
+    test('allows Myanmar and Chinese letters', () {
+      expect(usernameValidationErrorKey('မောင်မောင်'), isNull);
+      expect(usernameValidationErrorKey('张伟用户'), isNull);
+    });
+
+    test('rejects special characters', () {
       expect(
         usernameValidationErrorKey('John-Doe'),
+        'set_credentials.username_chars',
+      );
+      expect(
+        usernameValidationErrorKey('မောင်@net'),
         'set_credentials.username_chars',
       );
     });

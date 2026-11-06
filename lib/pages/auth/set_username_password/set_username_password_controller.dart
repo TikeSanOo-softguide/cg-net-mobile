@@ -32,30 +32,30 @@ class SetUsernamePasswordController
   final SecureStorage _secureStorage;
   final PushNotificationService _push;
 
-  Future<bool> submit({
+  Future<RegistrationResult?> submit({
     required String verificationToken,
     required String username,
     required String password,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final token = await _authApi.completeRegistration(
+      final result = await _authApi.completeRegistration(
         verificationToken: verificationToken,
         name: username,
         password: password,
       );
-      await _secureStorage.writeToken(token);
+      await _secureStorage.writeToken(result.token);
       _push.syncToken();
-      if (!mounted) return true;
+      if (!mounted) return result;
       state = state.copyWith(isLoading: false);
-      return true;
+      return result;
     } on ApiException catch (error) {
-      if (!mounted) return false;
+      if (!mounted) return null;
       state = state.copyWith(
         isLoading: false,
         error: error.failure == ApiFailure.cancelled ? null : error,
       );
-      return false;
+      return null;
     }
   }
 }
