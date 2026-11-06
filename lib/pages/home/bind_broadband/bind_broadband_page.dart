@@ -16,7 +16,6 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
-import '../../../core/utils/loading_helper.dart';
 import '../../../data/broadband/broadband_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
@@ -36,6 +35,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
   final _formKey = GlobalKey<FormState>();
   String _serviceType = 'FTTH';
   bool _isSubmitting = false;
+  bool _isBinding = false;
   bool get _isFormValid => _validateAccount(_account.text) == null;
 
   @override
@@ -93,17 +93,18 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
       account: _account.text.trim(),
     );
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _isBinding = true;
+    });
 
     try {
       while (true) {
         try {
-          final response = await LoadingHelper.runWithLoading(
-            () => ref.read(broadbandRepositoryProvider).connect(
-                  accountNumber: bound.account,
-                  serviceType: bound.serviceType,
-                ),
-          );
+          final response = await ref.read(broadbandRepositoryProvider).connect(
+                accountNumber: bound.account,
+                serviceType: bound.serviceType,
+              );
 
           debugPrint('BROADBAND CONNECT RESPONSE: $response');
           break;
@@ -158,7 +159,10 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isSubmitting = false);
+        setState(() {
+          _isSubmitting = false;
+          _isBinding = false;
+        });
       }
     }
   }
@@ -179,12 +183,10 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     try {
       while (true) {
         try {
-          await LoadingHelper.runWithLoading(
-            () => ref.read(broadbandRepositoryProvider).unbindAccount(
-                  serviceType: bound.serviceType,
-                  accountNumber: bound.account,
-                ),
-          );
+          await ref.read(broadbandRepositoryProvider).unbindAccount(
+                serviceType: bound.serviceType,
+                accountNumber: bound.account,
+              );
 
           if (!mounted) return;
 
@@ -242,11 +244,12 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
   @override
   Widget build(BuildContext context) {
     final bound = ref.watch(boundBroadbandProvider);
+    final displayedBound = _isSubmitting && _isBinding ? null : bound;
     final profile = ref.watch(profileControllerProvider);
 
     return AppCurvedScaffold(
       title: Text(
-        bound == null
+        displayedBound == null
             ? context.tr('broadband.bind_now')
             : context.tr('home.broadband_account'),
       ),
@@ -254,7 +257,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          if (bound == null)
+          if (displayedBound == null)
             _BindForm(
               formKey: _formKey,
               account: _account,
@@ -268,10 +271,10 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
             )
           else
             _BoundAccountCard(
-              bound: bound,
+              bound: displayedBound,
               profile: profile,
               isSubmitting: _isSubmitting,
-              onRemove: () => _onRemove(bound),
+              onRemove: () => _onRemove(displayedBound),
             ),
         ],
       ),

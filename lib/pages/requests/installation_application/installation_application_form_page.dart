@@ -13,8 +13,6 @@ import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
-import '../../../data/location/location_repository.dart';
-import '../../../models/location/location_place.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import 'installation_application_controller.dart';
 import 'installation_plan_catalog.dart';
@@ -44,15 +42,6 @@ class _InstallationApplicationFormPageState
   String? _productLine;
   int? _speedMbps;
   int? _monthCycle;
-  List<LocationPlace> _states = const [];
-  List<LocationPlace> _regions = const [];
-  List<LocationPlace> _areas = const [];
-  int? _stateId;
-  int? _regionId;
-  int? _areaId;
-  bool _loadingStates = true;
-  bool _loadingRegions = false;
-  bool _loadingAreas = false;
   AutovalidateMode _customerAutovalidate = AutovalidateMode.disabled;
 
   @override
@@ -63,12 +52,8 @@ class _InstallationApplicationFormPageState
     _phoneController = TextEditingController(text: draft.phone);
     _addressController = TextEditingController(text: draft.address);
     _noteController = TextEditingController(text: draft.note ?? '');
-    _stateId = draft.stateId;
-    _regionId = draft.regionId;
-    _areaId = draft.areaId;
     Future.microtask(() {
       _loadProducts();
-      _loadStates();
     });
   }
 
@@ -158,8 +143,7 @@ class _InstallationApplicationFormPageState
   }
 
   Future<void> _loadProducts() async {
-    final serviceType =
-        ref.read(installationRequestDraftProvider).serviceType;
+    final serviceType = ref.read(installationRequestDraftProvider).serviceType;
     _serviceType = serviceType == 'CG' ? 'CG' : 'FTTH';
     setState(() {
       _loadingOptions = true;
@@ -188,111 +172,6 @@ class _InstallationApplicationFormPageState
       });
       await showApiMessageModal(context, error);
     }
-  }
-
-  List<AppSelectOption<int>> _locationOptions(List<LocationPlace> places) {
-    final locale = context.locale.languageCode;
-    return places
-        .map(
-          (place) => AppSelectOption(
-            value: place.id,
-            label: place.labelFor(locale),
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  String _placeLabel(List<LocationPlace> places, int id) {
-    final locale = context.locale.languageCode;
-    for (final place in places) {
-      if (place.id == id) return place.labelFor(locale);
-    }
-    return '';
-  }
-
-  Future<void> _loadStates() async {
-    setState(() => _loadingStates = true);
-    try {
-      final states = await ref.read(locationRepositoryProvider).fetchStates();
-      if (!mounted) return;
-      setState(() {
-        _states = states;
-        _loadingStates = false;
-      });
-      if (_stateId != null) await _loadRegions(_stateId!);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadingStates = false);
-    }
-  }
-
-  Future<void> _loadRegions(int stateId) async {
-    setState(() {
-      _loadingRegions = true;
-      _regions = const [];
-    });
-    try {
-      final regions =
-          await ref.read(locationRepositoryProvider).fetchRegions(stateId);
-      if (!mounted) return;
-      setState(() {
-        _regions = regions;
-        _loadingRegions = false;
-      });
-      if (_regionId != null) await _loadAreas(_regionId!);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadingRegions = false);
-    }
-  }
-
-  Future<void> _loadAreas(int regionId) async {
-    setState(() {
-      _loadingAreas = true;
-      _areas = const [];
-    });
-    try {
-      final areas =
-          await ref.read(locationRepositoryProvider).fetchAreas(regionId);
-      if (!mounted) return;
-      setState(() {
-        _areas = areas;
-        _loadingAreas = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadingAreas = false);
-    }
-  }
-
-  Future<void> _selectState(int id) async {
-    final label = _placeLabel(_states, id);
-    ref.read(installationRequestDraftProvider.notifier).setStatePlace(id, label);
-    setState(() {
-      _stateId = id;
-      _regionId = null;
-      _areaId = null;
-      _areas = const [];
-    });
-    await _loadRegions(id);
-  }
-
-  Future<void> _selectRegion(int id) async {
-    final label = _placeLabel(_regions, id);
-    ref
-        .read(installationRequestDraftProvider.notifier)
-        .setRegionPlace(id, label);
-    setState(() {
-      _regionId = id;
-      _areaId = null;
-    });
-    await _loadAreas(id);
-  }
-
-  void _selectArea(int id) {
-    final label = _placeLabel(_areas, id);
-    ref.read(installationRequestDraftProvider.notifier).setAreaPlace(id, label);
-    setState(() => _areaId = id);
   }
 
   void _goBack() {
@@ -441,9 +320,7 @@ class _InstallationApplicationFormPageState
         barTitle: barTitle,
         title: title,
         description: description,
-        actionLabel: _step == 3
-            ? 'common.submit'.tr()
-            : 'common.continue'.tr(),
+        actionLabel: _step == 3 ? 'common.submit'.tr() : 'common.continue'.tr(),
         actionEnabled: switch (_step) {
           1 => !_loadingOptions && product != null,
           2 => true,
@@ -478,177 +355,166 @@ class _InstallationApplicationFormPageState
           );
 
     return AppCard(
-        elevated: false,
-        bordered: false,
-        padding: const EdgeInsets.fromLTRB(
-          AppStyle.spaceLg,
-          AppStyle.spaceLg,
-          AppStyle.spaceLg,
-          AppStyle.spaceXl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _SectionLabel(
-              label: 'installationApplication.service_type'.tr(),
-            ),
-            const SizedBox(height: AppStyle.spaceSm),
-            _ServiceTypeSwitch(
-              value: _serviceType,
-              enabled: !_loadingOptions,
-              onChanged: _selectServiceType,
-            ),
-            if (_loadingOptions)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppStyle.spaceXl),
-                child: Center(
-                  child: SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
+      elevated: false,
+      bordered: false,
+      padding: const EdgeInsets.fromLTRB(
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        AppStyle.spaceLg,
+        AppStyle.spaceXl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionLabel(
+            label: 'installationApplication.service_type'.tr(),
+          ),
+          const SizedBox(height: AppStyle.spaceSm),
+          _ServiceTypeSwitch(
+            value: _serviceType,
+            enabled: !_loadingOptions,
+            onChanged: _selectServiceType,
+          ),
+          if (_loadingOptions)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppStyle.spaceXl),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
                   ),
                 ),
+              ),
+            )
+          else if (_optionsFailed)
+            Center(
+              child: TextButton(
+                onPressed: _loadProducts,
+                child: Text('common.retry'.tr()),
+              ),
+            )
+          else if (_packages.isEmpty)
+            _EmptyCatalog(
+              message: 'installationApplication.options_unavailable'.tr(),
+              onRetry: _loadProducts,
+            )
+          else ...[
+            const SizedBox(height: AppStyle.spaceXl),
+            _SectionLabel(
+              label: 'installationApplication.network_provider'.tr(),
+            ),
+            const SizedBox(height: AppStyle.spaceSm),
+            if (providers.isEmpty)
+              Text(
+                'installationApplication.no_matching_packages'.tr(),
+                style: AppTheme.body(color: AppColors.textMuted),
               )
-            else if (_optionsFailed)
-              Center(
-                child: TextButton(
-                  onPressed: _loadProducts,
-                  child: Text('common.retry'.tr()),
-                ),
+            else
+              AppSelectDropdown<String>(
+                value: _productLine,
+                hint: 'installationApplication.select_provider'.tr(),
+                options: providers
+                    .map(
+                      (line) => AppSelectOption(
+                        value: line,
+                        label: line,
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (line) {
+                  if (line != null) _selectProvider(line);
+                },
+              ),
+            const SizedBox(height: AppStyle.spaceMd),
+            _SectionLabel(
+              label: 'installationApplication.internet_speed'.tr(),
+            ),
+            const SizedBox(height: AppStyle.spaceSm),
+            if (_productLine == null)
+              Text(
+                'installationApplication.choose_provider_first'.tr(),
+                style: AppTheme.caption(),
               )
-            else if (_packages.isEmpty)
-              _EmptyCatalog(
-                message: 'installationApplication.options_unavailable'.tr(),
-                onRetry: _loadProducts,
+            else if (speeds.isEmpty)
+              Text(
+                'installationApplication.no_matching_packages'.tr(),
+                style: AppTheme.body(color: AppColors.textMuted),
               )
-            else ...[
+            else
+              _ChoiceGrid(
+                columns: 3,
+                children: speeds
+                    .map(
+                      (speed) => _ChoiceChip(
+                        label: 'installationApplication.speed_mbps'.tr(
+                          namedArgs: {'speed': '$speed'},
+                        ),
+                        selected: speed == _speedMbps,
+                        onTap: () => _selectSpeed(speed),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: AppStyle.spaceXl),
+            _SectionLabel(
+              label: 'installationApplication.billing_period'.tr(),
+            ),
+            const SizedBox(height: AppStyle.spaceSm),
+            if (_speedMbps == null)
+              Text(
+                'installationApplication.choose_speed_first'.tr(),
+                style: AppTheme.caption(),
+              )
+            else if (cycles.isEmpty)
+              Text(
+                'installationApplication.no_matching_packages'.tr(),
+                style: AppTheme.body(color: AppColors.textMuted),
+              )
+            else
+              _ChoiceGrid(
+                columns: 3,
+                children: cycles
+                    .map(
+                      (cycle) => _ChoiceChip(
+                        label: _periodLabel(
+                          cycle,
+                          cycleUnitFor(
+                            products: _packages,
+                            productLine: _productLine!,
+                            speedMbps: _speedMbps!,
+                            monthCycle: cycle,
+                          ),
+                        ),
+                        selected: cycle == _monthCycle,
+                        onTap: () => _selectCycle(cycle),
+                      ),
+                    )
+                    .toList(),
+              ),
+            if (_monthCycle != null && product != null) ...[
               const SizedBox(height: AppStyle.spaceXl),
               _SectionLabel(
-                label: 'installationApplication.network_provider'.tr(),
+                label: 'installationApplication.selected_package'.tr(),
               ),
-                          const SizedBox(height: AppStyle.spaceSm),
-                          if (providers.isEmpty)
-                            Text(
-                              'installationApplication.no_matching_packages'
-                                  .tr(),
-                              style: AppTheme.body(color: AppColors.textMuted),
-                            )
-                          else
-                            AppSelectDropdown<String>(
-                              value: _productLine,
-                              hint: 'installationApplication.select_provider'
-                                  .tr(),
-                              options: providers
-                                  .map(
-                                    (line) => AppSelectOption(
-                                      value: line,
-                                      label: line,
-                                    ),
-                                  )
-                                  .toList(growable: false),
-                              onChanged: (line) {
-                                if (line != null) _selectProvider(line);
-                              },
-                            ),
-                          const SizedBox(height: AppStyle.spaceMd),
-                          _SectionLabel(
-                            label:
-                                'installationApplication.internet_speed'.tr(),
-                          ),
-                          const SizedBox(height: AppStyle.spaceSm),
-                          if (_productLine == null)
-                            Text(
-                              'installationApplication.choose_provider_first'
-                                  .tr(),
-                              style: AppTheme.caption(),
-                            )
-                          else if (speeds.isEmpty)
-                            Text(
-                              'installationApplication.no_matching_packages'
-                                  .tr(),
-                              style: AppTheme.body(color: AppColors.textMuted),
-                            )
-                          else
-                            _ChoiceGrid(
-                              columns: 3,
-                              children: speeds
-                                  .map(
-                                    (speed) => _ChoiceChip(
-                                      label:
-                                          'installationApplication.speed_mbps'
-                                              .tr(
-                                        namedArgs: {'speed': '$speed'},
-                                      ),
-                                      selected: speed == _speedMbps,
-                                      onTap: () => _selectSpeed(speed),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          const SizedBox(height: AppStyle.spaceXl),
-                          _SectionLabel(
-                            label:
-                                'installationApplication.billing_period'.tr(),
-                          ),
-                          const SizedBox(height: AppStyle.spaceSm),
-                          if (_speedMbps == null)
-                            Text(
-                              'installationApplication.choose_speed_first'.tr(),
-                              style: AppTheme.caption(),
-                            )
-                          else if (cycles.isEmpty)
-                            Text(
-                              'installationApplication.no_matching_packages'
-                                  .tr(),
-                              style: AppTheme.body(color: AppColors.textMuted),
-                            )
-                          else
-                            _ChoiceGrid(
-                              columns: 3,
-                              children: cycles
-                                  .map(
-                                    (cycle) => _ChoiceChip(
-                                      label: _periodLabel(
-                                        cycle,
-                                        cycleUnitFor(
-                                          products: _packages,
-                                          productLine: _productLine!,
-                                          speedMbps: _speedMbps!,
-                                          monthCycle: cycle,
-                                        ),
-                                      ),
-                                      selected: cycle == _monthCycle,
-                                      onTap: () => _selectCycle(cycle),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          if (_monthCycle != null && product != null) ...[
-                            const SizedBox(height: AppStyle.spaceXl),
-                            _SectionLabel(
-                              label: 'installationApplication.selected_package'
-                                  .tr(),
-                            ),
-                            const SizedBox(height: AppStyle.spaceSm),
-                            _SelectedPackageSummary(
-                              provider: providerLineOf(product),
-                              speed:
-                                  'installationApplication.speed_mbps'.tr(
-                                namedArgs: {
-                                  'speed': '${productSpeedMbps(product)}',
-                                },
-                              ),
-                              price: _points(product.productPrice),
-                              installationFee: _points(product.installationFee),
-                              total: _points(product.totalInitialPayment),
-                            ),
-                          ],
+              const SizedBox(height: AppStyle.spaceSm),
+              _SelectedPackageSummary(
+                provider: providerLineOf(product),
+                speed: 'installationApplication.speed_mbps'.tr(
+                  namedArgs: {
+                    'speed': '${productSpeedMbps(product)}',
+                  },
+                ),
+                price: _points(product.productPrice),
+                installationFee: _points(product.installationFee),
+                total: _points(product.totalInitialPayment),
+              ),
             ],
           ],
-        ),
+        ],
+      ),
     );
   }
 
@@ -695,52 +561,6 @@ class _InstallationApplicationFormPageState
               onChanged: (value) => ref
                   .read(installationRequestDraftProvider.notifier)
                   .setPhone(value),
-            ),
-            const SizedBox(height: AppStyle.spaceXs),
-            AppSelectDropdown<int>(
-              value: _stateId,
-              label: '${'installationApplication.location_state'.tr()} *',
-              hint: 'installationApplication.select_state'.tr(),
-              enabled: !_loadingStates,
-              options: _locationOptions(_states),
-              validator: (value) => value == null
-                  ? _requiredMessage('installationApplication.location_state')
-                  : null,
-              onChanged: (id) {
-                if (id != null) _selectState(id);
-              },
-            ),
-            const SizedBox(height: AppStyle.spaceXs),
-            AppSelectDropdown<int>(
-              value: _regionId,
-              label: '${'installationApplication.location_region'.tr()} *',
-              hint: _stateId == null
-                  ? 'installationApplication.choose_state_first'.tr()
-                  : 'installationApplication.select_region'.tr(),
-              enabled: _stateId != null && !_loadingRegions,
-              options: _locationOptions(_regions),
-              validator: (value) => value == null
-                  ? _requiredMessage('installationApplication.location_region')
-                  : null,
-              onChanged: (id) {
-                if (id != null) _selectRegion(id);
-              },
-            ),
-            const SizedBox(height: AppStyle.spaceXs),
-            AppSelectDropdown<int>(
-              value: _areaId,
-              label: '${'installationApplication.location_area'.tr()} *',
-              hint: _regionId == null
-                  ? 'installationApplication.choose_region_first'.tr()
-                  : 'installationApplication.select_area'.tr(),
-              enabled: _regionId != null && !_loadingAreas,
-              options: _locationOptions(_areas),
-              validator: (value) => value == null
-                  ? _requiredMessage('installationApplication.location_area')
-                  : null,
-              onChanged: (id) {
-                if (id != null) _selectArea(id);
-              },
             ),
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
@@ -837,18 +657,6 @@ class _InstallationApplicationFormPageState
             _ReviewRow(
               label: 'installationApplication.phone'.tr(),
               value: draft.phone,
-            ),
-            _ReviewRow(
-              label: 'installationApplication.location_state'.tr(),
-              value: draft.stateName ?? '',
-            ),
-            _ReviewRow(
-              label: 'installationApplication.location_region'.tr(),
-              value: draft.regionName ?? '',
-            ),
-            _ReviewRow(
-              label: 'installationApplication.location_area'.tr(),
-              value: draft.areaName ?? '',
             ),
             _ReviewRow(
               label: 'installationApplication.address'.tr(),
@@ -1057,9 +865,7 @@ class _ServiceTypeTab extends StatelessWidget {
             color: selected ? AppColors.primaryLight : AppColors.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: selected
-                  ? AppColors.primaryLight
-                  : AppColors.borderLight,
+              color: selected ? AppColors.primaryLight : AppColors.borderLight,
               width: 0.5,
             ),
           ),
@@ -1081,8 +887,7 @@ class _ServiceTypeTab extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.15,
-                    color:
-                        selected ? AppColors.primary : AppColors.textMuted,
+                    color: selected ? AppColors.primary : AppColors.textMuted,
                   ),
                 ),
               ),
@@ -1108,14 +913,12 @@ class _ChoiceGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = AppStyle.spaceSm;
-        final width =
-            (constraints.maxWidth - gap * (columns - 1)) / columns;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
           children: [
-            for (final child in children)
-              SizedBox(width: width, child: child),
+            for (final child in children) SizedBox(width: width, child: child),
           ],
         );
       },
@@ -1149,9 +952,7 @@ class _ChoiceChip extends StatelessWidget {
             color: selected ? AppColors.primaryLight : AppColors.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: selected
-                  ? AppColors.primaryLight
-                  : AppColors.borderLight,
+              color: selected ? AppColors.primaryLight : AppColors.borderLight,
               width: 0.5,
             ),
           ),

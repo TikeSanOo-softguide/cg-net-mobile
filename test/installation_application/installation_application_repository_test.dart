@@ -23,7 +23,6 @@ void main() {
         'month_cycle': 1,
         'month_cycle_unit': '月',
       },
-      'area_id': 2,
       'address': 'Installation address',
       'phone': '09123456789',
       'photos': [
@@ -41,7 +40,6 @@ void main() {
     expect(model.productId, '249');
     expect(model.productName, '办公移动网_100M_月');
     expect(model.packageDetail?['product_speed'], '100M');
-    expect(model.areaId, 2);
     expect(model.photos, [
       {'url': 'https://example.test/photo.jpg'},
     ]);
@@ -59,7 +57,6 @@ void main() {
         'month_cycle': 1,
         'month_cycle_unit': '月',
       },
-      'area_id': 2,
       'address': 'Installation address',
       'phone': '09123456789',
       'photos': [
@@ -126,7 +123,6 @@ void main() {
         'month_cycle': 1,
         'month_cycle_unit': '月',
       },
-      areaId: 2,
       name: 'Applicant Name',
       address: 'Installation address',
       phone: '09123456789',
@@ -167,13 +163,13 @@ void main() {
         'month_cycle': 1,
         'month_cycle_unit': '月',
       },
-      'area_id': 2,
       'address': 'Installation address',
       'phone': '09123456789',
     });
   });
 
-  test('loads FTTH products from Laravel installation-application/products', () async {
+  test('loads FTTH products from Laravel installation-application/products',
+      () async {
     final requests = <RequestOptions>[];
     final repository = InstallationApplicationRepository(
       _dio((options) {

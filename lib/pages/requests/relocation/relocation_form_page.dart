@@ -11,6 +11,7 @@ import '../../../components/app_input/app_input.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
@@ -34,6 +35,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   late final TextEditingController _preferredDateController;
   DateTime? _preferredDate;
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -63,7 +65,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     final preferredDate = _preferredDate;
     if (preferredDate != null) {
       _preferredDateController.text =
-          DateFormat.yMMMd(context.locale.toString()).format(preferredDate);
+          DateFormat('yyyy/MM/dd').format(preferredDate);
     }
   }
 
@@ -84,16 +86,19 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
         _preferredDate == null || _preferredDate!.isBefore(today)
             ? today
             : _preferredDate!;
-    final picked = await showDatePicker(
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate: initialDate,
-      firstDate: today,
-      lastDate: DateTime(today.year + 5),
+      barrierColor: AppColors.textPrimary.withValues(alpha: 0.28),
+      builder: (context) => _RelocationCompactDatePickerDialog(
+        initialDate: initialDate,
+        firstDate: today,
+        lastDate: DateTime(today.year + 5),
+      ),
     );
+
     if (picked != null && mounted) {
       setState(() => _preferredDate = picked);
-      _preferredDateController.text =
-          DateFormat.yMMMd(context.locale.toString()).format(picked);
+      _preferredDateController.text = DateFormat('yyyy/MM/dd').format(picked);
     }
   }
 
@@ -105,10 +110,13 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     if (!_formKey.currentState!.validate()) {
       setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
       return;
     }
+    setState(() => _submitting = true);
+
     final profile = ref.read(profileControllerProvider);
     final request = RelocationRequestModel(
       id: widget.request?.id ?? '',
@@ -125,11 +133,16 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
           : _detailsController.text.trim(),
       status: widget.request?.status ?? 'under_review',
     );
-    final savedRequest = await ref
-        .read(relocationControllerProvider.notifier)
-        .saveRequest(request);
-    if (savedRequest != null && mounted) {
-      Navigator.of(context).pop(savedRequest);
+
+    try {
+      final savedRequest = await ref
+          .read(relocationControllerProvider.notifier)
+          .saveRequest(request);
+      if (savedRequest != null && mounted) {
+        Navigator.of(context).pop<RelocationSaveResult>(savedRequest);
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -149,6 +162,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     }
 
     final errorMessage = state.errorMessage;
+    final isSubmitting = state.isSubmitting || _submitting;
     return AppCurvedScaffold(
       title: Text(
         widget.request == null
@@ -322,8 +336,8 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                   child: AppButton(
                     label: 'common.submit'.tr(),
-                    isLoading: state.isSubmitting,
-                    onPressed: state.isSubmitting ? null : _submit,
+                    isLoading: isSubmitting,
+                    onPressed: isSubmitting ? null : _submit,
                   ),
                 ),
               ),
@@ -385,5 +399,301 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
       );
     }
     return null;
+  }
+}
+
+class _RelocationCompactDatePickerDialog extends StatefulWidget {
+  const _RelocationCompactDatePickerDialog({
+    required this.initialDate,
+    required this.firstDate,
+    required this.lastDate,
+  });
+
+  final DateTime initialDate;
+  final DateTime firstDate;
+  final DateTime lastDate;
+
+  @override
+  State<_RelocationCompactDatePickerDialog> createState() =>
+      _RelocationCompactDatePickerDialogState();
+}
+
+class _RelocationCompactDatePickerDialogState
+    extends State<_RelocationCompactDatePickerDialog> {
+  late DateTime _visibleMonth;
+  late DateTime _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = DateUtils.dateOnly(widget.initialDate);
+    _visibleMonth = DateTime(_selected.year, _selected.month);
+  }
+
+  bool get _canGoPrev {
+    final previous = DateTime(_visibleMonth.year, _visibleMonth.month - 1);
+    return !DateTime(previous.year, previous.month + 1, 0)
+        .isBefore(widget.firstDate);
+  }
+
+  bool get _canGoNext {
+    final next = DateTime(_visibleMonth.year, _visibleMonth.month + 1);
+    return !next.isAfter(DateTime(widget.lastDate.year, widget.lastDate.month));
+  }
+
+  void _shiftMonth(int delta) {
+    if (delta < 0 && !_canGoPrev) return;
+    if (delta > 0 && !_canGoNext) return;
+    setState(() {
+      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
+    });
+  }
+
+  bool _isSelectable(DateTime day) {
+    final date = DateUtils.dateOnly(day);
+    return !date.isBefore(widget.firstDate) && !date.isAfter(widget.lastDate);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.locale.toString();
+    final today = DateUtils.dateOnly(DateTime.now());
+    final firstWeekday = MaterialLocalizations.of(context).firstDayOfWeekIndex;
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _visibleMonth.year,
+      _visibleMonth.month,
+    );
+    final monthStartWeekday =
+        DateTime(_visibleMonth.year, _visibleMonth.month, 1).weekday % 7;
+    final leading = (monthStartWeekday - firstWeekday + 7) % 7;
+    final weekdayLabels = List.generate(7, (index) {
+      final weekday = (firstWeekday + index) % 7;
+      final sample = DateTime(2024, 1, weekday == 0 ? 7 : weekday);
+      return DateFormat.E(locale).format(sample);
+    });
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
+        child: Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(color: AppColors.primary),
+                child: Row(
+                  children: [
+                    _RelocationMonthNavButton(
+                      icon: LucideIcons.chevron_left,
+                      enabled: _canGoPrev,
+                      onTap: () => _shiftMonth(-1),
+                    ),
+                    Expanded(
+                      child: Text(
+                        DateFormat.yMMMM(locale).format(_visibleMonth),
+                        textAlign: TextAlign.center,
+                        style: AppTheme.english(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onPrimary,
+                        ),
+                      ),
+                    ),
+                    _RelocationMonthNavButton(
+                      icon: LucideIcons.chevron_right,
+                      enabled: _canGoNext,
+                      onTap: () => _shiftMonth(1),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        for (final label in weekdayLabels)
+                          Expanded(
+                            child: Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.english(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: leading + daysInMonth,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7,
+                        mainAxisSpacing: 2,
+                        crossAxisSpacing: 2,
+                        childAspectRatio: 1,
+                      ),
+                      itemBuilder: (context, index) {
+                        if (index < leading) return const SizedBox.shrink();
+                        final day = index - leading + 1;
+                        final date = DateTime(
+                          _visibleMonth.year,
+                          _visibleMonth.month,
+                          day,
+                        );
+                        final selectable = _isSelectable(date);
+                        final selected = DateUtils.isSameDay(date, _selected);
+                        final isToday = DateUtils.isSameDay(date, today);
+                        return _RelocationDayCell(
+                          day: day,
+                          selected: selected,
+                          today: isToday,
+                          enabled: selectable,
+                          onTap: selectable
+                              ? () => setState(
+                                    () => _selected = DateUtils.dateOnly(date),
+                                  )
+                              : null,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 36,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(_selected),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          textStyle: AppTheme.english(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        child: Text('common.confirm'.tr()),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelocationMonthNavButton extends StatelessWidget {
+  const _RelocationMonthNavButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: Material(
+        color: enabled
+            ? AppColors.onPrimary.withValues(alpha: 0.14)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Icon(
+            icon,
+            size: 16,
+            color: enabled
+                ? AppColors.onPrimary
+                : AppColors.onPrimary.withValues(alpha: 0.35),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelocationDayCell extends StatelessWidget {
+  const _RelocationDayCell({
+    required this.day,
+    required this.selected,
+    required this.today,
+    required this.enabled,
+    this.onTap,
+  });
+
+  final int day;
+  final bool selected;
+  final bool today;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color textColor;
+    if (!enabled) {
+      textColor = AppColors.border;
+    } else if (selected) {
+      textColor = AppColors.onPrimary;
+    } else {
+      textColor = AppColors.textPrimary;
+    }
+
+    return Center(
+      child: Material(
+        color: selected ? AppColors.primary : Colors.transparent,
+        shape: CircleBorder(
+          side: today && !selected
+              ? const BorderSide(color: AppColors.primary, width: 1)
+              : BorderSide.none,
+        ),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 30,
+            height: 30,
+            child: Center(
+              child: Text(
+                '$day',
+                style: AppTheme.english(
+                  fontSize: 12,
+                  fontWeight:
+                      selected || today ? FontWeight.w700 : FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -11,6 +11,8 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
+import '../../../core/network/message_codes.dart';
+import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
@@ -37,23 +39,24 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       ref.read(relocationControllerProvider.notifier).fetchRequests();
 
   Future<void> _openForm([RelocationRequestModel? request]) async {
-    final savedRequest =
-        await Navigator.of(context).push<RelocationRequestModel>(
-      MaterialPageRoute<RelocationRequestModel>(
+    final result = await Navigator.of(context).push<RelocationSaveResult>(
+      MaterialPageRoute<RelocationSaveResult>(
         builder: (_) => RelocationFormPage(request: request),
       ),
     );
 
-    if (!mounted || savedRequest == null) return;
+    if (!mounted || result == null) return;
 
     await showAppSuccessModal(
       context,
-      title: request == null
-          ? 'relocation.submit_success_title'.tr()
-          : 'common.success'.tr(),
-      body: request == null
-          ? 'relocation.submit_success_body'.tr()
-          : 'relocation.update_success'.tr(),
+      title: 'common.success'.tr(),
+      body: MessageCodes.featureReqKey(
+        feature: 'relocation',
+        code: result.code,
+        fallbackKey: request == null
+            ? 'relocation.submit_success_body'
+            : 'relocation.update_success',
+      ).tr(),
     );
     if (mounted) await _refresh();
   }
@@ -71,25 +74,38 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
     if (confirmed != true) return;
 
     final controller = ref.read(relocationControllerProvider.notifier);
-    final success = await controller.cancelRequest(request.id);
+    final code = await controller.cancelRequest(request.id);
     if (!mounted) return;
 
-    final state = ref.read(relocationControllerProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'relocation.cancel_success'.tr()
-              : _localizedError(state.errorMessage),
-        ),
-        backgroundColor: success ? null : AppColors.error,
-      ),
+    if (code == null) {
+      final state = ref.read(relocationControllerProvider);
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: _localizedError(state.errorMessage),
+      );
+      return;
+    }
+
+    await showAppSuccessModal(
+      context,
+      title: 'common.success'.tr(),
+      body: MessageCodes.featureReqKey(
+        feature: 'relocation',
+        code: code,
+        fallbackKey: 'relocation.req_cancelled',
+      ).tr(),
     );
   }
 
   String _localizedError(String? message) {
     if (message == null) return 'common.error'.tr();
-    if (message.startsWith('api.') || message.startsWith('common.')) {
+    if (MessageCodes.isKnown(message)) {
+      return MessageCodes.locKey(message).tr();
+    }
+    if (message.startsWith('relocation.') ||
+        message.startsWith('api.') ||
+        message.startsWith('common.')) {
       return message.tr();
     }
     return message;

@@ -21,12 +21,6 @@ class InstallationRequestDraft {
     this.phone = '',
     this.address = '',
     this.note,
-    this.stateId,
-    this.regionId,
-    this.areaId,
-    this.stateName,
-    this.regionName,
-    this.areaName,
     this.photos = const [],
     this.status = 'under_review',
     this.ticketNumber,
@@ -47,12 +41,6 @@ class InstallationRequestDraft {
   final String phone;
   final String address;
   final String? note;
-  final int? stateId;
-  final int? regionId;
-  final int? areaId;
-  final String? stateName;
-  final String? regionName;
-  final String? areaName;
   final List<Map<String, dynamic>> photos;
   final String status;
   final String? ticketNumber;
@@ -76,14 +64,6 @@ class InstallationRequestDraft {
     String? phone,
     String? address,
     String? note,
-    int? stateId,
-    int? regionId,
-    int? areaId,
-    String? stateName,
-    String? regionName,
-    String? areaName,
-    bool clearRegion = false,
-    bool clearArea = false,
     List<Map<String, dynamic>>? photos,
     String? status,
     String? ticketNumber,
@@ -106,12 +86,6 @@ class InstallationRequestDraft {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       note: note ?? this.note,
-      stateId: stateId ?? this.stateId,
-      regionId: clearRegion ? null : regionId ?? this.regionId,
-      areaId: clearArea || clearRegion ? null : areaId ?? this.areaId,
-      stateName: stateName ?? this.stateName,
-      regionName: clearRegion ? null : regionName ?? this.regionName,
-      areaName: clearArea || clearRegion ? null : areaName ?? this.areaName,
       photos: photos ?? this.photos,
       status: status ?? this.status,
       ticketNumber: ticketNumber ?? this.ticketNumber,
@@ -138,7 +112,6 @@ class InstallationRequestDraft {
               'month_cycle': monthCycle ?? 1,
               'month_cycle_unit': monthCycleUnit ?? '',
             },
-      areaId: areaId,
       name: fullName.trim(),
       address: address.trim(),
       phone: phone.trim(),
@@ -176,7 +149,6 @@ class InstallationRequestDraftNotifier
       phone: request?.phone ?? profile.displayPhone,
       address: request?.address ?? '',
       note: request?.note,
-      areaId: request?.areaId,
       photos: request?.photos ?? const [],
       status: request?.status ?? 'under_review',
       ticketNumber: request?.ticketNumber,
@@ -223,27 +195,6 @@ class InstallationRequestDraftNotifier
   void setNote(String value) {
     if (state.note == value) return;
     state = state.copyWith(note: value);
-  }
-
-  void setStatePlace(int id, String name) {
-    state = state.copyWith(
-      stateId: id,
-      stateName: name,
-      clearRegion: true,
-      clearArea: true,
-    );
-  }
-
-  void setRegionPlace(int id, String name) {
-    state = state.copyWith(
-      regionId: id,
-      regionName: name,
-      clearArea: true,
-    );
-  }
-
-  void setAreaPlace(int id, String name) {
-    state = state.copyWith(areaId: id, areaName: name);
   }
 
   void reset() {
