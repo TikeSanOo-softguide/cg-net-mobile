@@ -317,6 +317,7 @@
     "scan_title": "扫描条码",
     "scan_hint": "请将条码放入框内",
     "scan_unavailable": "无法打开相机",
+    "scan_pin_not_found": "二维码无效，请重试。",
     "check_serial_first": "请先核对序列号",
     "details_label": "账号与 PIN",
     "details_hint": "填写充值信息",
@@ -697,7 +698,7 @@
     "req_cancelled": "更换套餐申请已成功取消。",
     "req_submitted": "更换套餐申请已成功提交。\n我们的团队将尽快与您联系。",
     "req_updated": "更换套餐申请已成功更新。\n我们的团队将尽快与您联系。",
-    "cancel_title": "取消更换套餐申请",
+    "cancel_title": "取消更换套餐",
     "cancel_confirm": "确定要取消此更换套餐申请吗？",
     "cancel_success": "更换套餐申请已取消。"
   },

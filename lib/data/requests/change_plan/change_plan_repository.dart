@@ -7,6 +7,23 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 
+List<dynamic> _changePlanItemsFromResponse(Object? payload) {
+  if (payload is List) return payload;
+
+  if (payload is Map) {
+    for (final key in ['data', 'requests', 'items', 'results']) {
+      final value = payload[key];
+      if (value is List || value is Map) {
+        return _changePlanItemsFromResponse(value);
+      }
+    }
+
+    if (payload.containsKey('id')) return [payload];
+  }
+
+  return const [];
+}
+
 class ChangePlanRepository {
   ChangePlanRepository(this._dio);
 
@@ -15,12 +32,7 @@ class ChangePlanRepository {
   Future<List<ChangePlanRequestModel>> fetchRequests() async {
     try {
       final response = await _dio.get<dynamic>(ApiEndpoints.changePlanRequests);
-      final data = response.data;
-      final List items = data is Map && data['data'] is List
-          ? data['data'] as List
-          : data is List
-              ? data
-              : const [];
+      final items = _changePlanItemsFromResponse(response.data);
 
       return items
           .whereType<Map>()
@@ -52,7 +64,31 @@ class ChangePlanRepository {
     }
   }
 
-  Future<String?> deleteRequest(String requestId) async {
+  Future<ChangePlanSaveResult> updateRequest(
+    ChangePlanRequestModel request,
+  ) async {
+    if (request.id.trim().isEmpty) {
+      throw ApiException(
+        ApiFailure.unknown,
+        detail: 'requests.required_id'.tr(),
+      );
+    }
+
+    try {
+      final response = await _dio.put<dynamic>(
+        ApiEndpoints.changePlanRequest(request.id),
+        data: request.toJson(),
+      );
+      return ChangePlanSaveResult(
+        request: _requestFromResponse(response.data, request),
+        code: _messageCode(response.data),
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<String?> cancelRequest(String requestId) async {
     if (requestId.isEmpty) {
       throw ApiException(
         ApiFailure.unknown,
@@ -61,8 +97,8 @@ class ChangePlanRepository {
     }
 
     try {
-      final response = await _dio.delete<dynamic>(
-        ApiEndpoints.changePlanRequest(requestId),
+      final response = await _dio.patch<dynamic>(
+        ApiEndpoints.cancelChangePlanRequest(requestId),
       );
       return _messageCode(response.data);
     } on DioException catch (error) {
@@ -88,6 +124,9 @@ class ChangePlanRepository {
   String? _messageCode(Object? data) {
     if (data is Map && data['code'] is String) {
       return data['code'] as String;
+    }
+    if (data is Map) {
+      return _messageCode(data['data']);
     }
     return null;
   }

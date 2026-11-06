@@ -11,6 +11,8 @@ import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/date_time_format.dart';
+import '../../../data/requests/change_plan/change_plan_repository.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_plan_controller.dart';
@@ -40,12 +42,32 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
     await ref.read(changePlanControllerProvider.notifier).fetchRequests();
   }
 
-  Future<void> _openForm() async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const ChangePlanFormPage()),
+  Future<void> _openForm({ChangePlanRequestModel? request}) async {
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
+        builder: (_) => request == null
+            ? const ChangePlanFormPage()
+            : ChangePlanFormPage(initialRequest: request),
+      ),
     );
-    if (!mounted) return;
-    await ref.read(changePlanControllerProvider.notifier).fetchRequests();
+    if (!mounted || result == null || result == false) return;
+    if (result is ChangePlanSaveResult) {
+      await showAppSuccessModal(
+        context,
+        title: 'common.success'.tr(),
+        body: MessageCodes.featureReqKey(
+          feature: 'changePlan',
+          code: result.code,
+          fallbackKey: request == null
+              ? 'changePlan.req_submitted'
+              : 'changePlan.req_updated',
+        ).tr(),
+      );
+    }
+
+    if (mounted) {
+      await ref.read(changePlanControllerProvider.notifier).fetchRequests();
+    }
   }
 
   Future<void> _confirmCancel(ChangePlanRequestModel request) async {
@@ -177,16 +199,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
       );
     }
 
-    final underReview = state.requests.where(_isUnderReview).toList();
-    final approved =
-        state.requests.where((item) => _statusKey(item) == 'approved').toList();
-    final cancelled = state.requests
-        .where(
-          (item) =>
-              _statusKey(item) == 'cancelled' || _statusKey(item) == 'rejected',
-        )
-        .toList();
-    final items = [...underReview, ...approved, ...cancelled];
+    final items = state.requests;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -199,6 +212,9 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
         for (var i = 0; i < items.length; i++) ...[
           _ChangePlanCard(
             request: items[i],
+            onEdit: _isUnderReview(items[i])
+                ? () => _openForm(request: items[i])
+                : null,
             onCancel: _isUnderReview(items[i])
                 ? () => _confirmCancel(items[i])
                 : null,
@@ -216,13 +232,18 @@ bool _isUnderReview(ChangePlanRequestModel request) {
 }
 
 String _statusKey(ChangePlanRequestModel request) {
-  return request.status.toLowerCase().replaceAll(' ', '_');
+  return request.status
+      .toLowerCase()
+      .trim()
+      .replaceAll(' ', '_')
+      .replaceAll('-', '_');
 }
 
 class _ChangePlanCard extends StatefulWidget {
-  const _ChangePlanCard({required this.request, this.onCancel});
+  const _ChangePlanCard({required this.request, this.onEdit, this.onCancel});
 
   final ChangePlanRequestModel request;
+  final VoidCallback? onEdit;
   final VoidCallback? onCancel;
 
   @override
@@ -240,6 +261,7 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
       case 'approved':
         return AppColors.success;
       case 'cancelled':
+      case 'canceled':
       case 'rejected':
         return AppColors.error;
       default:
@@ -255,6 +277,7 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
       case 'approved':
         return 'requests.status_approved'.tr();
       case 'cancelled':
+      case 'canceled':
         return 'requests.status_cancelled'.tr();
       case 'rejected':
         return 'requests.status_rejected'.tr();
@@ -268,7 +291,7 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
     final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : DateFormat('yyyy.MM.dd HH:mm').format(request.createdAt!.toLocal());
+        : formatDate(request.createdAt!.toLocal().toIso8601String());
     final preferred = request.preferredDate == null
         ? ''
         : DateFormat('yyyy/MM/dd').format(request.preferredDate!);
@@ -409,25 +432,56 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
                         ),
                       ),
                     ),
-                    if (widget.onCancel != null) ...[
+                    if (widget.onEdit != null || widget.onCancel != null) ...[
                       const Spacer(),
-                      Material(
-                        color: const Color(0xFFF8E8E6),
-                        borderRadius: BorderRadius.circular(6),
-                        child: InkWell(
-                          onTap: widget.onCancel,
+                      if (widget.onEdit != null)
+                        Material(
+                          color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(6),
-                          child: const SizedBox(
-                            width: 26,
-                            height: 24,
-                            child: Icon(
-                              LucideIcons.trash,
-                              size: 14,
-                              color: AppColors.error,
+                          child: InkWell(
+                            onTap: widget.onEdit,
+                            borderRadius: BorderRadius.circular(6),
+                            splashColor:
+                                AppColors.primary.withValues(alpha: 0.08),
+                            highlightColor:
+                                AppColors.primary.withValues(alpha: 0.04),
+                            child: const SizedBox(
+                              width: 26,
+                              height: 24,
+                              child: Center(
+                                child: Image(
+                                  image: AssetImage(
+                                    'assets/images/profile/edit.png',
+                                  ),
+                                  width: 14,
+                                  height: 14,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      if (widget.onEdit != null && widget.onCancel != null)
+                        const SizedBox(width: 8),
+                      if (widget.onCancel != null)
+                        Material(
+                          color: const Color(0xFFF8E8E6),
+                          borderRadius: BorderRadius.circular(6),
+                          child: InkWell(
+                            onTap: widget.onCancel,
+                            borderRadius: BorderRadius.circular(6),
+                            child: const SizedBox(
+                              width: 26,
+                              height: 24,
+                              child: Icon(
+                                LucideIcons.trash,
+                                size: 14,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ],
                 ),

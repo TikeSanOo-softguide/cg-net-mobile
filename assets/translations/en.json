@@ -318,6 +318,7 @@
     "scan_title": "Scan code",
     "scan_hint": "Place the code inside the frame",
     "scan_unavailable": "Camera isn't available",
+    "scan_pin_not_found": "Invalid QR code. Please try again.",
     "check_serial_first": "Please check the serial number first",
     "details_label": "Account & PIN",
     "details_hint": "Complete your top-up details",
@@ -696,7 +697,7 @@
     "req_cancelled": "Change plan request cancelled successfully.",
     "req_submitted": "Change plan request submitted successfully.\nOur team will contact you shortly.",
     "req_updated": "Change plan request updated successfully.\nOur team will contact you shortly.",
-    "cancel_title": "Cancel change plan request",
+    "cancel_title": "Cancel Change Plan",
     "cancel_confirm": "Are you sure you want to cancel this change plan request?",
     "cancel_success": "Change plan request cancelled."
   },
