@@ -23,6 +23,8 @@ class AppScanInput extends StatelessWidget {
     this.onSubmitted,
     this.validator,
     this.reserveErrorSpace = true,
+    this.scanValueParser,
+    this.scanInvalidMessage,
   });
 
   final TextEditingController controller;
@@ -37,6 +39,8 @@ class AppScanInput extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final String? Function(String?)? validator;
   final bool reserveErrorSpace;
+  final String? Function(String raw)? scanValueParser;
+  final String? scanInvalidMessage;
 
   String _normalize(String raw) {
     var next = TextEditingValue(text: raw.trim());
@@ -54,7 +58,10 @@ class AppScanInput extends StatelessWidget {
     final raw = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => const AppBarcodeScannerPage(),
+        builder: (_) => AppBarcodeScannerPage(
+          scanValueParser: scanValueParser,
+          scanInvalidMessage: scanInvalidMessage,
+        ),
       ),
     );
     if (raw == null || !context.mounted) return;

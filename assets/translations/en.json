@@ -315,6 +315,7 @@
     "scan_title": "Scan code",
     "scan_hint": "Place the code inside the frame",
     "scan_unavailable": "Camera isn't available",
+    "scan_pin_not_found": "Invalid QR code. Please try again.",
     "check_serial_first": "Please check the serial number first",
     "details_label": "Account & PIN",
     "details_hint": "Complete your top-up details",

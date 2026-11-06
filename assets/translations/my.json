@@ -314,6 +314,7 @@
     "scan_title": "ကုဒ်စကန်",
     "scan_hint": "ကုဒ်ကို ဘောင်ထဲ ထည့်ပါ",
     "scan_unavailable": "ကင်မရာ ဖွင့်လို့ မရပါ",
+    "scan_pin_not_found": "QR ကုဒ် မမှန်ကန်ပါ။ ထပ်မံကြိုးစားပါ။",
     "check_serial_first": "အရင် Serial number စစ်ပါ",
     "details_label": "Account & PIN",
     "details_hint": "Top-up အချက်အလက်ဖြည့်ပါ",
