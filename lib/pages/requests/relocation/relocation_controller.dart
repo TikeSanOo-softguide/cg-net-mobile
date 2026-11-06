@@ -65,17 +65,17 @@ class RelocationController extends StateNotifier<RelocationState> {
     }
   }
 
-  Future<RelocationRequestModel?> saveRequest(
+  Future<RelocationSaveResult?> saveRequest(
     RelocationRequestModel request,
   ) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      final savedRequest = request.id.isEmpty
+      final result = request.id.isEmpty
           ? await _repository.createRequest(request)
           : await _repository.updateRequest(request);
       state = state.copyWith(isSubmitting: false, clearError: true);
       await fetchRequests();
-      return savedRequest;
+      return result;
     } on ApiException catch (error) {
       state = state.copyWith(
         isSubmitting: false,
@@ -91,22 +91,18 @@ class RelocationController extends StateNotifier<RelocationState> {
     }
   }
 
-  Future<bool> cancelRequest(String requestId) async {
-    return _runMutation(() => _repository.cancelRequest(requestId));
-  }
-
-  Future<bool> _runMutation(Future<void> Function() mutation) async {
+  Future<String?> cancelRequest(String requestId) async {
     state = state.copyWith(clearError: true);
     try {
-      await mutation();
+      final code = await _repository.cancelRequest(requestId);
       await fetchRequests();
-      return true;
+      return code;
     } on ApiException catch (error) {
       state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
-      return false;
+      return null;
     } catch (error) {
       state = state.copyWith(errorMessage: error.toString());
-      return false;
+      return null;
     }
   }
 }

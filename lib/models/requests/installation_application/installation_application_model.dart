@@ -5,7 +5,6 @@ class InstallationApplicationModel {
     this.productId,
     this.productName,
     this.packageDetail,
-    required this.areaId,
     required this.name,
     required this.address,
     required this.phone,
@@ -25,7 +24,6 @@ class InstallationApplicationModel {
   final String? productId;
   final String? productName;
   final Map<String, dynamic>? packageDetail;
-  final int? areaId;
   final String name;
   final String? address;
   final String phone;
@@ -59,7 +57,6 @@ class InstallationApplicationModel {
           data['product_name']?.toString() ??
           data['productName']?.toString(),
       packageDetail: detail,
-      areaId: _toInt(data['area_id']),
       name: data['name']?.toString() ?? '',
       address: data['address']?.toString(),
       phone: data['phone']?.toString() ?? '',
@@ -85,7 +82,6 @@ class InstallationApplicationModel {
         'service_type': serviceType,
         'name': name,
         'package_detail': packageDetail,
-        'area_id': areaId,
         'address': address,
         'phone': phone,
         'photos': photos,
@@ -138,8 +134,8 @@ class InstallationApplicationOption {
     final productName = json['productName']?.toString() ??
         json['product_name']?.toString() ??
         json['name']?.toString();
-    final productSpeed = json['productSpeed']?.toString() ??
-        json['product_speed']?.toString();
+    final productSpeed =
+        json['productSpeed']?.toString() ?? json['product_speed']?.toString();
 
     if (productId == null || productId.trim().isEmpty) {
       throw FormatException(
@@ -159,21 +155,18 @@ class InstallationApplicationOption {
     return InstallationApplicationOption(
       productId: productId,
       productName: productName,
-      productSpeed: trimmedSpeed == null || trimmedSpeed.isEmpty
-          ? null
-          : trimmedSpeed,
-      productLine: (json['productLine'] ?? json['product_line'] ?? '')
-          .toString()
-          .trim(),
+      productSpeed:
+          trimmedSpeed == null || trimmedSpeed.isEmpty ? null : trimmedSpeed,
+      productLine:
+          (json['productLine'] ?? json['product_line'] ?? '').toString().trim(),
       productPrice: InstallationApplicationModel._toDouble(
         json['productPrice'] ?? json['product_price'],
       ),
-      monthCycle:
-          InstallationApplicationModel._toInt(json['monthCycle'] ?? json['month_cycle']) ??
-              1,
+      monthCycle: InstallationApplicationModel._toInt(
+              json['monthCycle'] ?? json['month_cycle']) ??
+          1,
       monthCycleUnit:
-          (json['monthCycleUnit'] ?? json['month_cycle_unit'] ?? '')
-              .toString(),
+          (json['monthCycleUnit'] ?? json['month_cycle_unit'] ?? '').toString(),
       installationFee: InstallationApplicationModel._toDouble(
         json['installationFee'] ?? json['installation_fee'],
       ),

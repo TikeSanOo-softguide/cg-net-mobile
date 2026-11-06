@@ -14,8 +14,8 @@ class TermsPage extends ConsumerWidget {
 
   static const _iconAsset = 'assets/images/settings/terms.png';
 
-  static const double _iconBoxSize = 50;
-  static const double _iconSize = 35;
+  static const double _iconBoxSize = 45;
+  static const double _iconSize = 26;
   static const double _iconRadius = 10;
   static const double _cardRadius = 8;
   static const double _contentPadding = 12;

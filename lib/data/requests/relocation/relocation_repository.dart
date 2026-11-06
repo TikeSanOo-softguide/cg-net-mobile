@@ -37,7 +37,7 @@ class RelocationRepository {
     }
   }
 
-  Future<RelocationRequestModel> createRequest(
+  Future<RelocationSaveResult> createRequest(
     RelocationRequestModel request,
   ) async {
     try {
@@ -45,13 +45,16 @@ class RelocationRepository {
         ApiEndpoints.createRelocationRequest,
         data: request.toJson(),
       );
-      return _requestFromResponse(response.data, request);
+      return RelocationSaveResult(
+        request: _requestFromResponse(response.data, request),
+        code: _messageCode(response.data),
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
 
-  Future<RelocationRequestModel> updateRequest(
+  Future<RelocationSaveResult> updateRequest(
     RelocationRequestModel request,
   ) async {
     if (request.id.trim().isEmpty) {
@@ -66,14 +69,17 @@ class RelocationRepository {
         ApiEndpoints.relocationRequest(request.id),
         data: request.toJson(),
       );
-      return _requestFromResponse(response.data, request);
+      return RelocationSaveResult(
+        request: _requestFromResponse(response.data, request),
+        code: _messageCode(response.data),
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
   }
 
-  Future<void> cancelRequest(String requestId) async {
-    if (requestId.isEmpty) {
+  Future<String?> cancelRequest(String requestId) async {
+    if (requestId.trim().isEmpty) {
       throw ApiException(
         ApiFailure.unknown,
         detail: 'requests.required_id'.tr(),
@@ -81,9 +87,14 @@ class RelocationRepository {
     }
 
     try {
-      await _dio.patch<dynamic>(
+      final response = await _dio.patch<dynamic>(
         ApiEndpoints.cancelRelocationRequest(requestId),
       );
+      final data = response.data;
+      if (data is Map && data['code'] is String) {
+        return data['code'] as String;
+      }
+      return null;
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
@@ -120,6 +131,23 @@ class RelocationRepository {
     }
     return fallback;
   }
+
+  String? _messageCode(Object? data) {
+    if (data is Map && data['code'] is String) {
+      return data['code'] as String;
+    }
+    return null;
+  }
+}
+
+class RelocationSaveResult {
+  const RelocationSaveResult({
+    required this.request,
+    this.code,
+  });
+
+  final RelocationRequestModel request;
+  final String? code;
 }
 
 final relocationRepositoryProvider = Provider<RelocationRepository>((ref) {

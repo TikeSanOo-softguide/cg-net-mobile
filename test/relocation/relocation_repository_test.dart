@@ -52,11 +52,22 @@ void main() {
       }
       if (options.method == 'POST') {
         return _jsonResponse(
-          '{"data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
+          '{"code":"MSG-REQ-002","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
+      }
+      if (options.method == 'PUT') {
+        return _jsonResponse(
+          '{"code":"MSG-REQ-003","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
+          '"current_address":"Old address","new_address":"New address",'
+          '"preferred_date":"2026-12-01","phone":"09123456789",'
+          '"details":"Move upstairs","status":"under_review"}}',
+        );
+      }
+      if (options.method == 'PATCH') {
+        return _jsonResponse('{"code":"MSG-REQ-001"}');
       }
       return _jsonResponse('{}');
     });
@@ -74,14 +85,18 @@ void main() {
 
     final loaded = await repository.fetchRequests();
     final created = await repository.createRequest(request);
-    final updated = await repository.updateRequest(created);
-    await repository.cancelRequest(created.id);
+    final updated = await repository.updateRequest(created.request);
+    final cancellationCode =
+        await repository.cancelRequest(created.request.id);
 
     expect(loaded.single.id, '11');
     expect(loaded.single.preferredDate, DateTime(2026, 12, 1));
-    expect(created.id, '12');
-    expect(updated.id, created.id);
-    expect(updated.currentAddress, created.currentAddress);
+    expect(created.request.id, '12');
+    expect(created.code, 'MSG-REQ-002');
+    expect(updated.request.id, created.request.id);
+    expect(updated.request.currentAddress, created.request.currentAddress);
+    expect(updated.code, 'MSG-REQ-003');
+    expect(cancellationCode, 'MSG-REQ-001');
     expect(
       requests.map((item) => (item.method, item.path)),
       [
