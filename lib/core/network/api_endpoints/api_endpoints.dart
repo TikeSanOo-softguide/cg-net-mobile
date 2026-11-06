@@ -97,6 +97,8 @@ class ApiEndpoints {
   static const String complaintCreate = '/failure-reports/create';
   static const String complaints = '/failure-reports';
   static String complaintDetail(String reportId) => '$complaints/$reportId';
+  static String cancelComplaint(String reportId) =>
+      '${complaintDetail(reportId)}/cancel';
   static const String chatStart = '/chat/start';
   static const String chatCurrent = '/chat/current';
   static const String chatSelectOption = '/chat/select-option';

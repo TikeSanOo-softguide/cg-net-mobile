@@ -361,10 +361,7 @@ class _ComplaintCardState extends State<_ComplaintCard> {
   }
 
   String _displayAccount(String? account) {
-    final value = account?.trim() ?? '';
-    if (value.startsWith('FTTH')) return value.substring(4);
-    if (value.startsWith('CG')) return value.substring(2);
-    return value;
+    return account?.trim() ?? '';
   }
 
   @override

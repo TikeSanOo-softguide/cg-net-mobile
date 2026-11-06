@@ -97,7 +97,7 @@ class ComplaintRepository {
 
     try {
       final response = await _dio.patch<dynamic>(
-        '${ApiEndpoints.complaints}/$complaintId/cancel',
+        ApiEndpoints.cancelComplaint(complaintId),
       );
       final code = _messageCode(response.data);
       return ComplaintCancelResult(code: code);
