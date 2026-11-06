@@ -62,12 +62,14 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
     }
   }
 
-  Future<ChangePlanSaveResult> createRequest(
+  Future<ChangePlanSaveResult> saveRequest(
     ChangePlanRequestModel request,
   ) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      final saved = await _repository.createRequest(request);
+      final saved = request.id.isEmpty
+          ? await _repository.createRequest(request)
+          : await _repository.updateRequest(request);
       state = state.copyWith(isSubmitting: false, clearError: true);
       await fetchRequests();
       return saved;
@@ -89,7 +91,7 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
   Future<String?> cancelRequest(String requestId) async {
     state = state.copyWith(clearError: true);
     try {
-      final code = await _repository.deleteRequest(requestId);
+      final code = await _repository.cancelRequest(requestId);
       await fetchRequests();
       return code;
     } on ApiException catch (error) {
