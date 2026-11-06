@@ -78,6 +78,8 @@ class ApiEndpoints {
   static const String createChangePlanRequest = '/change-plan-requests/create';
   static String changePlanRequest(String requestId) =>
       '$changePlanRequests/$requestId';
+  static String cancelChangePlanRequest(String requestId) =>
+      '${changePlanRequest(requestId)}/cancel';
   static const String relocationRequests = '/relocation-requests';
   static const String createRelocationRequest = '/relocation-requests/create';
   static String relocationRequest(String requestId) =>

@@ -6,12 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
-import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/api_message_modal.dart';
-import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import '../../../models/user_model/user_model.dart';
@@ -22,7 +21,9 @@ import '../installation_application/installation_plan_catalog.dart';
 import '../installation_application/installation_wizard_scaffold.dart';
 
 class ChangePlanFormPage extends ConsumerStatefulWidget {
-  const ChangePlanFormPage({super.key});
+  const ChangePlanFormPage({super.key, this.initialRequest});
+
+  final ChangePlanRequestModel? initialRequest;
 
   @override
   ConsumerState<ChangePlanFormPage> createState() => _ChangePlanFormPageState();
@@ -49,25 +50,44 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
   void initState() {
     super.initState();
     final profile = ref.read(profileControllerProvider);
-    _nameController = TextEditingController(text: profile.fullName);
-    _phoneController = TextEditingController(text: profile.displayPhone);
-    _noteController = TextEditingController();
-    _dateController = TextEditingController();
-    _serviceType = profile.serviceType == 'CG' ? 'CG' : 'FTTH';
+    final initial = widget.initialRequest;
+    _nameController =
+        TextEditingController(text: initial?.contactName ?? profile.fullName);
+    _phoneController =
+        TextEditingController(text: initial?.contactPhone ?? profile.displayPhone);
+    _noteController = TextEditingController(text: initial?.note ?? '');
+    _preferredDate = initial?.preferredDate;
+    _dateController = TextEditingController(
+      text: _preferredDate == null
+          ? ''
+          : DateFormat('yyyy/MM/dd').format(_preferredDate!),
+    );
+    _serviceType = initial?.serviceType == 'CG' ||
+            (initial == null && profile.serviceType == 'CG')
+        ? 'CG'
+        : 'FTTH';
     Future.microtask(() async {
       await ref.read(profileControllerProvider.notifier).fetchProfile();
       if (!mounted) return;
       final profile = ref.read(profileControllerProvider);
-      if (_nameController.text.trim().isEmpty && profile.fullName.isNotEmpty) {
+      if (initial == null &&
+          _nameController.text.trim().isEmpty &&
+          profile.fullName.isNotEmpty) {
         _nameController.text = profile.fullName;
       }
-      if (_phoneController.text.trim().isEmpty && profile.phone.isNotEmpty) {
+      if (initial == null &&
+          _phoneController.text.trim().isEmpty &&
+          profile.phone.isNotEmpty) {
         _phoneController.text = profile.displayPhone;
       }
-      if (profile.serviceType == 'CG' || profile.serviceType == 'FTTH') {
+      if (initial == null &&
+          (profile.serviceType == 'CG' || profile.serviceType == 'FTTH')) {
         _serviceType = profile.serviceType!;
       }
       await _loadProducts();
+      if (mounted && initial != null) {
+        setState(() => _restoreProductSelection(initial));
+      }
     });
   }
 
@@ -86,6 +106,37 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
         speedMbps: _speedMbps,
         monthCycle: _monthCycle,
       );
+
+  void _restoreProductSelection(ChangePlanRequestModel request) {
+    final networkName = request.newPackageDetail['network_name'];
+    final productLine = networkName is Map
+        ? networkName['en']?.toString() ??
+            networkName['my']?.toString() ??
+            networkName['zh']?.toString()
+        : networkName?.toString();
+    final speedDetail = request.newPackageDetail['speed'];
+    final speed = speedDetail is Map
+        ? int.tryParse(speedDetail['mbps']?.toString() ?? '')
+        : null;
+    final termDetail = request.newPackageDetail['term'];
+    final cycle = termDetail is Map
+        ? int.tryParse(
+            (termDetail['cycle'] ?? termDetail['months'])?.toString() ?? '',
+          )
+        : null;
+
+    if (productLine == null || speed == null || cycle == null) return;
+    final product = matchedProduct(
+      products: _packages,
+      productLine: productLine,
+      speedMbps: speed,
+      monthCycle: cycle,
+    );
+    if (product == null) return;
+    _productLine = providerLineOf(product);
+    _speedMbps = productSpeedMbps(product);
+    _monthCycle = product.monthCycle;
+  }
 
   Future<void> _loadProducts() async {
     setState(() {
@@ -184,12 +235,15 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
     if (product == null || _preferredDate == null) return;
 
     final profile = ref.read(profileControllerProvider);
+    final initial = widget.initialRequest;
     final request = ChangePlanRequestModel(
-      id: '',
-      userId: int.tryParse(profile.id) ?? 0,
-      broadbandAccountNumber: profile.accountNumber,
+      id: initial?.id ?? '',
+      userId: initial?.userId ?? int.tryParse(profile.id) ?? 0,
+      broadbandAccountNumber:
+          initial?.broadbandAccountNumber ?? profile.accountNumber,
       serviceType: _serviceType,
-      currentPackageDetail: ChangePlanRequestModel.currentDetailFrom(profile),
+      currentPackageDetail: initial?.currentPackageDetail ??
+          ChangePlanRequestModel.currentDetailFrom(profile),
       newPackageDetail: ChangePlanRequestModel.newDetailFrom(product),
       preferredDate: _preferredDate,
       contactName: _nameController.text.trim(),
@@ -198,21 +252,13 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
     );
 
     try {
-      final saved = await ref
-          .read(changePlanControllerProvider.notifier)
-          .createRequest(request);
-      if (!mounted) return;
-      await showAppSuccessModal(
-        context,
-        title: 'common.success'.tr(),
-        body: MessageCodes.featureReqKey(
-          feature: 'changePlan',
-          code: saved.code,
-          fallbackKey: 'changePlan.req_submitted',
-        ).tr(),
+      final saved = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(changePlanControllerProvider.notifier)
+            .saveRequest(request),
       );
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(saved);
     } catch (error) {
       if (!mounted) return;
       await showApiMessageModal(context, error);
