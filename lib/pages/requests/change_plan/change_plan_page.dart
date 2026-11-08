@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
+import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
@@ -251,8 +251,6 @@ class _ChangePlanCard extends StatefulWidget {
 }
 
 class _ChangePlanCardState extends State<_ChangePlanCard> {
-  bool _expanded = false;
-
   Color get _statusColor {
     switch (_statusKey(widget.request)) {
       case 'under_review':
@@ -296,200 +294,45 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
         ? ''
         : DateFormat('yyyy/MM/dd').format(request.preferredDate!);
 
-    return AppCard(
-      elevated: false,
-      bordered: false,
-      padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 3,
-            decoration: BoxDecoration(
-              color: _statusColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: _statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusLabel,
-                        style: AppTheme.caption(
-                          color: _statusColor,
-                          weight: FontWeight.w600,
-                        ).copyWith(fontSize: 10, height: 1),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (createdAt != null)
-                      Text(
-                        createdAt,
-                        style: AppTheme.caption(color: AppColors.textPrimary)
-                            .copyWith(fontSize: 11),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _DetailRow(
-                  label: 'installationApplication.ticket_number'.tr(),
-                  value: request.ticketNumber ?? '',
-                  ticket: true,
-                ),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  alignment: Alignment.topCenter,
-                  child: _expanded
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Column(
-                            children: [
-                              _DetailRow(
-                                label:
-                                    'installationApplication.service_type'.tr(),
-                                value: request.serviceType == 'CG'
-                                    ? 'installationApplication.cg_router'.tr()
-                                    : (request.serviceType ?? ''),
-                              ),
-                              _DetailRow(
-                                label: 'changePlan.current_plan'.tr(),
-                                value: _packageLabel(
-                                  request.currentPackageDetail,
-                                ),
-                              ),
-                              _DetailRow(
-                                label: 'changePlan.detail'.tr(),
-                                value: _packageLabel(request.newPackageDetail),
-                              ),
-                              _DetailRow(
-                                label: 'changePlan.preferred_date'.tr(),
-                                value: preferred,
-                              ),
-                              _DetailRow(
-                                label: 'changePlan.contact_name'.tr(),
-                                value: request.contactName,
-                              ),
-                              _DetailRow(
-                                label: 'changePlan.contact_phone'.tr(),
-                                value: request.contactPhone,
-                              ),
-                              _DetailRow(
-                                label: 'changePlan.note'.tr(),
-                                value: request.note ?? '',
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox(width: double.infinity),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () => setState(() => _expanded = !_expanded),
-                      borderRadius: BorderRadius.circular(8),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _expanded
-                                  ? 'common.see_less'.tr()
-                                  : 'common.see_more'.tr(),
-                              style: AppTheme.caption(
-                                color: AppColors.primary,
-                                weight: FontWeight.w600,
-                              ).copyWith(fontSize: 10),
-                            ),
-                            const SizedBox(width: 2),
-                            Icon(
-                              _expanded
-                                  ? LucideIcons.chevron_up
-                                  : LucideIcons.chevron_down,
-                              size: 12,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (widget.onEdit != null || widget.onCancel != null) ...[
-                      const Spacer(),
-                      if (widget.onEdit != null)
-                        Material(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
-                            onTap: widget.onEdit,
-                            borderRadius: BorderRadius.circular(6),
-                            splashColor:
-                                AppColors.primary.withValues(alpha: 0.08),
-                            highlightColor:
-                                AppColors.primary.withValues(alpha: 0.04),
-                            child: const SizedBox(
-                              width: 26,
-                              height: 24,
-                              child: Center(
-                                child: Image(
-                                  image: AssetImage(
-                                    'assets/images/profile/edit.png',
-                                  ),
-                                  width: 14,
-                                  height: 14,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (widget.onEdit != null && widget.onCancel != null)
-                        const SizedBox(width: 8),
-                      if (widget.onCancel != null)
-                        Material(
-                          color: const Color(0xFFF8E8E6),
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
-                            onTap: widget.onCancel,
-                            borderRadius: BorderRadius.circular(6),
-                            child: const SizedBox(
-                              width: 26,
-                              height: 24,
-                              child: Icon(
-                                LucideIcons.trash,
-                                size: 14,
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return RequestTicketCard(
+      statusLabel: _statusLabel,
+      statusColor: _statusColor,
+      ticketNumber: request.ticketNumber,
+      createdAt: createdAt,
+      onEdit: widget.onEdit,
+      onCancel: widget.onCancel,
+      details: [
+        _DetailRow(
+          label: 'installationApplication.service_type'.tr(),
+          value: request.serviceType == 'CG'
+              ? 'installationApplication.cg_router'.tr()
+              : (request.serviceType ?? ''),
+        ),
+        _DetailRow(
+          label: 'changePlan.current_plan'.tr(),
+          value: _packageLabel(request.currentPackageDetail),
+        ),
+        _DetailRow(
+          label: 'changePlan.detail'.tr(),
+          value: _packageLabel(request.newPackageDetail),
+        ),
+        _DetailRow(
+          label: 'changePlan.preferred_date'.tr(),
+          value: preferred,
+        ),
+        _DetailRow(
+          label: 'changePlan.contact_name'.tr(),
+          value: request.contactName,
+        ),
+        _DetailRow(
+          label: 'changePlan.contact_phone'.tr(),
+          value: request.contactPhone,
+        ),
+        _DetailRow(
+          label: 'changePlan.note'.tr(),
+          value: request.note ?? '',
+        ),
+      ],
     );
   }
 }
@@ -498,52 +341,34 @@ class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
     required this.value,
-    this.ticket = false,
   });
 
   final String label;
   final String value;
-  final bool ticket;
 
   @override
   Widget build(BuildContext context) {
-    if (value.trim().isEmpty && !ticket) return const SizedBox.shrink();
+    if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 108, child: Text(label, style: AppTheme.caption())),
+          SizedBox(
+            width: 108,
+            child: Text(
+              label,
+              style: AppTheme.caption().copyWith(fontSize: 13),
+            ),
+          ),
           Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: ticket && value.trim().isNotEmpty
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        value,
-                        textAlign: TextAlign.right,
-                        style: AppTheme.body(
-                          weight: FontWeight.w500,
-                          color: AppColors.primary,
-                        ).copyWith(fontSize: 12),
-                      ),
-                    )
-                  : Text(
-                      value.trim().isEmpty ? '—' : value,
-                      textAlign: TextAlign.right,
-                      style: AppTheme.body(
-                        weight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                      ).copyWith(fontSize: 12),
-                    ),
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: AppTheme.body(
+                weight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ).copyWith(fontSize: 13),
             ),
           ),
         ],

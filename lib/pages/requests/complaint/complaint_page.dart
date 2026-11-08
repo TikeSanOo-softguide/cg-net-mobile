@@ -4,7 +4,9 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../components/account_number_row/account_number_row.dart';
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
+import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
@@ -316,8 +318,6 @@ class _ComplaintCard extends StatefulWidget {
 }
 
 class _ComplaintCardState extends State<_ComplaintCard> {
-  bool _expanded = false;
-
   Color get _statusColor {
     switch (_normalizedReportStatus(widget.report.status)) {
       case 'under_review':
@@ -371,255 +371,35 @@ class _ComplaintCardState extends State<_ComplaintCard> {
         ? null
         : formatDate(report.createdAt!.toLocal().toIso8601String());
     final complaintType = ComplaintType.fromKey(report.complaintType);
-    final canManage = widget.onEdit != null || widget.onCancel != null;
-
-    return AppCard(
-      elevated: false,
-      bordered: false,
-      padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 3,
-            decoration: BoxDecoration(
-              color: _statusColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: _statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusLabel,
-                        textHeightBehavior: const TextHeightBehavior(
-                          applyHeightToFirstAscent: false,
-                          applyHeightToLastDescent: false,
-                        ),
-                        style: AppTheme.caption(
-                          color: _statusColor,
-                          weight: FontWeight.w600,
-                        ).copyWith(
-                          fontSize: 10,
-                          height: 1,
-                          leadingDistribution: TextLeadingDistribution.even,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (createdAt != null)
-                      Text(
-                        createdAt,
-                        style: AppTheme.caption(color: AppColors.textPrimary)
-                            .copyWith(fontSize: 11),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _TicketRow(ticketNumber: report.ticketNumber),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  alignment: Alignment.topCenter,
-                  child: _expanded
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Column(
-                            children: [
-                              _ReportDetail(
-                                label: 'complaint.complaint_type'.tr(),
-                                value:
-                                    'complaint.${complaintType.localizationKey}'
-                                        .tr(),
-                              ),
-                              _ReportDetail(
-                                label: 'complaint.card_account'.tr(),
-                                value: _displayAccount(
-                                  report.broadbandAccountNumber,
-                                ),
-                              ),
-                              _ReportDetail(
-                                label: 'complaint.contact_name'.tr(),
-                                value: report.contactName,
-                              ),
-                              _ReportDetail(
-                                label: 'complaint.contact_phone'.tr(),
-                                value: report.contactPhone,
-                              ),
-                              _ReportDetail(
-                                label: 'complaint.card_description'.tr(),
-                                value: report.description,
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox(width: double.infinity),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    InkWell(
-                      onTap: () => setState(() => _expanded = !_expanded),
-                      borderRadius: BorderRadius.circular(8),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _expanded
-                                  ? 'common.see_less'.tr()
-                                  : 'common.see_more'.tr(),
-                              style: AppTheme.caption(
-                                color: AppColors.primary,
-                                weight: FontWeight.w600,
-                              ).copyWith(fontSize: 10),
-                            ),
-                            const SizedBox(width: 2),
-                            Icon(
-                              _expanded
-                                  ? LucideIcons.chevron_up
-                                  : LucideIcons.chevron_down,
-                              size: 12,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (canManage) ...[
-                      const Spacer(),
-                      if (widget.onEdit != null)
-                        Material(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
-                            onTap: widget.onEdit,
-                            borderRadius: BorderRadius.circular(6),
-                            splashColor:
-                                AppColors.primary.withValues(alpha: 0.08),
-                            highlightColor:
-                                AppColors.primary.withValues(alpha: 0.04),
-                            child: const SizedBox(
-                              width: 26,
-                              height: 24,
-                              child: Center(
-                                child: Image(
-                                  image: AssetImage(
-                                    'assets/images/profile/edit.png',
-                                  ),
-                                  width: 14,
-                                  height: 14,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (widget.onEdit != null && widget.onCancel != null)
-                        const SizedBox(width: 8),
-                      if (widget.onCancel != null)
-                        Material(
-                          color: const Color(0xFFF8E8E6),
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
-                            onTap: widget.onCancel,
-                            borderRadius: BorderRadius.circular(6),
-                            child: const SizedBox(
-                              width: 26,
-                              height: 24,
-                              child: Icon(
-                                LucideIcons.trash,
-                                size: 14,
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TicketRow extends StatelessWidget {
-  const _TicketRow({required this.ticketNumber});
-
-  final String? ticketNumber;
-
-  @override
-  Widget build(BuildContext context) {
-    final ticket = ticketNumber?.trim() ?? '';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              'installationApplication.ticket_number'.tr(),
-              style: AppTheme.caption(),
-            ),
-          ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: ticket.isEmpty
-                  ? Text(
-                      '—',
-                      style: AppTheme.body(
-                        weight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                      ).copyWith(fontSize: 12),
-                    )
-                  : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        ticket,
-                        textAlign: TextAlign.right,
-                        style: AppTheme.body(
-                          weight: FontWeight.w500,
-                          color: AppColors.primary,
-                        ).copyWith(fontSize: 12),
-                      ),
-                    ),
-            ),
-          ),
-        ],
-      ),
+    return RequestTicketCard(
+      statusLabel: _statusLabel,
+      statusColor: _statusColor,
+      ticketNumber: report.ticketNumber,
+      createdAt: createdAt,
+      onEdit: widget.onEdit,
+      onCancel: widget.onCancel,
+      details: [
+        _ReportDetail(
+          label: 'complaint.complaint_type'.tr(),
+          value: 'complaint.${complaintType.localizationKey}'.tr(),
+        ),
+        _ReportDetail(
+          label: 'complaint.card_account'.tr(),
+          value: _displayAccount(report.broadbandAccountNumber),
+        ),
+        _ReportDetail(
+          label: 'complaint.contact_name'.tr(),
+          value: report.contactName,
+        ),
+        _ReportDetail(
+          label: 'complaint.contact_phone'.tr(),
+          value: report.contactPhone,
+        ),
+        _ReportDetail(
+          label: 'complaint.card_description'.tr(),
+          value: report.description,
+        ),
+      ],
     );
   }
 }
@@ -643,7 +423,10 @@ class _ReportDetail extends StatelessWidget {
         children: [
           SizedBox(
             width: 108,
-            child: Text(label, style: AppTheme.caption()),
+            child: Text(
+              label,
+              style: AppTheme.caption().copyWith(fontSize: 13),
+            ),
           ),
           Expanded(
             child: Text(
@@ -652,7 +435,7 @@ class _ReportDetail extends StatelessWidget {
               style: AppTheme.body(
                 weight: FontWeight.w500,
                 color: AppColors.textPrimary,
-              ).copyWith(fontSize: 12),
+              ).copyWith(fontSize: 13),
             ),
           ),
         ],
@@ -696,6 +479,7 @@ class __NewComplaintFormSheetState
     return null;
   }
 
+  String? _accountGapError;
   String _selectedType = 'no_internet';
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _selectedPhotos = [];
@@ -814,9 +598,21 @@ class __NewComplaintFormSheetState
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
     final profile = ref.read(profileControllerProvider);
+    final accountLocked = profile.accountNumber.isNotEmpty;
+    final accountError = accountLocked
+        ? _requiredText(
+            _storedAccountNumber(profile),
+            'complaint.broadband_account',
+          )
+        : null;
+    final formOk = _formKey.currentState!.validate();
+    if (!formOk || accountError != null) {
+      setState(() => _accountGapError = accountError);
+      return;
+    }
+    setState(() => _accountGapError = null);
+
     final boundAccount = _storedAccountNumber(profile);
     final userId = int.tryParse(profile.id) ?? 0;
 
@@ -908,59 +704,43 @@ class __NewComplaintFormSheetState
                       AppCard(
                         elevated: false,
                         bordered: false,
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.fromLTRB(8, 6, 10, 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 22,
-                                    height: 22,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Transform.translate(
+                                  offset: const Offset(0, -1),
+                                  child: Image.asset(
+                                    'assets/images/services/info.png',
+                                    width: 23,
+                                    height: 23,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'complaint.form_desc'.tr(),
+                                    style: AppTheme.body(
+                                      weight: FontWeight.w600,
+                                    ).copyWith(
+                                      fontSize: 13,
+                                      height: 22 / 13,
+                                      leadingDistribution:
+                                          TextLeadingDistribution.even,
                                       color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(
-                                      LucideIcons.circle_alert,
-                                      size: 13,
-                                      color: AppColors.onPrimary,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'complaint.form_desc'.tr(),
-                                      style: AppTheme.caption().copyWith(
-                                        height: 1.3,
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
-                            AppInput(
-                              controller: _broadbandAccountController,
-                              label: '${'complaint.broadband_account'.tr()} *',
-                              readOnly: profile.accountNumber.isNotEmpty,
-                              enabled: profile.accountNumber.isEmpty,
-                              prefixIcon: LucideIcons.id_card,
-                              validator: (value) => _requiredText(
-                                value,
-                                'complaint.broadband_account',
-                              ),
-                            ),
-                            const SizedBox(height: AppStyle.spaceXs),
+                            _accountBlock(profile),
+                            const SizedBox(height: 16),
                             AppInput(
                               controller: _contactNameController,
                               label: '${'complaint.contact_name'.tr()} *',
@@ -982,7 +762,38 @@ class __NewComplaintFormSheetState
                                 'complaint.contact_phone',
                               ),
                             ),
-                            const SizedBox(height: AppStyle.spaceXs),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'complaint.detail_title'.tr(),
+                              style: AppTheme.body(weight: FontWeight.w700)
+                                  .copyWith(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      AppCard(
+                        elevated: false,
+                        bordered: false,
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                             _buildComplaintTypeDropdown(context),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
@@ -1052,6 +863,28 @@ class __NewComplaintFormSheetState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _accountBlock(UserProfileModel profile) {
+    final locked = profile.accountNumber.isNotEmpty;
+    final label = 'complaint.broadband_account'.tr();
+    if (!locked) {
+      return AppInput(
+        controller: _broadbandAccountController,
+        label: '$label *',
+        prefixIcon: LucideIcons.id_card,
+        validator: (value) => _requiredText(
+          value,
+          'complaint.broadband_account',
+        ),
+      );
+    }
+
+    return AccountNumberRow(
+      label: label,
+      value: _broadbandAccountController.text,
+      error: _accountGapError,
     );
   }
 

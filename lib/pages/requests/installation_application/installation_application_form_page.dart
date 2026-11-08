@@ -5,11 +5,9 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
-import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
 import '../../../core/network/api_message_modal.dart';
-import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -205,25 +203,12 @@ class _InstallationApplicationFormPageState
       return;
     }
     final request = ref.read(installationRequestDraftProvider).toRequest();
-    final editing = ref.read(installationRequestDraftProvider).isEditing;
     try {
       final saved = await ref
           .read(installationApplicationControllerProvider.notifier)
           .saveRequest(request);
       if (!mounted) return;
-      await showAppSuccessModal(
-        context,
-        title: 'common.success'.tr(),
-        body: MessageCodes.featureReqKey(
-          feature: 'installationApplication',
-          code: saved.code,
-          fallbackKey: editing
-              ? 'installationApplication.req_updated'
-              : 'installationApplication.req_submitted',
-        ).tr(),
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop(saved.request);
+      Navigator.of(context).pop(saved);
     } catch (error) {
       if (!mounted) return;
       await showApiMessageModal(context, error);
@@ -522,7 +507,7 @@ class _InstallationApplicationFormPageState
     return AppCard(
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Form(
         key: _formKey,
         autovalidateMode: _customerAutovalidate,
