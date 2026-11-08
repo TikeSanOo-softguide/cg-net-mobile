@@ -52,6 +52,8 @@ class ApiEndpoints {
   static const String packagesBuy = '/packages/buy';
   static const String redeemCheckSerialNo = '/redeem/check-serial-no';
   static const String redeemTopUpAccount = '/redeem/top-up-account';
+  static const String ftthBillCheck = '/ftth-bills/check';
+  static const String ftthBillPay = '/ftth-bills/pay';
   static const String broadbandBind = '/broadband-account/bind';
   static const String broadbandUnbind = '/broadband-account/unbind';
   static const String transactions = '/customer/transactions';

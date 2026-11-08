@@ -61,21 +61,22 @@ Future<void> onHomeBindTap(BuildContext context, WidgetRef ref) async {
   await context.pushNamed(RouteNames.bindBroadband);
 }
 
-/// Fixed home top: glass logo, account number, notification — does not scroll.
+/// Fixed home top: glass logo, phone, broadband account — does not scroll.
 class HomePinnedBar extends StatelessWidget {
-  const HomePinnedBar({super.key, required this.accountNumber});
+  const HomePinnedBar({
+    super.key,
+    required this.accountNumber,
+    required this.broadbandAccount,
+  });
 
   final String accountNumber;
+  final String broadbandAccount;
 
   static const double _padTop = 14;
   static const double _padBottom = 8;
 
   /// Logo glass chip.
   static const double _chipSize = 40;
-
-  /// Notification glass chip and bell.
-  static const double _notifyChipSize = 35;
-  static const double _notifyIconSize = 20;
 
   /// Row tall enough for larger account / phone text.
   static const double _rowH = 44;
@@ -143,28 +144,52 @@ class HomePinnedBar extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Tooltip(
-                    message: 'nav.inbox'.tr(),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => context.goNamed(RouteNames.inboxList),
-                        borderRadius: BorderRadius.circular(8),
-                        overlayColor: WidgetStateProperty.all(
-                          Colors.white.withValues(alpha: 0.10),
-                        ),
-                        child: const _LiquidGlassChip(
-                          size: HomePinnedBar._notifyChipSize,
-                          child: Icon(
-                            LucideIcons.bell,
-                            color: AppColors.onPrimary,
-                            size: HomePinnedBar._notifyIconSize,
+                  if (broadbandAccount.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => context.pushNamed(
+                              RouteNames.bindBroadband,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            overlayColor: WidgetStateProperty.all(
+                              Colors.white.withValues(alpha: 0.10),
+                            ),
+                            child: Ink(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  width: 0.7,
+                                ),
+                              ),
+                              child: Text(
+                                broadbandAccount,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: AppTheme.english(
+                                  color: AppColors.onPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.15,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
