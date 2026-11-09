@@ -18,12 +18,18 @@ void main() {
       expect(usernameValidationErrorKey('A B'), 'set_credentials.username_min');
     });
 
-    test('allows Myanmar and Chinese letters', () {
-      expect(usernameValidationErrorKey('မောင်မောင်'), isNull);
-      expect(usernameValidationErrorKey('张伟用户'), isNull);
+    test('rejects usernames longer than 30 characters', () {
+      expect(
+        usernameValidationErrorKey('a' * 31),
+        'set_credentials.username_max',
+      );
     });
 
-    test('rejects special characters', () {
+    test('allows usernames up to 30 characters', () {
+      expect(usernameValidationErrorKey('a' * 30), isNull);
+    });
+
+    test('rejects unsupported characters', () {
       expect(
         usernameValidationErrorKey('John-Doe'),
         'set_credentials.username_chars',

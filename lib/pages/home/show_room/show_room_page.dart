@@ -1,82 +1,90 @@
+import 'dart:async';
+
+import 'package:cg_net_mobile/core/network/api_message_modal.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../core/utils/loading_helper.dart';
+import '../../../data/show_room/show_room_repository.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../models/show_room_model/show_room_model.dart';
 
-class ShowRoomPage extends StatelessWidget {
+class ShowRoomPage extends ConsumerStatefulWidget {
   const ShowRoomPage({super.key});
 
-  static const _rooms = <_ShowRoom>[
-    _ShowRoom(
-      name: 'Mahar NET Yangon',
-      address:
-          'Room B22, Building 2 (Near KBZ Bank), MICT Park, Hlaing Township, Yangon',
-      phones: ['09770333373', '09890988916', '09890988901'],
-    ),
-    _ShowRoom(
-      name: 'Mahar NET Mandalay',
-      address:
-          'Room 241, Tower A, Mann Myanmar Plaza, 28th Street (84 × 85), Chan Aye Tharzan Township, Mandalay',
-      phones: ['09770333383', '09880576001', '09880576009'],
-    ),
-    _ShowRoom(
-      name: 'Mahar NET Bahan',
-      address: 'U Chit Maung Road, Bahan Township, Yangon',
-      phones: ['09770333373', '09890988916', '09890988901'],
-    ),
-    _ShowRoom(
-      name: 'Mahar NET Hlaing Thar Yar',
-      address: 'No. 16, Bo Aung Kyaw Road, Hlaing Thar Yar, Yangon',
-      phones: ['09693333203', '09770333373', '09890988916'],
-    ),
-    _ShowRoom(
-      name: 'Mahar NET Hlaing',
-      address: 'No. 155, Insein Road, Hlaing Township, Yangon',
-      phones: ['09956294695', '09770333373', '09890988916'],
-    ),
-  ];
+  @override
+  ConsumerState<ShowRoomPage> createState() => _ShowRoomPageState();
+}
+
+class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_loadShowRooms());
+    });
+  }
+
+  Future<void> _loadShowRooms({bool retry = false}) async {
+    if (retry) ref.invalidate(showRoomsProvider);
+    try {
+      await LoadingHelper.runWithLoading(
+        () => ref.read(showRoomsProvider.future),
+      );
+    } catch (error) {
+      await showApiMessageModal(context, error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final roomsAsync = ref.watch(showRoomsProvider);
+    final locale = context.locale.languageCode;
+
     return AppCurvedScaffold(
       title: Text('home.service_show_room'.tr()),
       showBack: true,
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        itemCount: _rooms.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          if (index == _rooms.length) {
-            return const _SocialMediaCard();
-          }
-          return _ShowRoomCard(room: _rooms[index]);
-        },
+      body: roomsAsync.when(
+        loading: () => const SizedBox.shrink(),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('common.error'.tr()),
+              TextButton(
+                onPressed: () => unawaited(_loadShowRooms(retry: true)),
+                child: Text('common.retry'.tr()),
+              ),
+            ],
+          ),
+        ),
+        data: (rooms) => ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+          itemCount: rooms.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            if (index == rooms.length) {
+              return const _SocialMediaCard();
+            }
+            return _ShowRoomCard(room: rooms[index], locale: locale);
+          },
+        ),
       ),
     );
   }
 }
 
-class _ShowRoom {
-  const _ShowRoom({
-    required this.name,
-    required this.address,
-    required this.phones,
-  });
-
-  final String name;
-  final String address;
-  final List<String> phones;
-}
-
 class _ShowRoomCard extends StatelessWidget {
-  const _ShowRoomCard({required this.room});
+  const _ShowRoomCard({required this.room, required this.locale});
 
-  final _ShowRoom room;
+  final ShowRoom room;
+  final String locale;
 
   static const _officeAsset = 'assets/images/services/office.png';
   static const _verifiedAsset = 'assets/images/services/verified.png';
@@ -91,7 +99,7 @@ class _ShowRoomCard extends StatelessWidget {
 
   Future<void> _openMap() {
     return _open(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent('${room.name} ${room.address}')}',
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent('${room.nameFor(locale)} ${room.addressFor(locale)}')}',
     );
   }
 
@@ -112,7 +120,7 @@ class _ShowRoomCard extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  room.name,
+                  room.nameFor(locale),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.english(
@@ -151,7 +159,7 @@ class _ShowRoomCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    room.address,
+                    room.addressFor(locale),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.english(
@@ -167,7 +175,7 @@ class _ShowRoomCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          for (final phone in room.phones)
+          for (final phone in room.phoneNumbers)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: InkWell(
@@ -202,17 +210,18 @@ class _ShowRoomCard extends StatelessWidget {
             children: [
               _ChatPng(
                 asset: _wechatAsset,
-                onTap: () => _open('weixin://'),
+                onTap: () => _open(room.socialLinks['wechat'] ?? 'weixin://'),
               ),
               const SizedBox(width: 10),
               _ChatPng(
                 asset: _telegramAsset,
-                onTap: () => _open('https://t.me/'),
+                onTap: () =>
+                    _open(room.socialLinks['telegram'] ?? 'https://t.me/'),
               ),
               const SizedBox(width: 10),
               _ChatPng(
                 asset: _viberAsset,
-                onTap: () => _open('viber://'),
+                onTap: () => _open(room.socialLinks['viber'] ?? 'viber://'),
               ),
             ],
           ),
@@ -399,4 +408,3 @@ class _SocialMediaTile extends StatelessWidget {
     );
   }
 }
-

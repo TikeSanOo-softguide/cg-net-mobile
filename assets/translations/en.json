@@ -151,6 +151,7 @@
     "create": "Create account",
     "username_required": "Username is required.",
     "username_min": "Username must be at least 4 characters.",
+    "username_max": "Username cannot exceed 30 characters.",
     "username_spaces": "Username cannot contain spaces.",
     "username_chars": "Username cannot contain special characters.",
     "username_taken": "This username is already taken.",

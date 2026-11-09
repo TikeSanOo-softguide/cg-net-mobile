@@ -35,18 +35,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool _launchPromoHandled = false;
   bool _launchPromoShowing = false;
 
-  /// Extra blue behind the header only while the list is pulled past the top.
-  double _topOverscroll = 0;
-
-  bool _onHomeScroll(ScrollNotification notification) {
-    if (notification.metrics.axis != Axis.vertical) return false;
-    final pixels = notification.metrics.pixels;
-    final next = pixels < 0 ? -pixels : 0.0;
-    if (next == _topOverscroll) return false;
-    setState(() => _topOverscroll = next);
-    return false;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -120,11 +108,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              height: pinnedH + _topOverscroll,
+              height: pinnedH,
               child: const ColoredBox(color: AppColors.primary),
             ),
             NotificationListener<ScrollNotification>(
-              onNotification: _onHomeScroll,
               child: RefreshIndicator(
                 color: AppColors.primary,
                 edgeOffset: pinnedH,
@@ -170,8 +157,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SliverToBoxAdapter(
                     child: SizedBox(height: HomeSectionHeader.sectionGap),
                   ),
-                  SliverToBoxAdapter(
-                    child: const HomePlanCard(),
+                  const SliverToBoxAdapter(
+                    child: HomePlanCard(),
                   ),
                   const SliverToBoxAdapter(
                     child: SizedBox(height: HomeSectionHeader.sectionGap),

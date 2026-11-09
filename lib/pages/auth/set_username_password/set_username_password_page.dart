@@ -30,7 +30,11 @@ String? usernameValidationErrorKey(String? value) {
     return 'set_credentials.username_min';
   }
 
-  if (!RegExp(r'^[\p{L}\p{M}\p{N}_ ]+$', unicode: true).hasMatch(username)) {
+  if (username.length > 30) {
+    return 'set_credentials.username_max';
+  }
+
+  if (!RegExp(r'^[A-Za-z0-9_ ]+$').hasMatch(username)) {
     return 'set_credentials.username_chars';
   }
 
@@ -230,6 +234,7 @@ class _SetUsernamePasswordPageState
                 hint: 'set_credentials.username'.tr(),
                 suffixIcon: LucideIcons.user,
                 textInputAction: TextInputAction.next,
+                maxLength: 255,
                 onChanged: (_) {
                   if (_usernameServerError != null) {
                     setState(() => _usernameServerError = null);
