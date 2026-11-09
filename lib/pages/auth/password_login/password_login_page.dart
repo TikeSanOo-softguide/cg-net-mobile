@@ -41,6 +41,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
   String? _inlineError;
   bool _submitting = false;
   bool _handlingPasswordInput = false;
+  bool _wasComplete = false;
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _focusNodes = List.generate(_length, (_) => FocusNode());
@@ -62,15 +63,26 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
       TweenSequenceItem(tween: Tween(begin: 5, end: -3), weight: 2),
       TweenSequenceItem(tween: Tween(begin: -3, end: 0), weight: 1),
     ]).animate(CurvedAnimation(parent: _shake, curve: Curves.easeOut));
+    for (final controller in _controllers) {
+      controller.addListener(_syncSubmitEnabled);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNodes.first.requestFocus();
     });
+  }
+
+  void _syncSubmitEnabled() {
+    final complete = _isComplete;
+    if (complete == _wasComplete) return;
+    _wasComplete = complete;
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _shake.dispose();
     for (final c in _controllers) {
+      c.removeListener(_syncSubmitEnabled);
       c.dispose();
     }
     for (final f in _focusNodes) {

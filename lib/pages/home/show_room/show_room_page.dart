@@ -237,12 +237,18 @@ class _TitlePngChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       alignment: Alignment.center,
-      child: Image.asset(
-        asset,
-        width: 22,
-        height: 22,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+      child: ColorFiltered(
+        colorFilter: const ColorFilter.mode(
+          AppColors.primary,
+          BlendMode.srcIn,
+        ),
+        child: Image.asset(
+          asset,
+          width: 22,
+          height: 22,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
       ),
     );
   }
