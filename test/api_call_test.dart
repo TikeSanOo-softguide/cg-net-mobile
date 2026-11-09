@@ -252,7 +252,7 @@ void main() {
     final result = await TopUpRepository(dio).checkSerialNo('1234567890123456');
 
     expect(result.isValid, isFalse);
-    expect(result.result, TopUpSerialCheckStatus.invalid);
+    expect(result.status, TopUpSerialCheckStatus.invalid);
     expect(result.message, 'Invalid or unavailable top-up card.');
   });
 
@@ -273,9 +273,9 @@ void main() {
     final used =
         await TopUpRepository(usedDio).checkSerialNo('1234567890123456');
 
-    expect(invalid.result, TopUpSerialCheckStatus.invalid);
+    expect(invalid.status, TopUpSerialCheckStatus.invalid);
     expect(invalid.isValid, isFalse);
-    expect(used.result, TopUpSerialCheckStatus.alreadyUsed);
+    expect(used.status, TopUpSerialCheckStatus.alreadyUsed);
     expect(used.isValid, isFalse);
   });
 }

@@ -8,14 +8,14 @@ import '../../core/network/dio_client/dio_client.dart';
 
 class TopUpSerialCheckResult {
   const TopUpSerialCheckResult({
-    required this.result,
+    required this.status,
     this.message,
   });
 
-  final TopUpSerialCheckStatus result;
+  final TopUpSerialCheckStatus status;
   final String? message;
 
-  bool get isValid => result == TopUpSerialCheckStatus.valid;
+  bool get isValid => status == TopUpSerialCheckStatus.valid;
 }
 
 enum TopUpSerialCheckStatus {
@@ -90,12 +90,20 @@ class TopUpRepository {
             nestedData['transaction_no']?.toString(),
       );
     } on DioException catch (error) {
+      final responseData = _asMap(error.response?.data);
+      if (error.response?.statusCode == 404 &&
+          _responseMessage(responseData) == MessageCodes.topupAccountNotFound) {
+        return const TopUpAccountResult(
+          isSuccess: false,
+          message: MessageCodes.topupAccountNotFound,
+        );
+      }
       throw ApiException.fromDio(error);
     }
   }
 
   static bool _resolveSuccess(int? statusCode, Map<String, dynamic> data) {
-    final explicit = data['success'];
+    final explicit = data['success'] ?? _asMap(data['data'])['success'];
     if (explicit is bool) return explicit;
     if (explicit is num) return explicit != 0;
     if (explicit is String) {
@@ -118,7 +126,7 @@ class TopUpRepository {
             : TopUpSerialCheckStatus.invalid);
 
     return TopUpSerialCheckResult(
-      result: result,
+      status: result,
       message: _responseMessage(data),
     );
   }
@@ -140,7 +148,9 @@ class TopUpRepository {
   }
 
   static String? _responseMessage(Map<String, dynamic> root) {
-    final code = root['code']?.toString().trim().toUpperCase();
+    final nestedData = _asMap(root['data']);
+    final code =
+        (root['code'] ?? nestedData['code'])?.toString().trim().toUpperCase();
     if (MessageCodes.isKnown(code)) return code;
 
     final rootMessage = root['message'];
@@ -148,7 +158,7 @@ class TopUpRepository {
       return rootMessage;
     }
 
-    final dataMessage = _asMap(root['data'])['message'];
+    final dataMessage = nestedData['message'];
     if (dataMessage is String && dataMessage.trim().isNotEmpty) {
       return dataMessage;
     }
