@@ -6,6 +6,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/utils/date_time_format.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -77,7 +78,7 @@ class TopUpResultShell extends StatelessWidget {
             apiMessageText(result.errorBody, fallbackKey: bodyKey)
         : bodyKey.tr();
 
-    final when = DateFormat('d MMM yyyy, hh:mm a').format(result.occurredAt);
+    final when = formatDateTimeOf(result.occurredAt);
 
     final detailRows = <(String, String)>[
       (

@@ -51,21 +51,56 @@ class PayBillReceipt {
     required this.transactionNo,
     required this.amount,
     required this.status,
+    this.account = '',
+    this.serviceType = '',
+    this.productName = '',
+    this.productId = '',
+    this.productSpeed = '',
+    this.createdAt,
   });
 
   final String transactionNo;
   final String amount;
   final String status;
+  final String account;
+  final String serviceType;
+  final String productName;
+  final String productId;
+  final String productSpeed;
+  final DateTime? createdAt;
 
   factory PayBillReceipt.fromJson(Map<String, dynamic> json) {
     final data = json['data'] is Map
         ? Map<String, dynamic>.from(json['data'] as Map)
         : json;
+    final package = data['package'] is Map
+        ? Map<String, dynamic>.from(data['package'] as Map)
+        : const <String, dynamic>{};
     return PayBillReceipt(
       transactionNo: data['transaction_no']?.toString() ?? '',
       amount: data['amount']?.toString() ?? '',
-      status: data['billing_status']?.toString() ?? '',
+      status: (data['billing_status'] ?? data['status'])?.toString() ?? '',
+      account: data['account']?.toString() ?? '',
+      serviceType: data['service_type']?.toString() ?? '',
+      productName: package['product_name']?.toString() ?? '',
+      productId: package['product_id']?.toString() ?? '',
+      productSpeed: package['product_speed']?.toString() ?? '',
+      createdAt: _parseTime(data['confirmed_at'] ?? data['created_at']),
     );
+  }
+
+  String get productLabel {
+    final name = productName.trim();
+    final id = productId.trim();
+    if (name.isEmpty) return id;
+    if (id.isEmpty) return name;
+    return '$name · $id';
+  }
+
+  int get amountPoints {
+    final parsed = num.tryParse(amount.trim());
+    if (parsed == null) return 0;
+    return parsed.round();
   }
 }
 
@@ -122,6 +157,12 @@ class PayBillRepository {
 num _num(Object? value) {
   if (value is num) return value;
   return num.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+DateTime? _parseTime(Object? raw) {
+  final text = raw?.toString().trim() ?? '';
+  if (text.isEmpty) return null;
+  return DateTime.tryParse(text.replaceFirst(' ', 'T'));
 }
 
 final payBillRepositoryProvider = Provider<PayBillRepository>((ref) {

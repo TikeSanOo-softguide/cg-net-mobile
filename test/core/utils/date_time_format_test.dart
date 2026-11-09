@@ -25,14 +25,21 @@ void main() {
     test('formats timezone-less timestamps as UTC', () {
       expect(
         formatDateTime('2026-10-29 10:30:45'),
-        '29 Oct 2026 10:30:45 AM',
+        '29/10/2026 10:30 AM',
       );
     });
 
     test('can format timezone-aware values in UTC', () {
       expect(
         formatDateTime('2026-10-29T10:30:45+06:30', isUTC: true),
-        '29 Oct 2026 04:00:45 AM',
+        '29/10/2026 04:00 AM',
+      );
+    });
+
+    test('formats DateTime as day/month/year time', () {
+      expect(
+        formatDateTimeOf(DateTime(2026, 11, 9, 15, 0)),
+        '09/11/2026 03:00 PM',
       );
     });
 

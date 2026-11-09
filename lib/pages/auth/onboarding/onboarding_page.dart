@@ -167,19 +167,19 @@ class _GlassSkipButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         overlayColor: WidgetStateProperty.all(
           AppColors.primary.withValues(alpha: 0.06),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: AppColors.borderLight,
                   width: 0.8,
@@ -188,7 +188,7 @@ class _GlassSkipButton extends StatelessWidget {
               child: Text(
                 'common.skip'.tr(),
                 style: AppTheme.english(
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                   letterSpacing: 0.3,

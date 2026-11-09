@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:cg_net_mobile/core/utils/loading_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_logo/app_logo.dart';
@@ -101,72 +104,84 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: SafeArea(
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SlideTransition(
-                      position: _logoSlide,
-                      child: FadeTransition(
-                        opacity: _logoOpacity,
-                        child: ScaleTransition(
-                          scale: _logoScale,
-                          child: const AppLogo(
-                            width: 100,
-                            height: 65,
-                            padding: 0,
-                            borderRadius: 0,
-                            backgroundColor: Colors.transparent,
-                            showShadow: false,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.systemOverlayImmersive.copyWith(
+        systemNavigationBarColor: AppColors.primary,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.primary,
+        body: SafeArea(
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SlideTransition(
+                        position: _logoSlide,
+                        child: FadeTransition(
+                          opacity: _logoOpacity,
+                          child: ScaleTransition(
+                            scale: _logoScale,
+                            child: const AppLogo(
+                              width: 100,
+                              height: 65,
+                              padding: 0,
+                              borderRadius: 0,
+                              backgroundColor: Colors.transparent,
+                              showShadow: false,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    // No gap between logo and title.
-                    SizedBox(
-                      width: double.infinity,
-                      child: _WordRow(
-                        words: _titleZhWords,
-                        progressFor: (i) => _wordProgress(
-                          _titleZhProgress,
-                          i,
-                          _titleZhWords.length,
+                      SizedBox(
+                        width: double.infinity,
+                        child: _WordRow(
+                          words: _titleZhWords,
+                          progressFor: (i) => _wordProgress(
+                            _titleZhProgress,
+                            i,
+                            _titleZhWords.length,
+                          ),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                          wordGap: 6,
                         ),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
-                        wordGap: 6,
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      width: double.infinity,
-                      child: _WordRow(
-                        words: _titleMyWords,
-                        progressFor: (i) => _wordProgress(
-                          _titleMyProgress,
-                          i,
-                          _titleMyWords.length,
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _WordRow(
+                          words: _titleMyWords,
+                          progressFor: (i) => _wordProgress(
+                            _titleMyProgress,
+                            i,
+                            _titleMyWords.length,
+                          ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          wordGap: 6,
                         ),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        wordGap: 6,
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                      Opacity(
+                        opacity: _logoOpacity.value,
+                        child: const Padding(
+                          padding: EdgeInsets.only(top: 28),
+                          child: _LiquidDots(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -265,6 +280,94 @@ class _GoldenWord extends StatelessWidget {
                 height: 1.25,
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LiquidDots extends StatefulWidget {
+  const _LiquidDots();
+
+  @override
+  State<_LiquidDots> createState() => _LiquidDotsState();
+}
+
+class _LiquidDotsState extends State<_LiquidDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _wave;
+
+  @override
+  void initState() {
+    super.initState();
+    _wave = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _wave.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _wave,
+      builder: (context, _) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(width: 10),
+              _LiquidDot(progress: _wave.value, index: i),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LiquidDot extends StatelessWidget {
+  const _LiquidDot({
+    required this.progress,
+    required this.index,
+  });
+
+  final double progress;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final phase = (progress - index * 0.18) % 1.0;
+    final bounce = math.sin(phase * math.pi);
+    final y = -11 * bounce;
+    final scale = 0.7 + (0.42 * bounce);
+    final squash = 1.0 - (0.28 * (1 - bounce));
+
+    return Transform.translate(
+      offset: Offset(0, y),
+      child: Transform.scale(
+        scaleX: scale / squash,
+        scaleY: scale * squash,
+        child: Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.28 * bounce),
+                blurRadius: 8,
+                spreadRadius: 1.2 * bounce,
+              ),
+            ],
           ),
         ),
       ),

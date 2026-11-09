@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+final _dateTimeDisplay = DateFormat('dd/MM/yyyy hh:mm a');
+
 final _dateOnlyPattern = RegExp(r'^\d{4}[-/]\d{2}[-/]\d{2}$');
 final _dateTimePrefixPattern = RegExp(r'^\d{4}-\d{2}-\d{2}[T ]');
 final _timezonePattern = RegExp(
@@ -57,5 +59,11 @@ String formatDateTime(String? value, {bool isUTC = false}) {
           ? date.toUtc()
           : date;
 
-  return DateFormat('d MMM yyyy hh:mm:ss a').format(displayDate);
+  return _dateTimeDisplay.format(displayDate);
+}
+
+String formatDateTimeOf(DateTime? value, {bool isUTC = false}) {
+  if (value == null) return '—';
+  final displayDate = isUTC ? value.toUtc() : value;
+  return _dateTimeDisplay.format(displayDate);
 }

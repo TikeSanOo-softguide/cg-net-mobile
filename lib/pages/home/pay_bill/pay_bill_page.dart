@@ -1,10 +1,12 @@
-﻿import 'dart:convert';
+﻿import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../components/app_button/app_button.dart';
@@ -15,12 +17,14 @@ import '../../../components/app_input/app_input.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/storage/local_prefs/local_prefs.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/pay_bill/pay_bill_repository.dart';
 import '../../profile/profile/profile_controller.dart';
+import 'pay_bill_result.dart';
 import '../home/bound_broadband_provider.dart';
 
 class PayBillPage extends ConsumerStatefulWidget {
@@ -52,7 +56,7 @@ class _FavoriteAccount {
   }
 }
 
-enum _PayStep { account, confirm, pay, done }
+enum _PayStep { account, confirm, pay }
 
 class _PayBillPageState extends ConsumerState<PayBillPage> {
   static const _favoritesKey = 'pay_bill_favorites_v1';
@@ -63,10 +67,10 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
   String _serviceType = 'FTTH';
   bool _checking = false;
   bool _paying = false;
+  var _processingOpen = false;
   bool _favorite = false;
   _PayStep _step = _PayStep.account;
   PayBillQuote? _quote;
-  PayBillReceipt? _receipt;
   String? _payKey;
   List<_FavoriteAccount> _favorites = const [];
 
@@ -194,52 +198,166 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
     await _saveFavorites(next);
   }
 
+  Future<void> _showProcessing() async {
+    if (_processingOpen) return;
+    _processingOpen = true;
+    final opened = Completer<void>();
+    unawaited(
+      showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: const Color(0x6B000000),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (ctx, animation, secondaryAnimation) {
+        if (!opened.isCompleted) opened.complete();
+        return Center(
+          child: Material(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'home.pay_bill_processing'.tr(),
+                    style: AppTheme.english(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+      ).whenComplete(() {
+        _processingOpen = false;
+      }),
+    );
+    await opened.future;
+  }
+
+  void _closeProcessingDialog() {
+    if (!_processingOpen) return;
+    _processingOpen = false;
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   Future<void> _pay() async {
     final quote = _quote;
     if (quote == null || _paying) return;
-    final password = await showAppPasswordModal(
+
+    Object? payError;
+    PayBillReceipt? receipt;
+    await showAppPasswordModal(
       context,
       title: 'home.pay_bill_password_title'.tr(),
       body: 'home.pay_bill_password_body'.tr(),
       amountPoints: quote.outstandingAmount.round(),
-    );
-    if (!mounted || password == null || password.length != 6) return;
-
-    final key = _payKey ??= _newKey();
-    setState(() => _paying = true);
-    try {
-      while (true) {
+      onSubmit: (password) async {
+        if (_paying) return;
+        _paying = true;
+        final key = _payKey ??= _newKey();
+        await _showProcessing();
         try {
-          final receipt = await ref.read(payBillRepositoryProvider).pay(
-                accountNumber: quote.account,
-                serviceType: quote.serviceType,
-                idempotencyKey: key,
-                password: password,
-              );
-          if (!mounted) return;
-          setState(() {
-            _receipt = receipt;
-            _step = _PayStep.done;
-          });
-          return;
-        } on ApiException catch (error) {
-          if (!mounted) return;
-          if (isOfflineError(error)) {
-            final retry = await showOfflineModal(context);
-            if (!mounted || !retry) return;
-            continue;
+          while (true) {
+            try {
+              receipt = await ref.read(payBillRepositoryProvider).pay(
+                    accountNumber: quote.account,
+                    serviceType: quote.serviceType,
+                    idempotencyKey: key,
+                    password: password,
+                  );
+              return;
+            } on ApiException catch (error) {
+              if (!mounted) return;
+              if (isOfflineError(error)) {
+                _closeProcessingDialog();
+                final retry = await showOfflineModal(context);
+                if (!mounted || !retry) return;
+                await _showProcessing();
+                continue;
+              }
+              payError = error;
+              return;
+            }
           }
-          await showAppFailureModal(
-            context,
-            title: 'common.error'.tr(),
-            body: apiErrorText(error),
-          );
-          return;
+        } finally {
+          _closeProcessingDialog();
+          _paying = false;
         }
-      }
-    } finally {
-      if (mounted) setState(() => _paying = false);
+      },
+    );
+    if (!mounted) return;
+    final paid = receipt;
+    if (paid != null) {
+      final pending = PayBillResult.isPendingStatus(paid.status);
+      final result = pending
+          ? PayBillResult.pending(
+              amountPoints: paid.amountPoints,
+              account: paid.account,
+              serviceType: paid.serviceType,
+              productLabel: paid.productLabel,
+              speed: paid.productSpeed,
+              transactionId: paid.transactionNo,
+              occurredAt: paid.createdAt,
+            )
+          : PayBillResult.success(
+              amountPoints: paid.amountPoints,
+              account: paid.account,
+              serviceType: paid.serviceType,
+              productLabel: paid.productLabel,
+              speed: paid.productSpeed,
+              transactionId: paid.transactionNo,
+              occurredAt: paid.createdAt,
+            );
+      context.pushReplacementNamed(
+        pending ? RouteNames.payBillPending : RouteNames.payBillSuccess,
+        extra: result,
+      );
+      return;
     }
+    final error = payError;
+    if (error == null) return;
+    context.pushReplacementNamed(
+      RouteNames.payBillFailure,
+      extra: PayBillResult.failure(
+        amountPoints: 0,
+        account: '',
+        serviceType: '',
+        productLabel: '',
+        speed: '',
+        transactionId: '',
+        errorBody: apiErrorText(error),
+      ),
+    );
   }
 
   String _newKey() {
@@ -310,9 +428,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                     onFavorite: _toggleFavorite,
                   )
                 else if (_step == _PayStep.pay && _quote != null)
-                  _PaymentCard(quote: _quote!)
-                else if (_step == _PayStep.done && _quote != null && _receipt != null)
-                  _SuccessCard(quote: _quote!, receipt: _receipt!),
+                  _PaymentCard(quote: _quote!),
               ],
             ),
           ),
@@ -334,9 +450,8 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                       _PayStep.account => 'home.pay_bill_check'.tr(),
                       _PayStep.confirm => 'common.continue'.tr(),
                       _PayStep.pay => 'home.pay_bill_confirm'.tr(),
-                      _PayStep.done => 'common.done'.tr(),
                     },
-                    isLoading: _checking || _paying,
+                    isLoading: _checking,
                     onPressed: (_checking ||
                             _paying ||
                             (_step == _PayStep.account &&
@@ -351,8 +466,6 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                                 setState(() => _step = _PayStep.pay);
                               case _PayStep.pay:
                                 _pay();
-                              case _PayStep.done:
-                                Navigator.of(context).maybePop();
                             }
                           },
                   ),
@@ -888,49 +1001,6 @@ class _PaymentCard extends StatelessWidget {
 }
 
 
-class _SuccessCard extends StatelessWidget {
-  const _SuccessCard({required this.quote, required this.receipt});
-
-  final PayBillQuote quote;
-  final PayBillReceipt receipt;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      elevated: false,
-      bordered: false,
-      padding: const EdgeInsets.fromLTRB(14, 20, 14, 10),
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(LucideIcons.circle_check, color: AppColors.primary, size: 22),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'home.pay_bill_success_body'.tr(),
-            textAlign: TextAlign.center,
-            style: AppTheme.bodySecondary(),
-          ),
-          const SizedBox(height: 8),
-          _amountLine('home.pay_bill_receipt'.tr(), quote.outstandingAmount),
-          _line('home.pay_bill_transaction'.tr(), receipt.transactionNo),
-          _line('home.pay_bill_account_number'.tr(), quote.account),
-          _line('home.pay_bill_product'.tr(), _product(quote)),
-          if (quote.productSpeed.trim().isNotEmpty)
-            _line('home.pay_bill_speed'.tr(), quote.productSpeed.trim()),
-        ],
-      ),
-    );
-  }
-}
-
 class _Ticket extends StatelessWidget {
   const _Ticket({
     required this.label,
@@ -1018,10 +1088,6 @@ class _DashPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-Widget _amountLine(String label, num amount) {
-  return _line(label, '${_money(amount)} ${'topup.pts'.tr()}', emphasize: true);
 }
 
 String _product(PayBillQuote quote) {

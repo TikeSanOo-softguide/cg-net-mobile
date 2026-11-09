@@ -171,19 +171,19 @@ class _SkipChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onSkip,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         overlayColor: WidgetStateProperty.all(
           Colors.white.withValues(alpha: 0.10),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.38),
                   width: 0.8,
@@ -195,17 +195,17 @@ class _SkipChip extends StatelessWidget {
                   Text(
                     'common.skip'.tr(),
                     style: AppTheme.english(
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                       letterSpacing: 0.2,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
                     '$remaining',
                     style: AppTheme.english(
-                      fontSize: 10,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
