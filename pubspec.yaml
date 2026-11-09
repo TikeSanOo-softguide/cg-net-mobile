@@ -64,6 +64,7 @@ flutter:
     - assets/images/inbox/
     - assets/images/dialogs/
     - assets/images/auth/
+    - assets/images/onboarding/
     - assets/images/support/
     - assets/images/profile/
     - assets/images/settings/
