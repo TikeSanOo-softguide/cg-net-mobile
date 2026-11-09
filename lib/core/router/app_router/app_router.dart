@@ -24,6 +24,10 @@ import '../../../pages/home/top_up/top_up_failure_page.dart';
 import '../../../pages/home/top_up/top_up_page.dart';
 import '../../../pages/home/top_up/top_up_pending_page.dart';
 import '../../../pages/home/top_up/top_up_result.dart';
+import '../../../pages/home/pay_bill/pay_bill_failure_page.dart';
+import '../../../pages/home/pay_bill/pay_bill_pending_page.dart';
+import '../../../pages/home/pay_bill/pay_bill_result.dart';
+import '../../../pages/home/pay_bill/pay_bill_success_page.dart';
 import '../../../pages/home/top_up/top_up_success_page.dart';
 import '../../../pages/inbox/inbox_detail/inbox_detail_page.dart';
 import '../../../pages/inbox/inbox_list/inbox_list_page.dart';
@@ -356,6 +360,68 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             return const NotFoundPage();
           }
           return PackageBuyFailurePage(result: result);
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.payBillSuccess,
+        name: RouteNames.payBillSuccess,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final result = state.extra;
+          final Widget child;
+          if (result is! PayBillResult ||
+              result.status != PayBillTxnStatus.success) {
+            child = const NotFoundPage();
+          } else {
+            child = PayBillSuccessPage(result: result);
+          }
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: child,
+            transitionDuration: const Duration(milliseconds: 320),
+            reverseTransitionDuration: const Duration(milliseconds: 280),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              final curved = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+                reverseCurve: Curves.easeInCubic,
+              );
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.payBillFailure,
+        name: RouteNames.payBillFailure,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final result = state.extra;
+          if (result is! PayBillResult ||
+              result.status != PayBillTxnStatus.failure) {
+            return const NotFoundPage();
+          }
+          return PayBillFailurePage(result: result);
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.payBillPending,
+        name: RouteNames.payBillPending,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final result = state.extra;
+          if (result is! PayBillResult ||
+              result.status != PayBillTxnStatus.pending) {
+            return const NotFoundPage();
+          }
+          return PayBillPendingPage(result: result);
         },
       ),
       StatefulShellRoute.indexedStack(

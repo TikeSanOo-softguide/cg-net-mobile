@@ -16,8 +16,22 @@ import 'home_section_header.dart';
 class HomeSpecialOfferSection extends ConsumerWidget {
   const HomeSpecialOfferSection({super.key});
 
-  static const _cardWidth = 240.0;
-  static const _listHeight = 236.0;
+  static ({double cardWidth, double imageHeight, double listHeight}) layoutFor(
+    double screenWidth,
+  ) {
+    final contentWidth = (screenWidth - AppStyle.pageMarginH * 2).clamp(
+      200.0,
+      600.0,
+    );
+    final cardWidth = (contentWidth * 0.72).clamp(196.0, 248.0);
+    final imageHeight = (cardWidth * 9 / 16).clamp(110.0, 136.0);
+    const bodyHeight = 128.0;
+    return (
+      cardWidth: cardWidth,
+      imageHeight: imageHeight,
+      listHeight: imageHeight + bodyHeight,
+    );
+  }
 
   static String _inboxId(HomePromotion item) {
     final id = item.id.trim();
@@ -35,6 +49,7 @@ class HomeSpecialOfferSection extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
+        final layout = layoutFor(MediaQuery.sizeOf(context).width);
         return Padding(
           padding: AppStyle.pagePaddingH.add(
             const EdgeInsets.only(top: HomeSectionHeader.sectionGap),
@@ -44,7 +59,7 @@ class HomeSpecialOfferSection extends ConsumerWidget {
             children: [
               HomeSectionHeader(title: 'home.special_offer'.tr()),
               SizedBox(
-                height: _listHeight,
+                height: layout.listHeight,
                 child: ListView.separated(
                   key: ValueKey('special-offers-$locale'),
                   scrollDirection: Axis.horizontal,
@@ -53,12 +68,13 @@ class HomeSpecialOfferSection extends ConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     return SizedBox(
-                      width: _cardWidth,
-                      height: _listHeight,
+                      width: layout.cardWidth,
+                      height: layout.listHeight,
                       child: _OfferCard(
                         item: items[index],
                         locale: locale,
-                        onReadMore: () {
+                        imageHeight: layout.imageHeight,
+                        onSeeMore: () {
                           final id = _inboxId(items[index]);
                           if (id.isEmpty) return;
                           context.pushNamed(
@@ -83,12 +99,14 @@ class _OfferCard extends StatelessWidget {
   const _OfferCard({
     required this.item,
     required this.locale,
-    required this.onReadMore,
+    required this.imageHeight,
+    required this.onSeeMore,
   });
 
   final HomePromotion item;
   final String locale;
-  final VoidCallback onReadMore;
+  final double imageHeight;
+  final VoidCallback onSeeMore;
 
   @override
   Widget build(BuildContext context) {
@@ -98,102 +116,98 @@ class _OfferCard extends StatelessWidget {
 
     return SizedBox.expand(
       child: AppCard(
-      elevated: false,
-      bordered: false,
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(12),
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(12),
+        elevated: false,
+        bordered: false,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+              child: SizedBox(
+                height: imageHeight,
+                width: double.infinity,
+                child: imageUrl == null || imageUrl.isEmpty
+                    ? const _ImageFallback()
+                    : Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        width: double.infinity,
+                        height: double.infinity,
+                        filterQuality: FilterQuality.high,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return const _ImageFallback();
+                        },
+                        errorBuilder: (_, __, ___) => const _ImageFallback(),
+                      ),
+              ),
             ),
-            child: SizedBox(
-              height: 118,
-              width: double.infinity,
-              child: imageUrl == null || imageUrl.isEmpty
-                  ? const _ImageFallback()
-                  : Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      filterQuality: FilterQuality.high,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return const _ImageFallback();
-                      },
-                      errorBuilder: (_, __, ___) => const _ImageFallback(),
-                    ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title.isEmpty ? 'home.special_offer'.tr() : title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.english(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      height: AppTheme.lineHeightMyanmarSafe,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  if (description.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      description,
-                      maxLines: 2,
+                      title.isEmpty ? 'home.special_offer'.tr() : title,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.english(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        height: 1.4,
+                        color: AppColors.primary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        height: AppTheme.lineHeightMyanmarSafe,
                         letterSpacing: 0,
                       ),
                     ),
-                  ],
-                  const SizedBox(height: 6),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: onReadMore,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    const SizedBox(height: 4),
+                    if (description.isNotEmpty)
+                      Expanded(
                         child: Text(
-                          'home.read_more'.tr(),
+                          description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTheme.english(
-                            color: AppColors.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            height: AppTheme.lineHeightMyanmarSafe,
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            height: 1.6,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      )
+                    else
+                      const Spacer(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: onSeeMore,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'common.see_more'.tr(),
+                            style: AppTheme.english(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              height: AppTheme.lineHeightMyanmarSafe,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -209,7 +223,7 @@ class _ImageFallback extends StatelessWidget {
       child: Center(
         child: Icon(
           LucideIcons.image,
-          size: 18,
+          size: 22,
           color: AppColors.primary,
         ),
       ),

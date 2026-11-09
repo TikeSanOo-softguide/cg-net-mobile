@@ -31,6 +31,27 @@ class PromotionRepository {
       throw ApiException.fromDio(error);
     }
   }
+
+  Future<HomePromotion> fetchOne(String idOrSlug) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.promotion(idOrSlug),
+      );
+      final data = response.data;
+      final map = data is Map && data['data'] is Map
+          ? Map<String, dynamic>.from(data['data'] as Map)
+          : data is Map
+              ? Map<String, dynamic>.from(data)
+              : <String, dynamic>{};
+      final item = HomePromotion.fromJson(map);
+      if (!item.hasContent) {
+        throw const ApiException(ApiFailure.unknown);
+      }
+      return item;
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
 }
 
 final promotionRepositoryProvider = Provider<PromotionRepository>((ref) {
@@ -39,4 +60,25 @@ final promotionRepositoryProvider = Provider<PromotionRepository>((ref) {
 
 final homePromotionsProvider = FutureProvider<List<HomePromotion>>((ref) {
   return ref.watch(promotionRepositoryProvider).fetchActive();
+});
+
+String? promotionCatalogId(String id) {
+  const prefix = 'promotion-';
+  final trimmed = id.trim();
+  if (!trimmed.startsWith(prefix)) return null;
+  final key = trimmed.substring(prefix.length).trim();
+  return key.isEmpty ? null : key;
+}
+
+final promotionDetailProvider =
+    FutureProvider.family<HomePromotion, String>((ref, idOrSlug) async {
+  final listed = ref.watch(homePromotionsProvider).valueOrNull;
+  if (listed != null) {
+    for (final item in listed) {
+      if (item.id == idOrSlug || item.slug == idOrSlug) {
+        return item;
+      }
+    }
+  }
+  return ref.watch(promotionRepositoryProvider).fetchOne(idOrSlug);
 });

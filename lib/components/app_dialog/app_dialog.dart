@@ -453,11 +453,15 @@ Future<bool> showAppConfirmModal(
 }
 
 /// Shared password dialog — amount + close + 6-digit boxes.
+///
+/// When [onSubmit] is set, filling 6 digits keeps the dialog open and runs
+/// [onSubmit] with a loading state. The dialog pops after [onSubmit] returns.
 Future<String?> showAppPasswordModal(
   BuildContext context, {
   required String title,
   required String body,
   int? amountPoints,
+  Future<void> Function(String password)? onSubmit,
 }) {
   return _showAppDialog<String>(
     context: context,
@@ -467,6 +471,7 @@ Future<String?> showAppPasswordModal(
         title: title,
         body: body,
         amountPoints: amountPoints,
+        onSubmit: onSubmit,
       );
     },
   );
@@ -553,11 +558,13 @@ class _AppPasswordDialog extends StatefulWidget {
     required this.title,
     required this.body,
     this.amountPoints,
+    this.onSubmit,
   });
 
   final String title;
   final String body;
   final int? amountPoints;
+  final Future<void> Function(String password)? onSubmit;
 
   @override
   State<_AppPasswordDialog> createState() => _AppPasswordDialogState();
@@ -568,6 +575,7 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
 
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
+  var _busy = false;
 
   @override
   void initState() {
@@ -615,17 +623,32 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
     if (_pin.length == _pinLength) _submit();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final pin = _pin;
-    if (pin.length != _pinLength) return;
-    Navigator.of(context).pop(pin);
+    if (pin.length != _pinLength || _busy) return;
+    final onSubmit = widget.onSubmit;
+    if (onSubmit == null) {
+      Navigator.of(context).pop(pin);
+      return;
+    }
+
+    setState(() => _busy = true);
+    FocusManager.instance.primaryFocus?.unfocus();
+    try {
+      await onSubmit(pin);
+      if (mounted) Navigator.of(context).pop(pin);
+    } catch (_) {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final amount = widget.amountPoints;
 
-    return Dialog(
+    return PopScope(
+      canPop: !_busy,
+      child: Dialog(
       backgroundColor: AppColors.surface,
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -652,18 +675,19 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).pop(),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: AppColors.textMuted,
+                  if (!_busy)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.of(context).pop(),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -691,27 +715,31 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
               ),
             ],
             const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const gap = 8.0;
-                final box = ((constraints.maxWidth - gap * (_pinLength - 1)) /
-                        _pinLength)
-                    .clamp(0.0, 56.0);
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var i = 0; i < _pinLength; i++) ...[
-                      if (i > 0) const SizedBox(width: gap),
-                      _AppPinBox(
-                        size: box,
-                        controller: _controllers[i],
-                        focusNode: _focusNodes[i],
-                        onChanged: (v) => _onDigitChanged(i, v),
-                      ),
+            IgnorePointer(
+              ignoring: _busy,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 8.0;
+                  final box =
+                      ((constraints.maxWidth - gap * (_pinLength - 1)) /
+                              _pinLength)
+                          .clamp(0.0, 56.0);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var i = 0; i < _pinLength; i++) ...[
+                        if (i > 0) const SizedBox(width: gap),
+                        _AppPinBox(
+                          size: box,
+                          controller: _controllers[i],
+                          focusNode: _focusNodes[i],
+                          onChanged: (v) => _onDigitChanged(i, v),
+                        ),
+                      ],
                     ],
-                  ],
-                );
-              },
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -727,6 +755,7 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
             const SizedBox(height: AppStyle.errorSlotHeight),
           ],
         ),
+      ),
       ),
     );
   }
