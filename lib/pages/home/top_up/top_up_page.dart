@@ -14,10 +14,13 @@ import '../../../components/app_pill_action_input/app_pill_action_input.dart';
 import '../../../components/app_scan_input/app_scan_input.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../data/top_up/top_up_repository.dart';
 import '../../profile/profile/profile_controller.dart';
@@ -39,11 +42,13 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   final _formKey = GlobalKey<FormState>();
   String? _serialErrorKey;
   bool _accountPrefillAttempted = false;
+  bool _checkingSerial = false;
 
   static const _serialLength = 16;
+  static const _accountMaxLength = 15;
 
   bool get _canSubmit =>
-      _account.text.trim().isNotEmpty && _pin.text.trim().length >= 16;
+      _account.text.trim().isNotEmpty && _pin.text.trim().isNotEmpty;
 
   void _prefillAccount(String phone) {
     final value = phone.trim();
@@ -66,6 +71,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   }
 
   Future<void> _checkSerial() async {
+    if (_checkingSerial) return;
     final value = _serial.text.trim();
     final len = value.length;
     if (len == 0) {
@@ -77,49 +83,57 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       return;
     }
 
-    setState(() => _serialErrorKey = null);
-
+    setState(() {
+      _serialErrorKey = null;
+      _checkingSerial = true;
+    });
     try {
-      final result =
-          await ref.read(topUpControllerProvider.notifier).checkSerialNo(value);
-      if (!mounted) return;
+      while (true) {
+        try {
+          final result = await LoadingHelper.runWithLoading(
+            () => ref.read(topUpControllerProvider.notifier).checkSerialNo(
+                  value,
+                ),
+            dismissAnimation: false,
+          );
+          if (!mounted) return;
 
-      if (result.isValid) {
-        _unfocusInputs();
-        await showAppSuccessModal(
-          context,
-          title: 'topup.serial_valid_title'.tr(),
-          body: 'topup.serial_valid_body'.tr(),
-        );
-      } else {
-        _unfocusInputs();
-        final alreadyUsed = result.result == TopUpSerialCheckStatus.alreadyUsed;
-        await showAppFailureModal(
-          context,
-          title: alreadyUsed
-              ? 'topup.serial_invalid_title'.tr()
-              : 'topup.serial_invalid_card_title'.tr(),
-          body: alreadyUsed
-              ? 'topup.serial_invalid_body'.tr()
-              : 'topup.serial_invalid_card_body'.tr(),
-        );
+          _unfocusInputs();
+          if (result.isValid) {
+            await showAppSuccessModal(
+              context,
+              title: 'topup.serial_valid_title'.tr(),
+              body: apiMessageText(result.message ?? MessageCodes.topupValid),
+            );
+          } else {
+            final alreadyUsed =
+                result.status == TopUpSerialCheckStatus.alreadyUsed;
+            await showAppFailureModal(
+              context,
+              title: alreadyUsed
+                  ? 'topup.serial_invalid_title'.tr()
+                  : 'topup.serial_invalid_card_title'.tr(),
+              body: apiMessageText(
+                result.message ??
+                    (alreadyUsed
+                        ? MessageCodes.topupAlreadyUsed
+                        : MessageCodes.topupInvalid),
+              ),
+            );
+          }
+          return;
+        } on ApiException catch (error) {
+          if (!isOfflineError(error)) rethrow;
+          if (!mounted) return;
+          final shouldRetry = await openNoInternetPage(context);
+          if (!mounted || shouldRetry != true) return;
+        }
       }
     } on ApiException catch (error) {
       debugPrint('Top-up error: $error');
       if (!mounted) return;
-      if (isOfflineError(error)) {
-        final shouldRetry = await openNoInternetPage(context);
-        if (shouldRetry == true && mounted) {
-          await _checkSerial();
-        }
-        return;
-      }
       _unfocusInputs();
-      await showAppFailureModal(
-        context,
-        title: 'common.error'.tr(),
-        body: apiErrorText(error),
-      );
+      await showApiErrorModal(context, error);
     } catch (_) {
       if (!mounted) return;
       _unfocusInputs();
@@ -128,69 +142,14 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         title: 'topup.verify_fail_title'.tr(),
         body: 'topup.verify_fail_body'.tr(),
       );
+    } finally {
+      if (mounted) setState(() => _checkingSerial = false);
     }
-  }
-
-  Future<void> _showProcessing() {
-    return showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: const Color(0x6B000000),
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (ctx, animation, secondaryAnimation) {
-        return Center(
-          child: Material(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2.4),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'topup.processing'.tr(),
-                    style: AppTheme.english(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.15,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (ctx, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
-            child: child,
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _submit() async {
     if (ref.read(topUpControllerProvider).isSubmitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    _showProcessing();
 
     try {
       final account = _account.text.trim();
@@ -198,41 +157,45 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       late final TopUpAccountResult response;
       while (true) {
         try {
-          final result =
-              await ref.read(topUpControllerProvider.notifier).submit(
-                    phone: account,
-                    pin: pin,
-                  );
+          final result = await LoadingHelper.runWithLoading(
+            () => ref.read(topUpControllerProvider.notifier).submit(
+                  phone: account,
+                  pin: pin,
+                ),
+            loadingMessage: 'topup.processing'.tr(),
+            dismissAnimation: false,
+          );
           if (result == null) {
-            _closeProcessingDialog();
             return;
           }
           response = result;
           break;
         } on ApiException catch (error) {
           if (!isOfflineError(error)) rethrow;
-          _closeProcessingDialog();
           if (!mounted) return;
           final shouldRetry = await showOfflineModal(context);
           if (!mounted || !shouldRetry) return;
-          _showProcessing();
         }
       }
       if (!mounted) return;
 
       if (!response.isSuccess) {
-        _closeProcessingDialog();
         if (!mounted) return;
         _unfocusInputs();
+        if (response.message == MessageCodes.topupAccountNotFound) {
+          await _showAccountNotFoundModal();
+          return;
+        }
         await showAppFailureModal(
           context,
           title: 'topup.redeem_failure_title'.tr(),
-          body: 'topup.redeem_failure_body'.tr(),
+          body: apiMessageText(
+            response.message ?? MessageCodes.topupActionIncomplete,
+          ),
         );
         return;
       }
 
-      _closeProcessingDialog();
       if (!mounted) return;
       _unfocusInputs();
       final profileRefresh =
@@ -240,31 +203,29 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       await showAppSuccessModal(
         context,
         title: 'topup.redeem_success_title'.tr(),
-        body: 'topup.redeem_success_body'.tr(),
+        body: apiMessageText(response.message ?? MessageCodes.topupSuccess),
       );
       if (!mounted) return;
       await profileRefresh;
       _pin.clear();
       setState(() {});
     } on ApiException catch (error) {
-      _closeProcessingDialog();
       if (!mounted) return;
       _unfocusInputs();
-      if (error.failure == ApiFailure.tooManyRequests) {
+      if (error.code == MessageCodes.topupAccountNotFound) {
+        await _showAccountNotFoundModal();
+        return;
+      }
+      if (error.code == MessageCodes.topupCardInvalid) {
         await showAppFailureModal(
           context,
-          title: 'topup.redeem_failure_title'.tr(),
+          title: 'topup.serial_invalid_card_title'.tr(),
           body: apiErrorText(error),
         );
         return;
       }
-      await showAppFailureModal(
-        context,
-        title: 'topup.redeem_failure_title'.tr(),
-        body: 'topup.redeem_failure_body'.tr(),
-      );
+      await showApiErrorModal(context, error);
     } catch (_) {
-      _closeProcessingDialog();
       if (!mounted) return;
       _unfocusInputs();
       await showAppFailureModal(
@@ -275,10 +236,12 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     }
   }
 
-  void _closeProcessingDialog() {
-    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
+  Future<void> _showAccountNotFoundModal() {
+    return showAppFailureModal(
+      context,
+      title: 'topup.invalid_user_account_title'.tr(),
+      body: apiMessageText(MessageCodes.topupAccountNotFound),
+    );
   }
 
   void _unfocusInputs() {
@@ -348,7 +311,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   label: 'topup.serial_label'.tr(),
                   hint: 'topup.serial_hint'.tr(),
                   actionLabel: 'topup.check'.tr(),
-                  actionEnabled: true,
+                  actionEnabled: !_checkingSerial,
                   onAction: _checkSerial,
                   maxLength: _serialLength,
                   keyboardType: TextInputType.number,
@@ -382,11 +345,18 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   hint: 'topup.account_hint'.tr(),
                   suffixIcon: LucideIcons.user,
                   keyboardType: TextInputType.phone,
+                  maxLength: _accountMaxLength,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   textInputAction: TextInputAction.next,
                   onChanged: (_) => setState(() {}),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'topup.account_required'.tr();
+                    }
+                    if (v.trim().length > _accountMaxLength) {
+                      return 'topup.account_too_long'.tr();
                     }
                     return null;
                   },
@@ -409,6 +379,9 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'topup.pin_required'.tr();
+                    }
+                    if (v.trim().length != 16) {
+                      return 'topup.pin_invalid'.tr();
                     }
                     return null;
                   },
