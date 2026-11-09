@@ -272,6 +272,7 @@ class _ServiceGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0) const SizedBox(width: _gap),

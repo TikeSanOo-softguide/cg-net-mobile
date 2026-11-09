@@ -697,11 +697,13 @@ class _ServiceTypeSwitch extends StatelessWidget {
     return _ChoiceGrid(
       children: [
         _ChoiceChip(
+          icon: LucideIcons.wifi,
           label: 'FTTH',
           selected: value == 'FTTH',
           onTap: enabled ? () => onChanged('FTTH') : () {},
         ),
         _ChoiceChip(
+          icon: LucideIcons.router,
           label: 'installationApplication.cg_router'.tr(),
           selected: value == 'CG',
           onTap: enabled ? () => onChanged('CG') : () {},
@@ -740,11 +742,13 @@ class _ChoiceChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.icon,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -765,20 +769,47 @@ class _ChoiceChip extends StatelessWidget {
               width: 0.5,
             ),
           ),
-          child: Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.15,
-                color: selected ? AppColors.primary : AppColors.textMuted,
-              ),
-            ),
-          ),
+          child: icon == null
+              ? Center(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.15,
+                      color: selected ? AppColors.primary : AppColors.textMuted,
+                    ),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 13,
+                      color: selected ? AppColors.primary : AppColors.textMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.15,
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

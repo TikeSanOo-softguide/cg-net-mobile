@@ -10,6 +10,7 @@ import '../../../data/promotion/promotion_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'components/home_cg_package_section.dart';
+import 'bound_broadband_provider.dart';
 import 'components/home_header.dart';
 import 'components/home_offers_section.dart';
 import 'components/home_plan_card.dart';
@@ -33,6 +34,18 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   bool _launchPromoHandled = false;
   bool _launchPromoShowing = false;
+
+  /// Extra blue behind the header only while the list is pulled past the top.
+  double _topOverscroll = 0;
+
+  bool _onHomeScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final pixels = notification.metrics.pixels;
+    final next = pixels < 0 ? -pixels : 0.0;
+    if (next == _topOverscroll) return false;
+    setState(() => _topOverscroll = next);
+    return false;
+  }
 
   @override
   void initState() {
@@ -88,6 +101,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         liveProfile.accountNumber.isNotEmpty;
     final displayProfile =
         hasLiveProfile ? liveProfile : cachedProfile.valueOrNull;
+    final broadbandAccount =
+        ref.watch(boundBroadbandProvider)?.account.trim() ?? '';
     final localeCode = ref.watch(appLocaleProvider);
     final showNav = ref.watch(bottomNavVisibleProvider);
 
@@ -105,14 +120,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              height: pinnedH + 40,
+              height: pinnedH + _topOverscroll,
               child: const ColoredBox(color: AppColors.primary),
             ),
-            RefreshIndicator(
-              color: AppColors.primary,
-              edgeOffset: pinnedH,
-              onRefresh: _refreshSession,
-              child: CustomScrollView(
+            NotificationListener<ScrollNotification>(
+              onNotification: _onHomeScroll,
+              child: RefreshIndicator(
+                color: AppColors.primary,
+                edgeOffset: pinnedH,
+                onRefresh: _refreshSession,
+                child: CustomScrollView(
                 key: ValueKey('home-$localeCode'),
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
@@ -181,6 +198,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SliverToBoxAdapter(child: HomeSpecialOfferSection()),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                 ],
+                ),
               ),
             ),
             Positioned(
@@ -193,6 +211,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: HomePinnedBar(
                   accountNumber: displayProfile?.phone ??
                       (cachedProfile.isLoading ? '' : '—'),
+                  broadbandAccount: broadbandAccount,
                 ),
               ),
             ),

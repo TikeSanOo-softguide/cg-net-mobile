@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
+import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
@@ -299,8 +299,6 @@ class _RelocationRequestCard extends StatefulWidget {
 }
 
 class _RelocationRequestCardState extends State<_RelocationRequestCard> {
-  bool _expanded = false;
-
   bool get _canManage {
     return _canManageRequest(widget.request);
   }
@@ -350,209 +348,43 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
             request.preferredDate!.toLocal().toIso8601String(),
           );
 
-    return AppCard(
-      elevated: false,
-      bordered: false,
-      padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 3,
-            decoration: BoxDecoration(
-              color: _statusColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-            ),
+    return RequestTicketCard(
+      statusLabel: _statusLabel,
+      statusColor: _statusColor,
+      ticketNumber: request.ticketNumber,
+      createdAt: createdAt,
+      onEdit: _canManage ? widget.onEdit : null,
+      onCancel: _canManage ? widget.onCancel : null,
+      cancelTooltip: 'relocation.cancel_action'.tr(),
+      details: [
+        if (request.broadbandAccountNumber?.trim().isNotEmpty == true)
+          _RelocationDetail(
+            label: 'requests.broadband_account'.tr(),
+            value: request.broadbandAccountNumber!,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: _statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusLabel,
-                        style: AppTheme.caption(
-                          color: _statusColor,
-                          weight: FontWeight.w600,
-                        ).copyWith(fontSize: 10, height: 1),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (createdAt != null)
-                      Text(
-                        createdAt,
-                        style: AppTheme.caption(color: AppColors.textPrimary)
-                            .copyWith(fontSize: 11),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _RelocationTicketRow(ticketNumber: request.ticketNumber),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  alignment: Alignment.topCenter,
-                  child: _expanded
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Column(
-                            children: [
-                              if (request.broadbandAccountNumber
-                                      ?.trim()
-                                      .isNotEmpty ==
-                                  true)
-                                _RelocationDetail(
-                                  label: 'requests.broadband_account'.tr(),
-                                  value: request.broadbandAccountNumber!,
-                                ),
-                              _RelocationDetail(
-                                label: 'requests.phone'.tr(),
-                                value: request.phone,
-                              ),
-                              _RelocationDetail(
-                                label: 'relocation.current_address'.tr(),
-                                value: request.currentAddress,
-                              ),
-                              _RelocationDetail(
-                                label: 'relocation.new_address'.tr(),
-                                value: request.newAddress,
-                              ),
-                              if (preferredDate != null)
-                                _RelocationDetail(
-                                  label: 'relocation.preferred_date'.tr(),
-                                  value: preferredDate,
-                                ),
-                              if (request.details?.trim().isNotEmpty == true)
-                                _RelocationDetail(
-                                  label: 'relocation.details'.tr(),
-                                  value: request.details!,
-                                ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox(width: double.infinity),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: () => setState(() => _expanded = !_expanded),
-                      borderRadius: BorderRadius.circular(8),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _expanded
-                                  ? 'common.see_less'.tr()
-                                  : 'common.see_more'.tr(),
-                              style: AppTheme.caption(
-                                color: AppColors.primary,
-                                weight: FontWeight.w600,
-                              ).copyWith(fontSize: 10),
-                            ),
-                            const SizedBox(width: 2),
-                            Icon(
-                              _expanded
-                                  ? LucideIcons.chevron_up
-                                  : LucideIcons.chevron_down,
-                              size: 12,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (_canManage) ...[
-                      const Spacer(),
-                      Material(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(6),
-                        child: InkWell(
-                          onTap: widget.onEdit,
-                          borderRadius: BorderRadius.circular(6),
-                          child: const SizedBox(
-                            width: 26,
-                            height: 24,
-                            child: Center(
-                              child: Image(
-                                image: AssetImage(
-                                  'assets/images/profile/edit.png',
-                                ),
-                                width: 14,
-                                height: 14,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Tooltip(
-                        message: 'relocation.cancel_action'.tr(),
-                        child: _RelocationActionButton(
-                          onPressed: widget.onCancel,
-                          icon: LucideIcons.trash,
-                          color: AppColors.error,
-                          background: const Color(0xFFF8E8E6),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RelocationActionButton extends StatelessWidget {
-  const _RelocationActionButton({
-    required this.icon,
-    required this.onPressed,
-    required this.color,
-    required this.background,
-  });
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final Color color;
-  final Color background;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(6),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(6),
-        child: SizedBox(
-          width: 26,
-          height: 24,
-          child: Icon(icon, size: 14, color: color),
+        _RelocationDetail(
+          label: 'requests.phone'.tr(),
+          value: request.phone,
         ),
-      ),
+        _RelocationDetail(
+          label: 'relocation.current_address'.tr(),
+          value: request.currentAddress,
+        ),
+        _RelocationDetail(
+          label: 'relocation.new_address'.tr(),
+          value: request.newAddress,
+        ),
+        if (preferredDate != null)
+          _RelocationDetail(
+            label: 'relocation.preferred_date'.tr(),
+            value: preferredDate,
+          ),
+        if (request.details?.trim().isNotEmpty == true)
+          _RelocationDetail(
+            label: 'relocation.details'.tr(),
+            value: request.details!,
+          ),
+      ],
     );
   }
 }
@@ -576,7 +408,10 @@ class _RelocationDetail extends StatelessWidget {
         children: [
           SizedBox(
             width: 108,
-            child: Text(label, style: AppTheme.caption()),
+            child: Text(
+              label,
+              style: AppTheme.caption().copyWith(fontSize: 13),
+            ),
           ),
           Expanded(
             child: Text(
@@ -585,64 +420,7 @@ class _RelocationDetail extends StatelessWidget {
               style: AppTheme.body(
                 weight: FontWeight.w500,
                 color: AppColors.textPrimary,
-              ).copyWith(fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RelocationTicketRow extends StatelessWidget {
-  const _RelocationTicketRow({required this.ticketNumber});
-
-  final String? ticketNumber;
-
-  @override
-  Widget build(BuildContext context) {
-    final ticket = ticketNumber?.trim() ?? '';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              'installationApplication.ticket_number'.tr(),
-              style: AppTheme.caption(),
-            ),
-          ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: ticket.isEmpty
-                  ? Text(
-                      '—',
-                      style: AppTheme.body(
-                        weight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                      ).copyWith(fontSize: 12),
-                    )
-                  : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        ticket,
-                        textAlign: TextAlign.right,
-                        style: AppTheme.body(
-                          weight: FontWeight.w500,
-                          color: AppColors.primary,
-                        ).copyWith(fontSize: 12),
-                      ),
-                    ),
+              ).copyWith(fontSize: 13),
             ),
           ),
         ],

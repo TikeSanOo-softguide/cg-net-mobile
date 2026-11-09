@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../components/account_number_row/account_number_row.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
@@ -13,6 +14,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
+import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
 
@@ -36,6 +38,8 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   DateTime? _preferredDate;
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   bool _submitting = false;
+  String? _accountGapError;
+  String? _addressGapError;
 
   @override
   void initState() {
@@ -111,13 +115,28 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
 
   Future<void> _submit() async {
     if (_submitting) return;
-    if (!_formKey.currentState!.validate()) {
-      setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
+    final profile = ref.read(profileControllerProvider);
+    final accountGap = profile.accountNumber.isNotEmpty
+        ? _accountError(_accountController.text)
+        : null;
+    final addressGap = profile.address.isNotEmpty
+        ? _currentAddressError(_currentAddressController.text)
+        : null;
+    final formOk = _formKey.currentState!.validate();
+    if (!formOk || accountGap != null || addressGap != null) {
+      setState(() {
+        _autovalidateMode = AutovalidateMode.onUserInteraction;
+        _accountGapError = accountGap;
+        _addressGapError = addressGap;
+      });
       return;
     }
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _accountGapError = null;
+      _addressGapError = null;
+    });
 
-    final profile = ref.read(profileControllerProvider);
     final request = RelocationRequestModel(
       id: widget.request?.id ?? '',
       userId: widget.request?.userId ?? int.tryParse(profile.id) ?? 0,
@@ -165,9 +184,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     final isSubmitting = state.isSubmitting || _submitting;
     return AppCurvedScaffold(
       title: Text(
-        widget.request == null
-            ? 'relocation.new_request'.tr()
-            : 'relocation.edit_request'.tr(),
+        'relocation.title'.tr(),
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
@@ -187,76 +204,74 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                       AppCard(
                         elevated: false,
                         bordered: false,
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.fromLTRB(8, 6, 10, 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 22,
-                                    height: 22,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Transform.translate(
+                                  offset: const Offset(0, -1),
+                                  child: Image.asset(
+                                    'assets/images/services/info.png',
+                                    width: 23,
+                                    height: 23,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'relocation.form_desc'.tr(),
+                                    style: AppTheme.body(
+                                      weight: FontWeight.w600,
+                                    ).copyWith(
+                                      fontSize: 13,
+                                      height: 22 / 13,
+                                      leadingDistribution:
+                                          TextLeadingDistribution.even,
                                       color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(
-                                      LucideIcons.circle_alert,
-                                      size: 13,
-                                      color: AppColors.onPrimary,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'relocation.form_desc'.tr(),
-                                      style: AppTheme.caption().copyWith(
-                                        height: 1.3,
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
-                            AppInput(
-                              controller: _accountController,
-                              label: '${'requests.broadband_account'.tr()} *',
-                              readOnly: profile.accountNumber.isNotEmpty,
-                              enabled: profile.accountNumber.isEmpty,
-                              prefixIcon: LucideIcons.id_card,
-                              validator: _accountError,
+                            _accountAndAddress(profile),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            const SizedBox(height: AppStyle.spaceXs),
-                            AppInput(
-                              controller: _currentAddressController,
-                              fillColor: AppColors.primaryLight,
-                              textColor: AppColors.primary,
-                              label: '${'relocation.current_address'.tr()} *',
-                              readOnly: profile.address.isNotEmpty,
-                              enabled: profile.address.isEmpty,
-                              prefixIcon: LucideIcons.map_pin,
-                              validator: _currentAddressError,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'relocation.move_title'.tr(),
+                              style: AppTheme.body(weight: FontWeight.w700)
+                                  .copyWith(fontSize: 13),
                             ),
-                            const SizedBox(height: AppStyle.spaceXs),
-                            AppInput(
-                              controller: _newAddressController,
-                              label: '${'relocation.new_address'.tr()} *',
-                              prefixIcon: LucideIcons.map_pin,
-                              maxLines: 2,
-                              maxLength: 5000,
-                              validator: _newAddressError,
-                            ),
-                            const SizedBox(height: AppStyle.spaceXs),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      AppCard(
+                        elevated: false,
+                        bordered: false,
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                             AppInput(
                               controller: _phoneController,
                               label: '${'requests.phone'.tr()} *',
@@ -270,6 +285,15 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                                     RegExp(r'[0-9+\s-]')),
                               ],
                               validator: _phoneError,
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
+                              controller: _newAddressController,
+                              label: '${'relocation.new_address'.tr()} *',
+                              prefixIcon: LucideIcons.map_pin,
+                              maxLines: 2,
+                              maxLength: 5000,
+                              validator: _newAddressError,
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
@@ -345,6 +369,137 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _accountAndAddress(UserProfileModel profile) {
+    final accountLocked = profile.accountNumber.isNotEmpty;
+    final addressLocked = profile.address.isNotEmpty;
+    final accountLabel = 'requests.broadband_account'.tr();
+    final addressLabel = 'relocation.current_address'.tr();
+
+    final accountInput = AppInput(
+      controller: _accountController,
+      label: '$accountLabel *',
+      readOnly: accountLocked,
+      enabled: !accountLocked,
+      prefixIcon: LucideIcons.id_card,
+      validator: _accountError,
+    );
+    final addressInput = AppInput(
+      controller: _currentAddressController,
+      label: '$addressLabel *',
+      readOnly: addressLocked,
+      enabled: !addressLocked,
+      prefixIcon: LucideIcons.map_pin,
+      validator: _currentAddressError,
+    );
+
+    final accountRow = AccountNumberRow(
+      label: accountLabel,
+      value: _accountController.text,
+      error: _accountGapError,
+    );
+
+    if (accountLocked && addressLocked) {
+      return Column(
+        children: [
+          accountRow,
+          const SizedBox(height: 8),
+          _lockedBox(
+            _lockedLine(
+              LucideIcons.map_pin,
+              addressLabel,
+              _currentAddressController.text,
+              error: _addressGapError,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        if (accountLocked) accountRow else accountInput,
+        const SizedBox(height: AppStyle.spaceXs),
+        if (addressLocked)
+          _lockedBox(
+            _lockedLine(
+              LucideIcons.map_pin,
+              addressLabel,
+              _currentAddressController.text,
+              error: _addressGapError,
+            ),
+          )
+        else
+          addressInput,
+      ],
+    );
+  }
+
+  Widget _lockedBox(Widget child) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _lockedLine(
+    IconData icon,
+    String label,
+    String value, {
+    String? error,
+    Color valueColor = AppColors.textPrimary,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  height: 1.3,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                  color: valueColor,
+                ),
+              ),
+              if (error != null && error.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(error, style: AppTheme.fieldError()),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 

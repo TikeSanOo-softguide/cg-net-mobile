@@ -19,7 +19,6 @@ const String _successIconAsset = 'assets/images/dialogs/success.png';
 const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
 const String _alertIconAsset = 'assets/images/dialogs/alert.png';
 const String _failureIconAsset = 'assets/images/dialogs/failure.png';
-const String _passwordIconAsset = 'assets/images/dialogs/password.png';
 const String _wifiOffIconAsset = 'assets/images/dialogs/wifi-off-icon.png';
 const Color _failure = Color(0xFFD90000);
 const Color _failureSoft = Color(0xFFFCE6E6); // light of #D90000
@@ -453,7 +452,7 @@ Future<bool> showAppConfirmModal(
   return result == true;
 }
 
-/// Shared password dialog — icon + amount + close + 6-digit boxes.
+/// Shared password dialog — amount + close + 6-digit boxes.
 Future<String?> showAppPasswordModal(
   BuildContext context, {
   required String title,
@@ -626,123 +625,108 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
   Widget build(BuildContext context) {
     final amount = widget.amountPoints;
 
-    return _appDialogShell(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _dialogPngIcon(
-                asset: _passwordIconAsset,
-                background: AppColors.primaryLight,
-              ),
-              const SizedBox(height: _gapIconTitle),
-              Text(
-                widget.title,
-                textAlign: TextAlign.center,
-                style: AppTheme.english(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.primary,
-                  height: 1.3,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              if (amount != null) ...[
-                const SizedBox(height: 8),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: NumberFormat('#,##0').format(amount),
-                        style: AppTheme.english(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                          height: 1.15,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ' ${'topup.pts'.tr()}',
-                        style: AppTheme.english(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                          height: 1.15,
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: _gapTitleBody),
-              Text(
-                widget.body,
-                textAlign: TextAlign.center,
-                style: AppTheme.english(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textMuted,
-                  height: 1.45,
-                  letterSpacing: 0,
-                ),
-              ),
-              const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const gap = 6.0;
-                  final box = ((constraints.maxWidth - gap * (_pinLength - 1)) /
-                          _pinLength)
-                      .clamp(32.0, 40.0);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        for (var i = 0; i < _pinLength; i++)
-                          _AppPinBox(
-                            size: box,
-                            controller: _controllers[i],
-                            focusNode: _focusNodes[i],
-                            onChanged: (v) => _onDigitChanged(i, v),
-                          ),
-                      ],
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(_dialogRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 22,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                      color: AppColors.textSecondary,
                     ),
-                  );
-                },
-              ),
-            ],
-          ),
-          Positioned(
-            top: -4,
-            right: -4,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => Navigator.of(context).pop(),
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.primaryLight),
                   ),
-                  child: const Icon(
-                    Icons.close_rounded,
-                    size: 16,
-                    color: AppColors.primary,
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
-          ),
-        ],
+            if (amount != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    NumberFormat('#,##0').format(amount),
+                    style: AppTheme.amount(color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'topup.pts'.tr(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 8.0;
+                final box = ((constraints.maxWidth - gap * (_pinLength - 1)) /
+                        _pinLength)
+                    .clamp(0.0, 56.0);
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < _pinLength; i++) ...[
+                      if (i > 0) const SizedBox(width: gap),
+                      _AppPinBox(
+                        size: box,
+                        controller: _controllers[i],
+                        focusNode: _focusNodes[i],
+                        onChanged: (v) => _onDigitChanged(i, v),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.body,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: AppStyle.errorSlotHeight),
+          ],
+        ),
       ),
     );
   }
@@ -785,7 +769,7 @@ class _AppPinBoxState extends State<_AppPinBox> {
   @override
   Widget build(BuildContext context) {
     final focused = widget.focusNode.hasFocus;
-    final fontSize = widget.size >= 38 ? 17.0 : 15.0;
+    final fontSize = widget.size >= 48 ? 22.0 : 18.0;
 
     return SizedBox(
       width: widget.size,
@@ -794,11 +778,11 @@ class _AppPinBoxState extends State<_AppPinBox> {
         duration: const Duration(milliseconds: 160),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppStyle.radiusInput),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: focused ? AppColors.primary : AppColors.border,
-            width: focused ? 1.6 : 1.2,
+            color: focused ? AppColors.primary : AppColors.paperBorder,
+            width: focused ? 1.5 : 1,
           ),
         ),
         child: TextField(
@@ -824,6 +808,8 @@ class _AppPinBoxState extends State<_AppPinBox> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: const InputDecoration(
             isCollapsed: true,
+            filled: true,
+            fillColor: AppColors.surface,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,

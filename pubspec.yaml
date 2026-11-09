@@ -68,6 +68,7 @@ flutter:
     - assets/images/support/
     - assets/images/profile/
     - assets/images/settings/
+    - assets/images/pay_bill/
   fonts:
     - family: NotoSansMyanmar
       fonts:
