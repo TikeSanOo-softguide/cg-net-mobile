@@ -381,12 +381,16 @@ class _InstallationApplicationCardState
           value: request.productName ?? '',
         ),
         _RequestDetail(
+          label: 'installationApplication.network_provider'.tr(),
+          value: detail?['product_line']?.toString() ?? '',
+        ),
+        _RequestDetail(
           label: 'installationApplication.internet_speed'.tr(),
           value: _speedLabel(detail?['product_speed']),
         ),
         _RequestDetail(
-          label: 'installationApplication.network_provider'.tr(),
-          value: detail?['product_line']?.toString() ?? '',
+          label: 'installationApplication.billing_period'.tr(),
+          value: _periodLabel(detail),
         ),
         _RequestDetail(
           label: 'requests.package_price'.tr(),
@@ -395,10 +399,6 @@ class _InstallationApplicationCardState
         _RequestDetail(
           label: 'installationApplication.installation_fee'.tr(),
           value: _pointsLabel(detail?['installation_fee']),
-        ),
-        _RequestDetail(
-          label: 'installationApplication.billing_period'.tr(),
-          value: _periodLabel(detail),
         ),
         _RequestDetail(
           label: 'requests.address'.tr(),
