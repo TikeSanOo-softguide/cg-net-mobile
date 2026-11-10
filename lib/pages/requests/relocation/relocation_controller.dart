@@ -39,25 +39,31 @@ class RelocationController extends StateNotifier<RelocationState> {
   RelocationController(this._repository) : super(const RelocationState());
 
   final RelocationRepository _repository;
+  int _fetchSequence = 0;
 
   Future<void> fetchRequests() async {
+    final sequence = ++_fetchSequence;
     state = state.copyWith(
       status: RelocationStatus.loading,
+      requests: const [],
       clearError: true,
     );
     try {
       final requests = await _repository.fetchRequests();
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: RelocationStatus.success,
         requests: requests,
         clearError: true,
       );
     } on ApiException catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: RelocationStatus.error,
         errorMessage: error.detail ?? error.messageKey,
       );
     } catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: RelocationStatus.error,
         errorMessage: error.toString(),

@@ -225,7 +225,7 @@ class _InstallationApplicationFormPageState
       return _requiredMessage(fieldKey);
     }
     if (key == 'requests.max_length') {
-      return 'requests.max_length'.tr(namedArgs: {'max': '255'});
+      return 'requests.max_length'.tr(namedArgs: {'max': '30'});
     }
     return key.tr();
   }
@@ -234,7 +234,7 @@ class _InstallationApplicationFormPageState
     final key = installationAddressError(value);
     if (key == null) return null;
     if (key == 'requests.required') {
-      return _requiredMessage('installationApplication.address');
+      return _requiredMessage('requests.address');
     }
     if (key == 'requests.max_length') {
       return 'requests.max_length'.tr(namedArgs: {'max': '5000'});
@@ -516,14 +516,13 @@ class _InstallationApplicationFormPageState
           children: [
             AppInput(
               controller: _nameController,
-              label: '${'installationApplication.full_name'.tr()} *',
-              hint: 'installationApplication.full_name_hint'.tr(),
+              label: '${'requests.contact_name'.tr()} *',
+              hint: 'requests.contact_name_hint'.tr(),
               prefixIcon: LucideIcons.user,
               textInputAction: TextInputAction.next,
-              maxLength: 255,
               validator: (value) => _translateError(
                 installationFullNameError(value),
-                fieldKey: 'installationApplication.full_name',
+                fieldKey: 'requests.contact_name',
               ),
               onChanged: (value) => ref
                   .read(installationRequestDraftProvider.notifier)
@@ -532,8 +531,8 @@ class _InstallationApplicationFormPageState
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
               controller: _phoneController,
-              label: '${'installationApplication.phone'.tr()} *',
-              hint: 'installationApplication.phone_hint'.tr(),
+              label: '${'requests.phone'.tr()} *',
+              hint: 'requests.phone_hint'.tr(),
               prefixIcon: LucideIcons.phone,
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
@@ -550,8 +549,8 @@ class _InstallationApplicationFormPageState
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
               controller: _addressController,
-              label: '${'installationApplication.address'.tr()} *',
-              hint: 'installationApplication.address_hint'.tr(),
+              label: '${'requests.address'.tr()} *',
+              hint: 'requests.address_hint'.tr(),
               prefixIcon: LucideIcons.map_pin,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.next,
@@ -565,8 +564,8 @@ class _InstallationApplicationFormPageState
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
               controller: _noteController,
-              label: 'installationApplication.note'.tr(),
-              hint: 'installationApplication.note_hint'.tr(),
+              label: 'requests.note'.tr(),
+              hint: 'requests.note_hint'.tr(),
               prefixIcon: LucideIcons.notebook_pen,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.done,
@@ -594,7 +593,7 @@ class _InstallationApplicationFormPageState
           title: 'installationApplication.step_package'.tr(),
           children: [
             _ReviewRow(
-              label: 'installationApplication.ticket_number'.tr(),
+              label: 'requests.ticket_number'.tr(),
               value: draft.ticketNumber ?? '',
             ),
             _ReviewRow(
@@ -620,7 +619,7 @@ class _InstallationApplicationFormPageState
                 ),
               ),
               _ReviewRow(
-                label: 'installationApplication.package_price'.tr(),
+                label: 'requests.package_price'.tr(),
                 value: _points(product.productPrice),
               ),
               _ReviewRow(
@@ -636,19 +635,19 @@ class _InstallationApplicationFormPageState
           title: 'installationApplication.step_customer'.tr(),
           children: [
             _ReviewRow(
-              label: 'installationApplication.full_name'.tr(),
+              label: 'requests.contact_name'.tr(),
               value: draft.fullName,
             ),
             _ReviewRow(
-              label: 'installationApplication.phone'.tr(),
+              label: 'requests.phone'.tr(),
               value: draft.phone,
             ),
             _ReviewRow(
-              label: 'installationApplication.address'.tr(),
+              label: 'requests.address'.tr(),
               value: draft.address,
             ),
             _ReviewRow(
-              label: 'installationApplication.note'.tr(),
+              label: 'requests.note'.tr(),
               value: draft.note ?? '',
             ),
           ],
@@ -998,7 +997,7 @@ class _SelectedPackageSummary extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _PriceLine(
-            label: 'installationApplication.package_price'.tr(),
+            label: 'requests.package_price'.tr(),
             value: price,
           ),
           const SizedBox(height: 8),

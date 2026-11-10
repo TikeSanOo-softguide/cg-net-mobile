@@ -118,7 +118,7 @@ class _RequestTicketCardState extends State<RequestTicketCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'installationApplication.ticket_number'.tr(),
+                            'requests.ticket_number'.tr(),
                             style: AppTheme.caption().copyWith(fontSize: 11),
                           ),
                           const SizedBox(height: 2),
