@@ -12,6 +12,7 @@ import '../../../components/app_input/app_input.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../../models/user_model/user_model.dart';
@@ -32,6 +33,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   late final TextEditingController _accountController;
   late final TextEditingController _currentAddressController;
   late final TextEditingController _newAddressController;
+  late final TextEditingController _contactNameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _detailsController;
   late final TextEditingController _preferredDateController;
@@ -56,6 +58,13 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     );
     _newAddressController =
         TextEditingController(text: request?.newAddress ?? '');
+    _contactNameController =
+        TextEditingController(text: request?.contactName ?? '');
+    if ((_contactNameController.text.isEmpty ||
+            _contactNameController.text == 'Customer') &&
+        profile.fullName.isNotEmpty) {
+      _contactNameController.text = profile.fullName;
+    }
     _phoneController =
         TextEditingController(text: request?.phone ?? profile.displayPhone);
     _detailsController = TextEditingController(text: request?.details ?? '');
@@ -78,6 +87,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     _accountController.dispose();
     _currentAddressController.dispose();
     _newAddressController.dispose();
+    _contactNameController.dispose();
     _phoneController.dispose();
     _detailsController.dispose();
     _preferredDateController.dispose();
@@ -146,6 +156,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
       currentAddress: _currentAddressController.text.trim(),
       newAddress: _newAddressController.text.trim(),
       preferredDate: _preferredDate,
+      contactName: _contactNameController.text.trim(),
       phone: _phoneController.text.trim(),
       details: _detailsController.text.trim().isEmpty
           ? null
@@ -273,9 +284,21 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             AppInput(
+                              controller: _contactNameController,
+                              label: 'requests.contact_name'.tr(),
+                              hint: 'requests.contact_name_hint'.tr(),
+                              prefixIcon: LucideIcons.user,
+                              validator: (value) => _requiredMaxLengthField(
+                                value,
+                                30,
+                                'requests.contact_name',
+                              ),
+                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
+                            AppInput(
                               controller: _phoneController,
                               label: '${'requests.phone'.tr()} *',
-                              hint: 'login.phone_hint'.tr(),
+                              hint: 'requests.phone_hint'.tr(),
                               prefixIcon: LucideIcons.phone,
                               keyboardType: TextInputType.phone,
                               textInputAction: TextInputAction.next,
@@ -290,6 +313,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                             AppInput(
                               controller: _newAddressController,
                               label: '${'relocation.new_address'.tr()} *',
+                              hint: 'relocation.new_address_hint'.tr(),
                               prefixIcon: LucideIcons.map_pin,
                               maxLines: 2,
                               maxLength: 5000,
@@ -323,7 +347,8 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                             ),
                             AppInput(
                               controller: _detailsController,
-                              label: 'relocation.details'.tr(),
+                              label: 'requests.note'.tr(),
+                              hint: 'requests.note_hint'.tr(),
                               prefixIcon: LucideIcons.notebook_pen,
                               maxLines: 3,
                               maxLength: 5000,
@@ -519,8 +544,17 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   String? _accountError(String? value) =>
       _requiredText(value, 'requests.broadband_account');
 
-  String? _phoneError(String? value) =>
-      _requiredMaxLengthField(value, 16, 'requests.phone');
+  String? _phoneError(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return 'login.phone_required'.tr();
+
+    final normalized = PhoneNumber.normalize(trimmed);
+    if (normalized == null || !PhoneNumber.isSupported(normalized)) {
+      return 'login.phone_invalid'.tr();
+    }
+
+    return null;
+  }
 
   String? _currentAddressError(String? value) =>
       _requiredMaxLengthField(value, 5000, 'relocation.current_address');
