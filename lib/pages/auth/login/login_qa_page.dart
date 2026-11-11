@@ -1,9 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../components/app_card/app_card.dart';
+import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -31,11 +34,19 @@ class LoginQaPage extends ConsumerWidget {
     (CountryDial.china, 'login.hotline_cn_local'),
   ];
 
-  static TextStyle get _bodyStyle =>
-      AppTheme.bodySecondary(color: AppColors.textMuted);
+  static TextStyle get _bodyStyle => AppTheme.english(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textMuted,
+        height: AppTheme.lineHeightMyanmarSafe,
+      );
 
-  static TextStyle get _titleStyle =>
-      AppTheme.sectionTitle().copyWith(fontSize: 13);
+  static TextStyle get _titleStyle => AppTheme.english(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.primary,
+        height: AppTheme.lineHeightMyanmarSafe,
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -119,21 +130,53 @@ class LoginQaPage extends ConsumerWidget {
               ),
           ];
 
-    return AuthBackgroundScaffold(
+    return AppCurvedScaffold(
       key: ValueKey('login-qa-$localeCode'),
+      title: Text('login.qa_title'.tr()),
       showBack: true,
-      topBarTitle: 'login.qa_title'.tr(),
-      card: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      onBack: () => context.pop(),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          Text(
-            'login.qa_subtitle'.tr(),
-            textAlign: TextAlign.center,
-            style: _bodyStyle,
+          AppCard(
+            elevated: false,
+            bordered: false,
+            borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    LucideIcons.headset,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'login.qa_subtitle'.tr(),
+                    style: AppTheme.english(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primary,
+                      height: AppTheme.lineHeightMyanmarSafe,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppStyle.spaceMd),
+          const SizedBox(height: 12),
           ...qaWidgets,
-          const SizedBox(height: AppStyle.spaceSm),
+          const SizedBox(height: 10),
           _HotlineSection(
             hotlines: hotlineNumbers.isNotEmpty
                 ? hotlineNumbers
@@ -186,75 +229,41 @@ class _QaItemState extends State<_QaItem> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(
-        bottom: AppStyle.spaceSm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _isExpanded
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : AppColors.borderLight,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppStyle.spaceMd,
-              vertical: AppStyle.spaceSm,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.help_outline,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: AppStyle.spaceSm),
-                    Expanded(
-                      child: Text(
-                        widget.question,
-                        style: widget.titleStyle,
-                      ),
-                    ),
-                    const SizedBox(width: AppStyle.spaceSm),
-                    Icon(
-                      _isExpanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      size: AppStyle.iconSizeSm,
-                      color: AppColors.textMuted,
-                    ),
-                  ],
+    return AppCard(
+      onTap: () => setState(() => _isExpanded = !_isExpanded),
+      elevated: false,
+      bordered: false,
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.question,
+                  style: widget.titleStyle,
                 ),
-                if (_isExpanded) ...[
-                  const SizedBox(height: AppStyle.spaceSm),
-                  const Divider(height: 1, color: AppColors.borderLight),
-                  const SizedBox(height: AppStyle.spaceSm),
-                  Padding(
-                    padding: const EdgeInsets.only(left: AppStyle.spaceXxl),
-                    child: Text(
-                      widget.answer,
-                      style: widget.bodyStyle,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                _isExpanded ? LucideIcons.chevron_up : LucideIcons.chevron_down,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+            ],
           ),
-        ),
+          if (_isExpanded) ...[
+            const SizedBox(height: 12),
+            Text(
+              widget.answer,
+              style: widget.bodyStyle,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -293,7 +302,7 @@ class _HotlineSection extends StatelessWidget {
           backgroundColor: AppColors.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           insetPadding: const EdgeInsets.symmetric(horizontal: 44),
           child: Padding(
@@ -423,34 +432,27 @@ class _HotlineSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppStyle.spaceMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return AppCard(
+      elevated: false,
+      bordered: false,
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.headset_mic_outlined,
-                  size: 14,
-                  color: AppColors.primary.withValues(
-                    alpha: 0.85,
-                  ),
+                const Icon(
+                  LucideIcons.headset,
+                  size: 16,
+                  color: AppColors.primary,
                 ),
-                const SizedBox(width: AppStyle.spaceXs),
+                const SizedBox(width: 8),
                 Text(
                   'login.hotline_title'.tr(),
-                  style: AppTheme.bodySecondary(
-                    color: AppColors.textPrimary,
-                  ).copyWith(fontWeight: FontWeight.w500),
+                  style: titleStyle,
                 ),
               ],
             ),
@@ -500,7 +502,7 @@ class _HotlineSection extends StatelessWidget {
                           ),
                         ),
                         const Icon(
-                          Icons.chevron_right,
+                          LucideIcons.chevron_right,
                           size: 16,
                           color: AppColors.textMuted,
                         ),
@@ -511,7 +513,6 @@ class _HotlineSection extends StatelessWidget {
               ),
           ],
         ),
-      ),
     );
   }
 }

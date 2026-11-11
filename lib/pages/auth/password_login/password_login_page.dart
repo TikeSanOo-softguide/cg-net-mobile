@@ -436,6 +436,14 @@ class _PasswordDigitState extends State<_PasswordDigit> {
     if (mounted) setState(() {});
   }
 
+  void _selectAll() {
+    final text = widget.controller.text;
+    widget.controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: text.length,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final focused = widget.focusNode.hasFocus;
@@ -456,7 +464,7 @@ class _PasswordDigitState extends State<_PasswordDigit> {
       height: size,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        clipBehavior: Clip.antiAlias,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: AppStyle.borderRadiusInput,
@@ -465,81 +473,81 @@ class _PasswordDigitState extends State<_PasswordDigit> {
             width: focused || widget.hasError ? 1.5 : 1.2,
           ),
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Opacity(
-              opacity: 0,
-              child: Focus(
-                canRequestFocus: false,
-                skipTraversal: true,
-                onKeyEvent: (node, event) => widget.onKeyEvent(event),
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: widget.focusNode,
-                  enabled: widget.enabled,
-                  obscureText: true,
-                  obscuringCharacter: '•',
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  textInputAction: widget.autofill
-                      ? TextInputAction.done
-                      : TextInputAction.next,
-                  maxLength: 6,
-                  showCursor: false,
-                  enableInteractiveSelection: false,
-                  autofillHints: widget.autofill
-                      ? const [AutofillHints.password]
-                      : null,
-                  style: AppTheme.english(
-                    fontSize: 1,
-                    height: 1,
-                    color: Colors.transparent,
-                  ),
-                  onTapOutside: (_) {
-                    if (widget.focusNode.hasFocus) {
-                      widget.focusNode.unfocus();
-                    }
-                  },
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(
-                    isCollapsed: true,
-                    isDense: true,
-                    border: InputBorder.none,
-                    counterText: '',
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onSubmitted: widget.isLast ? (_) {} : null,
-                  onChanged: (value) {
-                    final digits = value.replaceAll(RegExp(r'\D'), '');
-                    if (digits.length > 1) {
-                      widget.onChanged(digits);
-                      return;
-                    }
-                    final digit = digits.isEmpty ? '' : digits;
-                    if (widget.controller.text != digit) {
-                      widget.controller.value = TextEditingValue(
-                        text: digit,
-                        selection: TextSelection.collapsed(offset: digit.length),
-                      );
-                    }
-                    widget.onChanged(digit);
-                  },
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(
+            child: Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              onKeyEvent: (node, event) => widget.onKeyEvent(event),
+              child: TextField(
+                controller: widget.controller,
+                focusNode: widget.focusNode,
+                enabled: widget.enabled,
+                obscureText: true,
+                obscuringCharacter: '•',
+                textAlign: TextAlign.center,
+                textAlignVertical: TextAlignVertical.center,
+                keyboardType: TextInputType.number,
+                textInputAction: widget.autofill
+                    ? TextInputAction.done
+                    : TextInputAction.next,
+                maxLength: 6,
+                showCursor: true,
+                cursorColor: AppColors.primary,
+                cursorWidth: 2,
+                cursorHeight: fontSize,
+                enableInteractiveSelection: true,
+                autofillHints: widget.autofill
+                    ? const [AutofillHints.password]
+                    : null,
+                style: AppTheme.english(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w700,
+                  color: filled ? AppColors.textPrimary : AppColors.textMuted,
+                  height: 1.2,
                 ),
+                strutStyle: StrutStyle(
+                  fontSize: fontSize,
+                  height: 1.2,
+                  forceStrutHeight: true,
+                ),
+                onTapOutside: (_) {
+                  if (widget.focusNode.hasFocus) {
+                    widget.focusNode.unfocus();
+                  }
+                },
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  counterText: '',
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onTap: widget.enabled ? _selectAll : null,
+                onSubmitted: widget.isLast ? (_) {} : null,
+                onChanged: (value) {
+                  final digits = value.replaceAll(RegExp(r'\D'), '');
+                  if (digits.length > 1) {
+                    widget.onChanged(digits);
+                    return;
+                  }
+                  final digit = digits.isEmpty ? '' : digits;
+                  if (widget.controller.text != digit) {
+                    widget.controller.value = TextEditingValue(
+                      text: digit,
+                      selection: TextSelection.collapsed(offset: digit.length),
+                    );
+                  }
+                  widget.onChanged(digit);
+                },
               ),
             ),
-            if (filled)
-              IgnorePointer(
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: AppColors.textPrimary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

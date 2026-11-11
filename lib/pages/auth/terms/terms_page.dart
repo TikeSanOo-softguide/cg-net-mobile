@@ -62,27 +62,26 @@ class TermsPage extends ConsumerWidget {
             child: Container(
               width: _iconBoxSize,
               height: _iconBoxSize,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.04),
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(_iconRadius),
               ),
-              child: Center(
-                child: Image.asset(
-                  _iconAsset,
-                  width: _iconSize,
-                  height: _iconSize,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                ),
+              child: Image.asset(
+                _iconAsset,
+                width: _iconSize,
+                height: _iconSize,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
               ),
             ),
           ),
-          const SizedBox(height: AppStyle.spaceXl),
+          const SizedBox(height: AppStyle.spaceLg),
           Text(
             titleText,
             textAlign: TextAlign.center,
             style: AppTheme.english(
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
               height: 1.4,
@@ -100,7 +99,7 @@ class TermsPage extends ConsumerWidget {
               bodyText,
               textAlign: TextAlign.start,
               style: AppTheme.english(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: AppColors.textMuted,
                 height: 1.5,
