@@ -58,7 +58,6 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
             : 'relocation.update_success',
       ).tr(),
     );
-    if (mounted) await _refresh();
   }
 
   Future<void> _confirmAction({
@@ -339,7 +338,7 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
     final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : formatDateTime(
+        : formatDate(
             request.createdAt!.toLocal().toIso8601String(),
           );
     final preferredDate = request.preferredDate == null
@@ -363,6 +362,10 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
             value: request.broadbandAccountNumber!,
           ),
         _RelocationDetail(
+          label: 'requests.contact_name'.tr(),
+          value: request.contactName,
+        ),
+        _RelocationDetail(
           label: 'requests.phone'.tr(),
           value: request.phone,
         ),
@@ -381,7 +384,7 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
           ),
         if (request.details?.trim().isNotEmpty == true)
           _RelocationDetail(
-            label: 'relocation.details'.tr(),
+            label: 'requests.note'.tr(),
             value: request.details!,
           ),
       ],
