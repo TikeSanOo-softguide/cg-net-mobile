@@ -153,7 +153,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
 
     try {
       final account = _account.text.trim();
-      final pin = _pin.text.trim();
+      final pin = _pin.text.replaceAll(' ', '').trim();
       late final TopUpAccountResult response;
       while (true) {
         try {
@@ -368,9 +368,9 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   hint: 'topup.pin_hint'.tr(),
                   obscureText: false,
                   keyboardType: TextInputType.number,
-                  maxLength: 16,
+                  maxLength: 19,
                   inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
+                    PinSpaceFormatter(),
                   ],
                   scanValueParser: extractPinFromQr,
                   scanInvalidMessage: 'topup.scan_pin_not_found'.tr(),
@@ -380,7 +380,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                     if (v == null || v.trim().isEmpty) {
                       return 'topup.pin_required'.tr();
                     }
-                    if (v.trim().length != 16) {
+                    if (v.replaceAll(RegExp(r'\D'), '').length != 16) {
                       return 'topup.pin_invalid'.tr();
                     }
                     return null;
@@ -399,6 +399,46 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class PinSpaceFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limitedDigits = digits.length > 16 ? digits.substring(0, 16) : digits;
+    final formatted = limitedDigits
+        .replaceAllMapped(
+          RegExp(r'.{4}'),
+          (match) => '${match.group(0)} ',
+        )
+        .trimRight();
+
+    int formattedOffset(int inputOffset) {
+      final safeOffset = inputOffset.clamp(0, newValue.text.length).toInt();
+      var digitsBefore = newValue.text
+          .substring(0, safeOffset)
+          .replaceAll(RegExp(r'\D'), '')
+          .length;
+      if (digitsBefore > limitedDigits.length) {
+        digitsBefore = limitedDigits.length;
+      }
+      final spacesBefore = digitsBefore == 0 ? 0 : (digitsBefore - 1) ~/ 4;
+      return digitsBefore + spacesBefore;
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection(
+        baseOffset: formattedOffset(newValue.selection.baseOffset),
+        extentOffset: formattedOffset(newValue.selection.extentOffset),
+        affinity: newValue.selection.affinity,
+        isDirectional: newValue.selection.isDirectional,
       ),
     );
   }

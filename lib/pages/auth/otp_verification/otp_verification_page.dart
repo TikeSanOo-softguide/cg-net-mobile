@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
+import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
@@ -102,7 +103,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
   }
 
   void _clearInlineError() {
-    if (_inlineError == null) return;
+    if (!mounted) return;
     setState(() => _inlineError = null);
   }
 
@@ -184,9 +185,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
       }
 
       if (digits.length == 1) {
-        final unchanged = _controllers[index].text == digits;
         _writeBox(index, digits);
-        if (unchanged) return;
         if (index < _length - 1) _focusBox(index + 1);
         _clearInlineError();
         return;
@@ -312,6 +311,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
         if (kDebugMode) {
           debugPrint('[otp] authenticated without token — abort');
         }
+        await _showOtpContinuationError();
         return;
       }
       await ref.read(secureStorageProvider).writeToken(token);
@@ -334,6 +334,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
           '[otp] next_step=${result.nextStep} missing verification_token',
         );
       }
+      await _showOtpContinuationError();
       return;
     }
 
@@ -364,6 +365,19 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     if (kDebugMode) {
       debugPrint('[otp] unhandled next_step=${result.nextStep}');
     }
+    await _showOtpContinuationError();
+  }
+
+  Future<void> _showOtpContinuationError() async {
+    if (!mounted) return;
+    await showAppFailureModal(
+      context,
+      title: 'common.error'.tr(),
+      body: 'otp.continuation_error'.tr(),
+      buttonLabel: 'otp.restart_login'.tr(),
+    );
+    if (!mounted) return;
+    context.goNamed(RouteNames.login);
   }
 
   Future<void> _resend() async {

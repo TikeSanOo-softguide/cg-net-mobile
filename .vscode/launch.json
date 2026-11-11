@@ -7,13 +7,28 @@
       "type": "dart",
       "program": "lib/main.dart",
       "deviceId": "chrome",
-      "args": ["--no-web-resources-cdn"]
+      "args": [
+        "--no-web-resources-cdn",
+        "--dart-define=API_BASE_URL=http://127.0.0.1:8080/api"
+      ]
+    },
+    {
+      "name": "cg_net_mobile (emulator)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=API_BASE_URL=http://10.0.2.2:8080/api"
+      ]
     },
     {
       "name": "cg_net_mobile",
       "request": "launch",
       "type": "dart",
-      "program": "lib/main.dart"
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=API_BASE_URL=http://192.168.10.148:8080/api"
+      ]
     }
   ]
 }

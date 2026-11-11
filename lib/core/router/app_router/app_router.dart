@@ -134,10 +134,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.otpSuccess,
         name: RouteNames.otpSuccess,
-        builder: (context, state) {
-          final phone = state.uri.queryParameters['phone'] ?? '';
-          return OtpSuccessPage(phone: phone);
-        },
+        builder: (context, state) => OtpSuccessPage(
+          phone: state.uri.queryParameters['phone'] ?? '',
+          verificationToken:
+              state.uri.queryParameters['verification_token'] ?? '',
+        ),
       ),
       GoRoute(
         path: RoutePaths.setUsernamePassword,

@@ -7,18 +7,50 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/api_message_modal.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../models/notification_preferences_model/notification_preferences_model.dart';
 import '../../../models/user_model/user_model.dart';
 import 'notification_preferences_controller.dart';
 
-class NotificationPreferencesPage extends ConsumerWidget {
+class NotificationPreferencesPage extends ConsumerStatefulWidget {
   const NotificationPreferencesPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationPreferencesPage> createState() =>
+      _NotificationPreferencesPageState();
+}
+
+class _NotificationPreferencesPageState
+    extends ConsumerState<NotificationPreferencesPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadPreferences();
+    });
+  }
+
+  Future<void> _loadPreferences({bool retry = false}) async {
+    if (retry) {
+      ref.invalidate(notificationPreferencesControllerProvider);
+    }
+
+    try {
+      await LoadingHelper.runWithLoading(
+        () => ref.read(notificationPreferencesControllerProvider.future),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      await showApiMessageModal(context, error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final preferencesAsync =
         ref.watch(notificationPreferencesControllerProvider);
     final controller =
@@ -33,7 +65,7 @@ class NotificationPreferencesPage extends ConsumerWidget {
           controller,
           preferences,
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const SizedBox.shrink(),
         error: (error, stackTrace) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -41,7 +73,7 @@ class NotificationPreferencesPage extends ConsumerWidget {
               Text('profile.notifications_load_failed'.tr()),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: controller.reload,
+                onPressed: () => _loadPreferences(retry: true),
                 child: Text('common.retry'.tr()),
               ),
             ],

@@ -51,8 +51,8 @@ class _InstallationApplicationPageState
           profile: profile,
         );
     final editing = request != null;
-    final saved = await Navigator.of(context)
-        .push<InstallationApplicationSaveResult>(
+    final saved =
+        await Navigator.of(context).push<InstallationApplicationSaveResult>(
       MaterialPageRoute(
         builder: (_) => const InstallationApplicationFormPage(),
       ),
@@ -349,7 +349,7 @@ class _InstallationApplicationCardState
     final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : formatDateTime(
+        : formatDate(
             request.createdAt!.toLocal().toIso8601String(),
           );
     final canManage = _canManageRequest(request);
@@ -369,28 +369,31 @@ class _InstallationApplicationCardState
           value: _serviceLabel(request.serviceType),
         ),
         _RequestDetail(
-          label: 'installationApplication.package'.tr(),
+          label: 'requests.contact_name'.tr(),
+          value: request.name,
+        ),
+        _RequestDetail(
+          label: 'requests.phone'.tr(),
+          value: request.phone,
+        ),
+        _RequestDetail(
+          label: 'requests.package'.tr(),
           value: request.productName ?? '',
-        ),
-        _RequestDetail(
-          label: 'installationApplication.internet_speed'.tr(),
-          value: _speedLabel(detail?['product_speed']),
-        ),
-        if (request.note?.trim().isNotEmpty == true)
-          _RequestDetail(
-            label: 'installationApplication.note'.tr(),
-            value: request.note!,
-          ),
-        _RequestDetail(
-          label: 'installationApplication.billing_period'.tr(),
-          value: _periodLabel(detail),
         ),
         _RequestDetail(
           label: 'installationApplication.network_provider'.tr(),
           value: detail?['product_line']?.toString() ?? '',
         ),
         _RequestDetail(
-          label: 'installationApplication.package_price'.tr(),
+          label: 'installationApplication.internet_speed'.tr(),
+          value: _speedLabel(detail?['product_speed']),
+        ),
+        _RequestDetail(
+          label: 'installationApplication.billing_period'.tr(),
+          value: _periodLabel(detail),
+        ),
+        _RequestDetail(
+          label: 'requests.package_price'.tr(),
           value: _pointsLabel(detail?['product_price']),
         ),
         _RequestDetail(
@@ -398,17 +401,14 @@ class _InstallationApplicationCardState
           value: _pointsLabel(detail?['installation_fee']),
         ),
         _RequestDetail(
-          label: 'installationApplication.id_name'.tr(),
-          value: request.name,
-        ),
-        _RequestDetail(
-          label: 'installationApplication.address'.tr(),
+          label: 'requests.address'.tr(),
           value: request.address ?? '',
         ),
-        _RequestDetail(
-          label: 'installationApplication.phone'.tr(),
-          value: request.phone,
-        ),
+        if (request.note?.trim().isNotEmpty == true)
+          _RequestDetail(
+            label: 'requests.note'.tr(),
+            value: request.note!,
+          ),
       ],
     );
   }
