@@ -64,6 +64,7 @@ class ApiEndpoints {
   static const String language = '/customer/language';
   static const String deactivateAccount = '/customer/deactivate';
   static const String promotions = '/web-app/promotions';
+  static String promotion(String idOrSlug) => '$promotions/$idOrSlug';
   static const String showrooms = '/offices';
   static const String updateProfile = '/customer/profile';
   static const String notificationPreferences =
