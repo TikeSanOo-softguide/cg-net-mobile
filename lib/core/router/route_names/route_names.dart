@@ -28,7 +28,6 @@ class RouteNames {
   static const packageBuySuccess = 'packageBuySuccess';
   static const packageBuyFailure = 'packageBuyFailure';
   static const payBillSuccess = 'payBillSuccess';
-  static const payBillFailure = 'payBillFailure';
   static const payBillPending = 'payBillPending';
   static const inboxList = 'inboxList';
   static const inboxDetail = 'inboxDetail';
@@ -77,7 +76,6 @@ class RoutePaths {
   static const packageBuySuccess = '/package/buy/success';
   static const packageBuyFailure = '/package/buy/failure';
   static const payBillSuccess = '/pay-bill/success';
-  static const payBillFailure = '/pay-bill/failure';
   static const payBillPending = '/pay-bill/pending';
   static const inboxList = '/inbox';
   static const inboxDetail = '/inbox/:id';

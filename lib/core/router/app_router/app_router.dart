@@ -24,7 +24,6 @@ import '../../../pages/home/top_up/top_up_failure_page.dart';
 import '../../../pages/home/top_up/top_up_page.dart';
 import '../../../pages/home/top_up/top_up_pending_page.dart';
 import '../../../pages/home/top_up/top_up_result.dart';
-import '../../../pages/home/pay_bill/pay_bill_failure_page.dart';
 import '../../../pages/home/pay_bill/pay_bill_pending_page.dart';
 import '../../../pages/home/pay_bill/pay_bill_result.dart';
 import '../../../pages/home/pay_bill/pay_bill_success_page.dart';
@@ -373,7 +372,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               result.status != PayBillTxnStatus.success) {
             child = const NotFoundPage();
           } else {
-            child = PayBillSuccessPage(result: result);
+            child = PayBillSuccessPage(
+              result: result,
+              showPrimary: state.uri.queryParameters['hideDone'] != '1',
+            );
           }
           return CustomTransitionPage<void>(
             key: state.pageKey,
@@ -396,19 +398,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               );
             },
           );
-        },
-      ),
-      GoRoute(
-        path: RoutePaths.payBillFailure,
-        name: RouteNames.payBillFailure,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final result = state.extra;
-          if (result is! PayBillResult ||
-              result.status != PayBillTxnStatus.failure) {
-            return const NotFoundPage();
-          }
-          return PayBillFailurePage(result: result);
         },
       ),
       GoRoute(

@@ -6,7 +6,7 @@ Sources:
 - history: medical-record_9450510 — https://www.flaticon.com/free-icon/medical-record_9450510
 - bind: wifi-router_2876838 — https://www.flaticon.com/free-icon/wifi-router_2876838
 - package: all-inclusive_17209043 — https://www.flaticon.com/free-icon/all-inclusive_17209043
-- bill: equity_18282401 — https://www.flaticon.com/free-icon/equity_18282401
+- bill: transfer_2676701 — https://www.flaticon.com/free-icon/transfer_2676701
 
 Icons by Flaticon authors — https://www.flaticon.com
 Recolored: top up #0100CA, payment #FFD51E, history #7C3AED, package #DA3D20, bill #0E9F8A.

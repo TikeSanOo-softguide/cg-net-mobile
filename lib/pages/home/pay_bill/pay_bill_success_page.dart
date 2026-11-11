@@ -7,9 +7,14 @@ import 'pay_bill_result.dart';
 import 'pay_bill_result_shell.dart';
 
 class PayBillSuccessPage extends StatelessWidget {
-  const PayBillSuccessPage({super.key, required this.result});
+  const PayBillSuccessPage({
+    super.key,
+    required this.result,
+    this.showPrimary = true,
+  });
 
   final PayBillResult result;
+  final bool showPrimary;
 
   void _leave(BuildContext context) {
     if (context.canPop()) {
@@ -32,6 +37,7 @@ class PayBillSuccessPage extends StatelessWidget {
         onBack: () => _leave(context),
         primaryLabel: 'common.done'.tr(),
         onPrimary: () => _leave(context),
+        showPrimary: showPrimary,
       ),
     );
   }

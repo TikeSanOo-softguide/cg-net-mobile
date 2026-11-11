@@ -11,13 +11,21 @@ class PayBillPendingPage extends StatelessWidget {
 
   final PayBillResult result;
 
+  void _leave(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.goNamed(RouteNames.home);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PayBillResultShell(
       result: result,
-      onBack: () => context.goNamed(RouteNames.home),
+      onBack: () => _leave(context),
       primaryLabel: 'common.done'.tr(),
-      onPrimary: () => context.goNamed(RouteNames.home),
+      onPrimary: () => _leave(context),
     );
   }
 }

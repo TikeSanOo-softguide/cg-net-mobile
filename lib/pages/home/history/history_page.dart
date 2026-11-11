@@ -20,7 +20,7 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/history/history_repository.dart';
 import '../../../models/history_model/history_model.dart';
 
-final transactionHistoryProvider =
+final quickActionHistoryProvider =
     FutureProvider.autoDispose.family<List<HistoryModel>, String?>(
   (ref, type) => ref.watch(historyRepositoryProvider).fetch(type: type),
 );
@@ -127,7 +127,7 @@ class _HistoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final history = ref.watch(transactionHistoryProvider(type));
+    final history = ref.watch(quickActionHistoryProvider(type));
 
     return history.when(
       data: (items) {
@@ -179,16 +179,16 @@ class _HistoryList extends ConsumerWidget {
           if (isOfflineError(error)) {
             ref.read(networkRecoveryControllerProvider).enqueue(
                   recoveryKey,
-                  () async => ref.invalidate(transactionHistoryProvider(type)),
+                  () async => ref.invalidate(quickActionHistoryProvider(type)),
                 );
             final shouldRetry = await openNoInternetPage(context);
             if (shouldRetry == true && context.mounted) {
               ref.read(networkRecoveryControllerProvider).clear(recoveryKey);
-              ref.invalidate(transactionHistoryProvider(type));
+              ref.invalidate(quickActionHistoryProvider(type));
             }
             return;
           }
-          ref.invalidate(transactionHistoryProvider(type));
+          ref.invalidate(quickActionHistoryProvider(type));
         },
       ),
     );
@@ -210,21 +210,21 @@ class _HistoryRow extends StatelessWidget {
   String get _titleKey => switch (item.type.toLowerCase()) {
         'topup' => 'history.tab_topup',
         'wifi_package' => 'history.tab_package',
-        'ftth_bill' => 'history.tab_bill',
+        'ftth_bill' || 'cg_bill' => 'history.tab_bill',
         _ => 'history.tab_all',
       };
 
   String get _asset => switch (item.type.toLowerCase()) {
         'topup' => QuickActionIconChip.topUpAsset,
         'wifi_package' => QuickActionIconChip.packageAsset,
-        'ftth_bill' => QuickActionIconChip.billAsset,
+        'ftth_bill' || 'cg_bill' => QuickActionIconChip.billAsset,
         _ => QuickActionIconChip.historyAsset,
       };
 
   Color get _iconBackground => switch (item.type.toLowerCase()) {
         'topup' => QuickActionIconChip.topUpSoft,
         'wifi_package' => QuickActionIconChip.packageSoft,
-        'ftth_bill' => QuickActionIconChip.billSoft,
+        'ftth_bill' || 'cg_bill' => QuickActionIconChip.billSoft,
         _ => QuickActionIconChip.historySoft,
       };
 

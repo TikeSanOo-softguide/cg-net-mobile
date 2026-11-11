@@ -96,6 +96,22 @@ bool isAuthInputError(Object error) {
       error.code == MessageCodes.authIncorrectPassword;
 }
 
+bool isPayPasswordError(Object error) {
+  if (error is! ApiException) return false;
+  if (error.code == MessageCodes.userPasswordIncorrect) return true;
+  if (error.failure != ApiFailure.validation) return false;
+  final data = error.responseData;
+  if (data is! Map) return false;
+  final errors = data['errors'];
+  return errors is Map && errors.containsKey('password');
+}
+
+bool isInsufficientWalletError(Object error) {
+  if (error is! ApiException) return false;
+  return error.code == MessageCodes.ftthInsufficientBalance ||
+      error.code == MessageCodes.pkgInsufficientBalance;
+}
+
 Future<void> showApiErrorModal(BuildContext context, Object error) {
   return showAppFailureModal(
     context,

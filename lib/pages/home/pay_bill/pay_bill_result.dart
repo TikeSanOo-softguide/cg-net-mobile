@@ -1,7 +1,7 @@
-enum PayBillTxnStatus { success, failure, pending }
+enum PayBillTxnStatus { success, pending }
 
 class PayBillResult {
-  const PayBillResult({
+  PayBillResult({
     required this.status,
     required this.amountPoints,
     required this.account,
@@ -10,11 +10,8 @@ class PayBillResult {
     required this.speed,
     required this.transactionId,
     this.occurredAt,
-    this.errorTitleKey,
-    this.errorBodyKey,
-    this.errorTitle,
-    this.errorBody,
-  });
+    String? remark,
+  }) : remark = remark ?? '';
 
   final PayBillTxnStatus status;
   final int amountPoints;
@@ -24,10 +21,7 @@ class PayBillResult {
   final String speed;
   final String transactionId;
   final DateTime? occurredAt;
-  final String? errorTitleKey;
-  final String? errorBodyKey;
-  final String? errorTitle;
-  final String? errorBody;
+  final String remark;
 
   factory PayBillResult.success({
     required int amountPoints,
@@ -37,6 +31,7 @@ class PayBillResult {
     required String speed,
     required String transactionId,
     DateTime? occurredAt,
+    String remark = '',
   }) {
     return PayBillResult(
       status: PayBillTxnStatus.success,
@@ -47,6 +42,7 @@ class PayBillResult {
       speed: speed,
       transactionId: transactionId,
       occurredAt: occurredAt,
+      remark: remark,
     );
   }
 
@@ -58,6 +54,7 @@ class PayBillResult {
     required String speed,
     required String transactionId,
     DateTime? occurredAt,
+    String remark = '',
   }) {
     return PayBillResult(
       status: PayBillTxnStatus.pending,
@@ -68,35 +65,7 @@ class PayBillResult {
       speed: speed,
       transactionId: transactionId,
       occurredAt: occurredAt,
-    );
-  }
-
-  factory PayBillResult.failure({
-    required int amountPoints,
-    required String account,
-    required String serviceType,
-    required String productLabel,
-    required String speed,
-    required String transactionId,
-    DateTime? occurredAt,
-    String? errorTitleKey,
-    String? errorBodyKey,
-    String? errorTitle,
-    String? errorBody,
-  }) {
-    return PayBillResult(
-      status: PayBillTxnStatus.failure,
-      amountPoints: amountPoints,
-      account: account,
-      serviceType: serviceType,
-      productLabel: productLabel,
-      speed: speed,
-      transactionId: transactionId,
-      occurredAt: occurredAt,
-      errorTitleKey: errorTitleKey,
-      errorBodyKey: errorBodyKey,
-      errorTitle: errorTitle,
-      errorBody: errorBody,
+      remark: remark,
     );
   }
 

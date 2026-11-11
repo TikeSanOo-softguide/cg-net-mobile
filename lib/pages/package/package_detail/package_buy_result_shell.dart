@@ -203,12 +203,7 @@ class _DetailRows extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) ...[
-            const SizedBox(height: 11),
-            const Divider(
-                height: 0.5, thickness: 0.5, color: AppColors.paperBorder),
-            const SizedBox(height: 11),
-          ],
+          if (i > 0) const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -217,7 +212,7 @@ class _DetailRows extends StatelessWidget {
                 child: Text(
                   rows[i].$1,
                   style: AppTheme.english(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textMuted,
                   ),

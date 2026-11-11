@@ -4,7 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/network/api_error_text.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
@@ -94,18 +93,18 @@ TextStyle _modalBtnText({
     );
 
 TextStyle _dialogTitleStyle(Color color) => AppTheme.english(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
       color: color,
-      height: 1.3,
-      letterSpacing: -0.2,
+      height: AppTheme.lineHeightMyanmarSafe,
+      letterSpacing: 0,
     );
 
 TextStyle _dialogMessageStyle() => AppTheme.english(
-      fontSize: 12,
-      fontWeight: FontWeight.w500,
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
       color: AppColors.textMuted,
-      height: 1.45,
+      height: AppTheme.lineHeightMyanmarSafe,
       letterSpacing: 0,
     );
 
@@ -139,7 +138,9 @@ Future<T?> _showAppDialog<T>({
   );
 }
 
-Widget _appDialogShell({required Widget child}) {
+Widget _appDialogShell({
+  required Widget child,
+}) {
   return Dialog(
     backgroundColor: AppColors.surface,
     elevation: 0,
@@ -263,6 +264,88 @@ Future<void> showAppFailureModal(
       );
     },
   );
+}
+
+/// Failure dialog with Cancel + Try again. Returns true when retry is pressed.
+Future<bool> showAppRetryFailureModal(
+  BuildContext context, {
+  required String title,
+  required String body,
+  String? cancelLabel,
+  String? retryLabel,
+}) async {
+  final result = await _showAppDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) {
+      return _appDialogShell(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _dialogPngIcon(
+              asset: _failureIconAsset,
+              background: _failureSoft,
+            ),
+            const SizedBox(height: _gapIconTitle),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: _dialogTitleStyle(_failure),
+            ),
+            const SizedBox(height: _gapTitleBody),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: _dialogMessageStyle(),
+            ),
+            const SizedBox(height: _gapBodyButton),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: _modalBtnHeight,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      style: _cancelOutlineModalBtnStyle(),
+                      child: Text(
+                        cancelLabel ?? 'common.cancel'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _modalBtnText(
+                          color: _cancelRed,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: _modalBtnHeight,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: _primaryModalBtnStyle(),
+                      child: Text(
+                        retryLabel ?? 'common.try_again'.tr(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _modalBtnText(
+                          color: AppColors.onPrimary,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+  return result == true;
 }
 
 class _FailureRetryCountdown extends StatefulWidget {
@@ -571,34 +654,18 @@ class _AppPasswordDialog extends StatefulWidget {
   State<_AppPasswordDialog> createState() => _AppPasswordDialogState();
 }
 
-class _AppPasswordDialogState extends State<_AppPasswordDialog>
-    with SingleTickerProviderStateMixin {
+class _AppPasswordDialogState extends State<_AppPasswordDialog> {
   static const _pinLength = 6;
 
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
-  late final AnimationController _shake;
-  late final Animation<double> _shakeX;
   var _busy = false;
-  String? _inlineError;
 
   @override
   void initState() {
     super.initState();
     _controllers = List.generate(_pinLength, (_) => TextEditingController());
     _focusNodes = List.generate(_pinLength, (_) => FocusNode());
-    _shake = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 420),
-    );
-    _shakeX = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0, end: -7), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -7, end: 7), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 7, end: -5), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: -5, end: 5), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 5, end: -3), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: -3, end: 0), weight: 1),
-    ]).animate(CurvedAnimation(parent: _shake, curve: Curves.easeOut));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNodes.first.requestFocus();
     });
@@ -606,7 +673,6 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog>
 
   @override
   void dispose() {
-    _shake.dispose();
     for (final c in _controllers) {
       c.dispose();
     }
@@ -616,22 +682,10 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog>
     super.dispose();
   }
 
-  void _playErrorFeedback() {
-    HapticFeedback.mediumImpact();
-    HapticFeedback.vibrate();
-    _shake.forward(from: 0);
-  }
-
-  void _clearInlineError() {
-    if (_inlineError == null) return;
-    setState(() => _inlineError = null);
-  }
-
   String get _pin => _controllers.map((c) => c.text).join();
 
   void _onDigitChanged(int index, String value) {
     final digits = value.replaceAll(RegExp(r'\D'), '');
-    _clearInlineError();
     if (digits.length > 1) {
       for (var i = 0; i < _pinLength; i++) {
         _controllers[i].text = i < digits.length ? digits[i] : '';
@@ -662,21 +716,14 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog>
       return;
     }
 
-    setState(() {
-      _busy = true;
-      _inlineError = null;
-    });
+    setState(() => _busy = true);
     FocusManager.instance.primaryFocus?.unfocus();
     try {
       await onSubmit(pin);
       if (mounted) Navigator.of(context).pop(pin);
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _inlineError = apiErrorText(error);
-      });
-      _playErrorFeedback();
+      setState(() => _busy = false);
     }
   }
 
@@ -755,60 +802,31 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog>
             const SizedBox(height: 16),
             IgnorePointer(
               ignoring: _busy,
-              child: AnimatedBuilder(
-                animation: _shakeX,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(_shakeX.value, 0),
-                    child: child,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 8.0;
+                  final box =
+                      ((constraints.maxWidth - gap * (_pinLength - 1)) /
+                              _pinLength)
+                          .clamp(0.0, 56.0);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var i = 0; i < _pinLength; i++) ...[
+                        if (i > 0) const SizedBox(width: gap),
+                        _AppPinBox(
+                          size: box,
+                          controller: _controllers[i],
+                          focusNode: _focusNodes[i],
+                          onChanged: (v) => _onDigitChanged(i, v),
+                        ),
+                      ],
+                    ],
                   );
                 },
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    const gap = 8.0;
-                    final box =
-                        ((constraints.maxWidth - gap * (_pinLength - 1)) /
-                                _pinLength)
-                            .clamp(0.0, 56.0);
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (var i = 0; i < _pinLength; i++) ...[
-                          if (i > 0) const SizedBox(width: gap),
-                          _AppPinBox(
-                            size: box,
-                            hasError: _inlineError != null,
-                            controller: _controllers[i],
-                            focusNode: _focusNodes[i],
-                            onChanged: (v) => _onDigitChanged(i, v),
-                          ),
-                        ],
-                      ],
-                    );
-                  },
-                ),
               ),
             ),
-            SizedBox(
-              height: AppStyle.errorSlotHeight,
-              child: _inlineError == null
-                  ? null
-                  : Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                        _inlineError!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: AppTheme.english(
-                          fontSize: AppStyle.fontError,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.error,
-                          height: 1.2,
-                        ),
-                      ),
-                    ),
-            ),
+            const SizedBox(height: 16),
             Text(
               widget.body,
               textAlign: TextAlign.center,
@@ -833,11 +851,9 @@ class _AppPinBox extends StatefulWidget {
     required this.controller,
     required this.focusNode,
     required this.onChanged,
-    this.hasError = false,
   });
 
   final double size;
-  final bool hasError;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -867,11 +883,7 @@ class _AppPinBoxState extends State<_AppPinBox> {
   Widget build(BuildContext context) {
     final focused = widget.focusNode.hasFocus;
     final fontSize = widget.size >= 48 ? 22.0 : 18.0;
-    final borderColor = widget.hasError
-        ? AppColors.error
-        : focused
-            ? AppColors.primary
-            : AppColors.paperBorder;
+    final borderColor = focused ? AppColors.primary : AppColors.paperBorder;
 
     return SizedBox(
       width: widget.size,
@@ -884,7 +896,7 @@ class _AppPinBoxState extends State<_AppPinBox> {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: borderColor,
-            width: widget.hasError || focused ? 1.5 : 1,
+            width: focused ? 1.5 : 1,
           ),
         ),
         child: TextField(

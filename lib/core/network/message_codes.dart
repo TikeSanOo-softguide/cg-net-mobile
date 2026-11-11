@@ -83,6 +83,10 @@ class MessageCodes {
   static const userDeactivated = 'MSG-USER-003';
   static const userSuspended = 'MSG-USER-004';
 
+  static const ftthInsufficientBalance = 'MSG-FTTH-003';
+  static const ftthPaid = 'MSG-FTTH-008';
+  static const ftthProcessing = 'MSG-FTTH-010';
+
   static const reqCancelled = 'MSG-REQ-001';
   static const reqSubmitted = 'MSG-REQ-002';
   static const reqUpdated = 'MSG-REQ-003';
@@ -156,6 +160,9 @@ class MessageCodes {
     userPasswordIncorrect,
     userDeactivated,
     userSuspended,
+    ftthInsufficientBalance,
+    ftthPaid,
+    ftthProcessing,
     reqCancelled,
     reqSubmitted,
     reqUpdated,
@@ -169,6 +176,9 @@ class MessageCodes {
     }
     return 'msg.sys_001';
   }
+
+  /// Title/body pair: `MSG-FTTH-008` → `msg.ftth_008_body`
+  static String locKeyBody(String code) => '${locKey(code)}_body';
 
   /// Shared `MSG-REQ-*` codes mapped to a screen-specific loc key.
   static String featureReqKey({

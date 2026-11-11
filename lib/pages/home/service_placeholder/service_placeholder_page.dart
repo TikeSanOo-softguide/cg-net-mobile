@@ -5,6 +5,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../core/theme/app_style/app_style.dart';
+import '../history/service_history_page.dart';
 import '../pay_bill/pay_bill_page.dart';
 import '../../requests/change_plan/change_plan_page.dart';
 import '../../requests/change_wifi_password/change_wifi_password_page.dart';
@@ -70,6 +71,9 @@ class ServicePlaceholderPage extends StatelessWidget {
     }
     if (serviceId == 'pay_bill') {
       return const PayBillPage();
+    }
+    if (serviceId == 'history') {
+      return const ServiceHistoryPage();
     }
 
     final title = titleForId(serviceId);

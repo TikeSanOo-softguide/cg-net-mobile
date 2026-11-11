@@ -22,6 +22,7 @@ import '../../../core/storage/local_prefs/local_prefs.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../data/pay_bill/pay_bill_repository.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'pay_bill_result.dart';
@@ -62,6 +63,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
   static const _favoritesKey = 'pay_bill_favorites_v1';
 
   final _account = TextEditingController();
+  final _remark = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String _mode = 'mine';
   String _serviceType = 'FTTH';
@@ -83,6 +85,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
   @override
   void dispose() {
     _account.dispose();
+    _remark.dispose();
     super.dispose();
   }
 
@@ -274,90 +277,110 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
     final quote = _quote;
     if (quote == null || _paying) return;
 
-    Object? payError;
-    PayBillReceipt? receipt;
-    await showAppPasswordModal(
-      context,
-      title: 'home.pay_bill_password_title'.tr(),
-      body: 'home.pay_bill_password_body'.tr(),
-      amountPoints: quote.outstandingAmount.round(),
-      onSubmit: (password) async {
-        if (_paying) return;
-        _paying = true;
-        final key = _payKey ??= _newKey();
-        await _showProcessing();
-        try {
-          while (true) {
-            try {
-              receipt = await ref.read(payBillRepositoryProvider).pay(
-                    accountNumber: quote.account,
-                    serviceType: quote.serviceType,
-                    idempotencyKey: key,
-                    password: password,
-                  );
-              return;
-            } on ApiException catch (error) {
-              if (!mounted) return;
-              if (isOfflineError(error)) {
-                _closeProcessingDialog();
-                final retry = await showOfflineModal(context);
-                if (!mounted || !retry) return;
-                await _showProcessing();
-                continue;
+    while (mounted) {
+      Object? payError;
+      var wrongPassword = false;
+      PayBillReceipt? receipt;
+      await showAppPasswordModal(
+        context,
+        title: 'home.pay_bill_password_title'.tr(),
+        body: 'home.pay_bill_password_body'.tr(),
+        amountPoints: quote.outstandingAmount.round(),
+        onSubmit: (password) async {
+          if (_paying) return;
+          _paying = true;
+          final key = _payKey ??= _newKey();
+          await _showProcessing();
+          try {
+            while (true) {
+              try {
+                receipt = await ref.read(payBillRepositoryProvider).pay(
+                      accountNumber: quote.account,
+                      serviceType: quote.serviceType,
+                      idempotencyKey: key,
+                      password: password,
+                      remark: _remark.text.trim(),
+                    );
+                return;
+              } on ApiException catch (error) {
+                if (!mounted) return;
+                if (isOfflineError(error)) {
+                  _closeProcessingDialog();
+                  final retry = await showOfflineModal(context);
+                  if (!mounted || !retry) return;
+                  await _showProcessing();
+                  continue;
+                }
+                if (isPayPasswordError(error)) {
+                  wrongPassword = true;
+                  return;
+                }
+                payError = error;
+                return;
               }
-              payError = error;
-              return;
             }
+          } finally {
+            _closeProcessingDialog();
+            _paying = false;
           }
-        } finally {
-          _closeProcessingDialog();
-          _paying = false;
-        }
-      },
-    );
-    if (!mounted) return;
-    final paid = receipt;
-    if (paid != null) {
-      final pending = PayBillResult.isPendingStatus(paid.status);
-      final result = pending
-          ? PayBillResult.pending(
-              amountPoints: paid.amountPoints,
-              account: paid.account,
-              serviceType: paid.serviceType,
-              productLabel: paid.productLabel,
-              speed: paid.productSpeed,
-              transactionId: paid.transactionNo,
-              occurredAt: paid.createdAt,
-            )
-          : PayBillResult.success(
-              amountPoints: paid.amountPoints,
-              account: paid.account,
-              serviceType: paid.serviceType,
-              productLabel: paid.productLabel,
-              speed: paid.productSpeed,
-              transactionId: paid.transactionNo,
-              occurredAt: paid.createdAt,
-            );
-      context.pushReplacementNamed(
-        pending ? RouteNames.payBillPending : RouteNames.payBillSuccess,
-        extra: result,
+        },
+      );
+      if (!mounted) return;
+      final paid = receipt;
+      if (paid != null) {
+        final pending = PayBillResult.isPendingStatus(paid.status);
+        final note = paid.remark.trim().isNotEmpty
+            ? paid.remark.trim()
+            : _remark.text.trim();
+        final result = pending
+            ? PayBillResult.pending(
+                amountPoints: paid.amountPoints,
+                account: paid.account,
+                serviceType: paid.serviceType,
+                productLabel: paid.productLabel,
+                speed: paid.productSpeed,
+                transactionId: paid.transactionNo,
+                occurredAt: paid.createdAt,
+                remark: note,
+              )
+            : PayBillResult.success(
+                amountPoints: paid.amountPoints,
+                account: paid.account,
+                serviceType: paid.serviceType,
+                productLabel: paid.productLabel,
+                speed: paid.productSpeed,
+                transactionId: paid.transactionNo,
+                occurredAt: paid.createdAt,
+                remark: note,
+              );
+        context.pushReplacementNamed(
+          pending ? RouteNames.payBillPending : RouteNames.payBillSuccess,
+          extra: result,
+        );
+        return;
+      }
+      if (wrongPassword) {
+        final retry = await showAppRetryFailureModal(
+          context,
+          title: 'msg.user_002'.tr(),
+          body: 'msg.user_002_body'.tr(),
+        );
+        if (!mounted || !retry) return;
+        continue;
+      }
+      final error = payError;
+      if (error == null) return;
+      await showAppFailureModal(
+        context,
+        title: isInsufficientWalletError(error)
+            ? 'msg.ftth_003'.tr()
+            : 'home.pay_bill_result_failure_title'.tr(),
+        body: isInsufficientWalletError(error)
+            ? 'msg.ftth_003_body'.tr()
+            : apiErrorText(error),
       );
       return;
     }
-    final error = payError;
-    if (error == null) return;
-    context.pushReplacementNamed(
-      RouteNames.payBillFailure,
-      extra: PayBillResult.failure(
-        amountPoints: 0,
-        account: '',
-        serviceType: '',
-        productLabel: '',
-        speed: '',
-        transactionId: '',
-        errorBody: apiErrorText(error),
-      ),
-    );
   }
 
   String _newKey() {
@@ -427,8 +450,11 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                     favorite: _favorite,
                     onFavorite: _toggleFavorite,
                   )
-                else if (_step == _PayStep.pay && _quote != null)
+                else if (_step == _PayStep.pay && _quote != null) ...[
                   _PaymentCard(quote: _quote!),
+                  const SizedBox(height: 12),
+                  _RemarkCard(controller: _remark),
+                ],
               ],
             ),
           ),
@@ -594,7 +620,7 @@ class _ChoiceBlock extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: SizedBox(
-              height: 36,
+              height: 40,
               child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,8 +630,8 @@ class _ChoiceBlock extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: AppStyle.fontSecondary,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                     height: 1.2,
                     color: selected ? AppColors.textPrimary : AppColors.textSecondary,
                   ),
@@ -617,8 +643,8 @@ class _ChoiceBlock extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: AppStyle.fontCaption,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                       height: 1.2,
                       color: valueMuted
                           ? AppColors.textMuted
@@ -646,7 +672,7 @@ class _ChoiceBlock extends StatelessWidget {
         ),
         if (child != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(60, 0, 14, 12),
+            padding: const EdgeInsets.fromLTRB(64, 0, 14, 12),
             child: child,
           ),
       ],
@@ -662,8 +688,8 @@ class _ChoiceIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
-      height: 36,
+      width: 40,
+      height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
@@ -769,8 +795,8 @@ class _OtherAccountForm extends StatelessWidget {
               Text(
                 'home.pay_bill_favorites'.tr(),
                 style: const TextStyle(
-                  fontSize: AppStyle.fontCaption,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.textMuted,
                 ),
               ),
@@ -805,8 +831,8 @@ class _OtherAccountForm extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: AppStyle.fontSecondary,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   color: selected ? AppColors.textPrimary : AppColors.textSecondary,
                 ),
               ),
@@ -884,8 +910,8 @@ class _FavoriteRow extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: AppStyle.fontSecondary,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       height: AppStyle.lineHeightCaption,
                       color: selected ? AppColors.primary : AppColors.textPrimary,
                     ),
@@ -895,8 +921,8 @@ class _FavoriteRow extends StatelessWidget {
                 Text(
                   _serviceLabel(item.serviceType),
                   style: const TextStyle(
-                    fontSize: AppStyle.fontCaption,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textMuted,
                   ),
                 ),
@@ -963,9 +989,9 @@ class _ConfirmCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'home.pay_bill_favorite'.tr(),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      style: AppTheme.english(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -975,6 +1001,125 @@ class _ConfirmCard extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _RemarkCard extends StatelessWidget {
+  const _RemarkCard({required this.controller});
+
+  static const _max = 100;
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      elevated: false,
+      bordered: false,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+      borderRadius: AppStyle.borderRadiusLg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  LucideIcons.notebook_pen,
+                  size: 14,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'home.pay_bill_remark'.tr(),
+                style: AppTheme.english(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'home.pay_bill_remark_hint'.tr(),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.english(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const SizedBox(
+            width: double.infinity,
+            height: 1,
+            child: ColoredBox(color: AppColors.borderLight),
+          ),
+          TextField(
+            controller: controller,
+            maxLength: _max,
+            maxLines: 3,
+            minLines: 2,
+            textInputAction: TextInputAction.done,
+            onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
+            cursorColor: AppColors.primary,
+            style: AppTheme.english(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+              height: 1.45,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              counterText: '',
+              hintText: 'home.pay_bill_remark_placeholder'.tr(),
+              hintStyle: AppTheme.english(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textMuted,
+                height: 1.45,
+              ),
+              contentPadding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+            ),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final used = value.text.length;
+              if (used == 0) return const SizedBox.shrink();
+              return Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '$used/$_max',
+                  style: AppTheme.english(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1014,74 +1159,133 @@ class _Ticket extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final column = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: AppStyle.fontCaption,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                _money(amount),
-                style: AppTheme.amount(color: AppColors.primary),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'topup.pts'.tr(),
-                style: const TextStyle(
-                  fontSize: AppStyle.fontSecondary,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const SizedBox(
-            width: double.infinity,
-            height: 1,
-            child: CustomPaint(painter: _DashPainter()),
-          ),
-          const SizedBox(height: 4),
-          ...children,
-        ],
-      );
     return AppCard(
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
-      borderRadius: BorderRadius.circular(12),
-      child: column,
+      padding: EdgeInsets.zero,
+      borderRadius: AppStyle.borderRadiusLg,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTheme.english(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      NumberFormat('#,##0').format(amount.round()),
+                      style: AppTheme.amount(color: AppColors.primary),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'topup.pts'.tr(),
+                      style: AppTheme.english(
+                        fontSize: AppStyle.fontSecondary,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const _TicketPerforation(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+            child: Column(children: children),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _DashPainter extends CustomPainter {
-  const _DashPainter();
+class _TicketPerforation extends StatelessWidget {
+  const _TicketPerforation();
+
+  static const _notch = 8.0;
+  static const _gap = 16.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: _gap),
+      child: SizedBox(
+        height: _notch * 2,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            const Positioned.fill(
+              child: CustomPaint(painter: _DashLinePainter()),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Transform.translate(
+                offset: const Offset(-_notch, 0),
+                child: const _TicketNotch(),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Transform.translate(
+                offset: const Offset(_notch, 0),
+                child: const _TicketNotch(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TicketNotch extends StatelessWidget {
+  const _TicketNotch();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: _TicketPerforation._notch * 2,
+      height: _TicketPerforation._notch * 2,
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _DashLinePainter extends CustomPainter {
+  const _DashLinePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.border
-      ..strokeWidth = 1;
+      ..color = AppColors.paperBorder
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
     const dash = 4.0;
-    const gap = 4.0;
-    var x = 0.0;
-    while (x < size.width) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(min(x + dash, size.width), 0),
-        paint,
-      );
+    const gap = 3.0;
+    const inset = 18.0;
+    var x = inset;
+    final y = size.height / 2;
+    final end = size.width - inset;
+    while (x < end) {
+      final next = (x + dash).clamp(x, end);
+      canvas.drawLine(Offset(x, y), Offset(next, y), paint);
       x += dash + gap;
     }
   }
@@ -1101,26 +1305,30 @@ String _product(PayBillQuote quote) {
 Widget _line(String label, String value, {bool emphasize = false}) {
   final shown = value.trim().isEmpty ? '—' : value.trim();
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
+    padding: const EdgeInsets.only(bottom: 12),
     child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           flex: 5,
           child: Text(
             label,
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: AppTheme.english(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           flex: 6,
           child: Text(
             shown,
             textAlign: TextAlign.right,
-            style: TextStyle(
+            style: AppTheme.english(
               fontSize: 14,
-              fontWeight: emphasize ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: FontWeight.w500,
               color: emphasize ? AppColors.primary : AppColors.textPrimary,
             ),
           ),
@@ -1131,8 +1339,3 @@ Widget _line(String label, String value, {bool emphasize = false}) {
 }
 
 String _serviceLabel(String value) => value == 'CG' ? 'CG Router' : value;
-
-String _money(num value) {
-  if (value == value.roundToDouble()) return value.toStringAsFixed(0);
-  return value.toStringAsFixed(2);
-}

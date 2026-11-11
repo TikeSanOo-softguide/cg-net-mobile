@@ -47,7 +47,7 @@ class PayBillQuote {
 }
 
 class PayBillReceipt {
-  const PayBillReceipt({
+  PayBillReceipt({
     required this.transactionNo,
     required this.amount,
     required this.status,
@@ -56,8 +56,9 @@ class PayBillReceipt {
     this.productName = '',
     this.productId = '',
     this.productSpeed = '',
+    String? remark,
     this.createdAt,
-  });
+  }) : remark = remark ?? '';
 
   final String transactionNo;
   final String amount;
@@ -67,6 +68,7 @@ class PayBillReceipt {
   final String productName;
   final String productId;
   final String productSpeed;
+  final String remark;
   final DateTime? createdAt;
 
   factory PayBillReceipt.fromJson(Map<String, dynamic> json) {
@@ -85,6 +87,7 @@ class PayBillReceipt {
       productName: package['product_name']?.toString() ?? '',
       productId: package['product_id']?.toString() ?? '',
       productSpeed: package['product_speed']?.toString() ?? '',
+      remark: _text(data['remark']),
       createdAt: _parseTime(data['confirmed_at'] ?? data['created_at']),
     );
   }
@@ -115,7 +118,7 @@ class PayBillRepository {
   }) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
-        ApiEndpoints.ftthBillCheck,
+        ApiEndpoints.internetBillCheck,
         data: {
           'account_number': accountNumber,
           'service_type': serviceType,
@@ -136,15 +139,18 @@ class PayBillRepository {
     required String serviceType,
     required String idempotencyKey,
     required String password,
+    String remark = '',
   }) async {
     try {
+      final note = remark.trim();
       final response = await _dio.post<Map<String, dynamic>>(
-        ApiEndpoints.ftthBillPay,
+        ApiEndpoints.internetBillPay,
         data: {
           'broadband_account_number': accountNumber,
           'service_type': serviceType,
           'idempotency_key': idempotencyKey,
           'password': password,
+          if (note.isNotEmpty) 'remark': note,
         },
       );
       return PayBillReceipt.fromJson(response.data ?? {});
@@ -152,6 +158,13 @@ class PayBillRepository {
       throw ApiException.fromDio(error);
     }
   }
+}
+
+String _text(Object? value) {
+  if (value == null) return '';
+  final text = value.toString().trim();
+  if (text.isEmpty || text.toLowerCase() == 'null') return '';
+  return text;
 }
 
 num _num(Object? value) {
