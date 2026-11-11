@@ -20,6 +20,10 @@ class AppStyle {
   static const EdgeInsets pagePadding = EdgeInsets.all(spaceXxl);
   static const EdgeInsets pagePaddingH =
       EdgeInsets.symmetric(horizontal: pageMarginH);
+
+  /// Extra space under the last list item (home indicator is in SafeArea).
+  static const double listPaddingBottom = 28;
+
   static const EdgeInsets cardPadding = EdgeInsets.all(spaceLg);
   static const EdgeInsets sectionGap = EdgeInsets.only(bottom: spaceXl);
 

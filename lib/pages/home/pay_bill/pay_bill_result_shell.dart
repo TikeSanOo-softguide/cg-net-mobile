@@ -114,7 +114,7 @@ class PayBillResultShell extends StatelessWidget {
         child: AppCard(
           elevated: false,
           bordered: false,
-          borderRadius: AppStyle.borderRadiusLg,
+          borderRadius: AppStyle.borderRadiusMd,
           padding: EdgeInsets.zero,
           child: Column(
             children: [
@@ -129,7 +129,7 @@ class PayBillResultShell extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: AppTheme.english(
                         fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: titleColor,
                         height: 1.25,
                         letterSpacing: 0.5,
@@ -165,23 +165,25 @@ class PayBillResultShell extends StatelessWidget {
                         ],
                       ),
                     ],
-                    const SizedBox(height: 6),
-                    Text(
-                      bodyText,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.english(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textMuted,
-                        height: 1.45,
+                    if (_isPending) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        bodyText,
+                        textAlign: TextAlign.center,
+                        style: AppTheme.english(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textMuted,
+                          height: 1.45,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
               const _TicketPerforation(),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                 child: Column(
                   children: [
                     _DetailRows(

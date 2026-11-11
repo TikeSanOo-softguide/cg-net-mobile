@@ -112,7 +112,10 @@ class AppCurvedScaffold extends StatelessWidget {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: body,
+                child: SafeArea(
+                  top: false,
+                  child: body,
+                ),
               ),
             ),
           ],

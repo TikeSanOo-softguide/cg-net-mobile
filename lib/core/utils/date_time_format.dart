@@ -42,7 +42,7 @@ String formatDate(String? value) {
 
   final displayDate = _isDateOnly(trimmed) ? date : date.toLocal();
 
-  return DateFormat('d MMM yyyy').format(displayDate);
+  return DateFormat('d MMM yyyy', 'en').format(displayDate);
 }
 
 String formatDateTime(String? value, {bool isUTC = false}) {

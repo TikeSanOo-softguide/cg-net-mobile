@@ -12,6 +12,7 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../core/utils/loading_helper.dart';
 import '../../../data/show_room/show_room_repository.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/show_room_model/show_room_model.dart';
 
@@ -50,35 +51,37 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
     return AppCurvedScaffold(
       title: Text('home.service_show_room'.tr()),
       showBack: true,
-      body: SafeArea(
-        top: false,
-        child: roomsAsync.when( 
-          loading: () => const SizedBox.shrink(),
-          error: (error, stackTrace) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('common.error'.tr()),
-                TextButton(
-                  onPressed: () => unawaited(_loadShowRooms(retry: true)),
-                  child: Text('common.retry'.tr()),
-                ),
-              ],
-            ),
-          ),
-          data: (rooms) => ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-            itemCount: rooms.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              if (index == rooms.length) {
-                return const _SocialMediaCard();
-              }
-              return _ShowRoomCard(room: rooms[index], locale: locale);
-            },
+      body: roomsAsync.when(
+        loading: () => const SizedBox.shrink(),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('common.error'.tr()),
+              TextButton(
+                onPressed: () => unawaited(_loadShowRooms(retry: true)),
+                child: Text('common.retry'.tr()),
+              ),
+            ],
           ),
         ),
-      )
+        data: (rooms) => ListView.separated(
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            AppStyle.listPaddingBottom,
+          ),
+          itemCount: rooms.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            if (index == rooms.length) {
+              return const _SocialMediaCard();
+            }
+            return _ShowRoomCard(room: rooms[index], locale: locale);
+          },
+        ),
+      ),
     );
   }
 }
@@ -215,13 +218,13 @@ class _ShowRoomCard extends StatelessWidget {
                 asset: _wechatAsset,
                 onTap: () => _open(room.socialLinks['wechat'] ?? 'weixin://'),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               _ChatPng(
                 asset: _telegramAsset,
                 onTap: () =>
                     _open(room.socialLinks['telegram'] ?? 'https://t.me/'),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               _ChatPng(
                 asset: _viberAsset,
                 onTap: () => _open(room.socialLinks['viber'] ?? 'viber://'),
@@ -281,13 +284,13 @@ class _ChatPng extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 36,
-        height: 36,
+        width: 28,
+        height: 28,
         child: Center(
           child: Image.asset(
             asset,
-            width: 28,
-            height: 28,
+            width: 22,
+            height: 22,
             fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
           ),

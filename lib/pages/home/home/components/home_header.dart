@@ -236,7 +236,7 @@ class HomeBalanceHeader extends ConsumerStatefulWidget {
   final String balanceAmount;
 
   /// Blue block height (content is centered inside).
-  static const double sectionHeight = 148;
+  static const double sectionHeight = 162;
 
   /// Matches HomeQuickActions.hangBelow — room above the overlapping card.
   static const double cardClearance = 30;
@@ -254,7 +254,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
     final raw = widget.balanceAmount.replaceAll(',', '');
     final value = double.tryParse(raw);
     if (value == null) return widget.balanceAmount;
-    return NumberFormat('#,##0').format(value);
+    return NumberFormat('#,##0.00', 'en').format(value);
   }
 
   @override
@@ -277,7 +277,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
           Positioned(
             left: AppStyle.pageMarginH,
             right: AppStyle.pageMarginH,
-            top: 22,
+            top: 30,
             bottom: HomeBalanceHeader.cardClearance,
             child: Center(child: _balanceBlock()),
           ),
@@ -293,9 +293,12 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
         children: [
           _balanceChip(),
           const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: Center(child: _amountRow()),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              height: 40,
+              child: Center(child: _amountRow()),
+            ),
           ),
         ],
       );
@@ -309,22 +312,25 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
         children: [
           _balanceChip(),
           const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (var i = 0; i < _maskCount; i++)
-                  Text(
-                    '*',
-                    style: AppTheme.english(
-                      color: AppColors.onPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      height: AppTheme.lineHeightMyanmarSafe,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < _maskCount; i++)
+                    Text(
+                      '*',
+                      style: AppTheme.english(
+                        color: AppColors.onPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: AppTheme.lineHeightMyanmarSafe,
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -344,10 +350,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
           Colors.white.withValues(alpha: 0.08),
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 5,
-          ),
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 5),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(20),
@@ -389,28 +392,43 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
   }
 
   Widget _amountRow() {
+    final amount = _visibleAmount;
+    final dot = amount.lastIndexOf('.');
+    final whole = dot >= 0 ? amount.substring(0, dot) : amount;
+    final cents = dot >= 0 ? amount.substring(dot) : '';
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          _visibleAmount,
+          whole,
           textAlign: TextAlign.center,
           style: AppTheme.english(
             color: AppColors.onPrimary,
-            fontSize: 35,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
             height: AppTheme.lineHeightMyanmarSafe,
           ),
         ),
+        if (cents.isNotEmpty)
+          Text(
+            cents,
+            style: AppTheme.english(
+              color: AppColors.onPrimary.withValues(alpha: 0.88),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              height: AppTheme.lineHeightMyanmarSafe,
+            ),
+          ),
         const SizedBox(width: 5),
         Text(
           'Pts',
           style: AppTheme.english(
             color: AppColors.onPrimary.withValues(alpha: 0.92),
-            fontSize: 18,
+            fontSize: 17,
             fontWeight: FontWeight.w600,
             height: AppTheme.lineHeightMyanmarSafe,
           ),

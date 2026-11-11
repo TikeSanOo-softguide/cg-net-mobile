@@ -24,6 +24,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/api_field_error.dart';
 import '../../../data/pay_bill/pay_bill_repository.dart';
+import '../../../data/profile/profile_repository.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'pay_bill_result.dart';
 import '../home/bound_broadband_provider.dart';
@@ -328,6 +329,11 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
       if (!mounted) return;
       final paid = receipt;
       if (paid != null) {
+        unawaited(
+          ref.read(profileControllerProvider.notifier).fetchProfile(),
+        );
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(cachedUserProfileProvider);
         final pending = PayBillResult.isPendingStatus(paid.status);
         final note = paid.remark.trim().isNotEmpty
             ? paid.remark.trim()

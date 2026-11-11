@@ -45,7 +45,12 @@ class ServiceHistoryPage extends ConsumerWidget {
         data: (items) {
           if (items.isEmpty) return const _ServiceHistoryEmpty();
           return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              AppStyle.listPaddingBottom,
+            ),
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(height: 5),
             itemBuilder: (context, index) {
@@ -204,7 +209,7 @@ class _ServiceHistoryRow extends StatelessWidget {
         : 'history.item_bill_body'.tr();
     final amount = item.amount == null
         ? '-'
-        : '-${NumberFormat('#,##0.##', locale.toString()).format(item.amount)} ${'topup.pts'.tr()}';
+        : '-${NumberFormat('#,##0.##', 'en').format(item.amount)} ${'topup.pts'.tr()}';
     final date = formatDate(item.createdAt.toIso8601String());
 
     return AppCard(
@@ -235,7 +240,7 @@ class _ServiceHistoryRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.english(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                           height: locale.languageCode == 'my'
@@ -246,11 +251,13 @@ class _ServiceHistoryRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      date,
+                      amount,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTheme.english(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textMuted,
+                        color: const Color(0xFFD90000),
                       ),
                     ),
                   ],
@@ -261,18 +268,16 @@ class _ServiceHistoryRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.english(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: AppColors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  amount,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  date,
                   style: AppTheme.english(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textMuted,
                   ),
