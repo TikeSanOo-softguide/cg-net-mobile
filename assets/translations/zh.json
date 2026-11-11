@@ -133,7 +133,9 @@
     "expired": "验证码已过期，请重新获取。",
     "success_title": "验证成功！",
     "success_body": "您的手机号码已成功验证。",
-    "continue_setup": "继续"
+    "continue_setup": "继续",
+    "continuation_error": "您的号码已验证，但无法继续。请返回登录页面重试。",
+    "restart_login": "返回登录"
   },
   "password_login": {
     "title": "输入密码",

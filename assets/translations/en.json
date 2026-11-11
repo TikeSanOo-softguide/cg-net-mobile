@@ -133,7 +133,9 @@
     "expired": "This OTP has expired. Please request a new code.",
     "success_title": "Verified!",
     "success_body": "Your phone number has been verified successfully.",
-    "continue_setup": "Continue"
+    "continue_setup": "Continue",
+    "continuation_error": "Your number was verified, but we couldn't continue. Please return to login and try again.",
+    "restart_login": "Return to login"
   },
   "password_login": {
     "title": "Enter password",

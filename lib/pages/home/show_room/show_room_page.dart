@@ -50,32 +50,35 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
     return AppCurvedScaffold(
       title: Text('home.service_show_room'.tr()),
       showBack: true,
-      body: roomsAsync.when(
-        loading: () => const SizedBox.shrink(),
-        error: (error, stackTrace) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('common.error'.tr()),
-              TextButton(
-                onPressed: () => unawaited(_loadShowRooms(retry: true)),
-                child: Text('common.retry'.tr()),
-              ),
-            ],
+      body: SafeArea(
+        top: false,
+        child: roomsAsync.when( 
+          loading: () => const SizedBox.shrink(),
+          error: (error, stackTrace) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('common.error'.tr()),
+                TextButton(
+                  onPressed: () => unawaited(_loadShowRooms(retry: true)),
+                  child: Text('common.retry'.tr()),
+                ),
+              ],
+            ),
+          ),
+          data: (rooms) => ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+            itemCount: rooms.length + 1,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              if (index == rooms.length) {
+                return const _SocialMediaCard();
+              }
+              return _ShowRoomCard(room: rooms[index], locale: locale);
+            },
           ),
         ),
-        data: (rooms) => ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-          itemCount: rooms.length + 1,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            if (index == rooms.length) {
-              return const _SocialMediaCard();
-            }
-            return _ShowRoomCard(room: rooms[index], locale: locale);
-          },
-        ),
-      ),
+      )
     );
   }
 }
@@ -344,7 +347,7 @@ class _SocialMediaCard extends StatelessWidget {
               _SocialMediaTile(
                 asset: _websiteAsset,
                 label: 'home.social_website'.tr(),
-                onTap: () => _open('https://www.google.com/search?q=Mahar+NET'),
+                onTap: () => _open('https://www.google.com/search?q=Yaung+Ni+Oo'),
               ),
             ],
           ),
