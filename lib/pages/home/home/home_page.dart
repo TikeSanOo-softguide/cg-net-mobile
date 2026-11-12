@@ -32,6 +32,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  static const _pinnedBarSeamOverlap = 1.0;
   bool _launchPromoHandled = false;
   bool _launchPromoShowing = false;
 
@@ -192,7 +193,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              height: pinnedH,
+              height: pinnedH + _pinnedBarSeamOverlap,
               child: ColoredBox(
                 color: AppColors.primary,
                 child: HomePinnedBar(
