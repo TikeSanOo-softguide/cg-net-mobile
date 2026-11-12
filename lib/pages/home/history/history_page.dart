@@ -264,14 +264,36 @@ class _HistoryRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '${'history.amount'.tr()}: $amount',
+                RichText(
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textMuted,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${'history.amount'.tr()}: ',
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      TextSpan(
+                        text: amount,
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' Pts',
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (transactionNo != null && transactionNo.isNotEmpty) ...[

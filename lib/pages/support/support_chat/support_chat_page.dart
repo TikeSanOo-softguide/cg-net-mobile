@@ -288,6 +288,59 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
           ),
         ],
       ),
+      trailing: state.isOpen || state.isWaiting
+          ? PopupMenuButton<String>(
+              icon: const Icon(
+                LucideIcons.ellipsis,
+                color: AppColors.onPrimary,
+                size: 22,
+              ),
+              tooltip: '',
+              color: AppColors.surface,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              offset: const Offset(0, 4),
+              position: PopupMenuPosition.under,
+              constraints: const BoxConstraints(
+                minWidth: 140,
+                maxWidth: 180,
+              ),
+              enabled: !state.isClosingConversation,
+              onSelected: (value) async {
+                if (value == 'close') {
+                  await closeConversation();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'close',
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        LucideIcons.lock,
+                        color: AppColors.error,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Close conversation',
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : null,
       topBarContentHeight: 48,
       showBack: true,
       onBack: () => context.goNamed(RouteNames.home),
@@ -298,6 +351,13 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
             : _buildBody(state, inputFocused),
       ),
     );
+  }
+
+  Future<void> closeConversation() async {
+    final closed = await ref
+        .read(supportChatControllerProvider.notifier)
+        .closeConversation();
+    if (!mounted || !closed) return;
   }
 
   Widget _buildBody(SupportChatState state, bool inputFocused) {
@@ -627,9 +687,11 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                           height: 36,
                           decoration: BoxDecoration(
                             borderRadius: AppStyle.borderRadiusSm,
-                            color: state.composerEnabled
+                            color: state.isSendingMessage
                                 ? AppColors.primary
-                                : AppColors.textMuted,
+                                : state.composerEnabled
+                                    ? AppColors.primary
+                                    : AppColors.textMuted,
                             boxShadow: [
                               BoxShadow(
                                 color:
@@ -946,7 +1008,7 @@ class _BotMessageCard extends StatelessWidget {
                   style: AppTheme.body(
                     color: AppColors.textPrimary,
                     weight: FontWeight.w400,
-                  ).copyWith(fontSize: 13, height: 1.4),
+                  ).copyWith(fontSize: 14, height: 1.4),
                 ),
               ),
             ),
@@ -1022,7 +1084,7 @@ class _BotFlowCard extends StatelessWidget {
                     Text(
                       text,
                       style: AppTheme.english(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: AppColors.textPrimary,
                         height: AppStyle.lineHeightBody,

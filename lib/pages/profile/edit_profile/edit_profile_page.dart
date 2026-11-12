@@ -129,6 +129,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       label: '${'set_credentials.username'.tr()} *',
                       suffixIcon: LucideIcons.id_card,
                       textInputAction: TextInputAction.done,
+                      maxLength: 30,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'set_credentials.username_required'.tr();
@@ -209,7 +210,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     Text(
                       'profile.deactivate_account_title'.tr(),
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFFB42318),
                       ),
@@ -219,6 +220,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       'profile.deactivate_account_description'.tr(),
                       style: const TextStyle(
                         fontSize: 13,
+                        fontWeight: FontWeight.w600,
                         height: 1.35,
                         color: Color(0xFF626262),
                       ),

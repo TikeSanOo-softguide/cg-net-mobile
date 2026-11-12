@@ -113,6 +113,7 @@ class ApiEndpoints {
   static const String chatSelectOption = '/chat/select-option';
   static const String chatNavigate = '/chat/navigate';
   static const String chatSendMessage = '/chat/messages';
+  static const String chatClose = '/chat/close';
   static const String reverbHost = String.fromEnvironment('REVERB_HOST');
   static const int reverbPort = int.fromEnvironment(
     'REVERB_PORT',
