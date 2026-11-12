@@ -14,13 +14,15 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_photo_picker/app_photo_picker.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
-import '../../../core/network/api_message_modal.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../core/utils/loading_helper.dart';
+import '../../../core/utils/max_length_limiter.dart';
+import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/complaint/complaint_repository.dart';
 import '../../../models/requests/complaint/complaint_model.dart';
 import '../../../models/user_model/user_model.dart';
@@ -97,7 +99,6 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage> {
         );
       }
 
-      if (mounted) await _fetchComplaints();
     });
   }
 
@@ -380,23 +381,23 @@ class _ComplaintCardState extends State<_ComplaintCard> {
       onCancel: widget.onCancel,
       details: [
         _ReportDetail(
-          label: 'complaint.complaint_type'.tr(),
-          value: 'complaint.${complaintType.localizationKey}'.tr(),
-        ),
-        _ReportDetail(
           label: 'complaint.card_account'.tr(),
           value: _displayAccount(report.broadbandAccountNumber),
         ),
         _ReportDetail(
-          label: 'complaint.contact_name'.tr(),
+          label: 'requests.contact_name'.tr(),
           value: report.contactName,
         ),
         _ReportDetail(
-          label: 'complaint.contact_phone'.tr(),
-          value: report.contactPhone,
+          label: 'requests.phone'.tr(),
+          value: UserProfileModel.formatLocalPhone(report.contactPhone),
         ),
         _ReportDetail(
-          label: 'complaint.card_description'.tr(),
+          label: 'complaint.complaint_type'.tr(),
+          value: 'complaint.${complaintType.localizationKey}'.tr(),
+        ),
+        _ReportDetail(
+          label: 'requests.note'.tr(),
           value: report.description,
         ),
       ],
@@ -454,9 +455,13 @@ class _NewComplaintFormSheet extends ConsumerStatefulWidget {
       __NewComplaintFormSheetState();
 }
 
-class __NewComplaintFormSheetState
-    extends ConsumerState<_NewComplaintFormSheet> {
+class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
+    with ApiFieldErrorsMixin<_NewComplaintFormSheet> {
   final _formKey = GlobalKey<FormState>();
+  final _broadbandAccountFieldKey = GlobalKey<FormFieldState<String>>();
+  final _contactNameFieldKey = GlobalKey<FormFieldState<String>>();
+  final _phoneFieldKey = GlobalKey<FormFieldState<String>>();
+  final _descriptionFieldKey = GlobalKey<FormFieldState<String>>();
 
   late final TextEditingController _broadbandAccountController;
   late final TextEditingController _contactNameController;
@@ -472,15 +477,45 @@ class __NewComplaintFormSheetState
     return 'requests.required_field'.tr(namedArgs: {'field': fieldKey.tr()});
   }
 
-  String? _requiredText(String? value, String fieldKey) {
+  String? _requiredText(
+    String? value,
+    String fieldKey, {
+    String? apiField,
+  }) {
     if (value == null || value.trim().isEmpty) {
       return _requiredMessage(fieldKey);
     }
-    return null;
+    return apiField == null ? null : apiFieldError(apiField);
+  }
+
+  String? _validateDescription(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _requiredMessage('requests.note');
+    }
+    if (value.runes.length > 255) {
+      return 'requests.max_length'.tr(namedArgs: {'max': '255'});
+    }
+    return apiFieldError('description');
+  }
+
+  String? _validateContactPhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _requiredMessage('requests.phone');
+    }
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 8) return 'login.phone_invalid'.tr();
+
+    final normalized = PhoneNumber.normalize(value);
+    if (normalized == null || !PhoneNumber.isSupported(normalized)) {
+      return 'login.phone_unsupported'.tr();
+    }
+    return apiFieldError('contact_phone');
   }
 
   String? _accountGapError;
   String _selectedType = 'no_internet';
+  bool _contactNameEdited = false;
+  bool _phoneEdited = false;
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _selectedPhotos = [];
 
@@ -495,7 +530,9 @@ class __NewComplaintFormSheetState
         text: initial.broadbandAccountNumber ?? profile.accountNumber,
       );
       _contactNameController = TextEditingController(text: initial.contactName);
-      _phoneController = TextEditingController(text: initial.contactPhone);
+      _phoneController = TextEditingController(
+        text: UserProfileModel.formatLocalPhone(initial.contactPhone),
+      );
       _descriptionController = TextEditingController(text: initial.description);
       _selectedType = initial.complaintType;
       _selectedPhotos.addAll(
@@ -569,23 +606,19 @@ class __NewComplaintFormSheetState
 
     if (source == null || !mounted) return;
 
-    try {
-      final XFile? photo = await _picker.pickImage(
-        source: source,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 85,
-      );
+    final XFile? photo = await _picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
 
-      if (photo != null && mounted) {
-        setState(() {
-          _selectedPhotos.add(photo);
-        });
-        field.didChange(_selectedPhotos.length);
-        if (field.hasError) field.validate();
-      }
-    } catch (e) {
-      debugPrint('Error picking image: $e');
+    if (photo != null && mounted) {
+      setState(() {
+        _selectedPhotos.add(photo);
+      });
+      field.didChange(_selectedPhotos.length);
+      if (field.hasError) field.validate();
     }
   }
 
@@ -598,6 +631,7 @@ class __NewComplaintFormSheetState
   }
 
   Future<void> _submitForm() async {
+    clearAllApiFieldErrors();
     final profile = ref.read(profileControllerProvider);
     final accountLocked = profile.accountNumber.isNotEmpty;
     final accountError = accountLocked
@@ -623,6 +657,11 @@ class __NewComplaintFormSheetState
               imageUrl: file.path,
             ))
         .toList();
+    final contactPhone = PhoneNumber.normalize(_phoneController.text);
+    if (contactPhone == null || !PhoneNumber.isSupported(contactPhone)) return;
+    final description = _descriptionController.text.trim();
+    final contactName = _contactNameController.text.trim();
+    final reportId = widget.initialReport?.id;
 
     final ComplaintSaveResult? savedResult;
     try {
@@ -630,17 +669,30 @@ class __NewComplaintFormSheetState
         () => ref.read(complaintControllerProvider.notifier).submitComplaint(
               broadbandAccount: boundAccount,
               complaintType: _selectedType,
-              description: _descriptionController.text.trim(),
-              contactName: _contactNameController.text.trim(),
-              contactPhone: _phoneController.text.trim(),
+              description: description,
+              contactName: contactName,
+              contactPhone: contactPhone,
               photos: photos,
               userId: userId,
-              reportId: widget.initialReport?.id,
+              reportId: reportId,
             ),
       );
     } catch (error) {
       if (!mounted) return;
-      await showApiMessageModal(context, error);
+      final profile = ref.read(profileControllerProvider);
+      final handledInline = handleApiError(
+        error,
+        fields: {
+          if (profile.accountNumber.isEmpty)
+            'broadband_account_number': _broadbandAccountFieldKey,
+          'contact_name': _contactNameFieldKey,
+          'contact_phone': _phoneFieldKey,
+          'description': _descriptionFieldKey,
+        },
+      );
+      if (!handledInline) {
+        await showApiErrorModal(context, error);
+      }
       return;
     }
 
@@ -671,12 +723,15 @@ class __NewComplaintFormSheetState
           _broadbandAccountController.text != profile.accountNumber) {
         _broadbandAccountController.text = profile.accountNumber;
       }
-      if ((_contactNameController.text.isEmpty ||
+      if (!_contactNameEdited &&
+          (_contactNameController.text.isEmpty ||
               _contactNameController.text == 'Customer') &&
           profile.fullName.isNotEmpty) {
         _contactNameController.text = profile.fullName;
       }
-      if (_phoneController.text.isEmpty && profile.phone.isNotEmpty) {
+      if (!_phoneEdited &&
+          _phoneController.text.isEmpty &&
+          profile.phone.isNotEmpty) {
         _phoneController.text = profile.displayPhone;
       }
     }
@@ -743,24 +798,43 @@ class __NewComplaintFormSheetState
                             const SizedBox(height: 16),
                             AppInput(
                               controller: _contactNameController,
-                              label: '${'complaint.contact_name'.tr()} *',
+                              label: '${'requests.contact_name'.tr()} *',
+                              hint: 'requests.contact_name_hint'.tr(),
                               prefixIcon: LucideIcons.user,
+                              formFieldKey: _contactNameFieldKey,
+                              maxLength: 30,
+                              inputFormatters: [maxLengthLimiter(30)],
                               validator: (value) => _requiredText(
                                 value,
-                                'complaint.contact_name',
+                                'requests.contact_name',
+                                apiField: 'contact_name',
                               ),
+                              onChanged: (_) {
+                                _contactNameEdited = true;
+                                clearApiFieldError(
+                                  'contact_name',
+                                  key: _contactNameFieldKey,
+                                );
+                              },
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _phoneController,
-                              label: '${'complaint.contact_phone'.tr()} *',
-                              hint: '09 xxx xxx xxx',
+                              label: '${'requests.phone'.tr()} *',
+                              hint: 'requests.phone_hint'.tr(),
                               keyboardType: TextInputType.phone,
-                              prefixIcon: LucideIcons.phone,
-                              validator: (value) => _requiredText(
-                                value,
-                                'complaint.contact_phone',
-                              ),
+                              suffixIcon: LucideIcons.phone,
+                              formFieldKey: _phoneFieldKey,
+                              maxLength: 16,
+                              inputFormatters: [maxLengthLimiter(16)],
+                              validator: _validateContactPhone,
+                              onChanged: (_) {
+                                _phoneEdited = true;
+                                clearApiFieldError(
+                                  'contact_phone',
+                                  key: _phoneFieldKey,
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -798,13 +872,16 @@ class __NewComplaintFormSheetState
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _descriptionController,
-                              label: '${'complaint.description'.tr()} *',
-                              hint: 'complaint.description_hint'.tr(),
+                              label: '${'requests.note'.tr()} *',
+                              hint: 'requests.note_hint'.tr(),
                               prefixIcon: LucideIcons.file_text,
-                              maxLines: 3,
-                              validator: (value) => _requiredText(
-                                value,
-                                'complaint.description',
+                              maxLines: 2,
+                              inputFormatters: [maxLengthLimiter(255)],
+                              formFieldKey: _descriptionFieldKey,
+                              validator: _validateDescription,
+                              onChanged: (_) => clearApiFieldError(
+                                'description',
+                                key: _descriptionFieldKey,
                               ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
@@ -874,9 +951,15 @@ class __NewComplaintFormSheetState
         controller: _broadbandAccountController,
         label: '$label *',
         prefixIcon: LucideIcons.id_card,
+        formFieldKey: _broadbandAccountFieldKey,
         validator: (value) => _requiredText(
           value,
           'complaint.broadband_account',
+          apiField: 'broadband_account_number',
+        ),
+        onChanged: (_) => clearApiFieldError(
+          'broadband_account_number',
+          key: _broadbandAccountFieldKey,
         ),
       );
     }
