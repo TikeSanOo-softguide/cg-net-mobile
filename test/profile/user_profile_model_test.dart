@@ -44,9 +44,30 @@ void main() {
     expect(profile.productLine, '缅甸网_村');
     expect(profile.productSpeed, '10M');
     expect(profile.productPrice, '128');
+    expect(profile.currentPackageTermMonths, 1);
     expect(profile.startTime, '2026-10-01 16:29:45');
     expect(profile.endTime, '2030-09-09 10:35:11');
     expect(profile.onlineStatus, '离线');
+  });
+
+  test('reads current package billing cycle from package details', () {
+    final profile = UserProfileModel.fromJson({
+      'data': {
+        'account': {
+          'productName': 'CG-NET_20M',
+        },
+        'packages': [
+          {
+            'package_id': 3,
+            'details': {
+              'term': {'cycle': 6, 'cycle_unit': '月'},
+            },
+          },
+        ],
+      },
+    });
+
+    expect(profile.currentPackageTermMonths, 6);
   });
 
   test('reads broadband account details separately from user profile', () {

@@ -92,14 +92,22 @@ class ChangePlanRequestModel {
     final speedRaw = snapshot?.speedMbps ??
         RegExp(r'\d+').firstMatch(profile.productSpeed)?.group(0);
     final speed = num.tryParse(speedRaw ?? '');
-    final termMonths = snapshot?.termMonths;
+    final termMonths = profile.currentPackageTermMonths;
+    final termCycle = snapshot?.termCycle ?? termMonths;
+    final termCycleUnit = snapshot?.termCycleUnit ??
+        (termMonths == null ? null : '月');
 
     return {
       if (snapshot?.packageId != null) 'package_id': snapshot!.packageId,
       'price': price,
       if (networkName.isNotEmpty) 'network_name': networkName,
       if (speed != null) 'speed': {'mbps': speed},
-      if (termMonths != null) 'term': {'months': termMonths},
+      if (termMonths != null || termCycle != null || termCycleUnit != null)
+        'term': {
+          if (termMonths != null) 'months': termMonths,
+          if (termCycle != null) 'cycle': termCycle,
+          if (termCycleUnit != null) 'cycle_unit': termCycleUnit,
+        },
     };
   }
 

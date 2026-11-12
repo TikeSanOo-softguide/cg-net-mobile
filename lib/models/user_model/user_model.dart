@@ -120,6 +120,8 @@ class UserPackageSnapshot {
     this.networkName = const {},
     this.speedMbps,
     this.termMonths,
+    this.termCycle,
+    this.termCycleUnit,
   });
 
   final int? packageId;
@@ -127,6 +129,8 @@ class UserPackageSnapshot {
   final Map<String, String> networkName;
   final String? speedMbps;
   final int? termMonths;
+  final int? termCycle;
+  final String? termCycleUnit;
 
   factory UserPackageSnapshot.fromJson(Map<String, dynamic> json) {
     final details = json['details'] is Map
@@ -141,6 +145,22 @@ class UserPackageSnapshot {
     final term = details['term'] is Map
         ? Map<String, dynamic>.from(details['term'] as Map)
         : const <String, dynamic>{};
+    final cycleUnit =
+        (term['cycle_unit'] ??
+                details['month_cycle_unit'] ??
+                details['monthCycleUnit'] ??
+                '')
+            .toString();
+    final cycle = term['cycle'] ??
+        details['month_cycle'] ??
+        details['monthCycle'] ??
+        term['months'];
+    final monthCycle = term['months'] ??
+        details['month_cycle'] ??
+        details['monthCycle'] ??
+        (cycleUnit.contains('月') || cycleUnit.toLowerCase().contains('month')
+            ? term['cycle']
+            : null);
 
     return UserPackageSnapshot(
       packageId: int.tryParse('${json['package_id'] ?? ''}'),
@@ -153,7 +173,9 @@ class UserPackageSnapshot {
             entry.key: '${entry.value}',
       },
       speedMbps: speed['mbps']?.toString(),
-      termMonths: int.tryParse('${term['months'] ?? ''}'),
+      termMonths: int.tryParse('$monthCycle'),
+      termCycle: int.tryParse('$cycle'),
+      termCycleUnit: cycleUnit.isEmpty ? null : cycleUnit,
     );
   }
 
@@ -215,6 +237,23 @@ class UserProfileModel {
 
   UserPackageSnapshot? get currentPackage =>
       packages.isEmpty ? null : packages.first;
+
+  int? get currentPackageTermMonths {
+    final snapshot = currentPackage;
+    final parsedCycle = snapshot?.termMonths;
+    if (parsedCycle != null) return parsedCycle;
+    final cycleUnit = snapshot?.termCycleUnit?.toLowerCase() ?? '';
+    if (cycleUnit.contains('天') || cycleUnit.contains('day')) return null;
+
+    final name = productName.toLowerCase();
+    final numericMonths = RegExp(r'(\d+)\s*(?:个月|月|months?|mos?|mo)')
+        .firstMatch(name);
+    if (numericMonths != null) {
+      return int.tryParse(numericMonths.group(1)!);
+    }
+    if (name.contains('月') || name.contains('monthly')) return 1;
+    return null;
+  }
 
   String get displayPhone => formatLocalPhone(phone);
 

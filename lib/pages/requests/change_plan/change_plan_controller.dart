@@ -39,22 +39,31 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
   ChangePlanController(this._repository) : super(const ChangePlanState());
 
   final ChangePlanRepository _repository;
+  int _fetchSequence = 0;
 
   Future<void> fetchRequests() async {
-    state = state.copyWith(status: ChangePlanStatus.loading, clearError: true);
+    final sequence = ++_fetchSequence;
+    state = state.copyWith(
+      status: ChangePlanStatus.loading,
+      requests: const [],
+      clearError: true,
+    );
     try {
       final requests = await _repository.fetchRequests();
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangePlanStatus.success,
         requests: requests,
         clearError: true,
       );
     } on ApiException catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangePlanStatus.error,
         errorMessage: error.detail ?? error.messageKey,
       );
     } catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangePlanStatus.error,
         errorMessage: error.toString(),
@@ -70,8 +79,20 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
       final saved = request.id.isEmpty
           ? await _repository.createRequest(request)
           : await _repository.updateRequest(request);
-      state = state.copyWith(isSubmitting: false, clearError: true);
-      await fetchRequests();
+      final requests = [...state.requests];
+      final savedIndex = requests.indexWhere(
+        (item) => item.id.isNotEmpty && item.id == saved.request.id,
+      );
+      if (savedIndex == -1) {
+        requests.insert(0, saved.request);
+      } else {
+        requests[savedIndex] = saved.request;
+      }
+      state = state.copyWith(
+        isSubmitting: false,
+        requests: requests,
+        clearError: true,
+      );
       return saved;
     } on ApiException catch (error) {
       state = state.copyWith(
