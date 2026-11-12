@@ -96,7 +96,6 @@ class _ChangeWifiPasswordPageState
           ).tr(),
         );
       }
-
     });
   }
 
@@ -132,7 +131,7 @@ class _ChangeWifiPasswordPageState
       body: MessageCodes.featureReqKey(
         feature: 'change_wifi',
         code: result.code,
-        fallbackKey: 'change_wifi.cancel_success',
+        fallbackKey: 'change_wifi.req_cancelled',
       ).tr(),
     );
   }

@@ -829,7 +829,6 @@
     "submitted_desc": "Your complaint has been received. Our support team will contact you shortly.",
     "cancel_title": "Cancel Complaint",
     "cancel_confirm": "Are you sure you want to cancel this complaint?",
-    "cancel_success": "Complaint cancelled successfully.",
     "req_cancelled": "Complaint cancelled successfully.",
     "req_submitted": "Your complaint has been received.\nOur support team will contact you shortly.",
     "req_updated": "Complaint updated successfully."

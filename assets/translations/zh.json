@@ -831,7 +831,6 @@
     "submitted_desc": "我们已收到您的投诉。我们的服务团队将尽快与您联系。",
     "cancel_title": "取消投诉",
     "cancel_confirm": "您确定要取消此投诉吗？",
-    "cancel_success": "投诉已成功取消。",
     "req_cancelled": "投诉已成功取消。",
     "req_submitted": "我们已收到您的投诉。\n我们的服务团队将尽快与您联系。",
     "req_updated": "投诉已成功更新。"
