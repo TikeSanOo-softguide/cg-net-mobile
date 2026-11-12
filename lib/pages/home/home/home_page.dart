@@ -32,7 +32,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  static const _pinnedBarSeamOverlap = 1.0;
   bool _launchPromoHandled = false;
   bool _launchPromoShowing = false;
 
@@ -96,7 +95,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final showNav = ref.watch(bottomNavVisibleProvider);
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
-    final pinnedH = HomePinnedBar.heightOf(context);
+    final pinnedH = HomePinnedBar.heightOf(context).ceilToDouble();
 
     return MediaQuery.removePadding(
       context: context,
@@ -112,12 +111,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               height: pinnedH,
               child: const ColoredBox(color: AppColors.primary),
             ),
-            NotificationListener<ScrollNotification>(
-              child: RefreshIndicator(
-                color: AppColors.primary,
-                edgeOffset: pinnedH,
-                onRefresh: _refreshSession,
-                child: CustomScrollView(
+            RefreshIndicator(
+              color: AppColors.primary,
+              edgeOffset: pinnedH,
+              onRefresh: _refreshSession,
+              child: CustomScrollView(
                 key: ValueKey('home-$localeCode'),
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
@@ -143,7 +141,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ? ''
                                           : '—',
                             ),
-                            const SizedBox(height: HomeQuickActions.hangBelow),
+                            const SizedBox(
+                                height: HomeQuickActions.hangBelow),
                           ],
                         ),
                         const Positioned(
@@ -186,14 +185,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SliverToBoxAdapter(child: HomeSpecialOfferSection()),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                 ],
-                ),
               ),
             ),
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              height: pinnedH + _pinnedBarSeamOverlap,
+              height: pinnedH,
               child: ColoredBox(
                 color: AppColors.primary,
                 child: HomePinnedBar(
