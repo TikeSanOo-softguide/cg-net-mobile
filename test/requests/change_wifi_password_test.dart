@@ -193,6 +193,29 @@ void main() {
       expect(result.code, 'MSG-REQ-003');
     });
 
+    test('updateRequest sends null when the Wi-Fi name is cleared', () async {
+      _setResponse(dio, '{"code":"MSG-REQ-003"}');
+
+      const request = ChangePasswordRequestModel(
+        id: '15',
+        userId: 2,
+        broadbandAccountNumber: 'CG0000011',
+        contactName: 'Sophia',
+        contactPhone: '09757943906',
+        newWifiName: null,
+        newPassword: 'updatedpassword123',
+        ticketNumber: 'CWP11030001',
+      );
+
+      await repository.updateRequest(request);
+
+      final payload =
+          (dio.httpClientAdapter as _JsonAdapter).lastRequestOptions!.data
+              as Map<String, dynamic>;
+      expect(payload.containsKey('new_wifi_name'), isTrue);
+      expect(payload['new_wifi_name'], isNull);
+    });
+
     test('cancelRequest returns the backend message code', () async {
       _setResponse(dio, '{"code":"MSG-REQ-001","message":"Cancelled"}');
 

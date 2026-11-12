@@ -71,7 +71,10 @@ class ChangeWifiPasswordRepository {
     try {
       final response = await _dio.put<dynamic>(
         ApiEndpoints.changeWifiPasswordRequest(request.id),
-        data: request.toJson(),
+        data: {
+          ...request.toJson(),
+          'new_wifi_name': request.newWifiName,
+        },
       );
       final data = response.data;
       return ChangeWifiPasswordSaveResult(
