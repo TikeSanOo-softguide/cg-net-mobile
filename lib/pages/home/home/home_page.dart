@@ -95,7 +95,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final showNav = ref.watch(bottomNavVisibleProvider);
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
-    final pinnedH = HomePinnedBar.heightOf(context).ceilToDouble();
+    final pinnedH = HomePinnedBar.heightOf(context);
 
     return MediaQuery.removePadding(
       context: context,
@@ -111,11 +111,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               height: pinnedH,
               child: const ColoredBox(color: AppColors.primary),
             ),
-            RefreshIndicator(
-              color: AppColors.primary,
-              edgeOffset: pinnedH,
-              onRefresh: _refreshSession,
-              child: CustomScrollView(
+            NotificationListener<ScrollNotification>(
+              child: RefreshIndicator(
+                color: AppColors.primary,
+                edgeOffset: pinnedH,
+                onRefresh: _refreshSession,
+                child: CustomScrollView(
                 key: ValueKey('home-$localeCode'),
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
@@ -141,8 +142,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ? ''
                                           : '—',
                             ),
-                            const SizedBox(
-                                height: HomeQuickActions.hangBelow),
+                            const SizedBox(height: HomeQuickActions.hangBelow),
                           ],
                         ),
                         const Positioned(
@@ -185,6 +185,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SliverToBoxAdapter(child: HomeSpecialOfferSection()),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                 ],
+                ),
               ),
             ),
             Positioned(
