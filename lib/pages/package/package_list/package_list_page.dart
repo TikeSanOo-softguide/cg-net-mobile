@@ -12,6 +12,9 @@ import '../../../core/network/api_error_text.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
+import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/theme/app_style/app_style.dart';
+import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../models/package_model/package_model.dart';
 import '../components/luxury_package_card.dart';
 import 'package_list_controller.dart';
@@ -79,33 +82,142 @@ class PackageListPage extends ConsumerWidget {
               ref.read(packageListControllerProvider.notifier).load();
             },
           ),
-        PackageListStatus.data => ListView.separated(
+        PackageListStatus.data => CustomScrollView(
             key: ValueKey('package-list-$locale'),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            itemCount: state.packages.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final data = _PackageListData.fromModel(
-                state.packages[index],
-                localeCode: locale,
-              );
-              return LuxuryPackageCard(
-                title: data.title,
-                priceLabel: '${data.price} ${'topup.pts'.tr()}',
-                periodLabel: data.cycle.isEmpty
-                    ? 'home.offer_month'.tr()
-                    : '/ ${data.cycle}',
-                speedLabel: data.speed.contains('Mbps')
-                    ? data.speed
-                    : '${data.speed} Mbps',
-                popular: data.popular,
-                features: data.features,
-                onTap: () => _openDetail(context, data.id),
-                onBuy: () => _openDetail(context, data.id),
-              );
-            },
+            slivers: [
+              const SliverToBoxAdapter(child: _PackagePageIntro()),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  16,
+                  14,
+                  16,
+                  AppStyle.listPaddingBottom,
+                ),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 12,
+                    mainAxisExtent: 220,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _packageCard(context, state, index),
+                    childCount: state.packages.length,
+                  ),
+                ),
+              ),
+            ],
           ),
       },
+    );
+  }
+
+  Widget _packageCard(
+    BuildContext context,
+    PackageListState state,
+    int index,
+  ) {
+    final data = _PackageListData.fromModel(state.packages[index]);
+    return LuxuryPackageCard(
+      title: LuxuryPackageCard.planName(index),
+      productId: data.id,
+      lineLabel: data.line,
+      priceLabel: data.price,
+      periodLabel: data.cycle,
+      speedLabel: data.speed,
+      popular: data.popular,
+      accentIndex: index,
+      compact: true,
+      onTap: () => _openDetail(context, data.id),
+      onBuy: () => _openDetail(context, data.id),
+    );
+  }
+}
+
+class _PackagePageIntro extends StatelessWidget {
+  const _PackagePageIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'package.brand'.tr(),
+                      style: AppTheme.english(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        letterSpacing: 0.8,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'package.popular_plan'.tr(),
+                      style: AppTheme.english(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'package.unlimited_internet'.tr(),
+                      style: AppTheme.english(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Row(
+                children: [
+                  _PlanDot(index: 0),
+                  SizedBox(width: 6),
+                  _PlanDot(index: 1),
+                  SizedBox(width: 6),
+                  _PlanDot(index: 2),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanDot extends StatelessWidget {
+  const _PlanDot({required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LuxuryPackageCard.accentAt(index),
+        shape: BoxShape.circle,
+      ),
+      child: const SizedBox(width: 10, height: 10),
     );
   }
 }
@@ -113,44 +225,35 @@ class PackageListPage extends ConsumerWidget {
 class _PackageListData {
   const _PackageListData({
     required this.id,
-    required this.title,
     required this.speed,
     required this.cycle,
     required this.price,
     required this.popular,
-    required this.features,
+    required this.line,
   });
 
   final String id;
-  final String title;
   final String speed;
   final String cycle;
   final String price;
   final bool popular;
-  final List<String> features;
+  final String line;
 
-  factory _PackageListData.fromModel(
-    PackageModel model, {
-    required String localeCode,
-  }) {
-    final title = model.localizedName?[localeCode] ??
-        model.localizedName?['en'] ??
-        model.name;
-    final cycle = model.termMonths == null
-        ? model.billingCycle
-        : '${model.termMonths} ${model.billingCycle}'.trim();
-    final price = model.price == model.price.roundToDouble()
-        ? model.price.toInt().toString()
-        : model.price.toString();
+  factory _PackageListData.fromModel(PackageModel model) {
+    final speed = model.speed.trim();
+    final cycle = [
+      if (model.termMonths != null) '${model.termMonths}',
+      model.billingCycle.trim(),
+    ].join();
+    final price = '${model.price}';
 
     return _PackageListData(
       id: model.id,
-      title: title,
-      speed: model.speed.trim(),
+      speed: speed.toLowerCase().contains('mbps') ? speed : '$speed Mbps',
       cycle: cycle,
       price: price,
       popular: model.recommended,
-      features: model.features,
+      line: model.currency.trim(),
     );
   }
 }

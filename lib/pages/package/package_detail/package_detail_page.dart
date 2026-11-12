@@ -96,33 +96,34 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     PackageListState state,
   ) {
     PackageModel? model;
-    for (final item in state.packages) {
-      if (item.id == widget.packageId) {
-        model = item;
+    var planIndex = 0;
+    for (var i = 0; i < state.packages.length; i++) {
+      if (state.packages[i].id == widget.packageId) {
+        model = state.packages[i];
+        planIndex = i;
         break;
       }
     }
 
     final catalog = PackageCatalog.byId(widget.packageId);
-    final speedDigits = model?.speed.replaceAll(RegExp(r'[^0-9]'), '');
-    final speedFromModel =
-        speedDigits == null || speedDigits.isEmpty ? null : speedDigits;
-
-    final cycle = model?.termMonths == null
-        ? (model?.billingCycle ?? '')
-        : '${model!.termMonths} ${model.billingCycle}'.trim();
+    final speed = (model?.speed ?? catalog?.speedMbps ?? '').trim();
+    final price = model?.price ?? catalog?.pricePoints ?? 0;
+    final cycle = [
+      if (model?.termMonths != null) '${model!.termMonths}',
+      model?.billingCycle.trim() ?? '',
+    ].join();
 
     return _PackageDetailViewData(
       id: widget.packageId,
-      title: model?.localizedName?[localeCode] ??
-          model?.localizedName?['en'] ??
-          model?.name ??
-          (catalog?.titleKey ?? 'package.title').tr(),
-      pricePoints: model?.price.toInt() ?? catalog?.pricePoints ?? 15000,
-      speedMbps: speedFromModel ?? catalog?.speedMbps ?? '20',
-      periodLabel: cycle.isEmpty ? 'home.offer_month'.tr() : '/ $cycle',
+      title: model?.name ?? (catalog?.titleKey ?? 'package.title').tr(),
+      pricePoints: price is num ? price.toInt() : 0,
+      priceLabel: '$price',
+      speedMbps: speed,
+      periodLabel: cycle,
       popular: model?.recommended ?? catalog?.popular ?? false,
       features: model?.features ?? const [],
+      lineLabel: model?.currency ?? '',
+      planIndex: planIndex,
     );
   }
 
@@ -276,12 +277,16 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
             LuxuryPackageCard(
-              title: info.title,
-              priceLabel: '${info.pricePoints} ${'topup.pts'.tr()}',
+              title: LuxuryPackageCard.planName(info.planIndex),
+              productId: info.id,
+              lineLabel: info.lineLabel,
+              priceLabel: info.priceLabel,
               periodLabel: info.periodLabel,
-              speedLabel: '${info.speedMbps} Mbps',
+              speedLabel: info.speedMbps.toLowerCase().contains('mbps')
+                  ? info.speedMbps
+                  : '${info.speedMbps} Mbps',
               popular: info.popular,
-              features: info.features,
+              accentIndex: info.planIndex,
               onBuy: _buyNow,
               footer: _RenewRow(
                 value: _autoRenew,
@@ -300,19 +305,25 @@ class _PackageDetailViewData {
     required this.id,
     required this.title,
     required this.pricePoints,
+    required this.priceLabel,
     required this.speedMbps,
     required this.periodLabel,
     required this.popular,
     this.features = const [],
+    this.lineLabel = '',
+    this.planIndex = 0,
   });
 
   final String id;
   final String title;
   final int pricePoints;
+  final String priceLabel;
   final String speedMbps;
   final String periodLabel;
   final bool popular;
   final List<String> features;
+  final String lineLabel;
+  final int planIndex;
 }
 
 class _RenewRow extends StatelessWidget {

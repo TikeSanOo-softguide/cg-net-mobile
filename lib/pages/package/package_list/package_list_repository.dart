@@ -45,10 +45,10 @@ class PackageListRepository {
 PackageModel _fromCgProduct(Map<String, dynamic> json) {
   final unit = json['monthCycleUnit']?.toString() ?? '';
   final cycle = int.tryParse('${json['monthCycle'] ?? ''}');
-  final rawPrice = json['productPrice'];
-  final price = rawPrice is num
-      ? rawPrice
-      : num.tryParse('$rawPrice') ?? 0;
+  final productPrice = json['productPrice'];
+  final price = productPrice is num
+      ? productPrice
+      : num.tryParse('$productPrice') ?? 0;
 
   return PackageModel(
     id: json['productID'].toString(),
@@ -60,7 +60,7 @@ PackageModel _fromCgProduct(Map<String, dynamic> json) {
     dataLimit: '',
     isCurrent: false,
     features: const [],
-    termMonths: unit == '月' ? cycle : null,
+    termMonths: cycle,
   );
 }
 
