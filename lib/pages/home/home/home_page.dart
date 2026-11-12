@@ -32,7 +32,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  static const _pinnedBarSeamOverlap = 1.0;
+  bool _showPinnedBarDivider = false;
   bool _launchPromoHandled = false;
   bool _launchPromoShowing = false;
 
@@ -97,6 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // Strip bottom inset only while shell bottom nav (with its SafeArea) is shown.
     final pinnedH = HomePinnedBar.heightOf(context);
+    final dividerHeight = 1 / MediaQuery.devicePixelRatioOf(context);
 
     return MediaQuery.removePadding(
       context: context,
@@ -113,79 +114,81 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: const ColoredBox(color: AppColors.primary),
             ),
             NotificationListener<ScrollNotification>(
+              onNotification: _handleScrollNotification,
               child: RefreshIndicator(
                 color: AppColors.primary,
                 edgeOffset: pinnedH,
                 onRefresh: _refreshSession,
                 child: CustomScrollView(
-                key: ValueKey('home-$localeCode'),
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: ColoredBox(
-                      color: AppColors.primary,
-                      child: SizedBox(height: pinnedH),
+                  key: ValueKey('home-$localeCode'),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: ColoredBox(
+                        color: AppColors.primary,
+                        child: SizedBox(height: pinnedH),
+                      ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            HomeBalanceHeader(
-                              balanceAmount:
-                                  displayProfile?.walletBalance.isNotEmpty ==
-                                          true
-                                      ? displayProfile!.walletBalance
-                                      : cachedProfile.isLoading
-                                          ? ''
-                                          : '—',
-                            ),
-                            const SizedBox(height: HomeQuickActions.hangBelow),
-                          ],
-                        ),
-                        const Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: HomeQuickActions(),
-                        ),
-                      ],
+                    SliverToBoxAdapter(
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              HomeBalanceHeader(
+                                balanceAmount:
+                                    displayProfile?.walletBalance.isNotEmpty ==
+                                            true
+                                        ? displayProfile!.walletBalance
+                                        : cachedProfile.isLoading
+                                            ? ''
+                                            : '—',
+                              ),
+                              const SizedBox(
+                                  height: HomeQuickActions.hangBelow),
+                            ],
+                          ),
+                          const Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: HomeQuickActions(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: HomePlanCard(),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(child: HomeServicesSection()),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(child: HomePromoAlert()),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  if (_showSpecialDataPackages) ...[
-                    const SliverToBoxAdapter(child: HomeOffersSection()),
                     const SliverToBoxAdapter(
                       child: SizedBox(height: HomeSectionHeader.sectionGap),
                     ),
+                    const SliverToBoxAdapter(
+                      child: HomePlanCard(),
+                    ),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: HomeSectionHeader.sectionGap),
+                    ),
+                    const SliverToBoxAdapter(child: HomeServicesSection()),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: HomeSectionHeader.sectionGap),
+                    ),
+                    const SliverToBoxAdapter(child: HomePromoAlert()),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: HomeSectionHeader.sectionGap),
+                    ),
+                    if (_showSpecialDataPackages) ...[
+                      const SliverToBoxAdapter(child: HomeOffersSection()),
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: HomeSectionHeader.sectionGap),
+                      ),
+                    ],
+                    const SliverToBoxAdapter(child: HomeCgPackageSection()),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: HomeSectionHeader.sectionGap),
+                    ),
+                    const SliverToBoxAdapter(child: HomePromoBanner()),
+                    const SliverToBoxAdapter(child: HomeSpecialOfferSection()),
+                    const SliverToBoxAdapter(child: SizedBox(height: 10)),
                   ],
-                  const SliverToBoxAdapter(child: HomeCgPackageSection()),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: HomeSectionHeader.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(child: HomePromoBanner()),
-                  const SliverToBoxAdapter(child: HomeSpecialOfferSection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                ],
                 ),
               ),
             ),
@@ -193,19 +196,48 @@ class _HomePageState extends ConsumerState<HomePage> {
               top: 0,
               left: 0,
               right: 0,
-              height: pinnedH + _pinnedBarSeamOverlap,
-              child: ColoredBox(
-                color: AppColors.primary,
-                child: HomePinnedBar(
-                  accountNumber: displayProfile?.phone ??
-                      (cachedProfile.isLoading ? '' : '—'),
-                  broadbandAccount: broadbandAccount,
-                ),
+              height: pinnedH + dividerHeight,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    bottom: dividerHeight,
+                    child: ColoredBox(
+                      color: AppColors.primary,
+                      child: HomePinnedBar(
+                        accountNumber: displayProfile?.phone ??
+                            (cachedProfile.isLoading ? '' : '—'),
+                        broadbandAccount: broadbandAccount,
+                      ),
+                    ),
+                  ),
+                  if (_showPinnedBarDivider)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: dividerHeight,
+                      child: const IgnorePointer(
+                        child: ColoredBox(color: Colors.white),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+
+    final shouldShow = notification.metrics.extentBefore > 0;
+    if (shouldShow != _showPinnedBarDivider && mounted) {
+      setState(() => _showPinnedBarDivider = shouldShow);
+    }
+    return false;
   }
 }
