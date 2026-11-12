@@ -3,10 +3,45 @@ import 'dart:typed_data';
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
 import 'package:cg_net_mobile/data/requests/change_plan/change_plan_repository.dart';
 import 'package:cg_net_mobile/models/requests/change_plan/change_plan_request_model.dart';
+import 'package:cg_net_mobile/models/user_model/user_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('current package details include monthly term fields', () {
+    final profile = UserProfileModel.fromJson({
+      'data': {
+        'account': {'productName': 'CG-NET_20M_月'},
+      },
+    });
+
+    expect(
+      ChangePlanRequestModel.currentDetailFrom(profile)['term'],
+      {'months': 1, 'cycle': 1, 'cycle_unit': '月'},
+    );
+  });
+
+  test('current package details preserve non-month cycle units', () {
+    final profile = UserProfileModel.fromJson({
+      'data': {
+        'account': {'productName': 'CG-NET_20M'},
+        'packages': [
+          {
+            'package_id': 3,
+            'details': {
+              'term': {'cycle': 7, 'cycle_unit': '天'},
+            },
+          },
+        ],
+      },
+    });
+
+    expect(
+      ChangePlanRequestModel.currentDetailFrom(profile)['term'],
+      {'cycle': 7, 'cycle_unit': '天'},
+    );
+  });
+
   test('fetchRequests preserves paginated API order across statuses',
       () async {
     final requests = <RequestOptions>[];

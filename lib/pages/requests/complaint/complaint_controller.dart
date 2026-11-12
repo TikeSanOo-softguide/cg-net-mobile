@@ -37,17 +37,25 @@ class ComplaintController extends StateNotifier<ComplaintState> {
   ComplaintController(this._repository) : super(const ComplaintState());
 
   final ComplaintRepository _repository;
+  int _fetchSequence = 0;
 
   Future<void> fetchComplaints() async {
-    state = state.copyWith(status: ComplaintStatus.loading);
+    final sequence = ++_fetchSequence;
+    state = state.copyWith(
+      status: ComplaintStatus.loading,
+      reports: const [],
+      errorMessage: null,
+    );
     try {
       final items = await _repository.fetchComplaints();
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ComplaintStatus.success,
         reports: items,
         errorMessage: null,
       );
     } catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ComplaintStatus.error,
         errorMessage: error is ApiException
@@ -154,7 +162,6 @@ class ComplaintController extends StateNotifier<ComplaintState> {
         errorMessage: null,
         reports: reports,
       );
-      await fetchComplaints();
 
       return saved;
     } on ApiException catch (e) {

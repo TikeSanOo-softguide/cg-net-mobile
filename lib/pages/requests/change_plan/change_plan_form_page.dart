@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,10 @@ import '../../../core/network/api_message_modal.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
+import '../../../core/utils/max_length_limiter.dart';
+import '../../../core/utils/phone_number.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import '../../../models/user_model/user_model.dart';
@@ -29,8 +33,12 @@ class ChangePlanFormPage extends ConsumerStatefulWidget {
   ConsumerState<ChangePlanFormPage> createState() => _ChangePlanFormPageState();
 }
 
-class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
+class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
+    with ApiFieldErrorsMixin<ChangePlanFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameFieldKey = GlobalKey<FormFieldState<String>>();
+  final _phoneFieldKey = GlobalKey<FormFieldState<String>>();
+  final _dateFieldKey = GlobalKey<FormFieldState<String>>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _noteController;
@@ -46,6 +54,24 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
   bool _loadingOptions = true;
   bool _optionsFailed = false;
 
+  String _requiredMessage(String fieldKey) {
+    return 'requests.required_field'.tr(namedArgs: {'field': fieldKey.tr()});
+  }
+
+  String? _validateContactPhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _requiredMessage('requests.phone');
+    }
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 8) return 'login.phone_invalid'.tr();
+
+    final normalized = PhoneNumber.normalize(value);
+    if (normalized == null || !PhoneNumber.isSupported(normalized)) {
+      return 'login.phone_unsupported'.tr();
+    }
+    return apiFieldError('contact_phone');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,8 +79,11 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
     final initial = widget.initialRequest;
     _nameController =
         TextEditingController(text: initial?.contactName ?? profile.fullName);
-    _phoneController =
-        TextEditingController(text: initial?.contactPhone ?? profile.displayPhone);
+    _phoneController = TextEditingController(
+      text: initial == null
+          ? profile.displayPhone
+          : UserProfileModel.formatLocalPhone(initial.contactPhone),
+    );
     _noteController = TextEditingController(text: initial?.note ?? '');
     _preferredDate = initial?.preferredDate;
     _dateController = TextEditingController(
@@ -208,7 +237,11 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
     );
     if (picked == null || !mounted) return;
     setState(() => _preferredDate = picked);
-    _dateController.text = DateFormat('yyyy/MM/dd').format(picked);
+    final formattedDate = DateFormat('yyyy/MM/dd').format(picked);
+    _dateController.text = formattedDate;
+    clearApiFieldError('preferred_date', key: _dateFieldKey);
+    _dateFieldKey.currentState?.didChange(formattedDate);
+    _dateFieldKey.currentState?.validate();
   }
 
   void _goBack() {
@@ -236,6 +269,10 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
 
     final profile = ref.read(profileControllerProvider);
     final initial = widget.initialRequest;
+    final normalizedPhone = PhoneNumber.normalize(_phoneController.text);
+    if (normalizedPhone == null || !PhoneNumber.isSupported(normalizedPhone)) {
+      return;
+    }
     final request = ChangePlanRequestModel(
       id: initial?.id ?? '',
       userId: initial?.userId ?? int.tryParse(profile.id) ?? 0,
@@ -247,7 +284,7 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
       newPackageDetail: ChangePlanRequestModel.newDetailFrom(product),
       preferredDate: _preferredDate,
       contactName: _nameController.text.trim(),
-      contactPhone: _phoneController.text.trim(),
+      contactPhone: normalizedPhone,
       note: _noteController.text.trim(),
     );
 
@@ -261,7 +298,17 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
       Navigator.of(context).pop(saved);
     } catch (error) {
       if (!mounted) return;
-      await showApiMessageModal(context, error);
+      final handledInline = handleApiError(
+        error,
+        fields: {
+          'contact_name': _nameFieldKey,
+          'contact_phone': _phoneFieldKey,
+          'preferred_date': _dateFieldKey,
+        },
+      );
+      if (!handledInline) {
+        await showApiErrorModal(context, error);
+      }
     }
   }
 
@@ -313,7 +360,8 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
         onStepSelected: (step) {
           if (step < _step) setState(() => _step = step);
         },
-        child: _step == 1 ? _buildPlanStep(product) : _buildContactStep(product),
+        child:
+            _step == 1 ? _buildPlanStep(product) : _buildContactStep(product),
       ),
     );
   }
@@ -516,47 +564,69 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage> {
               children: [
                 AppInput(
                   controller: _nameController,
-                  label: '${'changePlan.contact_name'.tr()} *',
+                  label: '${'requests.contact_name'.tr()} *',
+                  hint: 'requests.contact_name_hint'.tr(),
                   prefixIcon: LucideIcons.user,
                   textInputAction: TextInputAction.next,
-                  maxLength: 255,
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'requests.required'.tr()
-                      : null,
+                  maxLength: 30,
+                  inputFormatters: [maxLengthLimiter(30)],
+                  formFieldKey: _nameFieldKey,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return _requiredMessage('requests.contact_name');
+                    }
+                    return apiFieldError('contact_name');
+                  },
+                  onChanged: (_) => clearApiFieldError(
+                    'contact_name',
+                    key: _nameFieldKey,
+                  ),
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 AppInput(
                   controller: _phoneController,
-                  label: '${'changePlan.contact_phone'.tr()} *',
+                  label: '${'requests.phone'.tr()} *',
+                  hint: 'requests.phone_hint'.tr(),
                   prefixIcon: LucideIcons.phone,
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   maxLength: 16,
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'requests.required'.tr()
-                      : null,
+                  inputFormatters: [maxLengthLimiter(16)],
+                  formFieldKey: _phoneFieldKey,
+                  validator: _validateContactPhone,
+                  onChanged: (_) => clearApiFieldError(
+                    'contact_phone',
+                    key: _phoneFieldKey,
+                  ),
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 AppInput(
                   controller: _dateController,
                   label: '${'changePlan.preferred_date'.tr()} *',
                   hint: 'requests.choose_date'.tr(),
+                  formFieldKey: _dateFieldKey,
                   readOnly: true,
                   onTap: _selectDate,
                   suffix: AppInput.iconChip(
                     icon: LucideIcons.calendar_days,
                     onTap: _selectDate,
                   ),
-                  validator: (_) =>
-                      _preferredDate == null ? 'requests.required'.tr() : null,
+                  validator: (_) {
+                    if (_preferredDate == null) {
+                      return _requiredMessage('changePlan.preferred_date');
+                    }
+                    return apiFieldError('preferred_date');
+                  },
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 AppInput(
                   controller: _noteController,
-                  label: 'changePlan.note'.tr(),
+                  label: 'requests.note'.tr(),
+                  hint: 'requests.note_hint'.tr(),
                   prefixIcon: LucideIcons.notebook_pen,
                   maxLines: 2,
-                  maxLength: 5000,
+                  maxLength: 255,
+                  inputFormatters: [maxLengthLimiter(255)],
                 ),
               ],
             ),
@@ -614,9 +684,9 @@ class _CurrentPackageSummary extends StatelessWidget {
             ? profile.productLine
             : profile.productName);
     final speedRaw = snapshot?.speedMbps ?? profile.productSpeed;
-    final speed = RegExp(r'\d+').firstMatch(speedRaw ?? '')?.group(0) ?? '';
+    final speed = RegExp(r'\d+').firstMatch(speedRaw)?.group(0) ?? '';
     final price = snapshot?.price ?? num.tryParse(profile.productPrice);
-    final term = snapshot?.termMonths;
+    final term = profile.currentPackageTermMonths;
     final hasPlan = profile.productName.trim().isNotEmpty ||
         network.isNotEmpty ||
         speed.isNotEmpty ||
@@ -631,9 +701,8 @@ class _CurrentPackageSummary extends StatelessWidget {
     }
 
     return _SelectedPackageSummary(
-      packageName: profile.productName.trim().isEmpty
-          ? '—'
-          : profile.productName,
+      packageName:
+          profile.productName.trim().isEmpty ? '—' : profile.productName,
       provider: network.isEmpty ? '—' : network,
       speed: speed.isEmpty
           ? '—'
@@ -1157,7 +1226,8 @@ class _DayCell extends StatelessWidget {
                 '$day',
                 style: AppTheme.english(
                   fontSize: 12,
-                  fontWeight: selected || today ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight:
+                      selected || today ? FontWeight.w700 : FontWeight.w500,
                   color: textColor,
                 ),
               ),

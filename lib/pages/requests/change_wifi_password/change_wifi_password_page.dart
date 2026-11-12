@@ -11,15 +11,18 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
-import '../../../core/network/api_message_modal.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../core/utils/loading_helper.dart';
+import '../../../core/utils/max_length_limiter.dart';
+import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/change_wifi_password/change_wifi_password_repository.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
+import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_wifi_password_controller.dart';
 
@@ -94,7 +97,6 @@ class _ChangeWifiPasswordPageState
         );
       }
 
-      if (mounted) await _fetchRequests();
     });
   }
 
@@ -103,8 +105,8 @@ class _ChangeWifiPasswordPageState
       context,
       title: 'change_wifi.cancel_title'.tr(),
       body: 'change_wifi.cancel_confirm'.tr(),
+      confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
-      confirmLabel: 'change_wifi.yes_cancel'.tr(),
     );
     if (confirmed != true || !mounted) return;
 
@@ -322,12 +324,12 @@ class _RequestItemCardState extends State<_RequestItemCard> {
             item.broadbandAccountNumber!,
           ),
         _buildDetailRow(
-          'change_wifi.contact_name'.tr(),
+          'requests.contact_name'.tr(),
           item.contactName,
         ),
         _buildDetailRow(
-          'change_wifi.contact_phone'.tr(),
-          item.contactPhone,
+          'requests.phone'.tr(),
+          UserProfileModel.formatLocalPhone(item.contactPhone),
         ),
         if (item.newWifiName?.isNotEmpty == true)
           _buildDetailRow(
@@ -404,8 +406,14 @@ class _NewRequestFormSheet extends ConsumerStatefulWidget {
       __NewRequestFormSheetState();
 }
 
-class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
+class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
+    with ApiFieldErrorsMixin<_NewRequestFormSheet> {
   final _formKey = GlobalKey<FormState>();
+  final _broadbandAccountFieldKey = GlobalKey<FormFieldState<String>>();
+  final _contactNameFieldKey = GlobalKey<FormFieldState<String>>();
+  final _phoneFieldKey = GlobalKey<FormFieldState<String>>();
+  final _passwordFieldKey = GlobalKey<FormFieldState<String>>();
+  final _wifiNameFieldKey = GlobalKey<FormFieldState<String>>();
 
   late final TextEditingController _broadbandAccountController;
   late final TextEditingController _contactNameController;
@@ -415,6 +423,24 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
 
   late bool _isChangingWifiName;
   bool _obscurePassword = true;
+
+  String _requiredMessage(String fieldKey) {
+    return 'requests.required_field'.tr(namedArgs: {'field': fieldKey.tr()});
+  }
+
+  String? _validateContactPhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _requiredMessage('requests.phone');
+    }
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 8) return 'login.phone_invalid'.tr();
+
+    final normalized = PhoneNumber.normalize(value);
+    if (normalized == null || !PhoneNumber.isSupported(normalized)) {
+      return 'login.phone_unsupported'.tr();
+    }
+    return apiFieldError('contact_phone');
+  }
 
   @override
   void initState() {
@@ -429,7 +455,9 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
           (profile.fullName.isNotEmpty ? profile.fullName : 'Customer'),
     );
     _phoneController = TextEditingController(
-      text: request?.contactPhone ?? profile.displayPhone,
+      text: request == null
+          ? profile.displayPhone
+          : UserProfileModel.formatLocalPhone(request.contactPhone),
     );
     _wifiNameController = TextEditingController(text: request?.newWifiName);
     _passwordController = TextEditingController(text: request?.newPassword);
@@ -447,6 +475,7 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
   }
 
   Future<void> _submitForm() async {
+    clearAllApiFieldErrors();
     if (!_formKey.currentState!.validate()) return;
 
     final profile = ref.read(profileControllerProvider);
@@ -454,6 +483,10 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
     final boundAccount =
         inputAccount.isNotEmpty ? inputAccount : profile.accountNumber;
     final userId = int.tryParse(profile.id) ?? 0;
+    final normalizedPhone = PhoneNumber.normalize(_phoneController.text);
+    if (normalizedPhone == null || !PhoneNumber.isSupported(normalizedPhone)) {
+      return;
+    }
 
     final notifier = ref.read(changeWifiPasswordControllerProvider.notifier);
     final ChangeWifiPasswordSaveResult? savedResult;
@@ -463,25 +496,41 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
             ? notifier.submitRequest(
                 broadbandAccount: boundAccount,
                 contactName: _contactNameController.text.trim(),
-                contactPhone: _phoneController.text.trim(),
+                contactPhone: normalizedPhone,
                 newPassword: _passwordController.text.trim(),
-                newWifiName:
-                    _isChangingWifiName ? _wifiNameController.text.trim() : null,
+                newWifiName: _isChangingWifiName
+                    ? _wifiNameController.text.trim()
+                    : null,
                 userId: userId,
               )
             : notifier.updateRequest(
                 request: widget.request!,
                 broadbandAccount: boundAccount,
                 contactName: _contactNameController.text.trim(),
-                contactPhone: _phoneController.text.trim(),
+                contactPhone: normalizedPhone,
                 newPassword: _passwordController.text.trim(),
-                newWifiName:
-                    _isChangingWifiName ? _wifiNameController.text.trim() : null,
+                newWifiName: _isChangingWifiName
+                    ? _wifiNameController.text.trim()
+                    : null,
               ),
       );
     } catch (error) {
       if (!mounted) return;
-      await showApiMessageModal(context, error);
+      final profile = ref.read(profileControllerProvider);
+      final handledInline = handleApiError(
+        error,
+        fields: {
+          if (profile.accountNumber.isEmpty)
+            'broadband_account_number': _broadbandAccountFieldKey,
+          'contact_name': _contactNameFieldKey,
+          'contact_phone': _phoneFieldKey,
+          'new_password': _passwordFieldKey,
+          if (_isChangingWifiName) 'new_wifi_name': _wifiNameFieldKey,
+        },
+      );
+      if (!handledInline) {
+        await showApiErrorModal(context, error);
+      }
       return;
     }
 
@@ -586,40 +635,64 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                             else
                               AppInput(
                                 controller: _broadbandAccountController,
-                                label: 'change_wifi.broadband_account'.tr(),
+                                label:
+                                    '${'change_wifi.broadband_account'.tr()} *',
                                 prefixIcon: LucideIcons.id_card,
+                                formFieldKey: _broadbandAccountFieldKey,
+                                maxLength: 30,
+                                inputFormatters: [maxLengthLimiter(30)],
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'requests.required'.tr();
+                                    return _requiredMessage(
+                                      'change_wifi.broadband_account',
+                                    );
                                   }
-                                  return null;
+                                  return apiFieldError(
+                                    'broadband_account_number',
+                                  );
                                 },
+                                onChanged: (_) => clearApiFieldError(
+                                  'broadband_account_number',
+                                  key: _broadbandAccountFieldKey,
+                                ),
                               ),
                             const SizedBox(height: 16),
                             AppInput(
                               controller: _contactNameController,
-                              label: 'change_wifi.contact_name'.tr(),
+                              label: '${'requests.contact_name'.tr()} *',
+                              hint: 'requests.contact_name_hint'.tr(),
                               prefixIcon: LucideIcons.user,
+                              formFieldKey: _contactNameFieldKey,
+                              maxLength: 30,
+                              inputFormatters: [maxLengthLimiter(30)],
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  return 'requests.required'.tr();
+                                  return _requiredMessage(
+                                    'requests.contact_name',
+                                  );
                                 }
-                                return null;
+                                return apiFieldError('contact_name');
                               },
+                              onChanged: (_) => clearApiFieldError(
+                                'contact_name',
+                                key: _contactNameFieldKey,
+                              ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _phoneController,
-                              label: 'change_wifi.contact_phone'.tr(),
-                              hint: '09 xxx xxx xxx',
+                              label: '${'requests.phone'.tr()} *',
+                              hint: 'requests.phone_hint'.tr(),
                               keyboardType: TextInputType.phone,
                               prefixIcon: LucideIcons.phone,
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return 'requests.required'.tr();
-                                }
-                                return null;
-                              },
+                              formFieldKey: _phoneFieldKey,
+                              maxLength: 16,
+                              inputFormatters: [maxLengthLimiter(16)],
+                              validator: _validateContactPhone,
+                              onChanged: (_) => clearApiFieldError(
+                                'contact_phone',
+                                key: _phoneFieldKey,
+                              ),
                             ),
                           ],
                         ),
@@ -655,11 +728,13 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                           children: [
                             AppInput(
                               controller: _passwordController,
-                              label: 'change_wifi.req_new_password'.tr(),
+                              label: '${'change_wifi.req_new_password'.tr()} *',
                               hint: 'change_wifi.new_password_hint'.tr(),
                               obscureText: _obscurePassword,
                               prefixIcon: LucideIcons.lock,
+                              formFieldKey: _passwordFieldKey,
                               maxLength: 30,
+                              inputFormatters: [maxLengthLimiter(30)],
                               suffix: AppInput.iconChip(
                                 icon: _obscurePassword
                                     ? LucideIcons.eye_off
@@ -673,17 +748,23 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                               validator: (v) {
                                 final password = v?.trim() ?? '';
                                 if (password.isEmpty) {
-                                  if (_isChangingWifiName) return null;
-                                  return 'requests.required'.tr();
+                                  return _requiredMessage(
+                                    'change_wifi.new_password_hint',
+                                  );
                                 }
-                                if (password.length < 8) {
+                                if (password.isNotEmpty &&
+                                    password.length < 8) {
                                   return 'change_wifi.password_min_length'.tr();
                                 }
                                 if (password.length > 30) {
                                   return 'change_wifi.password_max_length'.tr();
                                 }
-                                return null;
+                                return apiFieldError('new_password');
                               },
+                              onChanged: (_) => clearApiFieldError(
+                                'new_password',
+                                key: _passwordFieldKey,
+                              ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             GestureDetector(
@@ -691,6 +772,10 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                               onTap: () {
                                 setState(() {
                                   _isChangingWifiName = !_isChangingWifiName;
+                                  clearApiFieldError(
+                                    'new_wifi_name',
+                                    key: _wifiNameFieldKey,
+                                  );
                                 });
                               },
                               child: Row(
@@ -720,16 +805,27 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet> {
                             if (_isChangingWifiName) ...[
                               AppInput(
                                 controller: _wifiNameController,
-                                label: 'change_wifi.req_new_wifi_name'.tr(),
+                                label:
+                                    '${'change_wifi.req_new_wifi_name'.tr()} *',
                                 hint: 'change_wifi.new_wifi_name_hint'.tr(),
                                 prefixIcon: LucideIcons.wifi,
+                                formFieldKey: _wifiNameFieldKey,
+                                maxLines: 2,
+                                maxLength: 255,
+                                inputFormatters: [maxLengthLimiter(255)],
                                 validator: (v) {
                                   if (_isChangingWifiName &&
                                       (v == null || v.trim().isEmpty)) {
-                                    return 'requests.required'.tr();
+                                    return _requiredMessage(
+                                      'change_wifi.new_wifi_name_hint',
+                                    );
                                   }
-                                  return null;
+                                  return apiFieldError('new_wifi_name');
                                 },
+                                onChanged: (_) => clearApiFieldError(
+                                  'new_wifi_name',
+                                  key: _wifiNameFieldKey,
+                                ),
                               ),
                               const SizedBox(height: AppStyle.spaceXs),
                             ],

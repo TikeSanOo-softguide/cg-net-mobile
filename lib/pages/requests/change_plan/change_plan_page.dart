@@ -14,6 +14,7 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../data/requests/change_plan/change_plan_repository.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
+import '../../../models/user_model/user_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_plan_controller.dart';
 import 'change_plan_form_page.dart';
@@ -65,9 +66,6 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
       );
     }
 
-    if (mounted) {
-      await ref.read(changePlanControllerProvider.notifier).fetchRequests();
-    }
   }
 
   Future<void> _confirmCancel(ChangePlanRequestModel request) async {
@@ -292,7 +290,9 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
         : formatDate(request.createdAt!.toLocal().toIso8601String());
     final preferred = request.preferredDate == null
         ? ''
-        : DateFormat('yyyy/MM/dd').format(request.preferredDate!);
+        : formatDate(
+            request.preferredDate!.toIso8601String().split('T').first,
+          );
 
     return RequestTicketCard(
       statusLabel: _statusLabel,
@@ -309,11 +309,19 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
               : (request.serviceType ?? ''),
         ),
         _DetailRow(
+          label: 'requests.contact_name'.tr(),
+          value: request.contactName,
+        ),
+        _DetailRow(
+          label: 'requests.phone'.tr(),
+          value: UserProfileModel.formatLocalPhone(request.contactPhone),
+        ),
+        _DetailRow(
           label: 'changePlan.current_plan'.tr(),
           value: _packageLabel(request.currentPackageDetail),
         ),
         _DetailRow(
-          label: 'changePlan.detail'.tr(),
+          label: 'changePlan.change_plan'.tr(),
           value: _packageLabel(request.newPackageDetail),
         ),
         _DetailRow(
@@ -321,15 +329,7 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
           value: preferred,
         ),
         _DetailRow(
-          label: 'changePlan.contact_name'.tr(),
-          value: request.contactName,
-        ),
-        _DetailRow(
-          label: 'changePlan.contact_phone'.tr(),
-          value: request.contactPhone,
-        ),
-        _DetailRow(
-          label: 'changePlan.note'.tr(),
+          label: 'requests.note'.tr(),
           value: request.note ?? '',
         ),
       ],

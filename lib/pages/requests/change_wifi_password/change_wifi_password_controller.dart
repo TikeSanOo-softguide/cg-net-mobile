@@ -42,17 +42,25 @@ class ChangeWifiPasswordController
   }
 
   final ChangeWifiPasswordRepository _repository;
+  int _fetchSequence = 0;
 
   Future<void> fetchRequests() async {
-    state = state.copyWith(status: ChangeWifiPasswordStatus.loading);
+    final sequence = ++_fetchSequence;
+    state = state.copyWith(
+      status: ChangeWifiPasswordStatus.loading,
+      requests: const [],
+      errorMessage: null,
+    );
     try {
       final items = await _repository.fetchRequests();
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.success,
         requests: items,
         errorMessage: null,
       );
     } catch (_) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.initial,
       );
@@ -101,8 +109,21 @@ class ChangeWifiPasswordController
 
     try {
       final savedRequest = await _repository.updateRequest(updatedRequest);
-      await fetchRequests();
-      state = state.copyWith(isSubmitting: false, errorMessage: null);
+      final requests = [...state.requests];
+      final savedIndex = requests.indexWhere(
+        (item) =>
+            item.id.isNotEmpty && item.id == savedRequest.request.id,
+      );
+      if (savedIndex == -1) {
+        requests.insert(0, savedRequest.request);
+      } else {
+        requests[savedIndex] = savedRequest.request;
+      }
+      state = state.copyWith(
+        isSubmitting: false,
+        requests: requests,
+        errorMessage: null,
+      );
       return savedRequest;
     } on ApiException catch (error) {
       state = state.copyWith(
@@ -162,8 +183,20 @@ class ChangeWifiPasswordController
 
     try {
       final savedModel = await _repository.submitRequest(model);
-      await fetchRequests();
-      state = state.copyWith(isSubmitting: false, errorMessage: null);
+      final requests = [...state.requests];
+      final savedIndex = requests.indexWhere(
+        (item) => item.id.isNotEmpty && item.id == savedModel.request.id,
+      );
+      if (savedIndex == -1) {
+        requests.insert(0, savedModel.request);
+      } else {
+        requests[savedIndex] = savedModel.request;
+      }
+      state = state.copyWith(
+        isSubmitting: false,
+        requests: requests,
+        errorMessage: null,
+      );
       return savedModel;
     } on ApiException catch (e) {
       final detailRaw = e.detail ?? e.messageKey;
@@ -195,6 +228,7 @@ class ChangeWifiPasswordController
       rethrow;
     }
   }
+
 }
 
 final changeWifiPasswordControllerProvider = StateNotifierProvider<
