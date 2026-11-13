@@ -41,16 +41,25 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
   final ChangePlanRepository _repository;
   int _fetchSequence = 0;
 
-  Future<void> fetchRequests() async {
+  Future<void> fetchRequests({String? accountNumber}) async {
     final sequence = ++_fetchSequence;
     state = state.copyWith(
       status: ChangePlanStatus.loading,
-      requests: const [],
       clearError: true,
     );
     try {
-      final requests = await _repository.fetchRequests();
+      final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
+      final normalizedAccount = accountNumber?.trim().toUpperCase();
+      final requests = normalizedAccount == null || normalizedAccount.isEmpty
+          ? items
+          : items
+              .where(
+                (request) =>
+                    request.broadbandAccountNumber?.trim().toUpperCase() ==
+                    normalizedAccount,
+              )
+              .toList();
       state = state.copyWith(
         status: ChangePlanStatus.success,
         requests: requests,
@@ -111,9 +120,15 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
 
   Future<String?> cancelRequest(String requestId) async {
     state = state.copyWith(clearError: true);
+    final requestIndex =
+        state.requests.indexWhere((item) => item.id == requestId);
+    final request =
+        requestIndex == -1 ? null : state.requests[requestIndex];
     try {
       final code = await _repository.cancelRequest(requestId);
-      await fetchRequests();
+      await fetchRequests(
+        accountNumber: request?.broadbandAccountNumber,
+      );
       return code;
     } on ApiException catch (error) {
       state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
