@@ -58,7 +58,9 @@ void main() {
         },
         'packages': [
           {
+            'id': 18,
             'package_id': 3,
+            'expires_at': '2026-12-15T00:00:00.000000Z',
             'details': {
               'term': {'cycle': 6, 'cycle_unit': '月'},
             },
@@ -68,6 +70,8 @@ void main() {
     });
 
     expect(profile.currentPackageTermMonths, 6);
+    expect(profile.currentPackage?.customerPackageId, 18);
+    expect(profile.currentPackage?.expiresAt, isNotNull);
   });
 
   test('reads broadband account details separately from user profile', () {

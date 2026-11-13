@@ -5,6 +5,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -37,21 +38,20 @@ class PackageBuyResultShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconBg = _isSuccess ? _successSoft : _failureSoft;
-    final titleKey = _isSuccess
-        ? 'package.result_success_title'
-        : (result.errorTitleKey ?? 'package.result_failure_title');
-    final bodyKey = _isSuccess
-        ? 'package.result_success_body'
-        : (result.errorBodyKey ?? 'package.result_failure_body');
     final titleColor = _isSuccess ? _successGreen : _failureRed;
     final titleText = _isSuccess
-        ? titleKey.tr()
+        ? MessageCodes.locKey(MessageCodes.pkgPurchased).tr()
         : result.errorTitleKey?.tr() ??
-            apiMessageText(result.errorTitle, fallbackKey: titleKey);
-    final bodyText = _isSuccess
-        ? bodyKey.tr()
-        : result.errorBodyKey?.tr() ??
-            apiMessageText(result.errorBody, fallbackKey: bodyKey);
+            apiMessageText(
+              result.errorTitle,
+              fallbackKey:
+                  result.errorTitleKey ?? 'package.result_failure_title',
+            );
+    final bodyText = result.errorBodyKey?.tr() ??
+        apiMessageText(
+          result.errorBody,
+          fallbackKey: result.errorBodyKey ?? 'package.result_failure_body',
+        );
     final statusLabel = _isSuccess
         ? 'package.status_completed'.tr()
         : 'package.status_failed'.tr();

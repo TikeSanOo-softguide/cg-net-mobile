@@ -923,6 +923,7 @@
     "ftth_010": "Payment processing",
     "ftth_010_body": "We have received your payment and are waiting for confirmation. Please wait.",
     "user_002": "The current password is incorrect.",
+    "user_002_body": "The password you entered is incorrect. Please try again.",
     "user_003": "This account has been deactivated. Please contact the administrator for assistance.",
     "user_004": "This account has been suspended. Please contact the administrator for assistance.",
     "req_001": "Request cancelled.",

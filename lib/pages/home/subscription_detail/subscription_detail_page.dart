@@ -7,9 +7,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/app_dialog/app_dialog.dart';
+import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
-import '../home/home_controller.dart';
+import '../../../data/profile/profile_repository.dart';
+import '../../../models/user_model/user_model.dart';
+import '../../profile/profile/profile_controller.dart';
 
 /// Active plans. Each plan keeps its own expiry and WiFi credentials.
 class SubscriptionDetailPage extends ConsumerStatefulWidget {
@@ -23,20 +28,88 @@ class SubscriptionDetailPage extends ConsumerStatefulWidget {
 class _SubscriptionDetailPageState
     extends ConsumerState<SubscriptionDetailPage> {
   final Set<String> _shown = {};
+  final Set<int> _loading = {};
+  final Map<int, PackageCredentials> _credentials = {};
 
-  bool _visible(String id, String field) => _shown.contains('$id:$field');
-
-  void _toggle(String id, String field) {
-    final key = '$id:$field';
-    setState(() {
-      if (!_shown.add(key)) _shown.remove(key);
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(profileControllerProvider.notifier).fetchProfile();
     });
+  }
+
+  bool _visible(int id, String field) => _shown.contains('$id:$field');
+
+  Future<void> _toggle(int id, String field) async {
+    final key = '$id:$field';
+    if (_shown.contains(key)) {
+      setState(() => _shown.remove(key));
+      return;
+    }
+    if (_credentials.containsKey(id)) {
+      setState(() => _shown.add(key));
+      return;
+    }
+    if (_loading.contains(id)) return;
+
+    setState(() => _loading.add(id));
+    try {
+      final credentials = await ref
+          .read(profileRepositoryProvider)
+          .fetchPackageCredentials(id);
+      if (!mounted) return;
+      setState(() {
+        _credentials[id] = credentials;
+        _loading.remove(id);
+        _shown.add(key);
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _loading.remove(id));
+      await showAppFailureModal(
+        context,
+        title: 'common.error'.tr(),
+        body: apiErrorText(error),
+      );
+    }
+  }
+
+  List<_SubscriptionPlan> _plans(String locale, UserProfileModel profile) {
+    return [
+      for (final package in profile.packages)
+        if (package.customerPackageId != null)
+          _SubscriptionPlan(
+            id: package.customerPackageId!,
+            title: _credentials[package.customerPackageId!]?.productName ??
+                _planTitle(package, locale),
+            expiry: _expiryLabel(
+              _credentials[package.customerPackageId!]?.expiresAt ??
+                  package.expiresAt,
+            ),
+          ),
+    ];
+  }
+
+  String _planTitle(UserPackageSnapshot package, String locale) {
+    final network = package.networkLabel(locale).trim();
+    final speed = package.speedMbps?.trim() ?? '';
+    final title = [
+      if (network.isNotEmpty) network,
+      if (speed.isNotEmpty) speed,
+    ].join(' · ');
+    return title.isEmpty ? 'home.my_subscription'.tr() : title;
+  }
+
+  String _expiryLabel(DateTime? expiry) {
+    if (expiry == null) return '—';
+    return DateFormat('yyyy.MM.dd').format(expiry.toLocal());
   }
 
   @override
   Widget build(BuildContext context) {
-    final _ = context.locale;
-    final plans = ref.watch(homeControllerProvider).plans;
+    final locale = context.locale.languageCode;
+    final plans = _plans(locale, ref.watch(profileControllerProvider));
 
     return AppCurvedScaffold(
       title: Text('home.my_subscription'.tr()),
@@ -57,26 +130,16 @@ class _SubscriptionDetailPageState
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              itemCount: plans.length + 1,
+              itemCount: plans.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Text(
-                    'home.active_packages'.tr(
-                      namedArgs: {'count': '${plans.length}'},
-                    ),
-                    style: AppTheme.english(
-                      color: AppColors.textMuted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      height: AppTheme.lineHeightMyanmarSafe,
-                      letterSpacing: 0,
-                    ),
-                  );
-                }
-                final plan = plans[index - 1];
+                final plan = plans[index];
+                final credentials = _credentials[plan.id];
                 return _PlanCard(
                   plan: plan,
+                  username: credentials?.account ?? '',
+                  password: credentials?.password ?? '',
+                  loading: _loading.contains(plan.id),
                   showUsername: _visible(plan.id, 'user'),
                   showPassword: _visible(plan.id, 'pass'),
                   onToggleUsername: () => _toggle(plan.id, 'user'),
@@ -88,16 +151,34 @@ class _SubscriptionDetailPageState
   }
 }
 
+class _SubscriptionPlan {
+  const _SubscriptionPlan({
+    required this.id,
+    required this.title,
+    required this.expiry,
+  });
+
+  final int id;
+  final String title;
+  final String expiry;
+}
+
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.plan,
+    required this.username,
+    required this.password,
+    required this.loading,
     required this.showUsername,
     required this.showPassword,
     required this.onToggleUsername,
     required this.onTogglePassword,
   });
 
-  final ActivePlan plan;
+  final _SubscriptionPlan plan;
+  final String username;
+  final String password;
+  final bool loading;
   final bool showUsername;
   final bool showPassword;
   final VoidCallback onToggleUsername;
@@ -157,7 +238,7 @@ class _PlanCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  plan.titleKey.tr(),
+                  plan.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.english(
@@ -228,15 +309,17 @@ class _PlanCard extends StatelessWidget {
           ),
           _CredentialField(
             label: 'home.username'.tr(),
-            value: plan.username,
+            value: username,
             visible: showUsername,
+            loading: loading,
             onToggleVisibility: onToggleUsername,
           ),
           const Divider(height: 1, thickness: 0.5, color: AppColors.borderLight),
           _CredentialField(
             label: 'home.password'.tr(),
-            value: plan.password,
+            value: password,
             visible: showPassword,
+            loading: loading,
             onToggleVisibility: onTogglePassword,
           ),
         ],
@@ -334,12 +417,14 @@ class _CredentialField extends StatelessWidget {
     required this.label,
     required this.value,
     required this.visible,
+    required this.loading,
     required this.onToggleVisibility,
   });
 
   final String label;
   final String value;
   final bool visible;
+  final bool loading;
   final VoidCallback onToggleVisibility;
 
   Future<void> _copy(BuildContext context) async {
@@ -357,7 +442,9 @@ class _CredentialField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final display = visible ? value : '•' * value.length.clamp(6, 12);
+    final display = visible && value.isNotEmpty
+        ? value
+        : '•' * (value.isEmpty ? 8 : value.length.clamp(6, 12));
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -392,13 +479,23 @@ class _CredentialField extends StatelessWidget {
               ),
             ),
           ),
-          _IconAction(
-            icon: visible ? LucideIcons.eye : LucideIcons.eye_off,
-            onTap: onToggleVisibility,
-          ),
+          if (loading)
+            const SizedBox(
+              width: 30,
+              height: 30,
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: CircularProgressIndicator(strokeWidth: 1.6),
+              ),
+            )
+          else
+            _IconAction(
+              icon: visible ? LucideIcons.eye : LucideIcons.eye_off,
+              onTap: onToggleVisibility,
+            ),
           _IconAction(
             icon: LucideIcons.copy,
-            onTap: () => _copy(context),
+            onTap: value.isEmpty ? () {} : () => _copy(context),
           ),
         ],
       ),

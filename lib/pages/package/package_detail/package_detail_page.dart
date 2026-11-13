@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,8 +16,11 @@ import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
 import '../../../data/package/package_buy_repository.dart';
+import '../../../data/profile/profile_repository.dart';
 import '../../../models/package_model/package_model.dart';
+import '../../profile/profile/profile_controller.dart';
 import '../components/luxury_package_card.dart';
 import '../package_catalog.dart';
 import '../package_list/package_list_controller.dart';
@@ -34,15 +39,25 @@ class PackageDetailPage extends ConsumerStatefulWidget {
 
 class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
   bool _submitting = false;
+  bool _processingOpen = false;
 
-  Future<void> _showProcessing() {
-    return showGeneralDialog<void>(
+  /// One key per purchase on this page. Retries reuse it so a lost response
+  /// cannot charge the wallet twice. A new package opens a new page.
+  String? _buyKey;
+
+  Future<void> _showProcessing() async {
+    if (_processingOpen) return;
+    _processingOpen = true;
+    final opened = Completer<void>();
+    unawaited(
+      showGeneralDialog<void>(
       context: context,
       barrierDismissible: false,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       barrierColor: const Color(0x6B000000),
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (ctx, animation, secondaryAnimation) {
+        if (!opened.isCompleted) opened.complete();
         return Center(
           child: Material(
             color: AppColors.surface,
@@ -87,7 +102,11 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
           ),
         );
       },
+      ).whenComplete(() {
+        _processingOpen = false;
+      }),
     );
+    await opened.future;
   }
 
   _PackageDetailViewData _resolveViewData(
@@ -127,6 +146,8 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
   }
 
   void _closeProcessingDialog() {
+    if (!_processingOpen) return;
+    _processingOpen = false;
     if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }
@@ -140,8 +161,8 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       locale,
       ref.read(packageListControllerProvider),
     );
-    final packageId = int.tryParse(widget.packageId);
-    if (packageId == null) {
+    final productId = widget.packageId.trim();
+    if (productId.isEmpty) {
       await showAppFailureModal(
         context,
         title: 'package.result_failure_title'.tr(),
@@ -159,104 +180,110 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     );
     if (!mounted || !confirmed) return;
 
-    final password = await showAppPasswordModal(
-      context,
-      title: 'package.password_title'.tr(),
-      body: 'package.password_body'.tr(),
-      amountPoints: info.pricePoints,
-    );
-    if (!mounted || password == null) return;
-
-    setState(() => _submitting = true);
-    _showProcessing();
-
-    try {
-      final now = DateTime.now();
-      final response = await ref.read(packageBuyRepositoryProvider).buyPackage(
-            packageId: packageId,
-            idempotencyKey: IdempotencyKey.generate(),
-          );
-
-      late final PackageBuyResult result;
-      if (response.isSuccess) {
-        result = PackageBuyResult.success(
-          packageId: info.id,
-          packageTitle: info.title,
-          pricePoints: info.pricePoints,
-          speedMbps: info.speedMbps,
-          autoRenew: false,
-          transactionId: response.transactionNo ?? 'PKG-UNKNOWN',
-          occurredAt: now,
-        );
-      } else {
-        result = PackageBuyResult.failure(
-          packageId: info.id,
-          packageTitle: info.title,
-          pricePoints: info.pricePoints,
-          speedMbps: info.speedMbps,
-          autoRenew: false,
-          transactionId: response.transactionNo ?? 'PKG-UNKNOWN',
-          occurredAt: now,
-          errorTitleKey: 'package.result_failure_title',
-          errorBody: response.message,
-        );
-      }
-
-      _closeProcessingDialog();
+    while (mounted) {
+      Object? buyError;
+      var wrongPassword = false;
+      PackageBuyApiResult? response;
+      if (!mounted) return;
+      await showAppPasswordModal(
+        context,
+        title: 'package.password_title'.tr(),
+        body: 'package.password_body'.tr(),
+        amountPoints: info.pricePoints,
+        onSubmit: (password) async {
+          if (_submitting) return;
+          setState(() => _submitting = true);
+          final buyKey = _buyKey ??= IdempotencyKey.generate();
+          await _showProcessing();
+          try {
+            while (true) {
+              try {
+                response = await ref.read(packageBuyRepositoryProvider).buyPackage(
+                      productId: productId,
+                      password: password,
+                      idempotencyKey: buyKey,
+                    );
+                return;
+              } on ApiException catch (error) {
+                if (!mounted) return;
+                if (isOfflineError(error)) {
+                  _closeProcessingDialog();
+                  final retry = await showOfflineModal(context);
+                  if (!mounted || !retry) return;
+                  await _showProcessing();
+                  continue;
+                }
+                if (isPayPasswordError(error)) {
+                  wrongPassword = true;
+                  return;
+                }
+                buyError = error;
+                return;
+              } catch (error) {
+                buyError = error;
+                return;
+              }
+            }
+          } finally {
+            _closeProcessingDialog();
+            if (mounted) setState(() => _submitting = false);
+          }
+        },
+      );
       if (!mounted) return;
 
-      switch (result.status) {
-        case PackageBuyTxnStatus.success:
-          context.pushReplacementNamed(
-            RouteNames.packageBuySuccess,
-            extra: result,
-          );
-          return;
-        case PackageBuyTxnStatus.failure:
-          context.pushReplacementNamed(
-            RouteNames.packageBuyFailure,
-            extra: result,
-          );
-          return;
-      }
-    } on ApiException catch (error) {
-      _closeProcessingDialog();
-      if (!mounted) return;
-      if (isOfflineError(error)) {
-        await openNoInternetPage(context);
+      final bought = response;
+      if (bought != null && bought.isSuccess) {
+        unawaited(ref.read(profileControllerProvider.notifier).fetchProfile());
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(cachedUserProfileProvider);
+        context.pushReplacementNamed(
+          RouteNames.packageBuySuccess,
+          extra: PackageBuyResult.success(
+            packageId: info.id,
+            packageTitle: info.title,
+            pricePoints: info.pricePoints,
+            speedMbps: info.speedMbps,
+            autoRenew: false,
+            transactionId: bought.transactionNo ?? 'PKG-UNKNOWN',
+          ),
+        );
         return;
       }
-      context.pushNamed(
-        RouteNames.packageBuyFailure,
-        extra: PackageBuyResult.failure(
-          packageId: info.id,
-          packageTitle: info.title,
-          pricePoints: info.pricePoints,
-          speedMbps: info.speedMbps,
-          autoRenew: false,
-          transactionId: 'PKG-UNKNOWN',
-          errorTitleKey: 'package.result_failure_title',
-          errorBody: apiErrorText(error),
-        ),
+      if (bought != null) {
+        await showAppFailureModal(
+          context,
+          title: 'package.result_failure_title'.tr(),
+          body: apiMessageText(
+            bought.message,
+            fallbackKey: 'package.result_failure_body',
+          ),
+        );
+        return;
+      }
+      if (wrongPassword) {
+        final retry = await showAppRetryFailureModal(
+          context,
+          title: 'msg.user_002'.tr(),
+          body: 'msg.user_002_body'.tr(),
+        );
+        if (!mounted || !retry) return;
+        continue;
+      }
+      final error = buyError;
+      if (error == null) return;
+      await showAppFailureModal(
+        context,
+        title: isInsufficientWalletError(error)
+            ? 'msg.ftth_003'.tr()
+            : 'package.result_failure_title'.tr(),
+        body: isInsufficientWalletError(error)
+            ? 'msg.ftth_003_body'.tr()
+            : error is ApiException
+                ? apiErrorText(error)
+                : 'package.result_failure_body'.tr(),
       );
-    } catch (_) {
-      _closeProcessingDialog();
-      if (!mounted) return;
-      context.pushNamed(
-        RouteNames.packageBuyFailure,
-        extra: PackageBuyResult.failure(
-          packageId: info.id,
-          packageTitle: info.title,
-          pricePoints: info.pricePoints,
-          speedMbps: info.speedMbps,
-          autoRenew: false,
-          transactionId: 'PKG-UNKNOWN',
-          errorTitleKey: 'package.result_failure_title',
-          errorBodyKey: 'package.result_failure_body',
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+      return;
     }
   }
 

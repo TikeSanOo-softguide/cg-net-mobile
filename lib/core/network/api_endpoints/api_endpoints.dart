@@ -61,6 +61,8 @@ class ApiEndpoints {
   static const String broadbandUnbind = '/broadband-account/unbind';
   static const String transactions = '/customer/transactions';
   static const String profile = '/customer/profile';
+  static String packageCredentials(int id) =>
+      '/customer/packages/$id/credentials';
   static const String language = '/customer/language';
   static const String deactivateAccount = '/customer/deactivate';
   static const String promotions = '/web-app/promotions';

@@ -10,6 +10,24 @@ import '../../core/network/get_retry_interceptor.dart';
 import '../../core/storage/secure_storage/secure_storage.dart';
 import '../../models/user_model/user_model.dart';
 
+class PackageCredentials {
+  const PackageCredentials({
+    required this.account,
+    required this.password,
+    this.customerPackageId,
+    this.productName,
+    this.startsAt,
+    this.expiresAt,
+  });
+
+  final String account;
+  final String password;
+  final int? customerPackageId;
+  final String? productName;
+  final DateTime? startsAt;
+  final DateTime? expiresAt;
+}
+
 class ProfileRepository {
   ProfileRepository(this._dio, this._secureStorage);
 
@@ -45,6 +63,38 @@ class ProfileRepository {
       throw const ApiException(
         ApiFailure.unknown,
         detail: 'Invalid profile response',
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
+  Future<PackageCredentials> fetchPackageCredentials(int customerPackageId) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiEndpoints.packageCredentials(customerPackageId),
+      );
+      final root = response.data;
+      final data = root is Map
+          ? Map<String, dynamic>.from(root)
+          : const <String, dynamic>{};
+      final payload = data['data'] is Map
+          ? Map<String, dynamic>.from(data['data'] as Map)
+          : const <String, dynamic>{};
+      final credentials = payload['credentials'] is Map
+          ? Map<String, dynamic>.from(payload['credentials'] as Map)
+          : const <String, dynamic>{};
+      final package = payload['package'] is Map
+          ? Map<String, dynamic>.from(payload['package'] as Map)
+          : const <String, dynamic>{};
+      final productName = package['product_name']?.toString().trim();
+      return PackageCredentials(
+        account: credentials['account']?.toString() ?? '',
+        password: credentials['password']?.toString() ?? '',
+        customerPackageId: int.tryParse('${payload['customer_package_id'] ?? ''}'),
+        productName: productName == null || productName.isEmpty ? null : productName,
+        startsAt: DateTime.tryParse('${payload['starts_at'] ?? ''}'),
+        expiresAt: DateTime.tryParse('${payload['expires_at'] ?? ''}'),
       );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);

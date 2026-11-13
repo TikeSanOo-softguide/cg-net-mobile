@@ -115,6 +115,7 @@ class InboxMessageModel {
 
 class UserPackageSnapshot {
   const UserPackageSnapshot({
+    this.customerPackageId,
     this.packageId,
     this.price,
     this.networkName = const {},
@@ -122,8 +123,11 @@ class UserPackageSnapshot {
     this.termMonths,
     this.termCycle,
     this.termCycleUnit,
+    this.expiresAt,
   });
 
+  /// `customer_packages.id`, used by the credentials endpoint.
+  final int? customerPackageId;
   final int? packageId;
   final num? price;
   final Map<String, String> networkName;
@@ -131,6 +135,7 @@ class UserPackageSnapshot {
   final int? termMonths;
   final int? termCycle;
   final String? termCycleUnit;
+  final DateTime? expiresAt;
 
   factory UserPackageSnapshot.fromJson(Map<String, dynamic> json) {
     final details = json['details'] is Map
@@ -163,7 +168,9 @@ class UserPackageSnapshot {
             : null);
 
     return UserPackageSnapshot(
+      customerPackageId: int.tryParse('${json['id'] ?? ''}'),
       packageId: int.tryParse('${json['package_id'] ?? ''}'),
+      expiresAt: DateTime.tryParse('${json['expires_at'] ?? ''}'),
       price: details['price'] is num
           ? details['price'] as num
           : num.tryParse('${details['price'] ?? ''}'),

@@ -24,13 +24,17 @@ class PackageBuyRepository {
   final Dio _dio;
 
   Future<PackageBuyApiResult> buyPackage({
-    required int packageId,
+    required String productId,
+    required String password,
     required String idempotencyKey,
   }) async {
     try {
       final response = await _dio.post<dynamic>(
         ApiEndpoints.packagesBuy,
-        data: {'package_id': packageId},
+        data: {
+          'product_id': productId,
+          'password': password,
+        },
         options: Options(
           headers: {'Idempotency-Key': idempotencyKey},
         ),
