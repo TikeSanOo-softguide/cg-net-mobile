@@ -1,192 +1,318 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
-import '../../../../components/app_card/app_card.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
-import 'home_section_header.dart';
+import '../../../../models/package_model/package_model.dart';
+import '../../../package/components/luxury_package_card.dart';
+import '../../../package/package_list/package_list_controller.dart';
 
+/// Special Packages For You — wide, short plan cards in a horizontal row.
 class HomeCgPackageSection extends StatelessWidget {
   const HomeCgPackageSection({super.key});
 
-  static const _items = <_CgPackage>[
-    _CgPackage(
-      id: '1m',
-      speedMbps: '20',
-      pricePoints: 15000,
-      durationKey: 'package.duration_1m',
-    ),
-    _CgPackage(
-      id: '3m',
-      speedMbps: '20',
-      pricePoints: 40000,
-      durationKey: 'package.duration_3m',
-    ),
-    _CgPackage(
-      id: '6m',
-      speedMbps: '30',
-      pricePoints: 75000,
-      durationKey: 'package.duration_6m',
-    ),
-    _CgPackage(
-      id: '1y',
-      speedMbps: '30',
-      pricePoints: 140000,
-      durationKey: 'package.duration_12m',
-    ),
-    _CgPackage(
-      id: '1m_extra',
-      speedMbps: '20',
-      pricePoints: 15000,
-      durationKey: 'package.duration_1m',
-    ),
-  ];
+  @override
+  Widget build(BuildContext context) => const _HomePackageStrip();
+}
 
-  static const _gap = 10.0;
-  static const _listHeight = 214.0;
-  static const _checkAsset = 'assets/images/packages/feature_check.png';
+class _HomePackageStrip extends ConsumerWidget {
+  const _HomePackageStrip();
+
+  static const _cardHeight = 146.0;
 
   @override
-  Widget build(BuildContext context) {
-    final locale = context.locale.languageCode;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final packages = ref.watch(packageListControllerProvider).packages;
+    final items = packages.take(3).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    final cardWidth = (MediaQuery.sizeOf(context).width * 0.72).clamp(
+      240.0,
+      320.0,
+    );
 
     return Padding(
       padding: AppStyle.pagePaddingH,
-      child: AppCard(
-        elevated: false,
-        bordered: false,
-        borderRadius: AppStyle.borderRadiusSm,
-        padding: const EdgeInsets.fromLTRB(10, 14, 10, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            HomeSectionHeader(
-              title: 'home.cg_package'.tr(),
-              onSeeAll: () => context.goNamed(RouteNames.packageList),
-            ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final cardWidth = (constraints.maxWidth - _gap) / 2;
-                return SizedBox(
-                  height: _listHeight,
-                  child: ListView.separated(
-                    key: ValueKey('cg-packages-$locale'),
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.zero,
-                    itemCount: _items.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: _gap),
-                    itemBuilder: (context, index) {
-                      return SizedBox(
-                        width: cardWidth,
-                        height: _listHeight,
-                        child: _HomePackageCard(item: _items[index]),
-                      );
-                    },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'home.cg_package'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.english(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    height: 1.2,
                   ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => context.goNamed(RouteNames.packageList),
+                child: Text(
+                  'common.see_more'.tr(),
+                  style: AppTheme.english(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: _cardHeight,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              clipBehavior: Clip.none,
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                return SizedBox(
+                  width: cardWidth,
+                  child: _WidePlanCard(model: items[index], index: index),
                 );
               },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _CgPackage {
-  const _CgPackage({
-    required this.id,
-    required this.speedMbps,
-    required this.pricePoints,
-    required this.durationKey,
-  });
+class _WidePlanCard extends StatelessWidget {
+  const _WidePlanCard({required this.model, required this.index});
 
-  final String id;
-  final String speedMbps;
-  final int pricePoints;
-  final String durationKey;
-}
-
-class _HomePackageCard extends StatelessWidget {
-  const _HomePackageCard({required this.item});
-
-  final _CgPackage item;
+  final PackageModel model;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
-    final price = NumberFormat('#,##0').format(item.pricePoints);
-
-    void openDetail() {
+    final accent = LuxuryPackageCard.accentAt(index);
+    final speed = model.speed.trim();
+    final speedText =
+        speed.toLowerCase().contains('mbps') ? speed : '$speed Mbps';
+    final speedParts = speedText.split(RegExp(r'\s+'));
+    final speedValue = speedParts.isEmpty ? '' : speedParts.first;
+    final speedUnit =
+        speedParts.length > 1 ? speedParts.sublist(1).join(' ') : '';
+    final cycle = [
+      if (model.termMonths != null) '${model.termMonths}',
+      model.billingCycle.trim(),
+    ].join();
+    final period = cycle.isEmpty
+        ? ''
+        : (cycle.startsWith('/') ? cycle : '/$cycle');
+    void open() {
       context.pushNamed(
         RouteNames.packageDetail,
-        pathParameters: {'id': item.id},
+        pathParameters: {'id': model.id},
       );
     }
 
     return Material(
-      color: AppColors.primarySoft,
+      color: AppColors.surface,
       elevation: 0,
-      shadowColor: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: openDetail,
-        splashColor: AppColors.primary.withValues(alpha: 0.05),
-        highlightColor: AppColors.primary.withValues(alpha: 0.03),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        onTap: open,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Stack(
             children: [
-              Text(
-                '${item.speedMbps} Mbps',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.english(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  height: 1.1,
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _HomeWavePainter(color: accent),
+                  ),
                 ),
               ),
-              const SizedBox(height: 10),
-              _MetaRow(
-                label: 'home.pkg_month'.tr(),
-                value: item.durationKey.tr(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ColoredBox(
+                            color: accent,
+                            child: const SizedBox(width: 5),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          LuxuryPackageCard.planName(index),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTheme.english(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                            height: 1.15,
+                                          ),
+                                        ),
+                                        if (speedValue.isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              color: accent.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.baseline,
+                                                textBaseline:
+                                                    TextBaseline.alphabetic,
+                                                children: [
+                                                  Text(
+                                                    speedValue,
+                                                    style: AppTheme.english(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: accent,
+                                                      height: 1,
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                  ),
+                                                  if (speedUnit.isNotEmpty) ...[
+                                                    const SizedBox(width: 3),
+                                                    Text(
+                                                      speedUnit,
+                                                      style: AppTheme.english(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: accent,
+                                                        height: 1,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${model.price}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTheme.english(
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.w800,
+                                          color: accent,
+                                          height: 1,
+                                          letterSpacing: -0.4,
+                                        ),
+                                      ),
+                                      if (period.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          period,
+                                          maxLines: 1,
+                                          style: AppTheme.english(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: accent,
+                                            height: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(19, 4, 72, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final label in [
+                            'package.feature_unlimited'.tr(),
+                            'package.feature_speed'.tr(),
+                          ]) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.english(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF6B7280),
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-              _MetaRow(
-                label: 'home.pkg_price'.tr(),
-                value: '$price ${'topup.pts'.tr()}',
-              ),
-              const SizedBox(height: 8),
-              _HomeFeature(label: 'package.feature_unlimited'.tr()),
-              const SizedBox(height: 4),
-              _HomeFeature(label: 'package.benefit_247'.tr()),
-              const Spacer(),
-              GestureDetector(
-                onTap: openDetail,
-                child: Container(
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: GestureDetector(
+                  onTap: open,
                   child: Text(
-                    'home.buy_now'.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    'home.buy_now'.tr().toUpperCase(),
                     style: AppTheme.english(
-                      color: AppColors.onPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      height: AppTheme.lineHeightMyanmarSafe,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.7,
+                      height: 1,
                     ),
                   ),
                 ),
@@ -199,83 +325,27 @@ class _HomePackageCard extends StatelessWidget {
   }
 }
 
-class _MetaRow extends StatelessWidget {
-  const _MetaRow({
-    required this.label,
-    required this.value,
-  });
+class _HomeWavePainter extends CustomPainter {
+  const _HomeWavePainter({required this.color});
 
-  final String label;
-  final String value;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.english(
-              fontSize: 11,
-              fontWeight: FontWeight.w400,
-              color: AppColors.textMuted,
-              height: AppTheme.lineHeightMyanmarSafe,
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: AppTheme.english(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-              height: AppTheme.lineHeightMyanmarSafe,
-            ),
-          ),
-        ),
-      ],
-    );
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width * 0.46, size.height)
+      ..arcToPoint(
+        Offset(size.width, size.height * 0.42),
+        radius: Radius.elliptical(size.width * 0.62, size.height * 0.7),
+        clockwise: false,
+      )
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
   }
-}
-
-class _HomeFeature extends StatelessWidget {
-  const _HomeFeature({required this.label});
-
-  final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Image.asset(
-          HomeCgPackageSection._checkAsset,
-          width: 12,
-          height: 12,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.english(
-              fontSize: 11,
-              fontWeight: FontWeight.w400,
-              color: AppColors.textSecondary,
-              height: AppTheme.lineHeightMyanmarSafe,
-            ),
-          ),
-        ),
-      ],
-    );
+  bool shouldRepaint(covariant _HomeWavePainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }

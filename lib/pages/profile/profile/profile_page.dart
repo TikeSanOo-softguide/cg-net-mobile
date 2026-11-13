@@ -198,7 +198,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             const SizedBox(height: 5),
             _SettingsCard(
-              asset: 'assets/images/profile/about.png',
+              asset: 'assets/images/profile/share.png',
               title: 'profile.share_app'.tr(),
               onTap: _shareApp,
             ),
