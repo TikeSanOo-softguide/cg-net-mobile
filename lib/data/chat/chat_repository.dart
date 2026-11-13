@@ -729,6 +729,24 @@ class ChatRepository {
     }
   }
 
+  Future<void> closeConversation({
+    required String conversationId,
+  }) async {
+    final parsedConversationId = int.tryParse(conversationId);
+    if (parsedConversationId == null) {
+      throw const ApiException(ApiFailure.validation, detail: 'validation');
+    }
+
+    try {
+      await _dio.post<dynamic>(
+        ApiEndpoints.chatClose,
+        data: {'conversation_id': parsedConversationId},
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   ChatConversationModel _parseConversationResponse(dynamic data) {
     final Map<String, dynamic> root =
         data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};

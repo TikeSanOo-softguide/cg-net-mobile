@@ -228,6 +228,16 @@ class _InstallationApplicationPageState
         .where((item) =>
             _statusKey(item) == 'cancelled' || _statusKey(item) == 'rejected')
         .toList();
+    const knownStatuses = {
+      'pending',
+      'under_review',
+      'approved',
+      'cancelled',
+      'rejected',
+    };
+    final otherStatuses = state.requests
+        .where((item) => !knownStatuses.contains(_statusKey(item)))
+        .toList();
 
     Widget cardFor(InstallationApplicationModel request) {
       return _InstallationApplicationCard(
@@ -266,7 +276,7 @@ class _InstallationApplicationPageState
             ),
           ),
         ..._requestCards(
-          [...underReview, ...approved, ...cancelled],
+          [...underReview, ...approved, ...cancelled, ...otherStatuses],
           cardFor,
         ),
       ],
@@ -349,9 +359,7 @@ class _InstallationApplicationCardState
     final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : formatDate(
-            request.createdAt!.toLocal().toIso8601String(),
-          );
+        : formatDate(request.createdAt!.toUtc().toIso8601String());
     final canManage = _canManageRequest(request);
     final detail = request.packageDetail;
 

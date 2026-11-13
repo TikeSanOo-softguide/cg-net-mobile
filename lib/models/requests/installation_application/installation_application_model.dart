@@ -57,9 +57,9 @@ class InstallationApplicationModel {
           data['product_name']?.toString() ??
           data['productName']?.toString(),
       packageDetail: detail,
-      name: data['name']?.toString() ?? '',
+      name: data['contact_name']?.toString() ?? '',
       address: data['address']?.toString(),
-      phone: data['phone']?.toString() ?? '',
+      phone: data['contact_phone']?.toString() ?? '',
       photos: rawPhotos is List
           ? rawPhotos
               .whereType<Map>()
@@ -80,10 +80,10 @@ class InstallationApplicationModel {
   Map<String, dynamic> toJson() => {
         'user_id': userId,
         'service_type': serviceType,
-        'name': name,
+        'contact_name': name,
         'package_detail': packageDetail,
         'address': address,
-        'phone': phone,
+        'contact_phone': phone,
         'photos': photos,
         'note': note,
         'status': status,
@@ -133,7 +133,7 @@ class InstallationApplicationOption {
         json['id']?.toString();
     final productName = json['productName']?.toString() ??
         json['product_name']?.toString() ??
-        json['name']?.toString();
+        json['contact_name']?.toString();
     final productSpeed =
         json['productSpeed']?.toString() ?? json['product_speed']?.toString();
 

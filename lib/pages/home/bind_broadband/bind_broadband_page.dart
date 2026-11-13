@@ -369,9 +369,16 @@ class _BoundAccountCard extends StatelessWidget {
     final productName = profile.productName.trim();
     final match = RegExp(r'_(\d*)个?月$').firstMatch(productName);
     final durationNumber = match?.group(1);
+    final durationCount = int.tryParse(durationNumber ?? '') ?? 1;
     final duration = match == null
         ? ''
-        : '${durationNumber?.isNotEmpty == true ? durationNumber : '1'}月';
+        : durationCount == 1
+            ? 'installationApplication.period_1'.tr()
+            : 'installationApplication.period_n'
+                .tr(namedArgs: {'count': '$durationCount'});
+    final productSpeed = profile.productSpeed.trim().isNotEmpty
+        ? '${profile.productSpeed.trim().replaceAll(RegExp(r'M$', caseSensitive: false), '')} Mbps'
+        : '';
 
     return AppCard(
       elevated: false,
@@ -434,7 +441,7 @@ class _BoundAccountCard extends StatelessWidget {
                 ),
                 _DetailRow(
                   label: context.tr('package.speed'),
-                  value: profile.productSpeed.trim(),
+                  value: productSpeed,
                 ),
                 _DetailRow(
                   label: context.tr('broadband.duration'),
@@ -455,10 +462,10 @@ class _BoundAccountCard extends StatelessWidget {
                     label: context.tr('broadband.detail_end_time'),
                     value: formatDate(profile.endTime),
                   ),
-                if (profile.status.trim().isNotEmpty)
+                if (profile.accountStatus.trim().isNotEmpty)
                   _DetailRow(
                     label: context.tr('broadband.detail_status'),
-                    value: profile.status,
+                    value: profile.accountStatus,
                     showDivider: false,
                   ),
               ],

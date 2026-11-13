@@ -253,25 +253,63 @@ class _HistoryRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.description.isEmpty ? _titleKey.tr() : item.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.description.isEmpty ? _titleKey.tr() : item.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.english(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormat('hh:mm:ss a', locale.toString())
+                          .format(item.createdAt.toLocal()),
+                      style: AppTheme.english(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '${'history.amount'.tr()}: $amount',
+                RichText(
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textMuted,
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${'history.amount'.tr()}: ',
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      TextSpan(
+                        text: amount,
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' Pts',
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (transactionNo != null && transactionNo.isNotEmpty) ...[

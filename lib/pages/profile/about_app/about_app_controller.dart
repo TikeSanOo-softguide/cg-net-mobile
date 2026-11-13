@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
+import '../../../core/utils/loading_helper.dart';
 
 class AppVersionInfo {
   const AppVersionInfo({
@@ -149,8 +150,11 @@ final aboutAppRepositoryProvider = Provider<AboutAppRepository>((ref) {
 final aboutAppVersionProvider = FutureProvider<AppVersionInfo>((ref) {
   final platform =
       defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+  final repository = ref.watch(aboutAppRepositoryProvider);
 
   debugPrint('[app-version] Provider initialized: $platform');
 
-  return ref.watch(aboutAppRepositoryProvider).fetchForPlatform(platform);
+  return LoadingHelper.runWithLoading(
+    () => repository.fetchForPlatform(platform),
+  );
 });

@@ -16,6 +16,7 @@ import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
+import '../../../core/utils/max_length_limiter.dart';
 import '../otp_verification/otp_success_drawer.dart';
 import 'set_username_password_controller.dart';
 
@@ -235,6 +236,7 @@ class _SetUsernamePasswordPageState
                 suffixIcon: LucideIcons.user,
                 textInputAction: TextInputAction.next,
                 maxLength: 30,
+                inputFormatters: [maxLengthLimiter(30)],
                 onChanged: (_) {
                   if (_usernameServerError != null) {
                     setState(() => _usernameServerError = null);

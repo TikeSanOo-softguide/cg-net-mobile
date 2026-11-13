@@ -39,19 +39,28 @@ class ComplaintController extends StateNotifier<ComplaintState> {
   final ComplaintRepository _repository;
   int _fetchSequence = 0;
 
-  Future<void> fetchComplaints() async {
+  Future<void> fetchComplaints({String? accountNumber}) async {
     final sequence = ++_fetchSequence;
     state = state.copyWith(
       status: ComplaintStatus.loading,
-      reports: const [],
       errorMessage: null,
     );
     try {
       final items = await _repository.fetchComplaints();
       if (sequence != _fetchSequence) return;
+      final normalizedAccount = accountNumber?.trim().toUpperCase();
+      final reports = normalizedAccount == null || normalizedAccount.isEmpty
+          ? items
+          : items
+              .where(
+                (report) =>
+                    report.broadbandAccountNumber?.trim().toUpperCase() ==
+                    normalizedAccount,
+              )
+              .toList();
       state = state.copyWith(
         status: ComplaintStatus.success,
-        reports: items,
+        reports: reports,
         errorMessage: null,
       );
     } catch (error) {
@@ -79,7 +88,9 @@ class ComplaintController extends StateNotifier<ComplaintState> {
               report,
         ],
       );
-      await fetchComplaints();
+      await fetchComplaints(
+        accountNumber: item.broadbandAccountNumber,
+      );
       return result;
     } on ApiException catch (error) {
       state = state.copyWith(
