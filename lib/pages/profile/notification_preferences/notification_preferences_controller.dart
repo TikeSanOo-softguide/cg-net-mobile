@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../data/notification_preferences/notification_preferences_repository.dart';
 import '../../../models/notification_preferences_model/notification_preferences_model.dart';
 
@@ -8,7 +9,8 @@ class NotificationPreferencesController
     extends AsyncNotifier<NotificationPreferencesModel> {
   @override
   Future<NotificationPreferencesModel> build() {
-    return ref.watch(notificationPreferencesRepositoryProvider).fetch();
+    final repository = ref.watch(notificationPreferencesRepositoryProvider);
+    return LoadingHelper.runWithLoading(repository.fetch);
   }
 
   Future<void> setAnnouncements(bool value) {
@@ -30,7 +32,9 @@ class NotificationPreferencesController
   Future<void> reload() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(notificationPreferencesRepositoryProvider).fetch(),
+      () => LoadingHelper.runWithLoading(
+        () => ref.read(notificationPreferencesRepositoryProvider).fetch(),
+      ),
     );
   }
 

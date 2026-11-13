@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/network/api_error_text.dart';
@@ -35,12 +36,7 @@ class AboutAppPage extends ConsumerWidget {
             const _AboutLogo(),
             const SizedBox(height: 20),
             appVersion.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
-              ),
+              loading: () => const ShimmerLoading(itemCount: 2, itemHeight: 250),
               error: (error, _) => _LoadError(
                 message: error is ApiException
                     ? apiErrorOrFallback(error)
@@ -82,7 +78,10 @@ class AboutAppPage extends ConsumerWidget {
                         child: Text(
                           'Flaticon - Receipt icons',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 decoration: TextDecoration.underline,
                               ),

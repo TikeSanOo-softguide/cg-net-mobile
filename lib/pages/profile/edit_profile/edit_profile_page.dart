@@ -13,6 +13,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/utils/loading_helper.dart';
+import '../../../core/utils/max_length_limiter.dart';
 import '../../../models/user_model/user_model.dart';
 import '../profile/profile_controller.dart';
 import 'edit_profile_controller.dart';
@@ -130,6 +131,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       suffixIcon: LucideIcons.id_card,
                       textInputAction: TextInputAction.done,
                       maxLength: 30,
+                      inputFormatters: [maxLengthLimiter(30)],
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'set_credentials.username_required'.tr();

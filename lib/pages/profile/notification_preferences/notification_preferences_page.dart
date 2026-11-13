@@ -7,7 +7,6 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../core/network/api_exception.dart';
-import '../../../core/network/api_message_modal.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -26,29 +25,6 @@ class NotificationPreferencesPage extends ConsumerStatefulWidget {
 
 class _NotificationPreferencesPageState
     extends ConsumerState<NotificationPreferencesPage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _loadPreferences();
-    });
-  }
-
-  Future<void> _loadPreferences({bool retry = false}) async {
-    if (retry) {
-      ref.invalidate(notificationPreferencesControllerProvider);
-    }
-
-    try {
-      await LoadingHelper.runWithLoading(
-        () => ref.read(notificationPreferencesControllerProvider.future),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      await showApiMessageModal(context, error);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final preferencesAsync =
@@ -73,7 +49,7 @@ class _NotificationPreferencesPageState
               Text('profile.notifications_load_failed'.tr()),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => _loadPreferences(retry: true),
+                onPressed: () => controller.reload(),
                 child: Text('common.retry'.tr()),
               ),
             ],
@@ -164,7 +140,7 @@ class _NotificationPreferencesPageState
     Future<void> Function() update,
   ) async {
     try {
-      await update();
+      await LoadingHelper.runWithLoading(update);
     } on ApiException {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
