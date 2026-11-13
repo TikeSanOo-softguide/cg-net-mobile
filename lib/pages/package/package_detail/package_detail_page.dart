@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../components/app_button/app_button.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/api_error_text.dart';
@@ -22,7 +22,7 @@ import '../package_list/package_list_controller.dart';
 import 'package_buy_confirm_drawer.dart';
 import 'package_buy_result.dart';
 
-/// Package detail — luxury plan card, renew, then buy.
+/// Package detail — plan card, description, features, then buy.
 class PackageDetailPage extends ConsumerStatefulWidget {
   const PackageDetailPage({super.key, required this.packageId});
 
@@ -33,7 +33,6 @@ class PackageDetailPage extends ConsumerStatefulWidget {
 }
 
 class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
-  bool _autoRenew = true;
   bool _submitting = false;
 
   Future<void> _showProcessing() {
@@ -156,7 +155,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       packageTitle: info.title,
       pricePoints: info.pricePoints,
       speedMbps: info.speedMbps,
-      autoRenew: _autoRenew,
+      periodLabel: info.periodLabel,
     );
     if (!mounted || !confirmed) return;
 
@@ -185,7 +184,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
           packageTitle: info.title,
           pricePoints: info.pricePoints,
           speedMbps: info.speedMbps,
-          autoRenew: _autoRenew,
+          autoRenew: false,
           transactionId: response.transactionNo ?? 'PKG-UNKNOWN',
           occurredAt: now,
         );
@@ -195,7 +194,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
           packageTitle: info.title,
           pricePoints: info.pricePoints,
           speedMbps: info.speedMbps,
-          autoRenew: _autoRenew,
+          autoRenew: false,
           transactionId: response.transactionNo ?? 'PKG-UNKNOWN',
           occurredAt: now,
           errorTitleKey: 'package.result_failure_title',
@@ -234,7 +233,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
           packageTitle: info.title,
           pricePoints: info.pricePoints,
           speedMbps: info.speedMbps,
-          autoRenew: _autoRenew,
+          autoRenew: false,
           transactionId: 'PKG-UNKNOWN',
           errorTitleKey: 'package.result_failure_title',
           errorBody: apiErrorText(error),
@@ -250,7 +249,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
           packageTitle: info.title,
           pricePoints: info.pricePoints,
           speedMbps: info.speedMbps,
-          autoRenew: _autoRenew,
+          autoRenew: false,
           transactionId: 'PKG-UNKNOWN',
           errorTitleKey: 'package.result_failure_title',
           errorBodyKey: 'package.result_failure_body',
@@ -276,22 +275,19 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
-            LuxuryPackageCard(
-              title: LuxuryPackageCard.planName(info.planIndex),
-              productId: info.id,
-              lineLabel: info.lineLabel,
+            _PackageDetailCard(
+              name: LuxuryPackageCard.planName(info.planIndex),
               priceLabel: info.priceLabel,
               periodLabel: info.periodLabel,
               speedLabel: info.speedMbps.toLowerCase().contains('mbps')
                   ? info.speedMbps
                   : '${info.speedMbps} Mbps',
-              popular: info.popular,
-              accentIndex: info.planIndex,
-              onBuy: _buyNow,
-              footer: _RenewRow(
-                value: _autoRenew,
-                onChanged: (v) => setState(() => _autoRenew = v),
-              ),
+              accent: LuxuryPackageCard.accentAt(info.planIndex),
+            ),
+            const SizedBox(height: 18),
+            AppButton(
+              label: 'home.buy_now'.tr(),
+              onPressed: _submitting ? null : _buyNow,
             ),
           ],
         ),
@@ -326,60 +322,238 @@ class _PackageDetailViewData {
   final int planIndex;
 }
 
-class _RenewRow extends StatelessWidget {
-  const _RenewRow({
-    required this.value,
-    required this.onChanged,
+class _PackageDetailCard extends StatelessWidget {
+  const _PackageDetailCard({
+    required this.name,
+    required this.priceLabel,
+    required this.periodLabel,
+    required this.speedLabel,
+    required this.accent,
   });
 
-  final bool value;
-  final ValueChanged<bool> onChanged;
+  final String name;
+  final String priceLabel;
+  final String periodLabel;
+  final String speedLabel;
+  final Color accent;
+
+  static const _featureKeys = [
+    'package.feature_unlimited',
+    'package.feature_speed',
+    'package.feature_router',
+    'package.feature_term',
+    'package.feature_anywhere',
+  ];
+
+  ({String value, String unit}) get _speed {
+    final text = speedLabel.trim();
+    if (text.toLowerCase().endsWith('mbps')) {
+      return (
+        value: text.substring(0, text.length - 4).trim(),
+        unit: 'Mbps',
+      );
+    }
+    return (value: text, unit: text.isEmpty ? '' : 'Mbps');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(
-          LucideIcons.refresh_cw,
-          size: 14,
-          color: AppColors.accent,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'package.renew'.tr(),
-                style: AppTheme.english(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+    final speed = _speed;
+    final period = periodLabel.trim().isEmpty
+        ? ''
+        : (periodLabel.trim().startsWith('/')
+            ? periodLabel.trim()
+            : '/${periodLabel.trim()}');
+
+    return Material(
+      color: AppColors.surface,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned(
+            right: 0,
+            bottom: 0,
+            width: 156,
+            height: 92,
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _DetailWavePainter(color: accent),
               ),
-              Text(
-                'package.renew_hint'.tr(),
-                style: AppTheme.english(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textMuted,
+            ),
+          ),
+          Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.english(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1C1C1E),
+                height: 1.25,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Flexible(
+                  child: Text(
+                    priceLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: accent,
+                      height: 1,
+                      letterSpacing: -0.6,
+                    ),
+                  ),
                 ),
+                if (period.isNotEmpty)
+                  Text(
+                    period,
+                    style: AppTheme.english(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: accent,
+                      height: 1,
+                    ),
+                  ),
+                if (speed.value.isNotEmpty) ...[
+                  const Spacer(),
+                  const SizedBox(width: 12),
+                  Text(
+                    speed.value,
+                    style: AppTheme.english(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1C1C1E),
+                      height: 1,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  if (speed.unit.isNotEmpty) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      speed.unit,
+                      style: AppTheme.english(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'package.detail_about'.tr(),
+              style: AppTheme.english(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1C1C1E),
+                height: 1.25,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'package.detail_description'.tr(),
+              style: AppTheme.english(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textMuted,
+                height: 1.5,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'package.features'.tr(),
+              style: AppTheme.english(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1C1C1E),
+                height: 1.25,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (var i = 0; i < _featureKeys.length; i++) ...[
+              if (i > 0) const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const SizedBox(width: 4, height: 4),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _featureKeys[i].tr(),
+                      style: AppTheme.english(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textMuted,
+                        height: 1.5,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
+          ],
         ),
-        Transform.scale(
-          scale: 0.62,
-          alignment: Alignment.centerRight,
-          child: Switch.adaptive(
-            value: value,
-            activeThumbColor: AppColors.primary,
-            activeTrackColor: AppColors.accent,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            onChanged: onChanged,
-          ),
-        ),
-      ],
+      ),
+        ],
+      ),
     );
+  }
+}
+
+class _DetailWavePainter extends CustomPainter {
+  const _DetailWavePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..arcToPoint(
+        Offset(size.width, size.height * 0.08),
+        radius: Radius.elliptical(size.width * 1.05, size.height * 1.2),
+        clockwise: false,
+      )
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DetailWavePainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }

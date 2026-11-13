@@ -22,7 +22,7 @@ class HomeCgPackageSection extends StatelessWidget {
 class _HomePackageStrip extends ConsumerWidget {
   const _HomePackageStrip();
 
-  static const _cardHeight = 158.0;
+  static const _cardHeight = 140.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -199,66 +199,46 @@ class _WidePlanCard extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 72, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 6, 72, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (speedValue.isNotEmpty)
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
                               children: [
-                                const Image(
-                                  image: AssetImage(
-                                    'assets/images/packages/speed_rocket.png',
-                                  ),
-                                  width: 28,
-                                  height: 28,
-                                  fit: BoxFit.contain,
-                                  filterQuality: FilterQuality.high,
-                                  gaplessPlayback: true,
-                                ),
-                                const SizedBox(width: 8),
                                 Flexible(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          speedValue,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTheme.english(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.w800,
-                                            color: const Color(0xFF1C1C1E),
-                                            height: 1,
-                                            letterSpacing: -0.9,
-                                          ),
-                                        ),
-                                      ),
-                                      if (speedUnit.isNotEmpty) ...[
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          speedUnit,
-                                          style: AppTheme.english(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: accent,
-                                            height: 1,
-                                            letterSpacing: 0.4,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                  child: Text(
+                                    speedValue,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.english(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF1C1C1E),
+                                      height: 1,
+                                      letterSpacing: -0.8,
+                                    ),
                                   ),
                                 ),
+                                if (speedUnit.isNotEmpty) ...[
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    speedUnit,
+                                    style: AppTheme.english(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: accent,
+                                      height: 1,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           Padding(
                             padding: EdgeInsets.only(
-                              left: speedValue.isNotEmpty ? 36 : 0,
                               top: speedValue.isNotEmpty ? 6 : 0,
                             ),
                             child: Column(
@@ -277,7 +257,7 @@ class _WidePlanCard extends StatelessWidget {
                                       fontWeight: FontWeight.w500,
                                       color: const Color(0xFF6B7280),
                                       height: 1.2,
-                                      letterSpacing: 0.1,
+                                      letterSpacing: 0.15,
                                     ),
                                   ),
                                 ],

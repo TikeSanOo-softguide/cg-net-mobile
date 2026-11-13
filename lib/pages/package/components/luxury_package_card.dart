@@ -20,6 +20,8 @@ class LuxuryPackageCard extends StatelessWidget {
     this.lineLabel = '',
     this.accentIndex = 0,
     this.compact = false,
+    this.showBuyNow = true,
+    this.showFeatures = true,
   });
 
   static const List<Color> accents = [
@@ -58,6 +60,8 @@ class LuxuryPackageCard extends StatelessWidget {
   final String lineLabel;
   final int accentIndex;
   final bool compact;
+  final bool showBuyNow;
+  final bool showFeatures;
 
   String get _name {
     if (title.trim().isNotEmpty) return title.trim();
@@ -82,8 +86,9 @@ class LuxuryPackageCard extends StatelessWidget {
       amount: priceLabel.trim(),
       monthLabel: periodLabel.trim(),
       speedLabel: speedLabel.trim(),
-      facts: _facts,
+      facts: showFeatures ? _facts : const [],
       onBuy: onBuy,
+      showBuyNow: showBuyNow,
     );
 
     return DecoratedBox(
@@ -127,6 +132,7 @@ class _CardBody extends StatelessWidget {
     required this.speedLabel,
     required this.facts,
     required this.onBuy,
+    required this.showBuyNow,
   });
 
   final bool compact;
@@ -137,6 +143,7 @@ class _CardBody extends StatelessWidget {
   final String speedLabel;
   final List<String> facts;
   final VoidCallback onBuy;
+  final bool showBuyNow;
 
   ({String value, String unit}) get _speed {
     final text = speedLabel.trim();
@@ -163,10 +170,10 @@ class _CardBody extends StatelessWidget {
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(
-            compact ? 14 : 24,
-            compact ? 24 : 30,
-            compact ? 14 : 24,
-            compact ? 36 : 48,
+            compact ? 14 : 20,
+            facts.isEmpty ? 18 : (compact ? 24 : 30),
+            compact ? 14 : 20,
+            facts.isEmpty ? 22 : (compact ? 36 : 48),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -219,7 +226,7 @@ class _CardBody extends StatelessWidget {
                 ],
               ),
               if (speed.value.isNotEmpty) ...[
-                SizedBox(height: compact ? 18 : 22),
+                SizedBox(height: facts.isEmpty ? 12 : (compact ? 18 : 22)),
                 Center(
                   child: _SpeedBadge(
                     compact: compact,
@@ -250,23 +257,24 @@ class _CardBody extends StatelessWidget {
             ],
           ),
         ),
-        Positioned(
-          right: compact ? 10 : 16,
-          bottom: compact ? 10 : 14,
-          child: GestureDetector(
-            onTap: onBuy,
-            child: Text(
-              'home.buy_now'.tr().toUpperCase(),
-              style: AppTheme.english(
-                fontSize: compact ? 9 : 11,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 0.7,
-                height: 1,
+        if (showBuyNow)
+          Positioned(
+            right: compact ? 10 : 16,
+            bottom: compact ? 10 : 14,
+            child: GestureDetector(
+              onTap: onBuy,
+              child: Text(
+                'home.buy_now'.tr().toUpperCase(),
+                style: AppTheme.english(
+                  fontSize: compact ? 9 : 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.7,
+                  height: 1,
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

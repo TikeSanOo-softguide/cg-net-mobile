@@ -69,10 +69,6 @@ class PackageBuyResultShell extends StatelessWidget {
           '${result.speedMbps} Mbps',
         ),
       ('package.price'.tr(), priceLabel),
-      (
-        'package.renew'.tr(),
-        result.autoRenew ? 'package.renew_on'.tr() : 'package.renew_off'.tr(),
-      ),
       ('package.detail_txn'.tr(), result.transactionId),
       ('package.detail_datetime'.tr(), when),
       ('package.detail_status'.tr(), statusLabel),

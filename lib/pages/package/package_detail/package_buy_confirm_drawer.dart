@@ -14,7 +14,7 @@ Future<bool> showPackageBuyConfirmDrawer(
   required String packageTitle,
   required int pricePoints,
   required String speedMbps,
-  required bool autoRenew,
+  required String periodLabel,
 }) async {
   final container = ProviderScope.containerOf(context);
   final nav = container.read(bottomNavVisibleProvider.notifier);
@@ -26,6 +26,8 @@ Future<bool> showPackageBuyConfirmDrawer(
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppStyle.radiusCurve),
@@ -35,7 +37,7 @@ Future<bool> showPackageBuyConfirmDrawer(
         packageTitle: packageTitle,
         pricePoints: pricePoints,
         speedMbps: speedMbps,
-        autoRenew: autoRenew,
+        periodLabel: periodLabel,
       ),
     );
     return result == true;
@@ -49,13 +51,13 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
     required this.packageTitle,
     required this.pricePoints,
     required this.speedMbps,
-    required this.autoRenew,
+    required this.periodLabel,
   });
 
   final String packageTitle;
   final int pricePoints;
   final String speedMbps;
-  final bool autoRenew;
+  final String periodLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +89,10 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTheme.english(
                 fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
+                height: 1.25,
+                letterSpacing: 0.2,
               ),
             ),
             const SizedBox(height: 6),
@@ -96,46 +100,35 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
               'package.confirm_buy_body'.tr(),
               textAlign: TextAlign.center,
               style: AppTheme.english(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: AppColors.textMuted,
-                height: 1.4,
+                height: 1.5,
+                letterSpacing: 0,
               ),
             ),
-            const SizedBox(height: AppStyle.spaceLg),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Column(
-                children: [
-                  _InfoRow(
-                    label: 'package.confirm_package'.tr(),
-                    value: packageTitle,
-                  ),
-                  const SizedBox(height: 10),
-                  _InfoRow(
-                    label: 'package.internet_speed'.tr(),
-                    value: speedLabel,
-                  ),
-                  const SizedBox(height: 10),
-                  _InfoRow(
-                    label: 'package.price'.tr(),
-                    value: priceLabel,
-                  ),
-                  const SizedBox(height: 10),
-                  _InfoRow(
-                    label: 'package.renew'.tr(),
-                    value: autoRenew
-                        ? 'package.renew_on'.tr()
-                        : 'package.renew_off'.tr(),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 18),
+            _InfoRow(
+              label: 'package.confirm_package'.tr(),
+              value: packageTitle,
             ),
+            const SizedBox(height: 12),
+            _InfoRow(
+              label: 'package.internet_speed'.tr(),
+              value: speedLabel,
+            ),
+            const SizedBox(height: 12),
+            _InfoRow(
+              label: 'package.price'.tr(),
+              value: priceLabel,
+            ),
+            if (periodLabel.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _InfoRow(
+                label: 'package.month_label'.tr(),
+                value: periodLabel.trim(),
+              ),
+            ],
             const SizedBox(height: AppStyle.spaceXl),
             AppButton(
               label: 'package.confirm_buy'.tr(),
@@ -189,9 +182,11 @@ class _InfoRow extends StatelessWidget {
           child: Text(
             label,
             style: AppTheme.english(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textMuted,
+              height: 1.5,
+              letterSpacing: 0,
             ),
           ),
         ),
@@ -202,9 +197,11 @@ class _InfoRow extends StatelessWidget {
             value,
             textAlign: TextAlign.right,
             style: AppTheme.english(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
+              height: 1.5,
+              letterSpacing: 0,
             ),
           ),
         ),
