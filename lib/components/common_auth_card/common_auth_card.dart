@@ -255,7 +255,9 @@ class AuthBackgroundScaffold extends StatelessWidget {
 
     final scaffoldBody = Column(
       children: [
-        SafeArea(
+        ColoredBox(
+          color: AppColors.primary,
+          child: SafeArea(
           bottom: false,
           child: Padding(
             padding: EdgeInsets.fromLTRB(
@@ -337,8 +339,18 @@ class AuthBackgroundScaffold extends StatelessWidget {
             ),
           ),
         ),
+        ),
         Expanded(
-          child: Container(
+          child: Stack(
+            children: [
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: AppStyle.radiusCurve,
+                child: ColoredBox(color: AppColors.primary),
+              ),
+              Container(
             width: double.infinity,
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -382,6 +394,8 @@ class AuthBackgroundScaffold extends StatelessWidget {
                         ),
                     ],
                   ),
+              ),
+            ],
           ),
         ),
       ],
@@ -390,7 +404,7 @@ class AuthBackgroundScaffold extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppTheme.systemOverlayPrimary,
       child: Scaffold(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.surface,
         resizeToAvoidBottomInset: !useKeyboardOverlay,
         body: useKeyboardOverlay
             ? _KeyboardOverlayBody(child: scaffoldBody)

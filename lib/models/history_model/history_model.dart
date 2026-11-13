@@ -58,7 +58,8 @@ class HistoryModel {
         json['package'] != null;
     final type = json['type']?.toString().trim() ?? '';
     final status = json['status']?.toString() ?? '';
-    final statusCode = _messageCodeForStatus(status);
+    final statusCode =
+        isBillHistory ? _messageCodeForStatus(status) : null;
     final titleCode = json['title_code']?.toString().trim() ?? '';
     final descriptionCode = json['description_code']?.toString().trim() ?? '';
 

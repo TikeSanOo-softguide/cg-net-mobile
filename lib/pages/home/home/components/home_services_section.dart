@@ -10,7 +10,6 @@ import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
-import '../../../../core/ui/bottom_nav_visibility_provider.dart';
 import 'home_header.dart';
 import 'home_section_header.dart';
 
@@ -114,113 +113,115 @@ class HomeServicesSection extends ConsumerWidget {
   ) async {
     final homeItems = _homeItems;
     final extraItems = _extraItems;
-    final nav = ref.read(bottomNavVisibleProvider.notifier);
-    nav.state = false;
 
-    try {
-      await showModalBottomSheet<void>(
-        context: context,
-        useRootNavigator: true,
-        isScrollControlled: true,
-        backgroundColor: AppColors.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppStyle.radiusCurve),
-          ),
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      sheetAnimationStyle: const AnimationStyle(
+        duration: Duration(milliseconds: 340),
+        reverseDuration: Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppStyle.radiusCurve),
         ),
-        builder: (sheetContext) {
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppStyle.spaceLg,
-                AppStyle.spaceMd,
-                AppStyle.spaceLg,
-                AppStyle.spaceLg,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppStyle.spaceLg,
+              12,
+              AppStyle.spaceLg,
+              AppStyle.spaceMd,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  const SizedBox(height: AppStyle.spaceMd),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'home.services'.tr(),
-                          style: AppTheme.sectionTitle().copyWith(
-                            fontSize: 15,
-                            letterSpacing: 0.2,
+                ),
+                const SizedBox(height: AppStyle.spaceMd),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'home.services'.tr(),
+                        style: AppTheme.sectionTitle().copyWith(
+                          fontSize: 15,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                    Material(
+                      color: AppColors.primarySoft,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        onTap: () => Navigator.of(sheetContext).pop(),
+                        child: const SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: Icon(
+                            LucideIcons.x,
+                            size: 18,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
-                      Material(
-                        color: AppColors.primarySoft,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          splashColor: Colors.transparent,
-                          highlightColor: Colors.transparent,
-                          onTap: () => Navigator.of(sheetContext).pop(),
-                          child: const SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: Icon(
-                              LucideIcons.x,
-                              size: 18,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppStyle.spaceLg),
-                  _ServiceGrid(
-                    items: homeItems.take(3).toList(),
-                    onTap: (item) => _onServiceTap(
-                      sheetContext,
-                      ref,
-                      item,
-                      fromSheet: true,
                     ),
+                  ],
+                ),
+                const SizedBox(height: AppStyle.spaceLg),
+                _ServiceGrid(
+                  items: homeItems.take(3).toList(),
+                  onTap: (item) => _onServiceTap(
+                    sheetContext,
+                    ref,
+                    item,
+                    fromSheet: true,
                   ),
-                  const SizedBox(height: 8),
-                  _ServiceGrid(
-                    items: homeItems.skip(3).take(3).toList(),
-                    onTap: (item) => _onServiceTap(
-                      sheetContext,
-                      ref,
-                      item,
-                      fromSheet: true,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                _ServiceGrid(
+                  items: homeItems.skip(3).take(3).toList(),
+                  onTap: (item) => _onServiceTap(
+                    sheetContext,
+                    ref,
+                    item,
+                    fromSheet: true,
                   ),
-                  const SizedBox(height: 8),
-                  _ServiceGrid(
-                    items: extraItems,
-                    onTap: (item) => _onServiceTap(
-                      sheetContext,
-                      ref,
-                      item,
-                      fromSheet: true,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                _ServiceGrid(
+                  items: extraItems,
+                  onTap: (item) => _onServiceTap(
+                    sheetContext,
+                    ref,
+                    item,
+                    fromSheet: true,
                   ),
-                  const SizedBox(height: AppStyle.spaceSm),
+                ),
                 ],
               ),
             ),
           );
         },
-      );
-    } finally {
-      nav.state = true;
-    }
+    );
   }
 
   @override

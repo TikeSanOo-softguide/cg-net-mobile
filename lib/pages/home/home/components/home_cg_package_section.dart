@@ -22,7 +22,7 @@ class HomeCgPackageSection extends StatelessWidget {
 class _HomePackageStrip extends ConsumerWidget {
   const _HomePackageStrip();
 
-  static const _cardHeight = 146.0;
+  static const _cardHeight = 158.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -112,9 +112,8 @@ class _WidePlanCard extends StatelessWidget {
       if (model.termMonths != null) '${model.termMonths}',
       model.billingCycle.trim(),
     ].join();
-    final period = cycle.isEmpty
-        ? ''
-        : (cycle.startsWith('/') ? cycle : '/$cycle');
+    final period =
+        cycle.isEmpty ? '' : (cycle.startsWith('/') ? cycle : '/$cycle');
     void open() {
       context.pushNamed(
         RouteNames.packageDetail,
@@ -143,157 +142,148 @@ class _WidePlanCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 28),
+                padding: const EdgeInsets.only(bottom: 26),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    IntrinsicHeight(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 14, 0),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ColoredBox(
-                            color: accent,
-                            child: const SizedBox(width: 5),
-                          ),
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          LuxuryPackageCard.planName(index),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: AppTheme.english(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.textPrimary,
-                                            height: 1.15,
-                                          ),
-                                        ),
-                                        if (speedValue.isNotEmpty) ...[
-                                          const SizedBox(height: 8),
-                                          DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: accent.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.baseline,
-                                                textBaseline:
-                                                    TextBaseline.alphabetic,
-                                                children: [
-                                                  Text(
-                                                    speedValue,
-                                                    style: AppTheme.english(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      color: accent,
-                                                      height: 1,
-                                                      letterSpacing: -0.3,
-                                                    ),
-                                                  ),
-                                                  if (speedUnit.isNotEmpty) ...[
-                                                    const SizedBox(width: 3),
-                                                    Text(
-                                                      speedUnit,
-                                                      style: AppTheme.english(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                        color: accent,
-                                                        height: 1,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '${model.price}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTheme.english(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w800,
-                                          color: accent,
-                                          height: 1,
-                                          letterSpacing: -0.4,
-                                        ),
-                                      ),
-                                      if (period.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          period,
-                                          maxLines: 1,
-                                          style: AppTheme.english(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: accent,
-                                            height: 1,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
+                            child: Text(
+                              LuxuryPackageCard.planName(index),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.english(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1C1C1E),
+                                height: 1.2,
+                                letterSpacing: 0.2,
                               ),
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '${model.price}',
+                                maxLines: 1,
+                                style: AppTheme.english(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  color: accent,
+                                  height: 1,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              if (period.isNotEmpty)
+                                Text(
+                                  period,
+                                  maxLines: 1,
+                                  style: AppTheme.english(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: accent,
+                                    height: 1,
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(19, 4, 72, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 72, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (final label in [
-                            'package.feature_unlimited'.tr(),
-                            'package.feature_speed'.tr(),
-                          ]) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF6B7280),
-                                height: 1.2,
-                              ),
+                          if (speedValue.isNotEmpty)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Image(
+                                  image: AssetImage(
+                                    'assets/images/packages/speed_rocket.png',
+                                  ),
+                                  width: 28,
+                                  height: 28,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                  gaplessPlayback: true,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          speedValue,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTheme.english(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w800,
+                                            color: const Color(0xFF1C1C1E),
+                                            height: 1,
+                                            letterSpacing: -0.9,
+                                          ),
+                                        ),
+                                      ),
+                                      if (speedUnit.isNotEmpty) ...[
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          speedUnit,
+                                          style: AppTheme.english(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: accent,
+                                            height: 1,
+                                            letterSpacing: 0.4,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: speedValue.isNotEmpty ? 36 : 0,
+                              top: speedValue.isNotEmpty ? 6 : 0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (var i = 0; i < 2; i++) ...[
+                                  if (i > 0) const SizedBox(height: 3),
+                                  Text(
+                                    i == 0
+                                        ? 'package.feature_unlimited'.tr()
+                                        : 'package.feature_speed'.tr(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.english(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF6B7280),
+                                      height: 1.2,
+                                      letterSpacing: 0.1,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -333,10 +323,10 @@ class _HomeWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final path = Path()
-      ..moveTo(size.width * 0.46, size.height)
+      ..moveTo(size.width * 0.38, size.height)
       ..arcToPoint(
-        Offset(size.width, size.height * 0.42),
-        radius: Radius.elliptical(size.width * 0.62, size.height * 0.7),
+        Offset(size.width, size.height * 0.32),
+        radius: Radius.elliptical(size.width * 0.72, size.height * 0.82),
         clockwise: false,
       )
       ..lineTo(size.width, size.height)

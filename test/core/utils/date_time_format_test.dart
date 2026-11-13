@@ -1,7 +1,12 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:cg_net_mobile/core/utils/date_time_format.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+  });
+
   group('formatDate', () {
     test('formats date-only values without shifting the calendar date', () {
       expect(formatDate('2026-10-29'), '29 Oct 2026');

@@ -41,10 +41,13 @@ class AppCurvedScaffold extends StatelessWidget {
     final canPop = Navigator.of(context).canPop();
     final showLeading = showBack && (onBack != null || canPop);
 
+    final sheetColor = backgroundColor ?? AppColors.background;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppTheme.systemOverlayPrimary,
       child: Scaffold(
-        backgroundColor: AppColors.primary,
+        // Sheet color, not brand blue — keyboard resize was leaving a blue band.
+        backgroundColor: sheetColor,
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
         floatingActionButton: floatingActionButton,
         body: Column(
@@ -103,19 +106,30 @@ class AppCurvedScaffold extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: backgroundColor ?? AppColors.background,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(AppStyle.radiusCurve),
+              child: Stack(
+                children: [
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: AppStyle.radiusCurve,
+                    child: ColoredBox(color: AppColors.primary),
                   ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: SafeArea(
-                  top: false,
-                  child: body,
-                ),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: sheetColor,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppStyle.radiusCurve),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: SafeArea(
+                      top: false,
+                      child: body,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
