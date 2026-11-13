@@ -318,6 +318,20 @@ void main() {
       expect(conversation.options.single.label, 'ဝန်ထမ်းနှင့် စကားပြောမည်');
     });
 
+    test('closes the specified conversation', () async {
+      late RequestOptions request;
+      final dio = _dio((options) {
+        request = options;
+        return _jsonResponse(200, '{"success":true}');
+      });
+
+      await ChatRepository(dio).closeConversation(conversationId: '12');
+
+      expect(request.method, 'POST');
+      expect(request.path, '/chat/close');
+      expect(request.data, {'conversation_id': 12});
+    });
+
     test('classifies Laravel conflicts as closed only for closed status',
         () async {
       final waitingDio = _dio((_) => _jsonResponse(
@@ -383,6 +397,47 @@ void main() {
   });
 
   group('SupportChatController', () {
+    test('closes the active conversation and unsubscribes realtime', () async {
+      final repository = _FakeChatRepository(
+        _conversation(
+          ChatConversationStatus.open,
+          message: 'Current prompt',
+          options: const [ChatFlowOption(id: '1', label: 'Option')],
+        ),
+      );
+      final realtime = _FakeRealtimeClient();
+      String? unsubscribedConversationId;
+      realtime.onUnsubscribeConversation = (conversationId) async {
+        unsubscribedConversationId = conversationId;
+      };
+      final controller = await _controller(repository, realtime: realtime);
+
+      expect(await controller.closeConversation(), isTrue);
+
+      expect(repository.closeCount, 1);
+      expect(repository.lastCloseConversationId, '12');
+      expect(controller.state.status, ChatConversationStatus.closed);
+      expect(controller.state.flowMessage, isNull);
+      expect(controller.state.options, isEmpty);
+      expect(controller.state.isClosingConversation, isFalse);
+      expect(unsubscribedConversationId, '12');
+    });
+
+    test('keeps the conversation open and exposes a close API error', () async {
+      final repository = _FakeChatRepository(
+        _conversation(ChatConversationStatus.waiting),
+      )..onCloseConversation = (_) async {
+          throw const ApiException(ApiFailure.offline);
+        };
+      final controller = await _controller(repository);
+
+      expect(await controller.closeConversation(), isFalse);
+
+      expect(controller.state.status, ChatConversationStatus.waiting);
+      expect(controller.state.isClosingConversation, isFalse);
+      expect(controller.state.errorMessage, 'api.offline');
+    });
+
     test(
         'auto-starts conversation on initial load if no active conversation exists',
         () async {
@@ -1190,6 +1245,7 @@ class _FakeChatRepository extends ChatRepository {
 
   ChatConversationModel current;
   final Future<ChatMessageModel> Function(String text)? onSendMessage;
+  Future<void> Function(String conversationId)? onCloseConversation;
   Future<ChatConversationModel> Function()? onStartConversation;
   Future<ChatConversationModel> Function(String optionId)? onSelectOption;
   Future<ChatConversationModel> Function()? onFetchCurrent;
@@ -1200,10 +1256,12 @@ class _FakeChatRepository extends ChatRepository {
   ChatFlowOptionAction? selectAction = ChatFlowOptionAction.goToStep;
 
   int sendCount = 0;
+  int closeCount = 0;
   int startCount = 0;
   int selectCount = 0;
   int navigateCount = 0;
   String? lastText;
+  String? lastCloseConversationId;
   String? lastConversationId;
   String? lastClientMessageId;
   String? lastRefreshConversationId;
@@ -1305,6 +1363,15 @@ class _FakeChatRepository extends ChatRepository {
           role: 'customer',
           time: '2026-10-07T01:00:00.000Z',
         );
+  }
+
+  @override
+  Future<void> closeConversation({
+    required String conversationId,
+  }) async {
+    closeCount++;
+    lastCloseConversationId = conversationId;
+    await onCloseConversation?.call(conversationId);
   }
 }
 

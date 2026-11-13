@@ -54,6 +54,7 @@ class SupportChatState {
     this.isNavigatingToMainMenu = false,
     this.isStartingChat = false,
     this.isSendingMessage = false,
+    this.isClosingConversation = false,
     this.realtimeReconnectRevision = 0,
     this.errorMessage,
   });
@@ -68,6 +69,7 @@ class SupportChatState {
   final bool isNavigatingToMainMenu;
   final bool isStartingChat;
   final bool isSendingMessage;
+  final bool isClosingConversation;
   final int realtimeReconnectRevision;
   final String? errorMessage;
 
@@ -78,7 +80,8 @@ class SupportChatState {
   bool get isOpen => status == ChatConversationStatus.open;
   bool get isClosed => status == ChatConversationStatus.closed;
   bool get canStartChat => isClosed || !hasConversation;
-  bool get composerEnabled => isOpen && !isLoading && !isSendingMessage;
+  bool get composerEnabled =>
+      isOpen && !isLoading && !isSendingMessage && !isClosingConversation;
 
   SupportChatState copyWith({
     ChatConversationStatus? status,
@@ -91,16 +94,18 @@ class SupportChatState {
     bool? isNavigatingToMainMenu,
     bool? isStartingChat,
     bool? isSendingMessage,
+    bool? isClosingConversation,
     int? realtimeReconnectRevision,
     String? errorMessage,
     bool clearConversationId = false,
+    bool clearFlowMessage = false,
     bool clearErrorMessage = false,
   }) {
     return SupportChatState(
       status: status ?? this.status,
       conversationId:
           clearConversationId ? null : conversationId ?? this.conversationId,
-      flowMessage: flowMessage ?? this.flowMessage,
+      flowMessage: clearFlowMessage ? null : flowMessage ?? this.flowMessage,
       options: options ?? this.options,
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
@@ -109,6 +114,8 @@ class SupportChatState {
           isNavigatingToMainMenu ?? this.isNavigatingToMainMenu,
       isStartingChat: isStartingChat ?? this.isStartingChat,
       isSendingMessage: isSendingMessage ?? this.isSendingMessage,
+      isClosingConversation:
+          isClosingConversation ?? this.isClosingConversation,
       realtimeReconnectRevision:
           realtimeReconnectRevision ?? this.realtimeReconnectRevision,
       errorMessage:
@@ -437,6 +444,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
     final conversationId = state.conversationId;
     if (!state.isChatFlow ||
         state.isSubmittingOption ||
+        state.isClosingConversation ||
         optionId.trim().isEmpty ||
         conversationId == null) {
       return null;
@@ -584,6 +592,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
         state.isLoading ||
         state.isSubmittingOption ||
         state.isNavigatingToMainMenu ||
+        state.isClosingConversation ||
         conversationId == null) {
       return false;
     }
@@ -625,6 +634,58 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       if (requestId != _activeRequestId) return false;
       state = state.copyWith(
         isNavigatingToMainMenu: false,
+        errorMessage: 'api.unknown',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> closeConversation() async {
+    final conversationId = state.conversationId;
+    if ((!state.isOpen && !state.isWaiting) ||
+        state.isClosingConversation ||
+        state.isLoading ||
+        state.isSendingMessage ||
+        state.isSubmittingOption ||
+        state.isNavigatingToMainMenu ||
+        conversationId == null) {
+      return false;
+    }
+
+    final requestId = ++_activeRequestId;
+    state = state.copyWith(
+      isClosingConversation: true,
+      clearErrorMessage: true,
+    );
+
+    try {
+      await _repository.closeConversation(conversationId: conversationId);
+      if (requestId != _activeRequestId) return false;
+
+      state = state.copyWith(
+        status: ChatConversationStatus.closed,
+        options: const [],
+        isClosingConversation: false,
+        clearFlowMessage: true,
+        clearErrorMessage: true,
+      );
+      await _unsubscribeCurrentConversation();
+      return true;
+    } on ApiException catch (error) {
+      if (requestId != _activeRequestId) return false;
+      state = state.copyWith(
+        isClosingConversation: false,
+        errorMessage: error.messageKey,
+      );
+      return false;
+    } catch (error, stackTrace) {
+      if (requestId != _activeRequestId) return false;
+      if (kDebugMode) {
+        debugPrint('[Chat] closing conversation failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      state = state.copyWith(
+        isClosingConversation: false,
         errorMessage: 'api.unknown',
       );
       return false;
