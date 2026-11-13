@@ -11,6 +11,8 @@ import '../../../core/network/api_message_modal.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/max_length_limiter.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import 'installation_application_controller.dart';
 import 'installation_plan_catalog.dart';
@@ -26,7 +28,12 @@ class InstallationApplicationFormPage extends ConsumerStatefulWidget {
 }
 
 class _InstallationApplicationFormPageState
-    extends ConsumerState<InstallationApplicationFormPage> {
+    extends ConsumerState<InstallationApplicationFormPage>
+    with ApiFieldErrorsMixin<InstallationApplicationFormPage> {
+  final _nameFieldKey = GlobalKey<FormFieldState<String>>();
+  final _phoneFieldKey = GlobalKey<FormFieldState<String>>();
+  final _addressFieldKey = GlobalKey<FormFieldState<String>>();
+  final _noteFieldKey = GlobalKey<FormFieldState<String>>();
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
@@ -211,7 +218,32 @@ class _InstallationApplicationFormPageState
       Navigator.of(context).pop(saved);
     } catch (error) {
       if (!mounted) return;
-      await showApiMessageModal(context, error);
+      final handledInline = handleApiError(
+        error,
+        fields: {
+          'name': _nameFieldKey,
+          'full_name': _nameFieldKey,
+          'contact_name': _nameFieldKey,
+          'phone': _phoneFieldKey,
+          'address': _addressFieldKey,
+          'note': _noteFieldKey,
+        },
+      );
+      if (handledInline) {
+        setState(() {
+          _step = 2;
+          _customerAutovalidate = AutovalidateMode.onUserInteraction;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _nameFieldKey.currentState?.validate();
+          _phoneFieldKey.currentState?.validate();
+          _addressFieldKey.currentState?.validate();
+          _noteFieldKey.currentState?.validate();
+        });
+      } else {
+        await showApiErrorModal(context, error);
+      }
     }
   }
 
@@ -237,7 +269,7 @@ class _InstallationApplicationFormPageState
       return _requiredMessage('requests.address');
     }
     if (key == 'requests.max_length') {
-      return 'requests.max_length'.tr(namedArgs: {'max': '5000'});
+      return 'requests.max_length'.tr(namedArgs: {'max': '255'});
     }
     return key.tr();
   }
@@ -245,7 +277,7 @@ class _InstallationApplicationFormPageState
   String? _noteError(String? value) {
     final key = installationNoteError(value);
     if (key == null) return null;
-    return 'requests.max_length'.tr(namedArgs: {'max': '5000'});
+    return 'requests.max_length'.tr(namedArgs: {'max': '255'});
   }
 
   String _serviceLabel(String type) {
@@ -492,6 +524,7 @@ class _InstallationApplicationFormPageState
                     'speed': '${productSpeedMbps(product)}',
                   },
                 ),
+                month: _periodLabel(product.monthCycle, product.monthCycleUnit),
                 price: _points(product.productPrice),
                 installationFee: _points(product.installationFee),
                 total: _points(product.totalInitialPayment),
@@ -516,21 +549,34 @@ class _InstallationApplicationFormPageState
           children: [
             AppInput(
               controller: _nameController,
+              formFieldKey: _nameFieldKey,
               label: '${'requests.contact_name'.tr()} *',
               hint: 'requests.contact_name_hint'.tr(),
               prefixIcon: LucideIcons.user,
               textInputAction: TextInputAction.next,
-              validator: (value) => _translateError(
-                installationFullNameError(value),
-                fieldKey: 'requests.contact_name',
-              ),
-              onChanged: (value) => ref
-                  .read(installationRequestDraftProvider.notifier)
-                  .setFullName(value),
+              maxLength: 30,
+              inputFormatters: [maxLengthLimiter(30)],
+              validator: (value) =>
+                  _translateError(
+                    installationFullNameError(value),
+                    fieldKey: 'requests.contact_name',
+                  ) ??
+                  apiFieldError('name') ??
+                  apiFieldError('full_name') ??
+                  apiFieldError('contact_name'),
+              onChanged: (value) {
+                clearApiFieldError('name', key: _nameFieldKey);
+                clearApiFieldError('full_name', key: _nameFieldKey);
+                clearApiFieldError('contact_name', key: _nameFieldKey);
+                ref
+                    .read(installationRequestDraftProvider.notifier)
+                    .setFullName(value);
+              },
             ),
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
               controller: _phoneController,
+              formFieldKey: _phoneFieldKey,
               label: '${'requests.phone'.tr()} *',
               hint: 'requests.phone_hint'.tr(),
               prefixIcon: LucideIcons.phone,
@@ -538,43 +584,59 @@ class _InstallationApplicationFormPageState
               textInputAction: TextInputAction.next,
               maxLength: 16,
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s-]')),
+                FilteringTextInputFormatter.digitsOnly,
+                maxLengthLimiter(16),
               ],
               validator: (value) =>
-                  _translateError(installationPhoneError(value)),
-              onChanged: (value) => ref
-                  .read(installationRequestDraftProvider.notifier)
-                  .setPhone(value),
+                  _translateError(installationPhoneError(value)) ??
+                  apiFieldError('phone'),
+              onChanged: (value) {
+                clearApiFieldError('phone', key: _phoneFieldKey);
+                ref
+                    .read(installationRequestDraftProvider.notifier)
+                    .setPhone(value);
+              },
             ),
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
               controller: _addressController,
+              formFieldKey: _addressFieldKey,
               label: '${'requests.address'.tr()} *',
               hint: 'requests.address_hint'.tr(),
               prefixIcon: LucideIcons.map_pin,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.next,
               maxLines: 2,
-              maxLength: 5000,
-              validator: _addressError,
-              onChanged: (value) => ref
-                  .read(installationRequestDraftProvider.notifier)
-                  .setAddress(value),
+              maxLength: 255,
+              inputFormatters: [maxLengthLimiter(255)],
+              validator: (value) =>
+                  _addressError(value) ?? apiFieldError('address'),
+              onChanged: (value) {
+                clearApiFieldError('address', key: _addressFieldKey);
+                ref
+                    .read(installationRequestDraftProvider.notifier)
+                    .setAddress(value);
+              },
             ),
             const SizedBox(height: AppStyle.spaceXs),
             AppInput(
               controller: _noteController,
+              formFieldKey: _noteFieldKey,
               label: 'requests.note'.tr(),
               hint: 'requests.note_hint'.tr(),
               prefixIcon: LucideIcons.notebook_pen,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.done,
               maxLines: 2,
-              maxLength: 5000,
-              validator: _noteError,
-              onChanged: (value) => ref
-                  .read(installationRequestDraftProvider.notifier)
-                  .setNote(value),
+              maxLength: 255,
+              inputFormatters: [maxLengthLimiter(255)],
+              validator: (value) => _noteError(value) ?? apiFieldError('note'),
+              onChanged: (value) {
+                clearApiFieldError('note', key: _noteFieldKey);
+                ref
+                    .read(installationRequestDraftProvider.notifier)
+                    .setNote(value);
+              },
             ),
           ],
         ),
@@ -602,13 +664,6 @@ class _InstallationApplicationFormPageState
             ),
             if (product != null) ...[
               _ReviewRow(
-                label: 'installationApplication.billing_period'.tr(),
-                value: _periodLabel(
-                  product.monthCycle,
-                  product.monthCycleUnit,
-                ),
-              ),
-              _ReviewRow(
                 label: 'installationApplication.network_provider'.tr(),
                 value: providerLineOf(product),
               ),
@@ -616,6 +671,13 @@ class _InstallationApplicationFormPageState
                 label: 'installationApplication.internet_speed'.tr(),
                 value: 'installationApplication.speed_mbps'.tr(
                   namedArgs: {'speed': '${productSpeedMbps(product)}'},
+                ),
+              ),
+              _ReviewRow(
+                label: 'installationApplication.billing_period'.tr(),
+                value: _periodLabel(
+                  product.monthCycle,
+                  product.monthCycleUnit,
                 ),
               ),
               _ReviewRow(
@@ -965,12 +1027,14 @@ class _SelectedPackageSummary extends StatelessWidget {
     required this.provider,
     required this.speed,
     required this.price,
+    required this.month,
     required this.installationFee,
     this.total,
   });
 
   final String provider;
   final String speed;
+  final String month;
   final String price;
   final String installationFee;
   final String? total;
@@ -994,6 +1058,11 @@ class _SelectedPackageSummary extends StatelessWidget {
           _PriceLine(
             label: 'installationApplication.internet_speed'.tr(),
             value: speed,
+          ),
+          const SizedBox(height: 8),
+          _PriceLine(
+            label: 'installationApplication.billing_period'.tr(),
+            value: month,
           ),
           const SizedBox(height: 8),
           _PriceLine(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
+import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/data/requests/relocation/relocation_repository.dart';
 import 'package:cg_net_mobile/models/requests/relocation/relocation_request_model.dart';
 import 'package:cg_net_mobile/pages/requests/relocation/relocation_controller.dart';
@@ -9,7 +10,34 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('keeps previous requests visible while fetching the current account list',
+  test('propagates save validation errors for inline field handling', () async {
+    final dio = _dio(
+      (_) => _jsonResponse(
+        '{"message":"The phone field is invalid.","errors":{"phone":["Use a valid phone number."]}}',
+        statusCode: 422,
+      ),
+    );
+    final controller = RelocationController(RelocationRepository(dio));
+    addTearDown(controller.dispose);
+    final request = const RelocationRequestModel(
+      id: '',
+      userId: 8,
+      currentAddress: 'Old address',
+      newAddress: 'New address',
+      contactName: 'Alex Example',
+      phone: '09123456789',
+    );
+
+    await expectLater(
+      controller.saveRequest(request),
+      throwsA(isA<ApiException>()),
+    );
+
+    expect(controller.state.isSubmitting, isFalse);
+    expect(controller.state.errorMessage, isNull);
+  });
+
+  test('fetches once per broadband account and reloads when it changes',
       () async {
     final dio = _dio(
       (_) => _jsonResponse(
@@ -21,15 +49,19 @@ void main() {
     final controller = RelocationController(RelocationRepository(dio));
     addTearDown(controller.dispose);
 
-    await controller.fetchRequests();
+    await controller.fetchRequestsForAccount('BB-OLD');
     expect(controller.state.requests.single.broadbandAccountNumber, 'BB-OLD');
 
     final response = Completer<ResponseBody>();
     dio.httpClientAdapter = _AsyncResponseAdapter((_) => response.future);
-    final fetch = controller.fetchRequests();
+
+    await controller.fetchRequestsForAccount('BB-OLD');
+    expect(controller.state.requests.single.broadbandAccountNumber, 'BB-OLD');
+
+    final fetch = controller.fetchRequestsForAccount('BB-NEW');
 
     expect(controller.state.status, RelocationStatus.loading);
-    expect(controller.state.requests.single.broadbandAccountNumber, 'BB-OLD');
+    expect(controller.state.requests, isEmpty);
 
     response.complete(_jsonResponse('{"data":[]}'));
     await fetch;
@@ -165,10 +197,10 @@ Dio _dio(ResponseBody Function(RequestOptions options) respond) {
   return dio;
 }
 
-ResponseBody _jsonResponse(String body) {
+ResponseBody _jsonResponse(String body, {int statusCode = 200}) {
   return ResponseBody.fromString(
     body,
-    200,
+    statusCode,
     headers: {
       Headers.contentTypeHeader: [Headers.jsonContentType],
     },

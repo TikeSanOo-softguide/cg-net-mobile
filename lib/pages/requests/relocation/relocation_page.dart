@@ -14,6 +14,7 @@ import '../../../core/utils/date_time_format.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
+import '../../home/home/bound_broadband_provider.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
 import 'relocation_form_page.dart';
@@ -31,12 +32,25 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
     super.initState();
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).fetchProfile();
-      ref.read(relocationControllerProvider.notifier).fetchRequests();
+      _fetchRequestsForCurrentAccount();
     });
   }
 
-  Future<void> _refresh() =>
-      ref.read(relocationControllerProvider.notifier).fetchRequests();
+  String _currentAccountNumber() {
+    final boundAccount = ref.read(boundBroadbandProvider)?.account.trim();
+    if (boundAccount?.isNotEmpty == true) return boundAccount!;
+    return ref.read(profileControllerProvider).accountNumber.trim();
+  }
+
+  void _fetchRequestsForCurrentAccount() {
+    ref
+        .read(relocationControllerProvider.notifier)
+        .fetchRequestsForAccount(_currentAccountNumber());
+  }
+
+  Future<void> _refresh() => ref
+      .read(relocationControllerProvider.notifier)
+      .fetchRequests(_currentAccountNumber());
 
   Future<void> _openForm([RelocationRequestModel? request]) async {
     final result = await Navigator.of(context).push<RelocationSaveResult>(
@@ -112,6 +126,13 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(profileControllerProvider, (_, __) {
+      _fetchRequestsForCurrentAccount();
+    });
+    ref.listen(boundBroadbandProvider, (_, __) {
+      _fetchRequestsForCurrentAccount();
+    });
+
     final state = ref.watch(relocationControllerProvider);
     final canSubmitNewRequest = !state.requests.any(_canManageRequest);
 
