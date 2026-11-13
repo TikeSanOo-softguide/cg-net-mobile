@@ -40,16 +40,66 @@ class RelocationController extends StateNotifier<RelocationState> {
 
   final RelocationRepository _repository;
   int _fetchSequence = 0;
+  String? _lastFetchAccount;
+  bool _hasFetchedAccount = false;
 
-  Future<void> fetchRequests() async {
+  Future<void> fetchRequestsForAccount(String? accountNumber) async {
+    final normalizedAccount = accountNumber?.trim().toUpperCase() ?? '';
+    if (_hasFetchedAccount &&
+        _lastFetchAccount == normalizedAccount &&
+        (state.status == RelocationStatus.loading ||
+            state.status == RelocationStatus.success)) {
+      return;
+    }
+
+    final accountChanged =
+        !_hasFetchedAccount || _lastFetchAccount != normalizedAccount;
+    _hasFetchedAccount = true;
+    _lastFetchAccount = normalizedAccount;
+    await _fetchRequests(
+      accountNumber,
+      clearPrevious: accountChanged,
+    );
+  }
+
+  Future<void> fetchRequests([String? accountNumber]) async {
+    final normalizedAccount = accountNumber?.trim().toUpperCase();
+    final accountChanged = normalizedAccount != null &&
+        (!_hasFetchedAccount || _lastFetchAccount != normalizedAccount);
+    if (normalizedAccount != null) {
+      _hasFetchedAccount = true;
+      _lastFetchAccount = normalizedAccount;
+    }
+    await _fetchRequests(
+      accountNumber,
+      clearPrevious: accountChanged,
+    );
+  }
+
+  Future<void> _fetchRequests(
+    String? accountNumber, {
+    bool clearPrevious = false,
+  }) async {
     final sequence = ++_fetchSequence;
     state = state.copyWith(
       status: RelocationStatus.loading,
+      requests: clearPrevious ? const [] : null,
       clearError: true,
     );
     try {
-      final requests = await _repository.fetchRequests();
+      final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
+
+      final normalizedAccount = accountNumber?.trim().toUpperCase();
+      final requests = items.where((request) {
+        final requestAccount =
+            request.broadbandAccountNumber?.trim().toUpperCase();
+        if (requestAccount == null || requestAccount.isEmpty) return true;
+        return normalizedAccount != null &&
+            normalizedAccount.isNotEmpty &&
+            requestAccount == normalizedAccount;
+      }).toList();
+
       state = state.copyWith(
         status: RelocationStatus.success,
         requests: requests,
@@ -79,28 +129,26 @@ class RelocationController extends StateNotifier<RelocationState> {
           ? await _repository.createRequest(request)
           : await _repository.updateRequest(request);
       state = state.copyWith(isSubmitting: false, clearError: true);
-      await fetchRequests();
+      await fetchRequests(request.broadbandAccountNumber);
       return result;
-    } on ApiException catch (error) {
+    } catch (_) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: error.detail ?? error.messageKey,
+        clearError: true,
       );
-      return null;
-    } catch (error) {
-      state = state.copyWith(
-        isSubmitting: false,
-        errorMessage: error.toString(),
-      );
-      return null;
+      rethrow;
     }
   }
 
   Future<String?> cancelRequest(String requestId) async {
     state = state.copyWith(clearError: true);
     try {
+      final requestIndex =
+          state.requests.indexWhere((item) => item.id == requestId);
+      final request = requestIndex == -1 ? null : state.requests[requestIndex];
+
       final code = await _repository.cancelRequest(requestId);
-      await fetchRequests();
+      await fetchRequests(request?.broadbandAccountNumber);
       return code;
     } on ApiException catch (error) {
       state = state.copyWith(errorMessage: error.detail ?? error.messageKey);

@@ -175,10 +175,6 @@
     "broadband_account": "Broadband account",
     "broadband_account_hint": "Enter broadband account",
     "broadband_account_required": "Broadband account is required",
-    "customer_name": "Customer name",
-    "customer_name_hint": "Enter customer name",
-    "customer_name_required": "Customer name is required",
-    "bind": "Bind",
     "bind_success_title": "Bound successfully",
     "bind_success_body": "Your broadband account is now linked.",
     "remove_broadband": "Remove broadband",
@@ -313,10 +309,8 @@
     "duration": "Duration",
     "validation": {
       "account_required": "Account number is required",
-      "customer_name_required": "Customer name is required",
       "service_type_required": "Select a service type",
       "account_max_length": "Account number must not exceed 32 characters",
-      "customer_name_max_length": "Customer name must not exceed 50 characters",
       "bind_fail_title": "Binding failed",
       "bind_fail_body": "We could not connect your broadband account. Please try again.",
       "unbind_fail_title": "Removal failed",
@@ -324,7 +318,6 @@
       "remove_broadband": "Remove broadband",
       "broadband_account_not_match": "Account details don't match.",
       "broadband_already_connected": "This account is already connected.",
-      "broadband_different_account": "Another broadband account is already connected.",
       "broadband_account_in_use": "This account is already connected to another user."
     }
   },
@@ -727,7 +720,7 @@
   "relocation": {
     "title": "Relocation",
     "no_requests": "No relocation requests",
-    "no_requests_desc": "Tap the + button to submit a broadband relocation request.",
+    "no_requests_desc": "Tap the + button to submit a broadband relocation request",
     "new_request": "New Relocation Request",
     "edit_request": "Edit Relocation Request",
     "form_desc": "Request a service relocation.",
@@ -739,9 +732,9 @@
     "submit_success_title": "Relocation Request Submitted",
     "submit_success_body": "Your relocation request has been submitted successfully.",
     "submitted_desc": "Your relocation request is being processed. You will receive a notification once it is complete.",
+    "update_success": "Relocation request updated successfully.",
     "cancel_title": "Cancel Relocation Request",
     "cancel_confirm": "Are you sure you want to cancel this relocation request?",
-    "cancel_success": "Relocation request cancelled.",
     "req_cancelled": "Relocation request cancelled successfully.",
     "req_submitted": "Your Relocation request has been submitted successfully.",
     "req_updated": "Your Relocation request has been updated successfully."
@@ -782,7 +775,6 @@
     "cancel_title": "Cancel Installation Application",
     "cancel_confirm": "Are you sure you want to cancel this installation application?",
     "cancel_action": "Cancel Application",
-    "cancel_success": "Installation Application Cancelled.",
     "step_package": "Package",
     "step_customer": "Details",
     "step_review": "Review",
