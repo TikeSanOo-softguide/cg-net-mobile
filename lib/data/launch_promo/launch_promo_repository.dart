@@ -9,50 +9,46 @@ import '../../core/network/dio_client/dio_client.dart';
 import '../../core/utils/image_url_helper.dart';
 import '../../models/advertisement_model/advertisement_model.dart';
 
+class LaunchBannerAssets {
+  const LaunchBannerAssets({
+    required this.skipTimerPromo,
+    required this.activeAdvertisements,
+    required this.homeBanners,
+  });
+
+  final SkipTimerPromo? skipTimerPromo;
+  final List<Advertisement> activeAdvertisements;
+  final List<BannerModel> homeBanners;
+}
+
 class LaunchPromoRepository {
   LaunchPromoRepository(this._dio);
 
   final Dio _dio;
 
-  Future<SkipTimerPromo?> fetchSkipTimerPromo(
-    String language,
-  ) async {
+  Future<LaunchBannerAssets> fetchBannerAssets(String language) async {
     try {
       final response = await _dio.get<dynamic>(
         ApiEndpoints.banners,
       );
 
-      final promoItems = BannerResponseHelper.itemsOfType(
+      SkipTimerPromo? skipTimerPromo;
+      for (final item in BannerResponseHelper.itemsOfType(
         response.data,
         type: 'app_entry',
-      );
-      for (final item in promoItems) {
+      )) {
         final imageUrl = ImageUrlHelper.resolve(
           item,
           language: language,
         );
-
         if (imageUrl != null && imageUrl.isNotEmpty) {
-          return SkipTimerPromo(
+          skipTimerPromo = SkipTimerPromo(
             image: imageUrl,
             durationSeconds: (item['duration'] as num?)?.toInt() ?? 5,
           );
+          break;
         }
       }
-
-      return null;
-    } on DioException catch (error) {
-      throw ApiException.fromDio(error);
-    }
-  }
-
-  Future<List<Advertisement>> fetchActiveAdvertisement(
-    String language,
-  ) async {
-    try {
-      final response = await _dio.get<dynamic>(
-        ApiEndpoints.banners,
-      );
 
       final advertisements = <Advertisement>[];
       for (final item in BannerResponseHelper.itemsOfType(
@@ -75,10 +71,36 @@ class LaunchPromoRepository {
         );
       }
 
-      return advertisements;
+      final homeBanners = <BannerModel>[];
+      for (final item in BannerResponseHelper.itemsOfType(
+        response.data,
+        type: 'web_background',
+      )) {
+        final imageUrl = ImageUrlHelper.resolve(
+          item,
+          language: language,
+        );
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          homeBanners.add(BannerModel(image: imageUrl));
+        }
+      }
+
+      return LaunchBannerAssets(
+        skipTimerPromo: skipTimerPromo,
+        activeAdvertisements: advertisements,
+        homeBanners: homeBanners,
+      );
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  Future<SkipTimerPromo?> fetchSkipTimerPromo(String language) async {
+    return (await fetchBannerAssets(language)).skipTimerPromo;
+  }
+
+  Future<List<Advertisement>> fetchActiveAdvertisement(String language) async {
+    return (await fetchBannerAssets(language)).activeAdvertisements;
   }
 }
 
@@ -88,16 +110,23 @@ final launchPromoRepositoryProvider = Provider<LaunchPromoRepository>((ref) {
   );
 });
 
+final launchBannerAssetsProvider =
+    FutureProvider.family<LaunchBannerAssets, String>((ref, language) {
+  return ref.watch(launchPromoRepositoryProvider).fetchBannerAssets(language);
+});
+
 final skipTimerPromoProvider = FutureProvider<SkipTimerPromo?>((ref) {
   final language = ref.watch(appLocaleProvider);
-  return ref.watch(launchPromoRepositoryProvider).fetchSkipTimerPromo(language);
+  return ref
+      .watch(launchBannerAssetsProvider(language).future)
+      .then((assets) => assets.skipTimerPromo);
 });
 
 final activeAdvertisementProvider = FutureProvider<List<Advertisement>>((ref) {
   final language = ref.watch(appLocaleProvider);
   return ref
-      .watch(launchPromoRepositoryProvider)
-      .fetchActiveAdvertisement(language);
+      .watch(launchBannerAssetsProvider(language).future)
+      .then((assets) => assets.activeAdvertisements);
 });
 
 /// When true, [HomePage] presents launch notice + promotion modals once after open.
