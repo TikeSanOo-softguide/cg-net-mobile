@@ -1,21 +1,57 @@
 import 'dart:typed_data';
 
+import 'package:cg_net_mobile/core/locale/app_locale_provider.dart';
 import 'package:cg_net_mobile/core/network/api_exception.dart';
+import 'package:cg_net_mobile/data/home_banner/home_banner_repository.dart';
 import 'package:cg_net_mobile/data/launch_promo/launch_promo_repository.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late Dio dio;
   late LaunchPromoRepository repository;
+  late _JsonAdapter adapter;
 
   setUp(() {
+    adapter = _JsonAdapter();
     dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'))
-      ..httpClientAdapter = _JsonAdapter();
+      ..httpClientAdapter = adapter;
     repository = LaunchPromoRepository(dio);
   });
 
   tearDown(() => dio.close());
+
+  test('fetchBannerAssets returns all launch and home banner types', () async {
+    final assets = await repository.fetchBannerAssets('my');
+
+    expect(assets.skipTimerPromo?.image,
+        'https://images.example.test/skip-myanmar');
+    expect(assets.activeAdvertisements, hasLength(2));
+    expect(
+      assets.homeBanners.map((banner) => banner.image),
+      ['https://images.example.test/banner'],
+    );
+    expect(adapter.requestCount, 1);
+  });
+
+  test('banner providers share one API request', () async {
+    final container = ProviderContainer(
+      overrides: [
+        appLocaleProvider.overrideWith((ref) => 'en'),
+        launchPromoRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await Future.wait<Object?>([
+      container.read(skipTimerPromoProvider.future),
+      container.read(activeAdvertisementProvider.future),
+      container.read(homeBannerProvider('en').future),
+    ]);
+
+    expect(adapter.requestCount, 1);
+  });
 
   test('fetchSkipTimerPromo returns the first usable app entry promo',
       () async {
@@ -113,6 +149,7 @@ class _JsonAdapter implements HttpClientAdapter {
 
   final String body;
   final int statusCode;
+  int requestCount = 0;
 
   @override
   Future<ResponseBody> fetch(
@@ -120,6 +157,7 @@ class _JsonAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    requestCount++;
     return ResponseBody.fromString(
       body,
       statusCode,

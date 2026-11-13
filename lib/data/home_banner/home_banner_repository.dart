@@ -7,6 +7,7 @@ import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
 import '../../core/utils/image_url_helper.dart';
 import '../../models/advertisement_model/advertisement_model.dart';
+import '../launch_promo/launch_promo_repository.dart';
 
 class HomeBannerRepository {
   HomeBannerRepository(this._dio);
@@ -50,8 +51,8 @@ final homeBannerRepositoryProvider = Provider<HomeBannerRepository>((ref) {
 });
 
 final homeBannerProvider =
-    FutureProvider.family<List<BannerModel>, String>((ref, language) async {
-  final repository = ref.watch(homeBannerRepositoryProvider);
-
-  return repository.fetchBanners(language);
+    FutureProvider.family<List<BannerModel>, String>((ref, language) {
+  return ref
+      .watch(launchBannerAssetsProvider(language).future)
+      .then((assets) => assets.homeBanners);
 });
