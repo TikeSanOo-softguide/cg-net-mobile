@@ -13,7 +13,7 @@ void main() {
   test('propagates save validation errors for inline field handling', () async {
     final dio = _dio(
       (_) => _jsonResponse(
-        '{"message":"The phone field is invalid.","errors":{"phone":["Use a valid phone number."]}}',
+        '{"message":"The contact phone field is invalid.","errors":{"contact_phone":["Use a valid phone number."]}}',
         statusCode: 422,
       ),
     );
@@ -43,7 +43,7 @@ void main() {
       (_) => _jsonResponse(
         '{"data":[{"id":11,"user_id":8,"broadband_account_number":"BB-OLD",'
         '"current_address":"Old address","new_address":"New address",'
-        '"contact_name":"Alex Example","phone":"09123456789"}]}',
+        '"contact_name":"Alex Example","contact_phone":"09123456789"}]}',
       ),
     );
     final controller = RelocationController(RelocationRepository(dio));
@@ -70,6 +70,34 @@ void main() {
     expect(controller.state.requests, isEmpty);
   });
 
+  test('filters by current account but keeps requests without an account',
+      () async {
+    final dio = _dio(
+      (_) => _jsonResponse(
+        '{"data":['
+        '{"id":11,"broadband_account_number":"BB-11"},'
+        '{"id":12,"broadband_account_number":"BB-22"},'
+        '{"id":13,"broadband_account_number":null},'
+        '{"id":14,"broadband_account_number":""}'
+        ']}',
+      ),
+    );
+    final controller = RelocationController(RelocationRepository(dio));
+    addTearDown(controller.dispose);
+
+    await controller.fetchRequestsForAccount(null);
+    expect(
+      controller.state.requests.map((request) => request.id),
+      ['13', '14'],
+    );
+
+    await controller.fetchRequestsForAccount('BB-11');
+    expect(
+      controller.state.requests.map((request) => request.id),
+      ['11', '13', '14'],
+    );
+  });
+
   test('supports nullable broadband account, preferred date and details',
       () async {
     final model = RelocationRequestModel.fromJson({
@@ -80,7 +108,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
       'details': null,
       'status': 'under_review',
       'created_at': '2026-10-19T10:00:00Z',
@@ -97,7 +125,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
       'details': null,
       'status': 'under_review',
     });
@@ -112,7 +140,7 @@ void main() {
           '{"data":[{"id":11,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"phone":"09123456789",'
+          '"contact_phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}]}',
         );
       }
@@ -121,7 +149,7 @@ void main() {
           '{"code":"MSG-REQ-002","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"phone":"09123456789",'
+          '"contact_phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
       }
@@ -130,7 +158,7 @@ void main() {
           '{"code":"MSG-REQ-003","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"phone":"09123456789",'
+          '"contact_phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
       }
@@ -183,7 +211,7 @@ void main() {
         'new_address': 'New address',
         'preferred_date': '2026-12-01',
         'contact_name': 'Alex Example',
-        'phone': '09123456789',
+        'contact_phone': '09123456789',
         'details': 'Move upstairs',
         'status': 'under_review',
       },

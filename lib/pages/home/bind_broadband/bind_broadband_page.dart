@@ -462,10 +462,10 @@ class _BoundAccountCard extends StatelessWidget {
                     label: context.tr('broadband.detail_end_time'),
                     value: formatDate(profile.endTime),
                   ),
-                if (profile.status.trim().isNotEmpty)
+                if (profile.accountStatus.trim().isNotEmpty)
                   _DetailRow(
                     label: context.tr('broadband.detail_status'),
-                    value: profile.status,
+                    value: profile.accountStatus,
                     showDivider: false,
                   ),
               ],

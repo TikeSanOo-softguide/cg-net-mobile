@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,6 +27,8 @@ import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/complaint/complaint_repository.dart';
 import '../../../models/requests/complaint/complaint_model.dart';
 import '../../../models/user_model/user_model.dart';
+import '../../home/home/bound_broadband.dart';
+import '../../home/home/bound_broadband_provider.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'complaint_controller.dart';
 
@@ -59,20 +62,94 @@ class ComplaintPage extends ConsumerStatefulWidget {
   ConsumerState<ComplaintPage> createState() => _ComplaintPageState();
 }
 
-class _ComplaintPageState extends ConsumerState<ComplaintPage> {
+class _ComplaintPageState extends ConsumerState<ComplaintPage>
+    with WidgetsBindingObserver {
+  late final ProviderSubscription<BoundBroadband?> _accountSubscription;
+  String _lastActiveAccount = '';
+  String? _pendingFetchAccount;
+  Future<void>? _pendingFetch;
+  bool _initialFetchComplete = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastActiveAccount = _activeAccountNumber();
+    _accountSubscription = ref.listenManual(
+      boundBroadbandProvider,
+      (previous, next) {
+        final account =
+            (next?.account ?? ref.read(profileControllerProvider).accountNumber)
+                .trim();
+        final serviceChanged = previous?.serviceType != next?.serviceType;
+        if (account == _lastActiveAccount && !serviceChanged) return;
+        _lastActiveAccount = account;
+        if (!_initialFetchComplete) return;
+        _fetchComplaintsForAccount(account);
+      },
+    );
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(profileControllerProvider.notifier).fetchProfile();
-      ref.read(complaintControllerProvider.notifier).fetchComplaints();
+      _loadComplaints(refreshProfile: true, completeInitialFetch: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _accountSubscription.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadComplaints(refreshProfile: true);
+    }
+  }
+
+  String _activeAccountNumber() {
+    final boundAccount = ref.read(boundBroadbandProvider)?.account;
+    return (boundAccount ?? ref.read(profileControllerProvider).accountNumber)
+        .trim();
+  }
+
+  Future<void> _loadComplaints({
+    bool refreshProfile = false,
+    bool completeInitialFetch = false,
+  }) async {
+    if (refreshProfile && ref.read(boundBroadbandProvider) == null) {
+      await ref.read(profileControllerProvider.notifier).fetchProfile();
+    }
+    if (!mounted) return;
+    final account = _activeAccountNumber();
+    await _fetchComplaintsForAccount(account);
+    if (!mounted) return;
+    _lastActiveAccount = account;
+    if (completeInitialFetch) _initialFetchComplete = true;
+  }
+
+  Future<void> _fetchComplaintsForAccount(String accountNumber) {
+    if (_pendingFetchAccount == accountNumber && _pendingFetch != null) {
+      return _pendingFetch!;
+    }
+
+    _pendingFetchAccount = accountNumber;
+    final fetch =
+        ref.read(complaintControllerProvider.notifier).fetchComplaints(
+              accountNumber: accountNumber.isEmpty ? null : accountNumber,
+            );
+    _pendingFetch = fetch;
+    return fetch.whenComplete(() {
+      if (identical(_pendingFetch, fetch)) {
+        _pendingFetch = null;
+        _pendingFetchAccount = null;
+      }
     });
   }
 
   Future<void> _fetchComplaints() async {
-    await ref.read(profileControllerProvider.notifier).fetchProfile();
-    await ref.read(complaintControllerProvider.notifier).fetchComplaints();
+    await _loadComplaints(refreshProfile: true);
   }
 
   void _openNewComplaintPage({ComplaintModel? initialReport}) {
@@ -98,7 +175,6 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage> {
           ).tr(),
         );
       }
-
     });
   }
 
@@ -142,7 +218,18 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage> {
   Widget build(BuildContext context) {
     final title = 'complaint.title'.tr();
     final reportState = ref.watch(complaintControllerProvider);
-    final hasUnderReviewReport = reportState.reports.any(
+    final accountNumber = ref.watch(boundBroadbandProvider)?.account.trim() ??
+        ref.watch(profileControllerProvider).accountNumber.trim();
+    final reports = accountNumber.isEmpty
+        ? reportState.reports
+        : reportState.reports
+            .where(
+              (report) =>
+                  report.broadbandAccountNumber?.trim().toUpperCase() ==
+                  accountNumber.toUpperCase(),
+            )
+            .toList();
+    final hasUnderReviewReport = reports.any(
       (report) => _isUnderReviewReport(report.status),
     );
 
@@ -159,15 +246,12 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage> {
             ),
       body: RefreshIndicator(
         onRefresh: _fetchComplaints,
-        child: _buildBody(),
+        child: _buildBody(reportState, reports),
       ),
     );
   }
 
-  Widget _buildBody() {
-    final state = ref.watch(complaintControllerProvider);
-    final reports = state.reports;
-
+  Widget _buildBody(ComplaintState state, List<ComplaintModel> reports) {
     if (state.status == ComplaintStatus.loading && reports.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -467,10 +551,30 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
   late final TextEditingController _contactNameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _descriptionController;
+  late final ProviderSubscription<BoundBroadband?> _accountSubscription;
+  late String _formAccountNumber;
+
+  String _effectiveAccountNumber(
+    UserProfileModel profile, {
+    String? boundAccount,
+  }) {
+    final requestAccount =
+        widget.initialReport?.broadbandAccountNumber?.trim() ?? '';
+    if (requestAccount.isNotEmpty) return requestAccount;
+    final activeBoundAccount = boundAccount?.trim() ?? '';
+    return activeBoundAccount.isNotEmpty
+        ? activeBoundAccount
+        : profile.accountNumber.trim();
+  }
 
   String _storedAccountNumber(UserProfileModel profile) {
     final typed = _broadbandAccountController.text.trim();
-    return typed.isNotEmpty ? typed : profile.accountNumber.trim();
+    return typed.isNotEmpty
+        ? typed
+        : _effectiveAccountNumber(
+            profile,
+            boundAccount: ref.read(boundBroadbandProvider)?.account,
+          );
   }
 
   String _requiredMessage(String fieldKey) {
@@ -507,7 +611,7 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
 
     final normalized = PhoneNumber.normalize(value);
     if (normalized == null || !PhoneNumber.isSupported(normalized)) {
-      return 'login.phone_unsupported'.tr();
+      return 'login.phone_invalid'.tr();
     }
     return apiFieldError('contact_phone');
   }
@@ -523,11 +627,16 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
   void initState() {
     super.initState();
     final profile = ref.read(profileControllerProvider);
+    final boundAccount = ref.read(boundBroadbandProvider)?.account;
     final initial = widget.initialReport;
+    _formAccountNumber = _effectiveAccountNumber(
+      profile,
+      boundAccount: boundAccount,
+    );
 
     if (initial != null) {
       _broadbandAccountController = TextEditingController(
-        text: initial.broadbandAccountNumber ?? profile.accountNumber,
+        text: _formAccountNumber,
       );
       _contactNameController = TextEditingController(text: initial.contactName);
       _phoneController = TextEditingController(
@@ -543,17 +652,49 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
       );
     } else {
       _broadbandAccountController =
-          TextEditingController(text: profile.accountNumber);
+          TextEditingController(text: _formAccountNumber);
       _contactNameController = TextEditingController(
         text: profile.fullName.isNotEmpty ? profile.fullName : 'Customer',
       );
       _phoneController = TextEditingController(text: profile.displayPhone);
       _descriptionController = TextEditingController();
     }
+    _accountSubscription = ref.listenManual(
+      boundBroadbandProvider,
+      (_, next) {
+        final account =
+            (next?.account ?? ref.read(profileControllerProvider).accountNumber)
+                .trim();
+        if (account == _formAccountNumber) return;
+        _formAccountNumber = account;
+        if (widget.initialReport != null) {
+          Navigator.of(context).maybePop();
+          return;
+        }
+        _clearFormForAccount(account);
+      },
+    );
+  }
+
+  void _clearFormForAccount(String account) {
+    clearAllApiFieldErrors();
+    _formKey.currentState?.reset();
+    _broadbandAccountController.text = account;
+    _contactNameController.clear();
+    _phoneController.clear();
+    _descriptionController.clear();
+    _selectedPhotos.clear();
+    _contactNameEdited = false;
+    _phoneEdited = false;
+    setState(() {
+      _accountGapError = null;
+      _selectedType = 'no_internet';
+    });
   }
 
   @override
   void dispose() {
+    _accountSubscription.close();
     _broadbandAccountController.dispose();
     _contactNameController.dispose();
     _phoneController.dispose();
@@ -633,7 +774,11 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
   Future<void> _submitForm() async {
     clearAllApiFieldErrors();
     final profile = ref.read(profileControllerProvider);
-    final accountLocked = profile.accountNumber.isNotEmpty;
+    final activeAccount = _effectiveAccountNumber(
+      profile,
+      boundAccount: ref.read(boundBroadbandProvider)?.account,
+    );
+    final accountLocked = activeAccount.isNotEmpty;
     final accountError = accountLocked
         ? _requiredText(
             _storedAccountNumber(profile),
@@ -680,10 +825,14 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
     } catch (error) {
       if (!mounted) return;
       final profile = ref.read(profileControllerProvider);
+      final activeAccount = _effectiveAccountNumber(
+        profile,
+        boundAccount: ref.read(boundBroadbandProvider)?.account,
+      );
       final handledInline = handleApiError(
         error,
         fields: {
-          if (profile.accountNumber.isEmpty)
+          if (activeAccount.isEmpty)
             'broadband_account_number': _broadbandAccountFieldKey,
           'contact_name': _contactNameFieldKey,
           'contact_phone': _phoneFieldKey,
@@ -717,11 +866,16 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
     final controllerState = ref.watch(complaintControllerProvider);
+    final boundAccount = ref.watch(boundBroadbandProvider)?.account;
+    final accountNumber = _effectiveAccountNumber(
+      profile,
+      boundAccount: boundAccount,
+    );
 
     if (widget.initialReport == null) {
-      if (profile.accountNumber.isNotEmpty &&
-          _broadbandAccountController.text != profile.accountNumber) {
-        _broadbandAccountController.text = profile.accountNumber;
+      if (accountNumber.isNotEmpty &&
+          _broadbandAccountController.text != accountNumber) {
+        _broadbandAccountController.text = accountNumber;
       }
       if (!_contactNameEdited &&
           (_contactNameController.text.isEmpty ||
@@ -794,7 +948,7 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
                               ],
                             ),
                             const SizedBox(height: 16),
-                            _accountBlock(profile),
+                            _accountBlock(accountNumber),
                             const SizedBox(height: 16),
                             AppInput(
                               controller: _contactNameController,
@@ -826,7 +980,10 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
                               suffixIcon: LucideIcons.phone,
                               formFieldKey: _phoneFieldKey,
                               maxLength: 16,
-                              inputFormatters: [maxLengthLimiter(16)],
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                maxLengthLimiter(16),
+                              ],
                               validator: _validateContactPhone,
                               onChanged: (_) {
                                 _phoneEdited = true;
@@ -943,8 +1100,8 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
     );
   }
 
-  Widget _accountBlock(UserProfileModel profile) {
-    final locked = profile.accountNumber.isNotEmpty;
+  Widget _accountBlock(String accountNumber) {
+    final locked = accountNumber.isNotEmpty;
     final label = 'complaint.broadband_account'.tr();
     if (!locked) {
       return AppInput(

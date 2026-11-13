@@ -91,15 +91,14 @@ class RelocationController extends StateNotifier<RelocationState> {
       if (sequence != _fetchSequence) return;
 
       final normalizedAccount = accountNumber?.trim().toUpperCase();
-      final requests = normalizedAccount == null || normalizedAccount.isEmpty
-          ? items
-          : items
-              .where(
-                (request) =>
-                    request.broadbandAccountNumber?.trim().toUpperCase() ==
-                    normalizedAccount,
-              )
-              .toList();
+      final requests = items.where((request) {
+        final requestAccount =
+            request.broadbandAccountNumber?.trim().toUpperCase();
+        if (requestAccount == null || requestAccount.isEmpty) return true;
+        return normalizedAccount != null &&
+            normalizedAccount.isNotEmpty &&
+            requestAccount == normalizedAccount;
+      }).toList();
 
       state = state.copyWith(
         status: RelocationStatus.success,

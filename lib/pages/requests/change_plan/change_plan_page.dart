@@ -15,6 +15,8 @@ import '../../../core/utils/date_time_format.dart';
 import '../../../data/requests/change_plan/change_plan_repository.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 import '../../../models/user_model/user_model.dart';
+import '../../home/home/bound_broadband.dart';
+import '../../home/home/bound_broadband_provider.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_plan_controller.dart';
 import 'change_plan_form_page.dart';
@@ -26,22 +28,95 @@ class ChangePlanPage extends ConsumerStatefulWidget {
   ConsumerState<ChangePlanPage> createState() => _ChangePlanPageState();
 }
 
-class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
+class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
+    with WidgetsBindingObserver {
   static const _serviceTint = Color(0xFF7A0BC0);
+  late final ProviderSubscription<BoundBroadband?> _accountSubscription;
+  String _lastActiveAccount = '';
+  String? _pendingFetchAccount;
+  Future<void>? _pendingFetch;
+  bool _initialFetchComplete = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastActiveAccount = _activeAccountNumber();
+    _accountSubscription = ref.listenManual(
+      boundBroadbandProvider,
+      (previous, next) {
+        final account = (next?.account ??
+                ref.read(profileControllerProvider).accountNumber)
+            .trim();
+        final serviceChanged = previous?.serviceType != next?.serviceType;
+        if (account == _lastActiveAccount && !serviceChanged) return;
+        _lastActiveAccount = account;
+        if (!_initialFetchComplete) return;
+        _fetchRequestsForAccount(account);
+      },
+    );
     Future.microtask(() {
-      ref.read(profileControllerProvider.notifier).fetchProfile();
-      ref.read(changePlanControllerProvider.notifier).fetchRequests();
+      if (!mounted) return;
+      _loadRequests(refreshProfile: true, completeInitialFetch: true);
     });
   }
 
-  Future<void> _refresh() async {
-    await ref.read(profileControllerProvider.notifier).fetchProfile();
-    await ref.read(changePlanControllerProvider.notifier).fetchRequests();
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _accountSubscription.close();
+    super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadRequests(refreshProfile: true);
+    }
+  }
+
+  String _activeAccountNumber() {
+    final boundAccount = ref.read(boundBroadbandProvider)?.account;
+    return (boundAccount ?? ref.read(profileControllerProvider).accountNumber)
+        .trim();
+  }
+
+  Future<void> _loadRequests({
+    bool refreshProfile = false,
+    bool completeInitialFetch = false,
+  }) async {
+    if (refreshProfile && ref.read(boundBroadbandProvider) == null) {
+      await ref.read(profileControllerProvider.notifier).fetchProfile();
+    }
+    if (!mounted) return;
+    final account = _activeAccountNumber();
+    await _fetchRequestsForAccount(account);
+    if (!mounted) return;
+    _lastActiveAccount = account;
+    if (completeInitialFetch) _initialFetchComplete = true;
+  }
+
+  Future<void> _fetchRequestsForAccount(String accountNumber) {
+    if (_pendingFetchAccount == accountNumber && _pendingFetch != null) {
+      return _pendingFetch!;
+    }
+
+    _pendingFetchAccount = accountNumber;
+    final fetch = ref
+        .read(changePlanControllerProvider.notifier)
+        .fetchRequests(
+          accountNumber: accountNumber.isEmpty ? null : accountNumber,
+        );
+    _pendingFetch = fetch;
+    return fetch.whenComplete(() {
+      if (identical(_pendingFetch, fetch)) {
+        _pendingFetch = null;
+        _pendingFetchAccount = null;
+      }
+    });
+  }
+
+  Future<void> _refresh() => _loadRequests(refreshProfile: true);
 
   Future<void> _openForm({ChangePlanRequestModel? request}) async {
     final result = await Navigator.of(context).push<Object?>(
@@ -106,7 +181,18 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(changePlanControllerProvider);
-    final hasUnderReview = state.requests.any(_isUnderReview);
+    final accountNumber = ref.watch(boundBroadbandProvider)?.account.trim() ??
+        ref.watch(profileControllerProvider).accountNumber.trim();
+    final requests = accountNumber.isEmpty
+        ? state.requests
+        : state.requests
+            .where(
+              (request) =>
+                  request.broadbandAccountNumber?.trim().toUpperCase() ==
+                  accountNumber.toUpperCase(),
+            )
+            .toList();
+    final hasUnderReview = requests.any(_isUnderReview);
 
     return AppCurvedScaffold(
       title: Text(
@@ -119,19 +205,22 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
           : AppAddFloatingActionButton(onPressed: _openForm),
       body: RefreshIndicator(
         onRefresh: _refresh,
-        child: _buildBody(state),
+        child: _buildBody(state, requests),
       ),
     );
   }
 
-  Widget _buildBody(ChangePlanState state) {
-    if (state.status == ChangePlanStatus.loading && state.requests.isEmpty) {
+  Widget _buildBody(
+    ChangePlanState state,
+    List<ChangePlanRequestModel> requests,
+  ) {
+    if (state.status == ChangePlanStatus.loading && requests.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (state.status == ChangePlanStatus.error && state.requests.isEmpty) {
+    if (state.status == ChangePlanStatus.error && requests.isEmpty) {
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
@@ -155,7 +244,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
       );
     }
 
-    if (state.requests.isEmpty) {
+    if (requests.isEmpty) {
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
@@ -197,7 +286,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage> {
       );
     }
 
-    final items = state.requests;
+    final items = requests;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(

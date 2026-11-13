@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,6 +24,8 @@ import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/change_wifi_password/change_wifi_password_repository.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
 import '../../../models/user_model/user_model.dart';
+import '../../home/home/bound_broadband.dart';
+import '../../home/home/bound_broadband_provider.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_wifi_password_controller.dart';
 
@@ -52,24 +55,93 @@ class ChangeWifiPasswordPage extends ConsumerStatefulWidget {
       _ChangeWifiPasswordPageState();
 }
 
-class _ChangeWifiPasswordPageState
-    extends ConsumerState<ChangeWifiPasswordPage> {
+class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
+    with WidgetsBindingObserver {
+  late final ProviderSubscription<BoundBroadband?> _accountSubscription;
+  String _lastActiveAccount = '';
+  String? _pendingFetchAccount;
+  Future<void>? _pendingFetch;
+  bool _initialFetchComplete = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastActiveAccount = _activeAccountNumber();
+    _accountSubscription = ref.listenManual(
+      boundBroadbandProvider,
+      (previous, next) {
+        final account =
+            (next?.account ?? ref.read(profileControllerProvider).accountNumber)
+                .trim();
+        final serviceChanged = previous?.serviceType != next?.serviceType;
+        if (account == _lastActiveAccount && !serviceChanged) return;
+        _lastActiveAccount = account;
+        if (!_initialFetchComplete) return;
+        _fetchRequestsForAccount(account);
+      },
+    );
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(profileControllerProvider.notifier).fetchProfile();
-      ref.read(changeWifiPasswordControllerProvider.notifier).fetchRequests();
+      _loadRequests(refreshProfile: true, completeInitialFetch: true);
     });
   }
 
-  Future<void> _fetchRequests() async {
-    await ref.read(profileControllerProvider.notifier).fetchProfile();
-    await ref
-        .read(changeWifiPasswordControllerProvider.notifier)
-        .fetchRequests();
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _accountSubscription.close();
+    super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadRequests(refreshProfile: true);
+    }
+  }
+
+  String _activeAccountNumber() {
+    final boundAccount = ref.read(boundBroadbandProvider)?.account;
+    return (boundAccount ?? ref.read(profileControllerProvider).accountNumber)
+        .trim();
+  }
+
+  Future<void> _loadRequests({
+    bool refreshProfile = false,
+    bool completeInitialFetch = false,
+  }) async {
+    if (refreshProfile && ref.read(boundBroadbandProvider) == null) {
+      await ref.read(profileControllerProvider.notifier).fetchProfile();
+    }
+    if (!mounted) return;
+    final account = _activeAccountNumber();
+    await _fetchRequestsForAccount(account);
+    if (!mounted) return;
+    _lastActiveAccount = account;
+    if (completeInitialFetch) _initialFetchComplete = true;
+  }
+
+  Future<void> _fetchRequestsForAccount(String accountNumber) {
+    if (_pendingFetchAccount == accountNumber && _pendingFetch != null) {
+      return _pendingFetch!;
+    }
+
+    _pendingFetchAccount = accountNumber;
+    final fetch =
+        ref.read(changeWifiPasswordControllerProvider.notifier).fetchRequests(
+              accountNumber: accountNumber.isEmpty ? null : accountNumber,
+            );
+    _pendingFetch = fetch;
+    return fetch.whenComplete(() {
+      if (identical(_pendingFetch, fetch)) {
+        _pendingFetch = null;
+        _pendingFetchAccount = null;
+      }
+    });
+  }
+
+  Future<void> _fetchRequests() => _loadRequests(refreshProfile: true);
 
   void _openNewRequestPage({ChangePasswordRequestModel? request}) {
     Navigator.of(context)
@@ -139,7 +211,18 @@ class _ChangeWifiPasswordPageState
   @override
   Widget build(BuildContext context) {
     final title = 'change_wifi.title'.tr();
-    final requests = ref.watch(changeWifiPasswordControllerProvider).requests;
+    final state = ref.watch(changeWifiPasswordControllerProvider);
+    final accountNumber = ref.watch(boundBroadbandProvider)?.account.trim() ??
+        ref.watch(profileControllerProvider).accountNumber.trim();
+    final requests = accountNumber.isEmpty
+        ? state.requests
+        : state.requests
+            .where(
+              (request) =>
+                  request.broadbandAccountNumber?.trim().toUpperCase() ==
+                  accountNumber.toUpperCase(),
+            )
+            .toList();
     final hasUnderReviewRequest =
         requests.any((request) => _isUnderReviewStatus(request.status));
 
@@ -156,15 +239,15 @@ class _ChangeWifiPasswordPageState
             ),
       body: RefreshIndicator(
         onRefresh: _fetchRequests,
-        child: _buildBody(),
+        child: _buildBody(state, requests),
       ),
     );
   }
 
-  Widget _buildBody() {
-    final state = ref.watch(changeWifiPasswordControllerProvider);
-    final requests = state.requests;
-
+  Widget _buildBody(
+    ChangeWifiPasswordState state,
+    List<ChangePasswordRequestModel> requests,
+  ) {
     if (state.status == ChangeWifiPasswordStatus.loading && requests.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -419,6 +502,8 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
   late final TextEditingController _phoneController;
   late final TextEditingController _wifiNameController;
   late final TextEditingController _passwordController;
+  late final ProviderSubscription<BoundBroadband?> _accountSubscription;
+  late String _formAccountNumber;
 
   late bool _isChangingWifiName;
   bool _obscurePassword = true;
@@ -436,7 +521,7 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
 
     final normalized = PhoneNumber.normalize(value);
     if (normalized == null || !PhoneNumber.isSupported(normalized)) {
-      return 'login.phone_unsupported'.tr();
+      return 'login.phone_invalid'.tr();
     }
     return apiFieldError('contact_phone');
   }
@@ -445,9 +530,14 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
   void initState() {
     super.initState();
     final profile = ref.read(profileControllerProvider);
+    final boundAccount = ref.read(boundBroadbandProvider)?.account;
     final request = widget.request;
+    _formAccountNumber = (request?.broadbandAccountNumber ??
+            boundAccount ??
+            profile.accountNumber)
+        .trim();
     _broadbandAccountController = TextEditingController(
-      text: request?.broadbandAccountNumber ?? profile.accountNumber,
+      text: request?.broadbandAccountNumber ?? _formAccountNumber,
     );
     _contactNameController = TextEditingController(
       text: request?.contactName ??
@@ -461,10 +551,40 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
     _wifiNameController = TextEditingController(text: request?.newWifiName);
     _passwordController = TextEditingController(text: request?.newPassword);
     _isChangingWifiName = request?.newWifiName?.trim().isNotEmpty == true;
+    _accountSubscription = ref.listenManual(
+      boundBroadbandProvider,
+      (_, next) {
+        final account =
+            (next?.account ?? ref.read(profileControllerProvider).accountNumber)
+                .trim();
+        if (account == _formAccountNumber) return;
+        _formAccountNumber = account;
+        if (widget.request != null) {
+          Navigator.of(context).maybePop();
+          return;
+        }
+        _clearFormForAccount(account);
+      },
+    );
+  }
+
+  void _clearFormForAccount(String account) {
+    clearAllApiFieldErrors();
+    _formKey.currentState?.reset();
+    _broadbandAccountController.text = account;
+    _contactNameController.clear();
+    _phoneController.clear();
+    _wifiNameController.clear();
+    _passwordController.clear();
+    setState(() {
+      _isChangingWifiName = false;
+      _obscurePassword = true;
+    });
   }
 
   @override
   void dispose() {
+    _accountSubscription.close();
     _broadbandAccountController.dispose();
     _contactNameController.dispose();
     _phoneController.dispose();
@@ -479,8 +599,9 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
 
     final profile = ref.read(profileControllerProvider);
     final inputAccount = _broadbandAccountController.text.trim();
-    final boundAccount =
-        inputAccount.isNotEmpty ? inputAccount : profile.accountNumber;
+    final boundAccount = inputAccount.isNotEmpty
+        ? inputAccount
+        : ref.read(boundBroadbandProvider)?.account ?? profile.accountNumber;
     final userId = int.tryParse(profile.id) ?? 0;
     final normalizedPhone = PhoneNumber.normalize(_phoneController.text);
     if (normalizedPhone == null || !PhoneNumber.isSupported(normalizedPhone)) {
@@ -555,10 +676,18 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
     final controllerState = ref.watch(changeWifiPasswordControllerProvider);
+    final requestAccount = widget.request?.broadbandAccountNumber?.trim() ?? '';
+    final boundAccount =
+        ref.watch(boundBroadbandProvider)?.account.trim() ?? '';
+    final accountNumber = requestAccount.isNotEmpty
+        ? requestAccount
+        : boundAccount.isNotEmpty
+            ? boundAccount
+            : profile.accountNumber.trim();
 
-    if (profile.accountNumber.isNotEmpty &&
-        _broadbandAccountController.text != profile.accountNumber) {
-      _broadbandAccountController.text = profile.accountNumber;
+    if (accountNumber.isNotEmpty &&
+        _broadbandAccountController.text != accountNumber) {
+      _broadbandAccountController.text = accountNumber;
     }
     if ((_contactNameController.text.isEmpty ||
             _contactNameController.text == 'Customer') &&
@@ -626,7 +755,7 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                               ],
                             ),
                             const SizedBox(height: 16),
-                            if (profile.accountNumber.isNotEmpty)
+                            if (accountNumber.isNotEmpty)
                               AccountNumberRow(
                                 label: 'change_wifi.broadband_account'.tr(),
                                 value: _broadbandAccountController.text,
@@ -686,7 +815,10 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                               prefixIcon: LucideIcons.phone,
                               formFieldKey: _phoneFieldKey,
                               maxLength: 16,
-                              inputFormatters: [maxLengthLimiter(16)],
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                maxLengthLimiter(16),
+                              ],
                               validator: _validateContactPhone,
                               onChanged: (_) => clearApiFieldError(
                                 'contact_phone',
@@ -810,8 +942,8 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                                 prefixIcon: LucideIcons.wifi,
                                 formFieldKey: _wifiNameFieldKey,
                                 maxLines: 2,
-                                maxLength: 255,
-                                inputFormatters: [maxLengthLimiter(255)],
+                                maxLength: 30,
+                                inputFormatters: [maxLengthLimiter(30)],
                                 validator: (v) {
                                   if (_isChangingWifiName &&
                                       (v == null || v.trim().isEmpty)) {

@@ -225,6 +225,7 @@ class _InstallationApplicationFormPageState
           'full_name': _nameFieldKey,
           'contact_name': _nameFieldKey,
           'phone': _phoneFieldKey,
+          'contact_phone': _phoneFieldKey,
           'address': _addressFieldKey,
           'note': _noteFieldKey,
         },
@@ -589,9 +590,11 @@ class _InstallationApplicationFormPageState
               ],
               validator: (value) =>
                   _translateError(installationPhoneError(value)) ??
-                  apiFieldError('phone'),
+                  apiFieldError('phone') ??
+                  apiFieldError('contact_phone'),
               onChanged: (value) {
                 clearApiFieldError('phone', key: _phoneFieldKey);
+                clearApiFieldError('contact_phone', key: _phoneFieldKey);
                 ref
                     .read(installationRequestDraftProvider.notifier)
                     .setPhone(value);

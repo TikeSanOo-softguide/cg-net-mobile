@@ -12,7 +12,7 @@ void main() {
       'id': 13,
       'user_id': 8,
       'service_type': 'FTTH',
-      'name': 'Applicant Name',
+      'contact_name': 'Applicant Name',
       'package_detail': {
         'product_id': '249',
         'product_name': '办公移动网_100M_月',
@@ -24,7 +24,7 @@ void main() {
         'month_cycle_unit': '月',
       },
       'address': 'Installation address',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
       'photos': [
         {'url': 'https://example.test/photo.jpg'},
       ],
@@ -46,7 +46,7 @@ void main() {
     expect(model.toJson(), {
       'user_id': 8,
       'service_type': 'FTTH',
-      'name': 'Applicant Name',
+      'contact_name': 'Applicant Name',
       'package_detail': {
         'product_id': '249',
         'product_name': '办公移动网_100M_月',
@@ -58,7 +58,7 @@ void main() {
         'month_cycle_unit': '月',
       },
       'address': 'Installation address',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
       'photos': [
         {'url': 'https://example.test/photo.jpg'},
       ],
@@ -74,20 +74,20 @@ void main() {
         requests.add(options);
         if (options.method == 'GET') {
           return _jsonResponse(
-            '{"data":[{"id":11,"user_id":8,"name":"Applicant Name",'
+            '{"data":[{"id":11,"user_id":8,"contact_name":"Applicant Name",'
             '"package_detail":{"product_id":"249","product_name":"100M"},'
             '"address":"Installation address",'
-            '"phone":"09123456789","photos":[],"status":"under_review"}]}',
+            '"contact_phone":"09123456789","photos":[],"status":"under_review"}]}',
           );
         }
         if (options.method == 'POST') {
           return _jsonResponse(
             '{"code":"MSG-REQ-002","level":"success",'
             '"message":"Installation application submitted.",'
-            '"data":{"id":12,"user_id":8,"name":"Applicant Name",'
+            '"data":{"id":12,"user_id":8,"contact_name":"Applicant Name",'
             '"package_detail":{"product_id":"249","product_name":"100M"},'
             '"address":"Installation address",'
-            '"phone":"09123456789","photos":[],"status":"under_review"}}',
+            '"contact_phone":"09123456789","photos":[],"status":"under_review"}}',
           );
         }
         if (options.method == 'PUT') {
@@ -152,7 +152,7 @@ void main() {
     );
     expect(requests[1].data, {
       'service_type': 'FTTH',
-      'name': 'Applicant Name',
+      'contact_name': 'Applicant Name',
       'package_detail': {
         'product_id': '249',
         'product_name': '办公移动网_100M_月',
@@ -164,7 +164,7 @@ void main() {
         'month_cycle_unit': '月',
       },
       'address': 'Installation address',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
     });
   });
 

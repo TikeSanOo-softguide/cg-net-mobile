@@ -240,6 +240,16 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
             _statusKey(request) == 'cancelled' ||
             _statusKey(request) == 'rejected')
         .toList();
+    const knownStatuses = {
+      'pending',
+      'under_review',
+      'approved',
+      'cancelled',
+      'rejected',
+    };
+    final otherStatuses = state.requests
+        .where((request) => !knownStatuses.contains(_statusKey(request)))
+        .toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -270,7 +280,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
             ),
           ),
         ..._relocationCards(
-          [...underReview, ...approved, ...closed],
+          [...underReview, ...approved, ...closed, ...otherStatuses],
           (request) => _RelocationRequestCard(
             request: request,
             onEdit: () => _openForm(request),
@@ -359,13 +369,11 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
     final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : formatDate(
-            request.createdAt!.toLocal().toIso8601String(),
-          );
+        : formatDate(request.createdAt!.toUtc().toIso8601String());
     final preferredDate = request.preferredDate == null
         ? null
         : formatDate(
-            request.preferredDate!.toLocal().toIso8601String(),
+            request.preferredDate!.toIso8601String().split('T').first,
           );
 
     return RequestTicketCard(
