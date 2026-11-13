@@ -227,14 +227,14 @@ String? installationAddressError(String? value) {
   if (value == null || value.trim().isEmpty) {
     return 'requests.required';
   }
-  if (value.trim().runes.length > 5000) {
+  if (value.trim().runes.length > 255) {
     return 'requests.max_length';
   }
   return null;
 }
 
 String? installationNoteError(String? value) {
-  if (value != null && value.trim().runes.length > 5000) {
+  if (value != null && value.trim().runes.length > 255) {
     return 'requests.max_length';
   }
   return null;

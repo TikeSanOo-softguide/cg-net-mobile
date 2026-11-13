@@ -12,6 +12,8 @@ import '../../../components/app_input/app_input.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/max_length_limiter.dart';
 import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
@@ -28,8 +30,17 @@ class RelocationFormPage extends ConsumerStatefulWidget {
   ConsumerState<RelocationFormPage> createState() => _RelocationFormPageState();
 }
 
-class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
+class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
+    with ApiFieldErrorsMixin<RelocationFormPage> {
+  final _contactNameFieldKey = GlobalKey<FormFieldState<String>>();
+  final _phoneFieldKey = GlobalKey<FormFieldState<String>>();
+  final _newAddressFieldKey = GlobalKey<FormFieldState<String>>();
+  final _preferredDateFieldKey = GlobalKey<FormFieldState<String>>();
+  final _detailsFieldKey = GlobalKey<FormFieldState<String>>();
+  final _accountFieldKey = GlobalKey<FormFieldState<String>>();
+  final _currentAddressFieldKey = GlobalKey<FormFieldState<String>>();
   final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _accountController;
   late final TextEditingController _currentAddressController;
   late final TextEditingController _newAddressController;
@@ -37,6 +48,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   late final TextEditingController _phoneController;
   late final TextEditingController _detailsController;
   late final TextEditingController _preferredDateController;
+
   DateTime? _preferredDate;
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   bool _submitting = false;
@@ -113,6 +125,10 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     if (picked != null && mounted) {
       setState(() => _preferredDate = picked);
       _preferredDateController.text = DateFormat('yyyy/MM/dd').format(picked);
+      clearApiFieldError(
+        'preferred_date',
+        key: _preferredDateFieldKey,
+      );
     }
   }
 
@@ -121,6 +137,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
       _preferredDate = null;
       _preferredDateController.clear();
     });
+    clearApiFieldError('preferred_date', key: _preferredDateFieldKey);
   }
 
   Future<void> _submit() async {
@@ -171,6 +188,25 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
       if (savedRequest != null && mounted) {
         Navigator.of(context).pop<RelocationSaveResult>(savedRequest);
       }
+    } catch (error) {
+      if (!mounted) return;
+      final profile = ref.read(profileControllerProvider);
+      final handledInline = handleApiError(
+        error,
+        fields: {
+          'contact_name': _contactNameFieldKey,
+          'phone': _phoneFieldKey,
+          'contact_phone': _phoneFieldKey,
+          'new_address': _newAddressFieldKey,
+          'preferred_date': _preferredDateFieldKey,
+          'details': _detailsFieldKey,
+          if (profile.accountNumber.isEmpty)
+            'broadband_account_number': _accountFieldKey,
+          if (profile.address.isEmpty)
+            'current_address': _currentAddressFieldKey,
+        },
+      );
+      if (!handledInline) await showApiErrorModal(context, error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -285,18 +321,28 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                           children: [
                             AppInput(
                               controller: _contactNameController,
+                              formFieldKey: _contactNameFieldKey,
                               label: 'requests.contact_name'.tr(),
                               hint: 'requests.contact_name_hint'.tr(),
                               prefixIcon: LucideIcons.user,
-                              validator: (value) => _requiredMaxLengthField(
-                                value,
-                                30,
-                                'requests.contact_name',
+                              maxLength: 30,
+                              inputFormatters: [maxLengthLimiter(30)],
+                              validator: (value) =>
+                                  _requiredMaxLengthField(
+                                    value,
+                                    30,
+                                    'requests.contact_name',
+                                  ) ??
+                                  apiFieldError('contact_name'),
+                              onChanged: (_) => clearApiFieldError(
+                                'contact_name',
+                                key: _contactNameFieldKey,
                               ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _phoneController,
+                              formFieldKey: _phoneFieldKey,
                               label: '${'requests.phone'.tr()} *',
                               hint: 'requests.phone_hint'.tr(),
                               prefixIcon: LucideIcons.phone,
@@ -304,28 +350,46 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                               textInputAction: TextInputAction.next,
                               maxLength: 16,
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9+\s-]')),
+                                FilteringTextInputFormatter.digitsOnly,
+                                maxLengthLimiter(16),
                               ],
                               validator: _phoneError,
+                              onChanged: (_) {
+                                clearApiFieldError(
+                                  'phone',
+                                  key: _phoneFieldKey,
+                                );
+                                clearApiFieldError(
+                                  'contact_phone',
+                                  key: _phoneFieldKey,
+                                );
+                              },
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _newAddressController,
+                              formFieldKey: _newAddressFieldKey,
                               label: '${'relocation.new_address'.tr()} *',
                               hint: 'relocation.new_address_hint'.tr(),
                               prefixIcon: LucideIcons.map_pin,
                               maxLines: 2,
-                              maxLength: 5000,
+                              maxLength: 255,
+                              inputFormatters: [maxLengthLimiter(255)],
                               validator: _newAddressError,
+                              onChanged: (_) => clearApiFieldError(
+                                'new_address',
+                                key: _newAddressFieldKey,
+                              ),
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _preferredDateController,
+                              formFieldKey: _preferredDateFieldKey,
                               label: 'relocation.preferred_date'.tr(),
                               hint: 'requests.choose_date'.tr(),
                               readOnly: true,
                               onTap: _selectPreferredDate,
+                              validator: (_) => apiFieldError('preferred_date'),
                               suffix: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -347,12 +411,17 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
                             ),
                             AppInput(
                               controller: _detailsController,
+                              formFieldKey: _detailsFieldKey,
                               label: 'requests.note'.tr(),
                               hint: 'requests.note_hint'.tr(),
                               prefixIcon: LucideIcons.notebook_pen,
-                              maxLines: 3,
-                              maxLength: 5000,
+                              maxLines: 2,
+                              maxLength: 255,
                               validator: _detailsError,
+                              onChanged: (_) => clearApiFieldError(
+                                'details',
+                                key: _detailsFieldKey,
+                              ),
                             ),
                             if (errorMessage != null) ...[
                               const SizedBox(height: AppStyle.spaceXs),
@@ -405,19 +474,29 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
 
     final accountInput = AppInput(
       controller: _accountController,
+      formFieldKey: _accountFieldKey,
       label: '$accountLabel *',
       readOnly: accountLocked,
       enabled: !accountLocked,
       prefixIcon: LucideIcons.id_card,
       validator: _accountError,
+      onChanged: (_) => clearApiFieldError(
+        'broadband_account_number',
+        key: _accountFieldKey,
+      ),
     );
     final addressInput = AppInput(
       controller: _currentAddressController,
+      formFieldKey: _currentAddressFieldKey,
       label: '$addressLabel *',
       readOnly: addressLocked,
       enabled: !addressLocked,
       prefixIcon: LucideIcons.map_pin,
       validator: _currentAddressError,
+      onChanged: (_) => clearApiFieldError(
+        'current_address',
+        key: _currentAddressFieldKey,
+      ),
     );
 
     final accountRow = AccountNumberRow(
@@ -542,7 +621,8 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
   }
 
   String? _accountError(String? value) =>
-      _requiredText(value, 'requests.broadband_account');
+      _requiredText(value, 'requests.broadband_account') ??
+      apiFieldError('broadband_account_number');
 
   String? _phoneError(String? value) {
     final trimmed = value?.trim() ?? '';
@@ -552,17 +632,19 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage> {
     if (normalized == null || !PhoneNumber.isSupported(normalized)) {
       return 'login.phone_invalid'.tr();
     }
-
-    return null;
+    return apiFieldError('phone') ?? apiFieldError('contact_phone');
   }
 
   String? _currentAddressError(String? value) =>
-      _requiredMaxLengthField(value, 5000, 'relocation.current_address');
+      _requiredMaxLengthField(value, 255, 'relocation.current_address') ??
+      apiFieldError('current_address');
 
   String? _newAddressError(String? value) =>
-      _requiredMaxLengthField(value, 5000, 'relocation.new_address');
+      _requiredMaxLengthField(value, 255, 'relocation.new_address') ??
+      apiFieldError('new_address');
 
-  String? _detailsError(String? value) => _maxLengthField(value, 5000);
+  String? _detailsError(String? value) =>
+      _maxLengthField(value, 255) ?? apiFieldError('details');
 
   String? _requiredText(String? value, String fieldKey) {
     if (value == null || value.trim().isEmpty) {

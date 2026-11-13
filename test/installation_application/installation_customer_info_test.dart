@@ -19,6 +19,19 @@ void main() {
       );
     });
 
+    test('limits notes to 255 Unicode code points', () {
+      expect(installationNoteError(List.filled(255, '中').join()), isNull);
+      expect(
+        installationNoteError(List.filled(256, '中').join()),
+        'requests.max_length',
+      );
+      expect(
+        installationNoteError(List.filled(128, 'က\u1039').join()),
+        'requests.max_length',
+      );
+      expect(installationNoteError(null), isNull);
+    });
+
     test('validates phone numbers with app country rules', () {
       expect(installationPhoneError(null), 'login.phone_required');
       expect(installationPhoneError('123'), 'login.phone_invalid');

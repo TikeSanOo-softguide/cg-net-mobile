@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
+import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/data/requests/relocation/relocation_repository.dart';
 import 'package:cg_net_mobile/models/requests/relocation/relocation_request_model.dart';
 import 'package:cg_net_mobile/pages/requests/relocation/relocation_controller.dart';
@@ -9,33 +10,92 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('keeps previous requests visible while fetching the current account list',
+  test('propagates save validation errors for inline field handling', () async {
+    final dio = _dio(
+      (_) => _jsonResponse(
+        '{"message":"The contact phone field is invalid.","errors":{"contact_phone":["Use a valid phone number."]}}',
+        statusCode: 422,
+      ),
+    );
+    final controller = RelocationController(RelocationRepository(dio));
+    addTearDown(controller.dispose);
+    final request = const RelocationRequestModel(
+      id: '',
+      userId: 8,
+      currentAddress: 'Old address',
+      newAddress: 'New address',
+      contactName: 'Alex Example',
+      phone: '09123456789',
+    );
+
+    await expectLater(
+      controller.saveRequest(request),
+      throwsA(isA<ApiException>()),
+    );
+
+    expect(controller.state.isSubmitting, isFalse);
+    expect(controller.state.errorMessage, isNull);
+  });
+
+  test('fetches once per broadband account and reloads when it changes',
       () async {
     final dio = _dio(
       (_) => _jsonResponse(
         '{"data":[{"id":11,"user_id":8,"broadband_account_number":"BB-OLD",'
         '"current_address":"Old address","new_address":"New address",'
-        '"contact_name":"Alex Example","phone":"09123456789"}]}',
+        '"contact_name":"Alex Example","contact_phone":"09123456789"}]}',
       ),
     );
     final controller = RelocationController(RelocationRepository(dio));
     addTearDown(controller.dispose);
 
-    await controller.fetchRequests();
+    await controller.fetchRequestsForAccount('BB-OLD');
     expect(controller.state.requests.single.broadbandAccountNumber, 'BB-OLD');
 
     final response = Completer<ResponseBody>();
     dio.httpClientAdapter = _AsyncResponseAdapter((_) => response.future);
-    final fetch = controller.fetchRequests();
+
+    await controller.fetchRequestsForAccount('BB-OLD');
+    expect(controller.state.requests.single.broadbandAccountNumber, 'BB-OLD');
+
+    final fetch = controller.fetchRequestsForAccount('BB-NEW');
 
     expect(controller.state.status, RelocationStatus.loading);
-    expect(controller.state.requests.single.broadbandAccountNumber, 'BB-OLD');
+    expect(controller.state.requests, isEmpty);
 
     response.complete(_jsonResponse('{"data":[]}'));
     await fetch;
 
     expect(controller.state.status, RelocationStatus.success);
     expect(controller.state.requests, isEmpty);
+  });
+
+  test('filters by current account but keeps requests without an account',
+      () async {
+    final dio = _dio(
+      (_) => _jsonResponse(
+        '{"data":['
+        '{"id":11,"broadband_account_number":"BB-11"},'
+        '{"id":12,"broadband_account_number":"BB-22"},'
+        '{"id":13,"broadband_account_number":null},'
+        '{"id":14,"broadband_account_number":""}'
+        ']}',
+      ),
+    );
+    final controller = RelocationController(RelocationRepository(dio));
+    addTearDown(controller.dispose);
+
+    await controller.fetchRequestsForAccount(null);
+    expect(
+      controller.state.requests.map((request) => request.id),
+      ['13', '14'],
+    );
+
+    await controller.fetchRequestsForAccount('BB-11');
+    expect(
+      controller.state.requests.map((request) => request.id),
+      ['11', '13', '14'],
+    );
   });
 
   test('supports nullable broadband account, preferred date and details',
@@ -48,7 +108,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
       'details': null,
       'status': 'under_review',
       'created_at': '2026-10-19T10:00:00Z',
@@ -65,7 +125,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'phone': '09123456789',
+      'contact_phone': '09123456789',
       'details': null,
       'status': 'under_review',
     });
@@ -80,7 +140,7 @@ void main() {
           '{"data":[{"id":11,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"phone":"09123456789",'
+          '"contact_phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}]}',
         );
       }
@@ -89,7 +149,7 @@ void main() {
           '{"code":"MSG-REQ-002","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"phone":"09123456789",'
+          '"contact_phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
       }
@@ -98,7 +158,7 @@ void main() {
           '{"code":"MSG-REQ-003","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"phone":"09123456789",'
+          '"contact_phone":"09123456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
       }
@@ -151,7 +211,7 @@ void main() {
         'new_address': 'New address',
         'preferred_date': '2026-12-01',
         'contact_name': 'Alex Example',
-        'phone': '09123456789',
+        'contact_phone': '09123456789',
         'details': 'Move upstairs',
         'status': 'under_review',
       },
@@ -165,10 +225,10 @@ Dio _dio(ResponseBody Function(RequestOptions options) respond) {
   return dio;
 }
 
-ResponseBody _jsonResponse(String body) {
+ResponseBody _jsonResponse(String body, {int statusCode = 200}) {
   return ResponseBody.fromString(
     body,
-    200,
+    statusCode,
     headers: {
       Headers.contentTypeHeader: [Headers.jsonContentType],
     },
