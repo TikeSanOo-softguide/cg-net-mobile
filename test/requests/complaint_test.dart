@@ -329,6 +329,35 @@ void main() {
   });
 
   group('ComplaintController', () {
+    test('fetchComplaints filters reports by broadband account', () async {
+      _setResponse(
+        dio,
+        '''
+        {
+          "data": [
+            {
+              "id": 31,
+              "broadband_account_number": "FTTH123456789",
+              "failure_type": "no_internet"
+            },
+            {
+              "id": 32,
+              "broadband_account_number": "CG987654321",
+              "failure_type": "slow"
+            }
+          ]
+        }
+        ''',
+      );
+      final controller = ComplaintController(repository);
+      addTearDown(controller.dispose);
+
+      await controller.fetchComplaints(accountNumber: ' ftth123456789 ');
+
+      expect(controller.state.reports, hasLength(1));
+      expect(controller.state.reports.single.id, '31');
+    });
+
     test('stores offline submission failures like installation requests',
         () async {
       dio.httpClientAdapter = _JsonAdapter(

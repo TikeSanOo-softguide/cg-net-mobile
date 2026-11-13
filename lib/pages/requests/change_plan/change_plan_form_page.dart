@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,6 +18,8 @@ import '../../../core/utils/phone_number.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import '../../../models/user_model/user_model.dart';
+import '../../home/home/bound_broadband.dart';
+import '../../home/home/bound_broadband_provider.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'change_plan_controller.dart';
 import '../installation_application/installation_application_controller.dart';
@@ -43,6 +45,8 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
   late final TextEditingController _phoneController;
   late final TextEditingController _noteController;
   late final TextEditingController _dateController;
+  late final ProviderSubscription<BoundBroadband?> _accountSubscription;
+  late String _formAccountNumber;
   DateTime? _preferredDate;
   int _step = 1;
   AutovalidateMode _contactAutovalidate = AutovalidateMode.disabled;
@@ -53,6 +57,8 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
   List<InstallationApplicationOption> _packages = const [];
   bool _loadingOptions = true;
   bool _optionsFailed = false;
+  int _productLoadSequence = 0;
+  int _accountChangeSequence = 0;
 
   String _requiredMessage(String fieldKey) {
     return 'requests.required_field'.tr(namedArgs: {'field': fieldKey.tr()});
@@ -67,7 +73,7 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
 
     final normalized = PhoneNumber.normalize(value);
     if (normalized == null || !PhoneNumber.isSupported(normalized)) {
-      return 'login.phone_unsupported'.tr();
+      return 'login.phone_invalid'.tr();
     }
     return apiFieldError('contact_phone');
   }
@@ -76,7 +82,12 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
   void initState() {
     super.initState();
     final profile = ref.read(profileControllerProvider);
+    final bound = ref.read(boundBroadbandProvider);
     final initial = widget.initialRequest;
+    _formAccountNumber = (initial?.broadbandAccountNumber ??
+            bound?.account ??
+            profile.accountNumber)
+        .trim();
     _nameController =
         TextEditingController(text: initial?.contactName ?? profile.fullName);
     _phoneController = TextEditingController(
@@ -91,27 +102,53 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
           ? ''
           : DateFormat('yyyy/MM/dd').format(_preferredDate!),
     );
-    _serviceType = initial?.serviceType == 'CG' ||
-            (initial == null && profile.serviceType == 'CG')
-        ? 'CG'
-        : 'FTTH';
+    final serviceType =
+        initial?.serviceType ?? bound?.serviceType ?? profile.serviceType;
+    _serviceType = serviceType == 'CG' ? 'CG' : 'FTTH';
+    _accountSubscription = ref.listenManual(
+      boundBroadbandProvider,
+      (_, next) {
+        final account =
+            (next?.account ?? ref.read(profileControllerProvider).accountNumber)
+                .trim();
+        final nextServiceType = next?.serviceType ??
+            ref.read(profileControllerProvider).serviceType;
+        if (account == _formAccountNumber &&
+            (nextServiceType == null || nextServiceType == _serviceType)) {
+          return;
+        }
+        _formAccountNumber = account;
+        _accountChangeSequence++;
+        if (initial != null) {
+          Navigator.of(context).maybePop();
+          return;
+        }
+        _clearFormForAccount(nextServiceType);
+      },
+    );
     Future.microtask(() async {
+      final accountChangeSequence = _accountChangeSequence;
       await ref.read(profileControllerProvider.notifier).fetchProfile();
       if (!mounted) return;
       final profile = ref.read(profileControllerProvider);
       if (initial == null &&
+          accountChangeSequence == _accountChangeSequence &&
           _nameController.text.trim().isEmpty &&
           profile.fullName.isNotEmpty) {
         _nameController.text = profile.fullName;
       }
       if (initial == null &&
+          accountChangeSequence == _accountChangeSequence &&
           _phoneController.text.trim().isEmpty &&
           profile.phone.isNotEmpty) {
         _phoneController.text = profile.displayPhone;
       }
+      final activeServiceType =
+          ref.read(boundBroadbandProvider)?.serviceType ?? profile.serviceType;
       if (initial == null &&
-          (profile.serviceType == 'CG' || profile.serviceType == 'FTTH')) {
-        _serviceType = profile.serviceType!;
+          accountChangeSequence == _accountChangeSequence &&
+          (activeServiceType == 'CG' || activeServiceType == 'FTTH')) {
+        _serviceType = activeServiceType!;
       }
       await _loadProducts();
       if (mounted && initial != null) {
@@ -122,11 +159,34 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
 
   @override
   void dispose() {
+    _accountSubscription.close();
     _nameController.dispose();
     _phoneController.dispose();
     _noteController.dispose();
     _dateController.dispose();
     super.dispose();
+  }
+
+  void _clearFormForAccount(String? serviceType) {
+    clearAllApiFieldErrors();
+    _formKey.currentState?.reset();
+    _nameController.clear();
+    _phoneController.clear();
+    _noteController.clear();
+    _dateController.clear();
+    setState(() {
+      _preferredDate = null;
+      _step = 1;
+      _contactAutovalidate = AutovalidateMode.disabled;
+      _serviceType = serviceType == 'CG' ? 'CG' : 'FTTH';
+      _productLine = null;
+      _speedMbps = null;
+      _monthCycle = null;
+      _packages = const [];
+      _loadingOptions = true;
+      _optionsFailed = false;
+    });
+    _loadProducts();
   }
 
   InstallationApplicationOption? get _matchedProduct => matchedProduct(
@@ -168,6 +228,7 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
   }
 
   Future<void> _loadProducts() async {
+    final sequence = ++_productLoadSequence;
     setState(() {
       _loadingOptions = true;
       _optionsFailed = false;
@@ -176,14 +237,14 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
       final options = await ref
           .read(installationApplicationControllerProvider.notifier)
           .fetchProducts(_serviceType);
-      if (!mounted) return;
+      if (!mounted || sequence != _productLoadSequence) return;
       setState(() {
         _packages = options;
         _loadingOptions = false;
         _optionsFailed = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || sequence != _productLoadSequence) return;
       setState(() {
         _optionsFailed = true;
         _loadingOptions = false;
@@ -276,8 +337,9 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
     final request = ChangePlanRequestModel(
       id: initial?.id ?? '',
       userId: initial?.userId ?? int.tryParse(profile.id) ?? 0,
-      broadbandAccountNumber:
-          initial?.broadbandAccountNumber ?? profile.accountNumber,
+      broadbandAccountNumber: initial?.broadbandAccountNumber ??
+          ref.read(boundBroadbandProvider)?.account ??
+          profile.accountNumber,
       serviceType: _serviceType,
       currentPackageDetail: initial?.currentPackageDetail ??
           ChangePlanRequestModel.currentDetailFrom(profile),
@@ -591,7 +653,10 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   maxLength: 16,
-                  inputFormatters: [maxLengthLimiter(16)],
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    maxLengthLimiter(16),
+                  ],
                   formFieldKey: _phoneFieldKey,
                   validator: _validateContactPhone,
                   onChanged: (_) => clearApiFieldError(
@@ -910,13 +975,6 @@ class _SelectedPackageSummary extends StatelessWidget {
       ),
       child: Column(
         children: [
-          if (packageName != null && packageName!.trim().isNotEmpty) ...[
-            _SummaryRow(
-              label: 'installationApplication.package'.tr(),
-              value: packageName!,
-            ),
-            const SizedBox(height: 8),
-          ],
           _SummaryRow(
             label: 'installationApplication.network_provider'.tr(),
             value: provider,
@@ -936,6 +994,13 @@ class _SelectedPackageSummary extends StatelessWidget {
             label: 'installationApplication.package_price'.tr(),
             value: price,
           ),
+          if (packageName != null && packageName!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _SummaryRow(
+              label: 'installationApplication.package'.tr(),
+              value: packageName!,
+            ),
+          ],
         ],
       ),
     );

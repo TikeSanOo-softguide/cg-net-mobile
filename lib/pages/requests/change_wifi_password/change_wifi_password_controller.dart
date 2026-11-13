@@ -37,26 +37,33 @@ class ChangeWifiPasswordState {
 class ChangeWifiPasswordController
     extends StateNotifier<ChangeWifiPasswordState> {
   ChangeWifiPasswordController(this._repository)
-      : super(const ChangeWifiPasswordState()) {
-    fetchRequests();
-  }
+      : super(const ChangeWifiPasswordState());
 
   final ChangeWifiPasswordRepository _repository;
   int _fetchSequence = 0;
 
-  Future<void> fetchRequests() async {
+  Future<void> fetchRequests({String? accountNumber}) async {
     final sequence = ++_fetchSequence;
     state = state.copyWith(
       status: ChangeWifiPasswordStatus.loading,
-      requests: const [],
       errorMessage: null,
     );
     try {
       final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
+      final normalizedAccount = accountNumber?.trim().toUpperCase();
+      final requests = normalizedAccount == null || normalizedAccount.isEmpty
+          ? items
+          : items
+              .where(
+                (request) =>
+                    request.broadbandAccountNumber?.trim().toUpperCase() ==
+                    normalizedAccount,
+              )
+              .toList();
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.success,
-        requests: items,
+        requests: requests,
         errorMessage: null,
       );
     } catch (_) {
@@ -72,7 +79,9 @@ class ChangeWifiPasswordController
   ) async {
     try {
       final result = await _repository.cancelRequest(item);
-      await fetchRequests();
+      await fetchRequests(
+        accountNumber: item.broadbandAccountNumber,
+      );
       return result;
     } on ApiException catch (e) {
       state = state.copyWith(errorMessage: e.detail ?? e.messageKey);
