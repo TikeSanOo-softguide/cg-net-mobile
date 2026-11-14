@@ -51,7 +51,6 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/mock/
     - assets/translations/
     - assets/images/
     - assets/images/packages/

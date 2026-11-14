@@ -58,21 +58,10 @@ class PackageListController extends StateNotifier<PackageListState> {
         errorMessage: e.messageKey,
       );
     } catch (e) {
-      try {
-        final fallback = await _repository.fetchPackagesMock();
-        state = state.copyWith(
-          status: fallback.isEmpty
-              ? PackageListStatus.empty
-              : PackageListStatus.data,
-          packages: fallback,
-          errorMessage: null,
-        );
-      } catch (_) {
-        state = state.copyWith(
-          status: PackageListStatus.error,
-          errorMessage: e.toString(),
-        );
-      }
+      state = state.copyWith(
+        status: PackageListStatus.error,
+        errorMessage: e.toString(),
+      );
     }
   }
 }

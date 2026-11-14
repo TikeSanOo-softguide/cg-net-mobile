@@ -47,12 +47,6 @@ lib/
 - Logic: `*_controller.dart` (Riverpod)
 - Feature API: `*_repository.dart` inside that page folder
 
-## Mock data
-
-Package list loads `assets/mock/packages.json`. Real endpoint (commented, ready to enable):
-
-`GET /v1/customer/plans/available`
-
 ## Design reference
 
 [CG-NT Figma](https://www.figma.com/design/11hEAsRtr3TPOtvhsnIPQJ/CG-NT?node-id=0-1)

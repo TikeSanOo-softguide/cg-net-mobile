@@ -22,7 +22,6 @@ import '../../../data/profile/profile_repository.dart';
 import '../../../models/package_model/package_model.dart';
 import '../../profile/profile/profile_controller.dart';
 import '../components/luxury_package_card.dart';
-import '../package_catalog.dart';
 import '../package_list/package_list_controller.dart';
 import 'package_buy_confirm_drawer.dart';
 import 'package_buy_result.dart';
@@ -109,10 +108,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     await opened.future;
   }
 
-  _PackageDetailViewData _resolveViewData(
-    String localeCode,
-    PackageListState state,
-  ) {
+  _PackageDetailViewData _resolveViewData(PackageListState state) {
     PackageModel? model;
     var planIndex = 0;
     for (var i = 0; i < state.packages.length; i++) {
@@ -123,9 +119,8 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       }
     }
 
-    final catalog = PackageCatalog.byId(widget.packageId);
-    final speed = (model?.speed ?? catalog?.speedMbps ?? '').trim();
-    final price = model?.price ?? catalog?.pricePoints ?? 0;
+    final speed = (model?.speed ?? '').trim();
+    final price = model?.price ?? 0;
     final cycle = [
       if (model?.termMonths != null) '${model!.termMonths}',
       model?.billingCycle.trim() ?? '',
@@ -133,12 +128,12 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
 
     return _PackageDetailViewData(
       id: widget.packageId,
-      title: model?.name ?? (catalog?.titleKey ?? 'package.title').tr(),
-      pricePoints: price is num ? price.toInt() : 0,
+      title: model?.name ?? 'package.title'.tr(),
+      pricePoints: price.toInt(),
       priceLabel: '$price',
       speedMbps: speed,
       periodLabel: cycle,
-      popular: model?.recommended ?? catalog?.popular ?? false,
+      popular: model?.recommended ?? false,
       features: model?.features ?? const [],
       lineLabel: model?.currency ?? '',
       planIndex: planIndex,
@@ -156,9 +151,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
   Future<void> _buyNow() async {
     if (_submitting) return;
 
-    final locale = context.locale.languageCode;
     final info = _resolveViewData(
-      locale,
       ref.read(packageListControllerProvider),
     );
     final productId = widget.packageId.trim();
@@ -291,7 +284,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final packageState = ref.watch(packageListControllerProvider);
-    final info = _resolveViewData(locale, packageState);
+    final info = _resolveViewData(packageState);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppTheme.systemOverlayPrimary,
       child: AppCurvedScaffold(
