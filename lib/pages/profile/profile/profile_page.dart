@@ -96,6 +96,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     elevated: false,
                     bordered: false,
                     padding: const EdgeInsets.all(AppStyle.spaceMd),
+                    borderRadius: AppStyle.borderRadiusListCard,
                     child: Row(
                       children: [
                         _AccountAvatar(name: profile.fullName),
@@ -170,39 +171,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               onTap: () => showLanguagePickerModal(context: context, ref: ref),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
             _SettingsCard(
               asset: 'assets/images/profile/account_settings.png',
               title: 'profile.account_settings'.tr(),
               onTap: () => context.pushNamed(RouteNames.editProfile),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
             _SettingsCard(
               asset: 'assets/images/profile/change_password.png',
               title: 'profile.change_password'.tr(),
               onTap: () => context.pushNamed(RouteNames.changePassword),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
             _SettingsCard(
               asset: 'assets/images/profile/notification.png',
               title: 'profile.notifications'.tr(),
               onTap: () =>
                   context.pushNamed(RouteNames.notificationPreferences),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
             _SettingsCard(
               asset: 'assets/images/profile/about.png',
               title: 'profile.about'.tr(),
               trailingText: versionText,
               onTap: () => context.pushNamed(RouteNames.aboutApp),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
             _SettingsCard(
               asset: 'assets/images/profile/share.png',
               title: 'profile.share_app'.tr(),
               onTap: _shareApp,
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
             _SettingsCard(
               asset: 'assets/images/profile/logout.png',
               tint: const Color(0xFFFFEBEE),
@@ -258,6 +259,7 @@ class _AccountHeaderSkeleton extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: EdgeInsets.all(AppStyle.spaceMd),
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Row(
         children: [
           ShimmerBox(width: 38, height: 38, borderRadius: 8),
@@ -325,7 +327,7 @@ class _SettingsCard extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusSm,
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
         child: Row(

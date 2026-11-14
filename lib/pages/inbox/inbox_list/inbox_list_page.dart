@@ -229,7 +229,7 @@ class _InboxList extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 5),
+        separatorBuilder: (_, __) => const SizedBox(height: 2),
         itemBuilder: (context, index) {
           final item = items[index];
           return _InboxCard(
@@ -314,7 +314,7 @@ class _InboxCard extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusSm,
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         child: Row(

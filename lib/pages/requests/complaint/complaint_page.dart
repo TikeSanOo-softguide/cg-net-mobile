@@ -350,7 +350,7 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
         80,
       ),
       itemCount: reports.length + (hasError ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
+      separatorBuilder: (_, __) => const SizedBox(height: 2),
       itemBuilder: (context, index) {
         if (hasError && index == 0) {
           return AppCard(

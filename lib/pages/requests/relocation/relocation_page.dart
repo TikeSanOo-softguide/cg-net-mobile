@@ -308,7 +308,7 @@ List<Widget> _relocationCards(
     for (var index = 0; index < requests.length; index++) ...[
       cardFor(requests[index]),
       if (index != requests.length - 1)
-        const SizedBox(height: AppStyle.spaceSm),
+        const SizedBox(height: 2),
     ],
   ];
 }

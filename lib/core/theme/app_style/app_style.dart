@@ -38,6 +38,11 @@ class AppStyle {
   static const double radiusInput = 8;
   static const double radiusButton = 8;
 
+  /// Inbox, account, history, and request list cards.
+  static const double radiusListCard = 8;
+  static const BorderRadius borderRadiusListCard =
+      BorderRadius.all(Radius.circular(radiusListCard));
+
   static BorderRadius get borderRadiusSm => BorderRadius.circular(radiusSm);
   static BorderRadius get borderRadiusMd => BorderRadius.circular(radiusMd);
   static BorderRadius get borderRadiusLg => BorderRadius.circular(radiusLg);

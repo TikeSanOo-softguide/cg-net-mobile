@@ -304,7 +304,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
         80,
       ),
       itemCount: requests.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppStyle.spaceSm),
+      separatorBuilder: (_, __) => const SizedBox(height: 2),
       itemBuilder: (context, index) {
         final request = requests[index];
         return _RequestItemCard(

@@ -16,6 +16,7 @@ import '../../../core/network/api_error_text.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/history/history_repository.dart';
 import '../../../models/history_model/history_model.dart';
@@ -154,7 +155,7 @@ class _HistoryList extends ConsumerWidget {
               ),
               for (final item in group.value) ...[
                 _HistoryRow(item: item),
-                const SizedBox(height: 5),
+                const SizedBox(height: 2),
               ],
             ],
           ],
@@ -240,6 +241,7 @@ class _HistoryRow extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: const EdgeInsets.all(14),
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Row(
         children: [
           QuickActionIconChip(

@@ -52,7 +52,7 @@ class ServiceHistoryPage extends ConsumerWidget {
               AppStyle.listPaddingBottom,
             ),
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 5),
+            separatorBuilder: (_, __) => const SizedBox(height: 2),
             itemBuilder: (context, index) {
               final item = items[index];
               return _ServiceHistoryRow(
@@ -154,6 +154,7 @@ class _ServiceHistoryEmpty extends StatelessWidget {
           elevated: false,
           bordered: false,
           padding: const EdgeInsets.all(AppStyle.spaceXxl),
+          borderRadius: AppStyle.borderRadiusListCard,
           child: Column(
             children: [
               ColorFiltered(
@@ -217,6 +218,7 @@ class _ServiceHistoryRow extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

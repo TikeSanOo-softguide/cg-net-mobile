@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
+import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 import '../app_card/app_card.dart';
 
@@ -69,7 +70,7 @@ class _RequestTicketCardState extends State<RequestTicketCard> {
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -80,7 +81,7 @@ class _RequestTicketCardState extends State<RequestTicketCard> {
             decoration: BoxDecoration(
               color: widget.statusColor,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
+                topLeft: Radius.circular(AppStyle.radiusListCard),
                 topRight: Radius.zero,
                 bottomRight: Radius.circular(9),
                 bottomLeft: Radius.circular(2),

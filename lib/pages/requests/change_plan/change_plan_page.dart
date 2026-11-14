@@ -306,7 +306,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
                 ? () => _confirmCancel(items[i])
                 : null,
           ),
-          if (i != items.length - 1) const SizedBox(height: AppStyle.spaceSm),
+          if (i != items.length - 1) const SizedBox(height: 2),
         ],
       ],
     );

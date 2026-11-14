@@ -295,7 +295,7 @@ List<Widget> _requestCards(
   return [
     for (var i = 0; i < requests.length; i++) ...[
       cardFor(requests[i]),
-      if (i != requests.length - 1) const SizedBox(height: AppStyle.spaceSm),
+      if (i != requests.length - 1) const SizedBox(height: 2),
     ],
   ];
 }

@@ -16,8 +16,9 @@ class AppGlassTabBar extends StatelessWidget {
   final TabController controller;
   final List<String> labels;
 
-  static const double _height = 44;
+  static const double _height = 50;
   static const double _pad = 4;
+  static const double _pillInsetV = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class AppGlassTabBar extends StatelessWidget {
       padding: const EdgeInsets.all(_pad),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: AppStyle.borderRadiusSm,
+        borderRadius: AppStyle.borderRadiusListCard,
         border: Border.all(color: AppColors.borderLight, width: 0.5),
       ),
       child: LayoutBuilder(
@@ -49,9 +50,9 @@ class AppGlassTabBar extends StatelessWidget {
                   // Horizontally sliding selected pill (follows swipe + tap).
                   Positioned(
                     left: value * tabWidth,
-                    top: 0,
+                    top: _pillInsetV,
                     width: tabWidth,
-                    height: pillHeight,
+                    height: pillHeight - _pillInsetV * 2,
                     child: IgnorePointer(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
@@ -93,7 +94,7 @@ class AppGlassTabBar extends StatelessWidget {
                                         maxLines: 1,
                                         softWrap: false,
                                         style: AppTheme.english(
-                                          fontSize: 14,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                           color: Color.lerp(
                                             AppColors.textMuted,
