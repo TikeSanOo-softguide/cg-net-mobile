@@ -8,9 +8,11 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
+import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
@@ -110,43 +112,100 @@ class _SubscriptionDetailPageState
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
     final plans = _plans(locale, ref.watch(profileControllerProvider));
+    final loading = ref.watch(profileHeaderLoadingProvider) && plans.isEmpty;
 
     return AppCurvedScaffold(
       title: Text('home.my_subscription'.tr()),
       showBack: true,
       onBack: () => context.pop(),
-      body: plans.isEmpty
-          ? Center(
-              child: Text(
-                'home.no_active_plan'.tr(),
-                style: AppTheme.english(
-                  color: AppColors.textMuted,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: AppTheme.lineHeightMyanmarSafe,
-                  letterSpacing: 0,
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () =>
+            ref.read(profileControllerProvider.notifier).fetchProfile(),
+        child: loading
+            ? _loadingList()
+            : plans.isEmpty
+                ? _emptyList()
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: plans.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final plan = plans[index];
+                      final credentials = _credentials[plan.id];
+                      return _PlanCard(
+                        plan: plan,
+                        username: credentials?.account ?? '',
+                        password: credentials?.password ?? '',
+                        loading: _loading.contains(plan.id),
+                        showUsername: _visible(plan.id, 'user'),
+                        showPassword: _visible(plan.id, 'pass'),
+                        onToggleUsername: () => _toggle(plan.id, 'user'),
+                        onTogglePassword: () => _toggle(plan.id, 'pass'),
+                      );
+                    },
+                  ),
+      ),
+    );
+  }
+
+  Widget _loadingList() {
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      itemCount: 2,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, __) => LayoutBuilder(
+        builder: (context, constraints) => ShimmerBox(
+          width: constraints.maxWidth,
+          height: 148,
+          borderRadius: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyList() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(AppStyle.spaceLg),
+      children: [
+        AppCard(
+          elevated: false,
+          bordered: false,
+          padding: const EdgeInsets.all(AppStyle.spaceXxl),
+          child: Column(
+            children: [
+              ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                  AppColors.primary,
+                  BlendMode.srcIn,
+                ),
+                child: Image.asset(
+                  'assets/images/services/subscription.png',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                 ),
               ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              itemCount: plans.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final plan = plans[index];
-                final credentials = _credentials[plan.id];
-                return _PlanCard(
-                  plan: plan,
-                  username: credentials?.account ?? '',
-                  password: credentials?.password ?? '',
-                  loading: _loading.contains(plan.id),
-                  showUsername: _visible(plan.id, 'user'),
-                  showPassword: _visible(plan.id, 'pass'),
-                  onToggleUsername: () => _toggle(plan.id, 'user'),
-                  onTogglePassword: () => _toggle(plan.id, 'pass'),
-                );
-              },
-            ),
+              const SizedBox(height: AppStyle.spaceMd),
+              Text(
+                'home.no_active_plan'.tr(),
+                style: AppTheme.sectionTitle(color: AppColors.primary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppStyle.spaceXs),
+              Text(
+                'home.no_active_plan_body'.tr(),
+                textAlign: TextAlign.center,
+                style: AppTheme.bodySecondary(),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -229,10 +288,18 @@ class _PlanCard extends StatelessWidget {
                   color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(7),
                 ),
-                child: const Icon(
-                  LucideIcons.box,
-                  size: 13,
-                  color: AppColors.primary,
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.primary,
+                    BlendMode.srcIn,
+                  ),
+                  child: Image.asset(
+                    'assets/images/services/subscription.png',
+                    width: 20,
+                    height: 20,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),

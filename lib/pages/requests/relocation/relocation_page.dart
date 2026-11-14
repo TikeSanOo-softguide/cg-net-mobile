@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
@@ -12,6 +13,7 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../core/network/message_codes.dart';
+import '../../../core/router/slide_page.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../home/home/bound_broadband_provider.dart';
@@ -32,7 +34,9 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
     super.initState();
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).fetchProfile();
-      _fetchRequestsForCurrentAccount();
+      ref
+          .read(relocationControllerProvider.notifier)
+          .fetchRequests(_currentAccountNumber());
     });
   }
 
@@ -54,7 +58,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
 
   Future<void> _openForm([RelocationRequestModel? request]) async {
     final result = await Navigator.of(context).push<RelocationSaveResult>(
-      MaterialPageRoute<RelocationSaveResult>(
+      SlidePageRoute<RelocationSaveResult>(
         builder: (_) => RelocationFormPage(request: request),
       ),
     );
@@ -154,9 +158,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
 
   Widget _buildBody(RelocationState state) {
     if (state.status == RelocationStatus.loading && state.requests.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return const CardListShimmer();
     }
 
     if (state.status == RelocationStatus.error && state.requests.isEmpty) {

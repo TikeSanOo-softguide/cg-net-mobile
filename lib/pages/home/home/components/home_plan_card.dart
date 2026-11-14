@@ -47,10 +47,18 @@ class HomePlanCard extends StatelessWidget {
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
-              LucideIcons.box,
-              size: 18,
-              color: AppColors.primary,
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(
+                AppColors.primary,
+                BlendMode.srcIn,
+              ),
+              child: Image.asset(
+                'assets/images/services/subscription.png',
+                width: 22,
+                height: 22,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
             ),
           ),
           const SizedBox(width: 12),

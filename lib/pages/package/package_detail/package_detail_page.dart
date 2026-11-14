@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
+import '../../../components/empty_state/empty_state.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/idempotency_key.dart';
@@ -108,7 +110,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     await opened.future;
   }
 
-  _PackageDetailViewData _resolveViewData(PackageListState state) {
+  _PackageDetailViewData? _resolveViewData(PackageListState state) {
     PackageModel? model;
     var planIndex = 0;
     for (var i = 0; i < state.packages.length; i++) {
@@ -118,24 +120,24 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
         break;
       }
     }
+    if (model == null) return null;
 
-    final speed = (model?.speed ?? '').trim();
-    final price = model?.price ?? 0;
+    final speed = model.speed.trim();
     final cycle = [
-      if (model?.termMonths != null) '${model!.termMonths}',
-      model?.billingCycle.trim() ?? '',
+      if (model.termMonths != null) '${model.termMonths}',
+      model.billingCycle.trim(),
     ].join();
 
     return _PackageDetailViewData(
       id: widget.packageId,
-      title: model?.name ?? 'package.title'.tr(),
-      pricePoints: price.toInt(),
-      priceLabel: '$price',
+      title: model.name,
+      pricePoints: model.price.toInt(),
+      priceLabel: '${model.price}',
       speedMbps: speed,
       periodLabel: cycle,
-      popular: model?.recommended ?? false,
-      features: model?.features ?? const [],
-      lineLabel: model?.currency ?? '',
+      popular: model.recommended,
+      features: model.features,
+      lineLabel: model.currency,
       planIndex: planIndex,
     );
   }
@@ -154,6 +156,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     final info = _resolveViewData(
       ref.read(packageListControllerProvider),
     );
+    if (info == null) return;
     final productId = widget.packageId.trim();
     if (productId.isEmpty) {
       await showAppFailureModal(
@@ -292,26 +295,61 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
         title: Text('package.title'.tr()),
         showBack: true,
         onBack: () => context.pop(),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-          children: [
-            _PackageDetailCard(
-              name: LuxuryPackageCard.planName(info.planIndex),
-              priceLabel: info.priceLabel,
-              periodLabel: info.periodLabel,
-              speedLabel: info.speedMbps.toLowerCase().contains('mbps')
-                  ? info.speedMbps
-                  : '${info.speedMbps} Mbps',
-              accent: LuxuryPackageCard.accentAt(info.planIndex),
-            ),
-            const SizedBox(height: 18),
-            AppButton(
-              label: 'home.buy_now'.tr(),
-              onPressed: _submitting ? null : _buyNow,
-            ),
-          ],
-        ),
+        body: info == null
+            ? _missingPackage(context, ref, packageState)
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                children: [
+                  _PackageDetailCard(
+                    name: LuxuryPackageCard.planName(info.planIndex),
+                    priceLabel: info.priceLabel,
+                    periodLabel: info.periodLabel,
+                    speedLabel: info.speedMbps.toLowerCase().contains('mbps')
+                        ? info.speedMbps
+                        : '${info.speedMbps} Mbps',
+                    accent: LuxuryPackageCard.accentAt(info.planIndex),
+                  ),
+                  const SizedBox(height: 18),
+                  AppButton(
+                    label: 'home.buy_now'.tr(),
+                    onPressed: _submitting ? null : _buyNow,
+                  ),
+                ],
+              ),
       ),
+    );
+  }
+
+  Widget _missingPackage(
+    BuildContext context,
+    WidgetRef ref,
+    PackageListState state,
+  ) {
+    if (state.status == PackageListStatus.loading) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) => ShimmerBox(
+              width: constraints.maxWidth,
+              height: 280,
+              borderRadius: 8,
+            ),
+          ),
+        ],
+      );
+    }
+    if (state.status == PackageListStatus.error) {
+      return EmptyState(
+        title: 'common.error'.tr(),
+        message: apiMessageText(state.errorMessage),
+        actionLabel: 'common.retry'.tr(),
+        onAction: () => ref.read(packageListControllerProvider.notifier).load(),
+      );
+    }
+    return EmptyState(
+      title: 'package.empty_title'.tr(),
+      message: 'package.empty_body'.tr(),
     );
   }
 }

@@ -38,13 +38,25 @@ class ComplaintController extends StateNotifier<ComplaintState> {
 
   final ComplaintRepository _repository;
   int _fetchSequence = 0;
+  String? _lastFetchAccount;
+  bool _hasFetchedAccount = false;
 
   Future<void> fetchComplaints({String? accountNumber}) async {
     final sequence = ++_fetchSequence;
-    state = state.copyWith(
-      status: ComplaintStatus.loading,
-      errorMessage: null,
-    );
+    final accountKey = _accountKey(accountNumber);
+    final accountChanged =
+        _hasFetchedAccount && _lastFetchAccount != accountKey;
+    _hasFetchedAccount = true;
+    _lastFetchAccount = accountKey;
+    final showLoading =
+        accountChanged || state.status == ComplaintStatus.initial;
+    if (showLoading) {
+      state = state.copyWith(
+        status: ComplaintStatus.loading,
+        reports: accountChanged ? const [] : null,
+        errorMessage: null,
+      );
+    }
     try {
       final items = await _repository.fetchComplaints();
       if (sequence != _fetchSequence) return;
@@ -72,6 +84,12 @@ class ComplaintController extends StateNotifier<ComplaintState> {
             : error.toString(),
       );
     }
+  }
+
+  String? _accountKey(String? accountNumber) {
+    final normalized = accountNumber?.trim().toUpperCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    return normalized;
   }
 
   Future<ComplaintCancelResult?> cancelComplaint(

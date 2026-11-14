@@ -262,10 +262,13 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       title: Text('topup.form_title'.tr()),
       showBack: true,
       onBack: () => context.pop(),
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Form(
+      body: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Form(
           key: _formKey,
           child: AppCard(
             padding: const EdgeInsets.all(16),
@@ -398,6 +401,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

@@ -35,48 +35,38 @@ class ServiceHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(appLocaleProvider);
     final history = ref.watch(serviceHistoryProvider);
+    final items = history.valueOrNull;
+    final showSkeleton = items == null && history.isLoading;
+    final failure = history.error;
 
     return AppCurvedScaffold(
       key: ValueKey('service-history-$locale'),
       title: Text('home.service_history'.tr()),
       showBack: true,
       onBack: () => context.pop(),
-      body: history.when(
-        data: (items) {
-          if (items.isEmpty) return const _ServiceHistoryEmpty();
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              12,
-              16,
-              AppStyle.listPaddingBottom,
-            ),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 2),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _ServiceHistoryRow(
-                item: item,
-                onTap: () => _openDetail(context, ref, item),
-              );
-            },
-          );
-        },
-        loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
-        error: (error, _) => EmptyState(
+      body: showSkeleton
+          ? const CardListShimmer(
+              itemCount: 5,
+              itemHeight: 96,
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+            )
+          : items == null
+          ? EmptyState(
           icon: LucideIcons.wifi_off,
-          iconAsset: isOfflineError(error) ? null : QuickActionIconChip.billAsset,
+          iconAsset: isOfflineError(failure)
+              ? null
+              : QuickActionIconChip.billAsset,
           iconBackground: QuickActionIconChip.billSoft,
-          title: isOfflineError(error)
+          title: isOfflineError(failure)
               ? 'shared.no_internet_title'.tr()
               : 'common.error'.tr(),
-          message: isOfflineError(error)
+          message: isOfflineError(failure)
               ? 'shared.no_internet_body'.tr()
-              : apiErrorText(error),
+              : apiErrorText(failure ?? 'common.error'),
           actionLabel: 'common.retry'.tr(),
           onAction: () async {
             const recoveryKey = 'service-history-reload';
-            if (isOfflineError(error)) {
+            if (isOfflineError(failure)) {
               ref.read(networkRecoveryControllerProvider).enqueue(
                     recoveryKey,
                     () async => ref.invalidate(serviceHistoryProvider),
@@ -90,8 +80,26 @@ class ServiceHistoryPage extends ConsumerWidget {
             }
             ref.invalidate(serviceHistoryProvider);
           },
-        ),
-      ),
+        )
+          : items.isEmpty
+              ? const _ServiceHistoryEmpty()
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    12,
+                    16,
+                    AppStyle.listPaddingBottom,
+                  ),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 2),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _ServiceHistoryRow(
+                      item: item,
+                      onTap: () => _openDetail(context, ref, item),
+                    );
+                  },
+                ),
     );
   }
 

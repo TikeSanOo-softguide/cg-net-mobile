@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
-import '../../../core/utils/loading_helper.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../data/show_room/show_room_repository.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -35,10 +35,9 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
   Future<void> _loadShowRooms({bool retry = false}) async {
     if (retry) ref.invalidate(showRoomsProvider);
     try {
-      await LoadingHelper.runWithLoading(
-        () => ref.read(showRoomsProvider.future),
-      );
+      await ref.read(showRoomsProvider.future);
     } catch (error) {
+      if (!mounted || ref.read(showRoomsProvider).valueOrNull != null) return;
       await showApiMessageModal(context, error);
     }
   }
@@ -47,41 +46,47 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
   Widget build(BuildContext context) {
     final roomsAsync = ref.watch(showRoomsProvider);
     final locale = context.locale.languageCode;
+    final rooms = roomsAsync.valueOrNull;
+    final showSkeleton = rooms == null && roomsAsync.isLoading;
 
     return AppCurvedScaffold(
       title: Text('home.service_show_room'.tr()),
       showBack: true,
-      body: roomsAsync.when(
-        loading: () => const SizedBox.shrink(),
-        error: (error, stackTrace) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('common.error'.tr()),
-              TextButton(
-                onPressed: () => unawaited(_loadShowRooms(retry: true)),
-                child: Text('common.retry'.tr()),
-              ),
-            ],
-          ),
-        ),
-        data: (rooms) => ListView.separated(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            AppStyle.listPaddingBottom,
-          ),
-          itemCount: rooms.length + 1,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            if (index == rooms.length) {
-              return const _SocialMediaCard();
-            }
-            return _ShowRoomCard(room: rooms[index], locale: locale);
-          },
-        ),
-      ),
+      body: showSkeleton
+          ? const CardListShimmer(
+              itemHeight: 168,
+              separator: 12,
+              borderRadius: 12,
+            )
+          : rooms == null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('common.error'.tr()),
+                      TextButton(
+                        onPressed: () => unawaited(_loadShowRooms(retry: true)),
+                        child: Text('common.retry'.tr()),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    AppStyle.listPaddingBottom,
+                  ),
+                  itemCount: rooms.length + 1,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    if (index == rooms.length) {
+                      return const _SocialMediaCard();
+                    }
+                    return _ShowRoomCard(room: rooms[index], locale: locale);
+                  },
+                ),
     );
   }
 }

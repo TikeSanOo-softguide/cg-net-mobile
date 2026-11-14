@@ -43,7 +43,9 @@ final authInterceptorProvider = Provider<AuthInterceptor>((ref) {
   return AuthInterceptor(
     ref.watch(secureStorageProvider),
     () {
-      ref.read(sharedPreferencesProvider).remove(LocalPrefs.inboxCacheKey);
+      ref.read(sharedPreferencesProvider)
+        ..remove(LocalPrefs.inboxCacheKey)
+        ..remove(LocalPrefs.chatCacheKey);
       ref.read(sessionClockProvider).expire();
     },
   );

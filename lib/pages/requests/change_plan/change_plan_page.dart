@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/message_codes.dart';
+import '../../../core/router/slide_page.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -120,7 +122,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
 
   Future<void> _openForm({ChangePlanRequestModel? request}) async {
     final result = await Navigator.of(context).push<Object?>(
-      MaterialPageRoute<Object?>(
+      SlidePageRoute<Object?>(
         builder: (_) => request == null
             ? const ChangePlanFormPage()
             : ChangePlanFormPage(initialRequest: request),
@@ -215,9 +217,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
     List<ChangePlanRequestModel> requests,
   ) {
     if (state.status == ChangePlanStatus.loading && requests.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return const CardListShimmer();
     }
 
     if (state.status == ChangePlanStatus.error && requests.isEmpty) {

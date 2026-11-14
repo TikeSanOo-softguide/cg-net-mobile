@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/storage/local_prefs/local_prefs.dart';
 import '../../../data/chat/chat_repository.dart';
 import '../../../data/chat/chat_realtime_service.dart';
+import '../../../data/chat/chat_transcript_cache.dart';
 
 class ChatMessage {
   const ChatMessage({
@@ -161,8 +164,14 @@ class SupportChatState {
 }
 
 class SupportChatController extends StateNotifier<SupportChatState> {
-  SupportChatController(this._repository, this._realtime)
-      : super(const SupportChatState()) {
+  SupportChatController(
+    this._repository,
+    this._realtime, {
+    SharedPreferences? preferences,
+  })  : _cache = ChatTranscriptCache(preferences),
+        super(const SupportChatState()) {
+    final cached = _readCachedState();
+    if (cached != null) state = cached;
     _realtimeEventsSubscription = _realtime.events.listen(
       _handleRealtimeEvent,
       onError: (Object error, StackTrace stackTrace) {
@@ -188,6 +197,140 @@ class SupportChatController extends StateNotifier<SupportChatState> {
 
   final ChatRepository _repository;
   final ChatRealtimeClient _realtime;
+  final ChatTranscriptCache _cache;
+
+  @override
+  set state(SupportChatState value) {
+    super.state = value;
+    _persist(value);
+  }
+
+  bool _hasTranscript(SupportChatState value) {
+    return value.messages.isNotEmpty ||
+        (value.conversationId != null && value.conversationId!.isNotEmpty) ||
+        (value.flowMessage?.trim().isNotEmpty ?? false);
+  }
+
+  void _persist(SupportChatState value) {
+    if (value.isLoading || value.isStartingChat) return;
+    if (!_hasTranscript(value)) {
+      unawaited(_cache.clear());
+      return;
+    }
+    unawaited(_cache.save({
+      'status': value.status.name,
+      'conversationId': value.conversationId,
+      'flowMessage': value.flowMessage,
+      'options': value.options.map(_optionJson).toList(),
+      'messages': value.messages.map(_messageJson).toList(),
+    }));
+  }
+
+  SupportChatState? _readCachedState() {
+    final json = _cache.read();
+    if (json == null) return null;
+    final messages = json['messages'] is List
+        ? (json['messages'] as List)
+            .whereType<Map>()
+            .map((item) => _messageFromJson(Map<String, dynamic>.from(item)))
+            .toList()
+        : const <ChatMessage>[];
+    final options = json['options'] is List
+        ? (json['options'] as List)
+            .whereType<Map>()
+            .map((item) => _optionFromJson(Map<String, dynamic>.from(item)))
+            .toList()
+        : const <ChatFlowOption>[];
+    final conversationId = json['conversationId']?.toString();
+    final flowMessage = json['flowMessage']?.toString();
+    final restored = SupportChatState(
+      status: _statusFromName(json['status']?.toString()),
+      conversationId: conversationId == null || conversationId.isEmpty
+          ? null
+          : conversationId,
+      flowMessage: flowMessage == null || flowMessage.trim().isEmpty
+          ? null
+          : flowMessage,
+      options: options,
+      messages: messages,
+    );
+    if (!_hasTranscript(restored)) return null;
+    return restored;
+  }
+
+  ChatConversationStatus _statusFromName(String? name) {
+    for (final status in ChatConversationStatus.values) {
+      if (status.name == name) return status;
+    }
+    return ChatConversationStatus.unknown;
+  }
+
+  Map<String, dynamic> _optionJson(ChatFlowOption option) {
+    return {
+      'id': option.id,
+      'label': option.label,
+      'value': option.value,
+      'translations': option.translations,
+    };
+  }
+
+  ChatFlowOption _optionFromJson(Map<String, dynamic> json) {
+    final translations = json['translations'] is Map
+        ? Map<String, String>.from(
+            (json['translations'] as Map).map(
+              (key, value) => MapEntry('$key', '$value'),
+            ),
+          )
+        : const <String, String>{};
+    return ChatFlowOption(
+      id: '${json['id'] ?? ''}',
+      label: '${json['label'] ?? ''}',
+      value: json['value']?.toString(),
+      translations: translations,
+    );
+  }
+
+  Map<String, dynamic> _messageJson(ChatMessage message) {
+    return {
+      'id': message.id,
+      'conversationId': message.conversationId,
+      'senderType': message.senderType,
+      'text': message.text,
+      'isMine': message.isMine,
+      'sentAt': message.sentAt.toUtc().toIso8601String(),
+      'fileName': message.fileName,
+      'selectedOption': message.selectedOption == null
+          ? null
+          : _optionJson(message.selectedOption!),
+      'flowOptions': message.flowOptions.map(_optionJson).toList(),
+    };
+  }
+
+  ChatMessage _messageFromJson(Map<String, dynamic> json) {
+    final id = json['id']?.toString();
+    final conversationId = json['conversationId']?.toString();
+    final selected = json['selectedOption'];
+    return ChatMessage(
+      id: id == null || id.isEmpty ? null : id,
+      conversationId: conversationId == null || conversationId.isEmpty
+          ? null
+          : conversationId,
+      senderType: '${json['senderType'] ?? ''}',
+      text: '${json['text'] ?? ''}',
+      isMine: json['isMine'] == true,
+      sentAt: DateTime.tryParse('${json['sentAt'] ?? ''}') ?? DateTime.now(),
+      fileName: json['fileName']?.toString(),
+      selectedOption: selected is Map
+          ? _optionFromJson(Map<String, dynamic>.from(selected))
+          : null,
+      flowOptions: json['flowOptions'] is List
+          ? (json['flowOptions'] as List)
+              .whereType<Map>()
+              .map((item) => _optionFromJson(Map<String, dynamic>.from(item)))
+              .toList()
+          : const [],
+    );
+  }
   int _clientMessageSequence = 0;
   int _activeRequestId = 0;
   String? _retryMessageText;
@@ -207,7 +350,10 @@ class SupportChatController extends StateNotifier<SupportChatState> {
     final requestId = ++_activeRequestId;
     final previousState = state;
     final targetConversationId = conversationId ?? previousState.conversationId;
-    state = state.copyWith(isLoading: true, clearErrorMessage: true);
+    final keepVisible = _hasTranscript(previousState);
+    state = keepVisible
+        ? state.copyWith(clearErrorMessage: true)
+        : state.copyWith(isLoading: true, clearErrorMessage: true);
     final conversationsTimer = Stopwatch()..start();
     if (kDebugMode) {
       debugPrint('[Chat] loading conversations started');
@@ -937,5 +1083,6 @@ final supportChatControllerProvider =
   return SupportChatController(
     ref.watch(chatRepositoryProvider),
     ref.watch(chatRealtimeClientProvider),
+    preferences: ref.watch(sharedPreferencesProvider),
   );
 });

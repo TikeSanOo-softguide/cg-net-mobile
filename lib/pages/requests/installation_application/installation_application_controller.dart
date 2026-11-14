@@ -41,28 +41,36 @@ class InstallationApplicationController
       : super(const InstallationApplicationState());
 
   final InstallationApplicationRepository _repository;
+  int _fetchSequence = 0;
 
   Future<InstallationApplicationOptions> fetchProducts(String serviceType) =>
       _repository.fetchProducts(serviceType);
 
   Future<void> fetchRequests() async {
-    state = state.copyWith(
-      status: InstallationApplicationStatus.loading,
-      clearError: true,
-    );
+    final sequence = ++_fetchSequence;
+    final firstLoad = state.status == InstallationApplicationStatus.initial;
+    if (firstLoad) {
+      state = state.copyWith(
+        status: InstallationApplicationStatus.loading,
+        clearError: true,
+      );
+    }
     try {
       final requests = await _repository.fetchRequests();
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: InstallationApplicationStatus.success,
         requests: requests,
         clearError: true,
       );
     } on ApiException catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: InstallationApplicationStatus.error,
         errorMessage: error.detail ?? error.messageKey,
       );
     } catch (error) {
+      if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: InstallationApplicationStatus.error,
         errorMessage: error.toString(),

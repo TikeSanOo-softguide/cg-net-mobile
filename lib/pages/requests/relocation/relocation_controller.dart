@@ -81,10 +81,12 @@ class RelocationController extends StateNotifier<RelocationState> {
     bool clearPrevious = false,
   }) async {
     final sequence = ++_fetchSequence;
+    final showLoading =
+        clearPrevious || state.status == RelocationStatus.initial;
     state = state.copyWith(
-      status: RelocationStatus.loading,
+      status: showLoading ? RelocationStatus.loading : null,
       requests: clearPrevious ? const [] : null,
-      clearError: true,
+      clearError: showLoading,
     );
     try {
       final items = await _repository.fetchRequests();

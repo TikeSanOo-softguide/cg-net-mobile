@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/account_number_row/account_number_row.dart';
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
@@ -13,6 +14,7 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../core/network/message_codes.dart';
+import '../../../core/router/slide_page.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -146,7 +148,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
   void _openNewRequestPage({ChangePasswordRequestModel? request}) {
     Navigator.of(context)
         .push<Object?>(
-      MaterialPageRoute<Object?>(
+      SlidePageRoute<Object?>(
         builder: (_) => _NewRequestFormSheet(request: request),
       ),
     )
@@ -249,8 +251,31 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
     List<ChangePasswordRequestModel> requests,
   ) {
     if (state.status == ChangeWifiPasswordStatus.loading && requests.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+      return const CardListShimmer();
+    }
+
+    if (state.status == ChangeWifiPasswordStatus.error && requests.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppStyle.spaceLg),
+        children: [
+          AppCard(
+            child: Column(
+              children: [
+                Text(
+                  _loadErrorMessage(state.errorMessage),
+                  textAlign: TextAlign.center,
+                  style: AppTheme.body(color: AppColors.textMuted),
+                ),
+                const SizedBox(height: AppStyle.spaceMd),
+                TextButton(
+                  onPressed: _fetchRequests,
+                  child: Text('common.retry'.tr()),
+                ),
+              ],
+            ),
+          ),
+        ],
       );
     }
 
@@ -296,6 +321,8 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
       );
     }
 
+    final hasError = state.status == ChangeWifiPasswordStatus.error &&
+        state.errorMessage != null;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppStyle.spaceLg,
@@ -303,10 +330,28 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
         AppStyle.spaceLg,
         80,
       ),
-      itemCount: requests.length,
+      itemCount: requests.length + (hasError ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 2),
       itemBuilder: (context, index) {
-        final request = requests[index];
+        if (hasError && index == 0) {
+          return AppCard(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _loadErrorMessage(state.errorMessage),
+                    style: AppTheme.body(color: AppColors.error),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _fetchRequests,
+                  child: Text('common.retry'.tr()),
+                ),
+              ],
+            ),
+          );
+        }
+        final request = requests[index - (hasError ? 1 : 0)];
         return _RequestItemCard(
           item: request,
           onEdit: _isUnderReviewStatus(request.status)

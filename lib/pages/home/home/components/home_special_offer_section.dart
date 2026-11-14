@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../components/app_card/app_card.dart';
+import '../../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -43,54 +44,62 @@ class HomeSpecialOfferSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = context.locale.languageCode;
     final promotions = ref.watch(homePromotionsProvider);
+    final cached = promotions.valueOrNull;
+    final showSkeleton = cached == null && promotions.isLoading;
+    if (!showSkeleton && (cached == null || cached.isEmpty)) {
+      return const SizedBox.shrink();
+    }
 
-    return promotions.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (items) {
-        if (items.isEmpty) return const SizedBox.shrink();
-        final layout = layoutFor(MediaQuery.sizeOf(context).width);
-        return Padding(
-          padding: AppStyle.pagePaddingH.add(
-            const EdgeInsets.only(top: HomeSectionHeader.sectionGap),
+    final items = cached ?? const <HomePromotion>[];
+    final layout = layoutFor(MediaQuery.sizeOf(context).width);
+    return Padding(
+      padding: AppStyle.pagePaddingH.add(
+        const EdgeInsets.only(top: HomeSectionHeader.sectionGap),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          HomeSectionHeader(title: 'home.special_offer'.tr()),
+          SizedBox(
+            height: layout.listHeight,
+            child: ListView.separated(
+              key: ValueKey('special-offers-$locale'),
+              scrollDirection: Axis.horizontal,
+              physics: showSkeleton
+                  ? const NeverScrollableScrollPhysics()
+                  : null,
+              padding: EdgeInsets.zero,
+              itemCount: showSkeleton ? 2 : items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                return SizedBox(
+                  width: layout.cardWidth,
+                  height: layout.listHeight,
+                  child: showSkeleton
+                      ? ShimmerBox(
+                          width: layout.cardWidth,
+                          height: layout.listHeight,
+                          borderRadius: 12,
+                        )
+                      : _OfferCard(
+                          item: items[index],
+                          locale: locale,
+                          imageHeight: layout.imageHeight,
+                          onSeeMore: () {
+                            final id = _inboxId(items[index]);
+                            if (id.isEmpty) return;
+                            context.pushNamed(
+                              RouteNames.inboxDetail,
+                              pathParameters: {'id': id},
+                            );
+                          },
+                        ),
+                );
+              },
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              HomeSectionHeader(title: 'home.special_offer'.tr()),
-              SizedBox(
-                height: layout.listHeight,
-                child: ListView.separated(
-                  key: ValueKey('special-offers-$locale'),
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.zero,
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    return SizedBox(
-                      width: layout.cardWidth,
-                      height: layout.listHeight,
-                      child: _OfferCard(
-                        item: items[index],
-                        locale: locale,
-                        imageHeight: layout.imageHeight,
-                        onSeeMore: () {
-                          final id = _inboxId(items[index]);
-                          if (id.isEmpty) return;
-                          context.pushNamed(
-                            RouteNames.inboxDetail,
-                            pathParameters: {'id': id},
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -347,7 +348,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
       body: ColoredBox(
         color: AppColors.background,
         child: (state.isLoading || state.isStartingChat) && !hasExistingChat
-            ? const Center(child: CircularProgressIndicator())
+            ? const _ChatThreadShimmer()
             : _buildBody(state, inputFocused),
       ),
     );
@@ -870,6 +871,43 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
             errorMessage: state.errorMessage?.tr(),
             onSelectOption: (id) => unawaited(_onSelectOption(id)),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _ChatThreadShimmer extends StatelessWidget {
+  const _ChatThreadShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        Widget bubble(double factor, double height, {required bool mine}) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Align(
+              alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+              child: ShimmerBox(
+                width: width * factor,
+                height: height,
+                borderRadius: 10,
+              ),
+            ),
+          );
+        }
+
+        return ListView(
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          children: [
+            bubble(0.72, 72, mine: false),
+            bubble(0.46, 48, mine: true),
+            bubble(0.64, 64, mine: false),
+            bubble(0.4, 48, mine: true),
+          ],
         );
       },
     );

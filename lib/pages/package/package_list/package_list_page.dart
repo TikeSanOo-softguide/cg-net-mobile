@@ -35,24 +35,52 @@ class PackageListPage extends ConsumerWidget {
     final locale = context.locale.languageCode;
     final state = ref.watch(packageListControllerProvider);
 
-    return AppCurvedScaffold(
-      title: Text('package.title'.tr()),
-      showBack: false,
-      body: switch (state.status) {
-        PackageListStatus.loading => const ShimmerLoading(
-            itemCount: 6,
-            itemHeight: 128,
-          ),
-        PackageListStatus.empty => EmptyState(
-            iconAsset: QuickActionIconChip.packageAsset,
-            iconBackground: QuickActionIconChip.packageSoft,
-            title: 'package.empty_title'.tr(),
-            message: 'package.empty_body'.tr(),
-            actionLabel: 'common.retry'.tr(),
-            onAction: () =>
-                ref.read(packageListControllerProvider.notifier).load(),
-          ),
-        PackageListStatus.error => EmptyState(
+    final hasPackages = state.packages.isNotEmpty;
+    final Widget body;
+    if (hasPackages || state.status == PackageListStatus.loading) {
+      body = _refreshable(
+        ref,
+        CustomScrollView(
+          key: ValueKey('package-list-$locale'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(child: _PackagePageIntro()),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                14,
+                16,
+                AppStyle.listPaddingBottom,
+              ),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 12,
+                  mainAxisExtent: 220,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => hasPackages
+                      ? _packageCard(context, state, index)
+                      : LayoutBuilder(
+                          builder: (context, constraints) => ShimmerBox(
+                            width: constraints.maxWidth,
+                            height: 220,
+                            borderRadius: 8,
+                          ),
+                        ),
+                  childCount: hasPackages ? state.packages.length : 4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (state.status == PackageListStatus.error) {
+      body = _refreshable(
+        ref,
+        _scrollableFill(
+          EmptyState(
             icon: LucideIcons.wifi_off,
             iconAsset: state.errorMessage == 'api.offline'
                 ? null
@@ -61,55 +89,74 @@ class PackageListPage extends ConsumerWidget {
             title: 'common.error'.tr(),
             message: apiMessageText(state.errorMessage),
             actionLabel: 'common.retry'.tr(),
-            onAction: () async {
-              const recoveryKey = 'package-list-load';
-              if (state.errorMessage == 'api.offline') {
-                ref.read(networkRecoveryControllerProvider).enqueue(
-                      recoveryKey,
-                      () async => ref
-                          .read(packageListControllerProvider.notifier)
-                          .load(),
-                    );
-                final shouldRetry = await openNoInternetPage(context);
-                if (shouldRetry == true && context.mounted) {
-                  ref
-                      .read(networkRecoveryControllerProvider)
-                      .clear(recoveryKey);
-                  ref.read(packageListControllerProvider.notifier).load();
-                }
-                return;
-              }
-              ref.read(packageListControllerProvider.notifier).load();
-            },
+            onAction: () => _retry(context, ref, state),
           ),
-        PackageListStatus.data => CustomScrollView(
-            key: ValueKey('package-list-$locale'),
-            slivers: [
-              const SliverToBoxAdapter(child: _PackagePageIntro()),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  14,
-                  16,
-                  AppStyle.listPaddingBottom,
-                ),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 12,
-                    mainAxisExtent: 220,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _packageCard(context, state, index),
-                    childCount: state.packages.length,
-                  ),
-                ),
-              ),
-            ],
+        ),
+      );
+    } else {
+      body = _refreshable(
+        ref,
+        _scrollableFill(
+          EmptyState(
+            iconAsset: QuickActionIconChip.packageAsset,
+            iconBackground: QuickActionIconChip.packageSoft,
+            title: 'package.empty_title'.tr(),
+            message: 'package.empty_body'.tr(),
+            actionLabel: 'common.retry'.tr(),
+            onAction: () =>
+                ref.read(packageListControllerProvider.notifier).load(),
           ),
+        ),
+      );
+    }
+
+    return AppCurvedScaffold(
+      title: Text('package.title'.tr()),
+      showBack: false,
+      body: body,
+    );
+  }
+
+  Widget _refreshable(WidgetRef ref, Widget child) {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () => ref.read(packageListControllerProvider.notifier).load(),
+      child: child,
+    );
+  }
+
+  Widget _scrollableFill(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(height: constraints.maxHeight, child: child),
+          ],
+        );
       },
     );
+  }
+
+  Future<void> _retry(
+    BuildContext context,
+    WidgetRef ref,
+    PackageListState state,
+  ) async {
+    const recoveryKey = 'package-list-load';
+    if (state.errorMessage == 'api.offline') {
+      ref.read(networkRecoveryControllerProvider).enqueue(
+            recoveryKey,
+            () async => ref.read(packageListControllerProvider.notifier).load(),
+          );
+      final shouldRetry = await openNoInternetPage(context);
+      if (shouldRetry == true && context.mounted) {
+        ref.read(networkRecoveryControllerProvider).clear(recoveryKey);
+        ref.read(packageListControllerProvider.notifier).load();
+      }
+      return;
+    }
+    ref.read(packageListControllerProvider.notifier).load();
   }
 
   Widget _packageCard(

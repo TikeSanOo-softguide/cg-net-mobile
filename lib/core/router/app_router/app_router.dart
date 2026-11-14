@@ -53,6 +53,7 @@ import '../../network/session_clock.dart';
 import '../../storage/secure_storage/secure_storage.dart';
 import '../route_names/route_names.dart';
 import '../route_policy.dart';
+import '../slide_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -199,13 +200,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.bindBroadband,
         name: RouteNames.bindBroadband,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BindBroadbandPage(),
+        pageBuilder: (context, state) => slidePage(
+          key: state.pageKey,
+          child: const BindBroadbandPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.topUp,
         name: RouteNames.topUp,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const TopUpPage(),
+        pageBuilder: (context, state) => slidePage(
+          key: state.pageKey,
+          child: const TopUpPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.topUpSuccess,
@@ -220,28 +227,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           } else {
             child = TopUpSuccessPage(result: result);
           }
-          // Full horizontal slide (no fade). Fade crossfades two
-          // AppCurvedScaffolds and makes the header/body jump.
-          return CustomTransitionPage<void>(
+          return slidePage<void>(
             key: state.pageKey,
             child: child,
-            transitionDuration: const Duration(milliseconds: 320),
-            reverseTransitionDuration: const Duration(milliseconds: 280),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              );
-            },
           );
         },
       ),
@@ -249,68 +237,89 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.topUpFailure,
         name: RouteNames.topUpFailure,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final result = state.extra;
+          final Widget child;
           if (result is! TopUpResult ||
               result.status != TopUpTxnStatus.failure) {
-            return const NotFoundPage();
+            child = const NotFoundPage();
+          } else {
+            child = TopUpFailurePage(result: result);
           }
-          return TopUpFailurePage(result: result);
+          return slidePage(key: state.pageKey, child: child);
         },
       ),
       GoRoute(
         path: RoutePaths.topUpPending,
         name: RouteNames.topUpPending,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final result = state.extra;
+          final Widget child;
           if (result is! TopUpResult ||
               result.status != TopUpTxnStatus.pending) {
-            return const NotFoundPage();
+            child = const NotFoundPage();
+          } else {
+            child = TopUpPendingPage(result: result);
           }
-          return TopUpPendingPage(result: result);
+          return slidePage(key: state.pageKey, child: child);
         },
       ),
       GoRoute(
         path: RoutePaths.history,
         name: RouteNames.history,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const HistoryPage(),
+        pageBuilder: (context, state) => slidePage(
+          key: state.pageKey,
+          child: const HistoryPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.activityDetail,
         name: RouteNames.activityDetail,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final item = state.extra;
+          final Widget child;
           if (item is! ActivityItem) {
-            return const NotFoundPage();
+            child = const NotFoundPage();
+          } else {
+            child = ActivityDetailPage(item: item);
           }
-          return ActivityDetailPage(item: item);
+          return slidePage(key: state.pageKey, child: child);
         },
       ),
       GoRoute(
         path: RoutePaths.servicePlaceholder,
         name: RouteNames.servicePlaceholder,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return ServicePlaceholderPage(serviceId: id);
+          return slidePage(
+            key: state.pageKey,
+            child: ServicePlaceholderPage(serviceId: id),
+          );
         },
       ),
       GoRoute(
         path: RoutePaths.subscriptionDetail,
         name: RouteNames.subscriptionDetail,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SubscriptionDetailPage(),
+        pageBuilder: (context, state) => slidePage(
+          key: state.pageKey,
+          child: const SubscriptionDetailPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.packageDetail,
         name: RouteNames.packageDetail,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return PackageDetailPage(packageId: id);
+          return slidePage(
+            key: state.pageKey,
+            child: PackageDetailPage(packageId: id),
+          );
         },
       ),
       GoRoute(
@@ -326,26 +335,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           } else {
             child = PackageBuySuccessPage(result: result);
           }
-          return CustomTransitionPage<void>(
+          return slidePage<void>(
             key: state.pageKey,
             child: child,
-            transitionDuration: const Duration(milliseconds: 320),
-            reverseTransitionDuration: const Duration(milliseconds: 280),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              );
-            },
           );
         },
       ),
@@ -353,13 +345,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.packageBuyFailure,
         name: RouteNames.packageBuyFailure,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final result = state.extra;
+          final Widget child;
           if (result is! PackageBuyResult ||
               result.status != PackageBuyTxnStatus.failure) {
-            return const NotFoundPage();
+            child = const NotFoundPage();
+          } else {
+            child = PackageBuyFailurePage(result: result);
           }
-          return PackageBuyFailurePage(result: result);
+          return slidePage(key: state.pageKey, child: child);
         },
       ),
       GoRoute(
@@ -378,26 +373,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               showPrimary: state.uri.queryParameters['hideDone'] != '1',
             );
           }
-          return CustomTransitionPage<void>(
+          return slidePage<void>(
             key: state.pageKey,
             child: child,
-            transitionDuration: const Duration(milliseconds: 320),
-            reverseTransitionDuration: const Duration(milliseconds: 280),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              );
-            },
           );
         },
       ),
@@ -405,13 +383,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.payBillPending,
         name: RouteNames.payBillPending,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final result = state.extra;
+          final Widget child;
           if (result is! PayBillResult ||
               result.status != PayBillTxnStatus.pending) {
-            return const NotFoundPage();
+            child = const NotFoundPage();
+          } else {
+            child = PayBillPendingPage(result: result);
           }
-          return PayBillPendingPage(result: result);
+          return slidePage(key: state.pageKey, child: child);
         },
       ),
       StatefulShellRoute.indexedStack(
@@ -447,9 +428,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: ':id',
                     name: RouteNames.inboxDetail,
-                    builder: (context, state) {
+                    pageBuilder: (context, state) {
                       final id = state.pathParameters['id']!;
-                      return InboxDetailPage(id: id);
+                      return slidePage(
+                        key: state.pageKey,
+                        child: InboxDetailPage(id: id),
+                      );
                     },
                   ),
                 ],
@@ -476,32 +460,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'edit',
                     name: RouteNames.editProfile,
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const EditProfilePage(),
+                    pageBuilder: (context, state) => slidePage(
+                      key: state.pageKey,
+                      child: const EditProfilePage(),
+                    ),
                   ),
                   GoRoute(
                     path: 'deactivate-account',
                     name: RouteNames.deactivateAccount,
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const DeactivateAccountPage(),
+                    pageBuilder: (context, state) => slidePage(
+                      key: state.pageKey,
+                      child: const DeactivateAccountPage(),
+                    ),
                   ),
                   GoRoute(
                     path: 'change-password',
                     name: RouteNames.changePassword,
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const ChangePasswordPage(),
+                    pageBuilder: (context, state) => slidePage(
+                      key: state.pageKey,
+                      child: const ChangePasswordPage(),
+                    ),
                     routes: [
                       GoRoute(
                         path: 'verify-otp',
                         name: RouteNames.verifyChangePasswordOtp,
                         parentNavigatorKey: _rootNavigatorKey,
-                        builder: (context, state) {
+                        pageBuilder: (context, state) {
                           final session = state.extra;
+                          final Widget child;
                           if (session is! ChangePasswordOtpSession) {
-                            return const NotFoundPage();
+                            child = const NotFoundPage();
+                          } else {
+                            child = VerifyChangePasswordOtpPage(
+                              session: session,
+                            );
                           }
-                          return VerifyChangePasswordOtpPage(
-                            session: session,
-                          );
+                          return slidePage(key: state.pageKey, child: child);
                         },
                       ),
                     ],
@@ -510,14 +506,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'notifications',
                     name: RouteNames.notificationPreferences,
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) =>
-                        const NotificationPreferencesPage(),
+                    pageBuilder: (context, state) => slidePage(
+                      key: state.pageKey,
+                      child: const NotificationPreferencesPage(),
+                    ),
                   ),
                   GoRoute(
                     path: 'about',
                     name: RouteNames.aboutApp,
                     parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const AboutAppPage(),
+                    pageBuilder: (context, state) => slidePage(
+                      key: state.pageKey,
+                      child: const AboutAppPage(),
+                    ),
                   ),
                 ],
               ),

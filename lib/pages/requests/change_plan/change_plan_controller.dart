@@ -40,13 +40,25 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
 
   final ChangePlanRepository _repository;
   int _fetchSequence = 0;
+  String? _lastFetchAccount;
+  bool _hasFetchedAccount = false;
 
   Future<void> fetchRequests({String? accountNumber}) async {
     final sequence = ++_fetchSequence;
-    state = state.copyWith(
-      status: ChangePlanStatus.loading,
-      clearError: true,
-    );
+    final accountKey = _accountKey(accountNumber);
+    final accountChanged =
+        _hasFetchedAccount && _lastFetchAccount != accountKey;
+    _hasFetchedAccount = true;
+    _lastFetchAccount = accountKey;
+    final showLoading =
+        accountChanged || state.status == ChangePlanStatus.initial;
+    if (showLoading) {
+      state = state.copyWith(
+        status: ChangePlanStatus.loading,
+        requests: accountChanged ? const [] : null,
+        clearError: true,
+      );
+    }
     try {
       final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
@@ -78,6 +90,12 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
         errorMessage: error.toString(),
       );
     }
+  }
+
+  String? _accountKey(String? accountNumber) {
+    final normalized = accountNumber?.trim().toUpperCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    return normalized;
   }
 
   Future<ChangePlanSaveResult> saveRequest(

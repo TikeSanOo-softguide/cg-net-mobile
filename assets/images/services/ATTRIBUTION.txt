@@ -22,6 +22,7 @@ Sources:
 - phone: apple_16566077 — https://www.flaticon.com/free-icon/apple_16566077
 - change_plan: exchange_5575716 — https://www.flaticon.com/free-icon/exchange_5575716
 - change_wifi: wifi_18696280 — https://www.flaticon.com/free-icon/wifi_18696280
+- subscription: wifi_6099332 — https://www.flaticon.com/free-icon/wifi_6099332
 
 Icons by Flaticon authors — https://www.flaticon.com
 Assets stored as pure black silhouettes (128×128); app tints per-tile:

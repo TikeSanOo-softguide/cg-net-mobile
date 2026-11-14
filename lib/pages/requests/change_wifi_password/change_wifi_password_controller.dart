@@ -41,13 +41,25 @@ class ChangeWifiPasswordController
 
   final ChangeWifiPasswordRepository _repository;
   int _fetchSequence = 0;
+  String? _lastFetchAccount;
+  bool _hasFetchedAccount = false;
 
   Future<void> fetchRequests({String? accountNumber}) async {
     final sequence = ++_fetchSequence;
-    state = state.copyWith(
-      status: ChangeWifiPasswordStatus.loading,
-      errorMessage: null,
-    );
+    final accountKey = _accountKey(accountNumber);
+    final accountChanged =
+        _hasFetchedAccount && _lastFetchAccount != accountKey;
+    _hasFetchedAccount = true;
+    _lastFetchAccount = accountKey;
+    final showLoading = accountChanged ||
+        state.status == ChangeWifiPasswordStatus.initial;
+    if (showLoading) {
+      state = state.copyWith(
+        status: ChangeWifiPasswordStatus.loading,
+        requests: accountChanged ? const [] : null,
+        errorMessage: null,
+      );
+    }
     try {
       final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
@@ -66,12 +78,25 @@ class ChangeWifiPasswordController
         requests: requests,
         errorMessage: null,
       );
-    } catch (_) {
+    } on ApiException catch (error) {
       if (sequence != _fetchSequence) return;
       state = state.copyWith(
-        status: ChangeWifiPasswordStatus.initial,
+        status: ChangeWifiPasswordStatus.error,
+        errorMessage: error.messageKey,
+      );
+    } catch (error) {
+      if (sequence != _fetchSequence) return;
+      state = state.copyWith(
+        status: ChangeWifiPasswordStatus.error,
+        errorMessage: error.toString(),
       );
     }
+  }
+
+  String? _accountKey(String? accountNumber) {
+    final normalized = accountNumber?.trim().toUpperCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    return normalized;
   }
 
   Future<ChangeWifiPasswordCancelResult?> cancelRequest(

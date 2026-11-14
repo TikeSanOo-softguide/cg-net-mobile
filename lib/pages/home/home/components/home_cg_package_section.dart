@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -26,9 +27,11 @@ class _HomePackageStrip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final packages = ref.watch(packageListControllerProvider).packages;
-    final items = packages.take(3).toList();
-    if (items.isEmpty) return const SizedBox.shrink();
+    final state = ref.watch(packageListControllerProvider);
+    final items = state.packages.take(3).toList();
+    final showSkeleton =
+        items.isEmpty && state.status == PackageListStatus.loading;
+    if (!showSkeleton && items.isEmpty) return const SizedBox.shrink();
 
     final cardWidth = (MediaQuery.sizeOf(context).width * 0.72).clamp(
       240.0,
@@ -74,14 +77,22 @@ class _HomePackageStrip extends ConsumerWidget {
             height: _cardHeight,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
+              physics: showSkeleton
+                  ? const NeverScrollableScrollPhysics()
+                  : const BouncingScrollPhysics(),
               clipBehavior: Clip.none,
-              itemCount: items.length,
+              itemCount: showSkeleton ? 2 : items.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 return SizedBox(
                   width: cardWidth,
-                  child: _WidePlanCard(model: items[index], index: index),
+                  child: showSkeleton
+                      ? ShimmerBox(
+                          width: cardWidth,
+                          height: _cardHeight,
+                          borderRadius: 8,
+                        )
+                      : _WidePlanCard(model: items[index], index: index),
                 );
               },
             ),
