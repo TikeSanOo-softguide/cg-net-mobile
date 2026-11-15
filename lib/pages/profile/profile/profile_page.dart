@@ -1,6 +1,8 @@
 import 'package:cg_net_mobile/components/language_setting/language_picker_modal.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -78,7 +80,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         style: AppTheme.topBarTitle(),
       ),
       showBack: false,
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: () =>
             ref.read(profileControllerProvider.notifier).fetchProfile(),
         child: ListView(

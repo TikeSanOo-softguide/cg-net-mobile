@@ -12,6 +12,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/utils/max_length_limiter.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import 'installation_application_controller.dart';
@@ -211,9 +212,11 @@ class _InstallationApplicationFormPageState
     }
     final request = ref.read(installationRequestDraftProvider).toRequest();
     try {
-      final saved = await ref
-          .read(installationApplicationControllerProvider.notifier)
-          .saveRequest(request);
+      final saved = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(installationApplicationControllerProvider.notifier)
+            .saveRequest(request),
+      );
       if (!mounted) return;
       Navigator.of(context).pop(saved);
     } catch (error) {
@@ -344,7 +347,6 @@ class _InstallationApplicationFormPageState
           2 => true,
           _ => !submitting,
         },
-        actionLoading: _step == 3 && submitting,
         onAction: _continue,
         onBack: _goBack,
         onStepSelected: (step) {

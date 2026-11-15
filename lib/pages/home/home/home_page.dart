@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/promotion_ads_modal/promotion_ads_modal.dart';
@@ -111,8 +113,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: const ColoredBox(color: AppColors.primary),
             ),
             NotificationListener<ScrollNotification>(
-              child: RefreshIndicator(
-                color: AppColors.primary,
+              child: AppRefreshIndicator(
+                color: AppColors.onPrimary,
                 edgeOffset: pinnedH,
                 onRefresh: _refreshSession,
                 child: CustomScrollView(

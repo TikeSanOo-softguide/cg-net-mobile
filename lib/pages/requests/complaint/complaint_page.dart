@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,7 @@ import '../../../components/app_photo_picker/app_photo_picker.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
+import '../request_detail_page.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -183,16 +186,16 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
   Future<void> _confirmCancel(ComplaintModel report) async {
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'complaint.cancel_title'.tr(),
+      title: 'common.cancel_ask'.tr(),
       body: 'complaint.cancel_confirm'.tr(),
       confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true || !mounted) return;
 
-    final result = await ref
-        .read(complaintControllerProvider.notifier)
-        .cancelComplaint(report);
+    final result = await LoadingHelper.runWithLoading(
+      () => ref.read(complaintControllerProvider.notifier).cancelComplaint(report),
+    );
     if (!mounted) return;
 
     if (result == null) {
@@ -246,7 +249,7 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
           : AppAddFloatingActionButton(
               onPressed: () => _openNewComplaintPage(),
             ),
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _fetchComplaints,
         child: _buildBody(reportState, reports),
       ),
@@ -347,7 +350,7 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
         AppStyle.spaceLg,
         AppStyle.spaceLg,
         AppStyle.spaceLg,
-        80,
+        AppStyle.listPaddingAboveFab,
       ),
       itemCount: reports.length + (hasError ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 2),

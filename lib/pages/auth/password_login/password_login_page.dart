@@ -309,7 +309,6 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
           label: 'password_login.sign_in'.tr(),
           height: 44,
           fontSize: 14,
-          isLoading: signingIn,
           onPressed: canSubmit ? _signIn : null,
         ),
         child: Column(

@@ -12,6 +12,7 @@ import '../../../components/app_input/app_input.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -101,10 +102,12 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     try {
       while (true) {
         try {
-          final response = await ref.read(broadbandRepositoryProvider).connect(
-                accountNumber: bound.account,
-                serviceType: bound.serviceType,
-              );
+          final response = await LoadingHelper.runWithLoading(
+            () => ref.read(broadbandRepositoryProvider).connect(
+                  accountNumber: bound.account,
+                  serviceType: bound.serviceType,
+                ),
+          );
 
           debugPrint('BROADBAND CONNECT RESPONSE: $response');
           break;
@@ -172,7 +175,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'home.remove_broadband_confirm_title'.tr(),
+      title: 'common.remove_ask'.tr(),
       body: 'home.remove_broadband_confirm_body'.tr(),
     );
 
@@ -183,10 +186,12 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     try {
       while (true) {
         try {
-          await ref.read(broadbandRepositoryProvider).unbindAccount(
-                serviceType: bound.serviceType,
-                accountNumber: bound.account,
-              );
+          await LoadingHelper.runWithLoading(
+            () => ref.read(broadbandRepositoryProvider).unbindAccount(
+                  serviceType: bound.serviceType,
+                  accountNumber: bound.account,
+                ),
+          );
 
           if (!mounted) return;
 
@@ -341,7 +346,6 @@ class _BindForm extends StatelessWidget {
               label: 'broadband.bind_now'.tr(),
               height: 44,
               fontSize: 14,
-              isLoading: isSubmitting,
               onPressed: isFormValid && !isSubmitting ? onSubmit : null,
             ),
           ],
@@ -476,7 +480,6 @@ class _BoundAccountCard extends StatelessWidget {
             label: context.tr('broadband.remove_account'),
             onPressed: isSubmitting ? null : onRemove,
             backgroundColor: AppColors.error,
-            isLoading: isSubmitting,
           ),
         ],
       ),

@@ -21,8 +21,11 @@ class AppStyle {
   static const EdgeInsets pagePaddingH =
       EdgeInsets.symmetric(horizontal: pageMarginH);
 
-  /// Extra space under the last list item (home indicator is in SafeArea).
-  static const double listPaddingBottom = 28;
+  /// Space under the last list item. The system inset stays on the scaffold.
+  static const double listPaddingBottom = 16;
+
+  /// Clears the mini add button (40) plus its 16 margin and an 8 gap.
+  static const double listPaddingAboveFab = 64;
 
   static const EdgeInsets cardPadding = EdgeInsets.all(spaceLg);
   static const EdgeInsets sectionGap = EdgeInsets.only(bottom: spaceXl);

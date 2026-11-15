@@ -221,7 +221,6 @@ class _SetUsernamePasswordPageState
           label: 'set_credentials.create'.tr(),
           height: 44,
           fontSize: 14,
-          isLoading: isSubmitting,
           onPressed: isSubmitting ? null : _submit,
         ),
         child: Form(

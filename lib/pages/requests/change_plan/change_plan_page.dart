@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
@@ -10,6 +12,8 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
+import '../../../core/utils/loading_helper.dart';
+import '../request_detail_page.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -148,16 +152,16 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
   Future<void> _confirmCancel(ChangePlanRequestModel request) async {
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'changePlan.cancel_title'.tr(),
+      title: 'common.cancel_ask'.tr(),
       body: 'changePlan.cancel_confirm'.tr(),
       confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true) return;
 
-    final code = await ref
-        .read(changePlanControllerProvider.notifier)
-        .cancelRequest(request.id);
+    final code = await LoadingHelper.runWithLoading(
+      () => ref.read(changePlanControllerProvider.notifier).cancelRequest(request.id),
+    );
     if (!mounted) return;
     if (code == null &&
         ref.read(changePlanControllerProvider).errorMessage != null) {
@@ -205,7 +209,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
       floatingActionButton: hasUnderReview
           ? null
           : AppAddFloatingActionButton(onPressed: _openForm),
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _refresh,
         child: _buildBody(state, requests),
       ),
@@ -293,7 +297,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
         AppStyle.spaceLg,
         AppStyle.spaceLg,
         AppStyle.spaceLg,
-        80,
+        AppStyle.listPaddingAboveFab,
       ),
       children: [
         for (var i = 0; i < items.length; i++) ...[

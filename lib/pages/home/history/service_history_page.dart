@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/app_card/app_card.dart';
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
@@ -36,7 +37,7 @@ class ServiceHistoryPage extends ConsumerWidget {
     final locale = ref.watch(appLocaleProvider);
     final history = ref.watch(serviceHistoryProvider);
     final items = history.valueOrNull;
-    final showSkeleton = items == null && history.isLoading;
+    final showSkeleton = !history.hasValue && history.isLoading;
     final failure = history.error;
 
     return AppCurvedScaffold(
@@ -48,10 +49,18 @@ class ServiceHistoryPage extends ConsumerWidget {
           ? const CardListShimmer(
               itemCount: 5,
               itemHeight: 96,
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
             )
-          : items == null
-          ? EmptyState(
+          : AppRefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async {
+                ref.invalidate(serviceHistoryProvider);
+                try {
+                  await ref.read(serviceHistoryProvider.future);
+                } catch (_) {}
+              },
+              child: items == null
+          ? _pullableFill(EmptyState(
           icon: LucideIcons.wifi_off,
           iconAsset: isOfflineError(failure)
               ? null
@@ -80,10 +89,11 @@ class ServiceHistoryPage extends ConsumerWidget {
             }
             ref.invalidate(serviceHistoryProvider);
           },
-        )
+        ))
           : items.isEmpty
               ? const _ServiceHistoryEmpty()
               : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     16,
                     12,
@@ -100,6 +110,18 @@ class ServiceHistoryPage extends ConsumerWidget {
                     );
                   },
                 ),
+            ),
+    );
+  }
+
+  Widget _pullableFill(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(height: constraints.maxHeight, child: child),
+        );
+      },
     );
   }
 
@@ -156,6 +178,7 @@ class _ServiceHistoryEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(AppStyle.spaceLg),
       children: [
         AppCard(

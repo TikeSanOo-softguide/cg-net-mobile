@@ -44,7 +44,9 @@ class RelocationRequestModel {
       preferredDate:
           DateTime.tryParse(data['preferred_date']?.toString() ?? ''),
       contactName: data['contact_name']?.toString() ?? '',
-      phone: data['contact_phone']?.toString() ?? '',
+      phone: data['phone']?.toString() ??
+          data['contact_phone']?.toString() ??
+          '',
       details: data['details']?.toString(),
       status: data['status']?.toString() ?? 'under_review',
       createdAt: DateTime.tryParse(data['created_at']?.toString() ?? ''),
@@ -59,7 +61,7 @@ class RelocationRequestModel {
         'new_address': newAddress,
         'preferred_date': preferredDate?.toIso8601String().split('T').first,
         'contact_name': contactName,
-        'contact_phone': phone,
+        'phone': phone,
         'details': details,
         'status': status,
       };

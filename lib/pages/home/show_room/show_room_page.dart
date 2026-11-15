@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/app_card/app_card.dart';
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../data/show_room/show_room_repository.dart';
@@ -47,7 +48,7 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
     final roomsAsync = ref.watch(showRoomsProvider);
     final locale = context.locale.languageCode;
     final rooms = roomsAsync.valueOrNull;
-    final showSkeleton = rooms == null && roomsAsync.isLoading;
+    final showSkeleton = !roomsAsync.hasValue && roomsAsync.isLoading;
 
     return AppCurvedScaffold(
       title: Text('home.service_show_room'.tr()),
@@ -58,20 +59,35 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
               separator: 12,
               borderRadius: 12,
             )
-          : rooms == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('common.error'.tr()),
-                      TextButton(
-                        onPressed: () => unawaited(_loadShowRooms(retry: true)),
-                        child: Text('common.retry'.tr()),
+          : AppRefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () => _loadShowRooms(retry: true),
+              child: rooms == null
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: constraints.maxHeight,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('common.error'.tr()),
+                              TextButton(
+                                onPressed: () =>
+                                    unawaited(_loadShowRooms(retry: true)),
+                                child: Text('common.retry'.tr()),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 )
               : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     16,
                     16,
@@ -87,6 +103,7 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
                     return _ShowRoomCard(room: rooms[index], locale: locale);
                   },
                 ),
+            ),
     );
   }
 }

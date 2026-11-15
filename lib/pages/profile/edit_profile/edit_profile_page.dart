@@ -164,7 +164,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       label: 'common.save'.tr(),
                       height: 44,
                       fontSize: 14,
-                      isLoading: isSubmitting,
                       onPressed: isSubmitting
                           ? null
                           : () async {

@@ -180,12 +180,9 @@ class _VerifyChangePasswordOtpPageState
     });
 
     try {
-      final nextChallenge = await LoadingHelper.runWithLoading(
-        () => ref
-            .read(changePasswordControllerProvider.notifier)
-            .changePassword(password: password),
-        dismissAnimation: false,
-      );
+      final nextChallenge = await ref
+          .read(changePasswordControllerProvider.notifier)
+          .changePassword(password: password);
       if (!mounted) return;
 
       _clearDigits();
@@ -281,7 +278,6 @@ class _VerifyChangePasswordOtpPageState
           label: 'otp.verify'.tr(),
           height: 44,
           fontSize: 14,
-          isLoading: verifying,
           onPressed: _isComplete && !verifying ? _verifyOtp : null,
         ),
         secondaryAction: _ChangePasswordOtpResendRow(

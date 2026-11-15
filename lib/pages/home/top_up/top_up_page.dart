@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +14,7 @@ import '../../../components/app_input/app_input.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_pill_action_input/app_pill_action_input.dart';
 import '../../../components/app_scan_input/app_scan_input.dart';
+import '../../../components/processing_status/processing_status.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/message_codes.dart';
@@ -43,6 +46,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   String? _serialErrorKey;
   bool _accountPrefillAttempted = false;
   bool _checkingSerial = false;
+  bool _processingOpen = false;
 
   static const _serialLength = 16;
   static const _accountMaxLength = 15;
@@ -147,6 +151,54 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     }
   }
 
+  Future<void> _showProcessing() async {
+    if (_processingOpen) return;
+    _processingOpen = true;
+    final opened = Completer<void>();
+    unawaited(
+      showGeneralDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+        barrierColor: const Color(0x6B000000),
+        transitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (ctx, animation, secondaryAnimation) {
+          if (!opened.isCompleted) opened.complete();
+          return Center(
+            child: ProcessingStatus(
+              label: 'common.processing'.tr(),
+            ),
+          );
+        },
+        transitionBuilder: (ctx, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      ).whenComplete(() {
+        _processingOpen = false;
+      }),
+    );
+    await opened.future;
+  }
+
+  void _closeProcessingDialog() {
+    if (!_processingOpen) return;
+    _processingOpen = false;
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   Future<void> _submit() async {
     if (ref.read(topUpControllerProvider).isSubmitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -157,15 +209,13 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       late final TopUpAccountResult response;
       while (true) {
         try {
-          final result = await LoadingHelper.runWithLoading(
-            () => ref.read(topUpControllerProvider.notifier).submit(
-                  phone: account,
-                  pin: pin,
-                ),
-            loadingMessage: 'topup.processing'.tr(),
-            dismissAnimation: false,
-          );
+          await _showProcessing();
+          final result = await ref.read(topUpControllerProvider.notifier).submit(
+                phone: account,
+                pin: pin,
+              );
           if (result == null) {
+            _closeProcessingDialog();
             return;
           }
           response = result;
@@ -173,11 +223,13 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
         } on ApiException catch (error) {
           if (!isOfflineError(error)) rethrow;
           if (!mounted) return;
+          _closeProcessingDialog();
           final shouldRetry = await showOfflineModal(context);
           if (!mounted || !shouldRetry) return;
         }
       }
       if (!mounted) return;
+      _closeProcessingDialog();
 
       if (!response.isSuccess) {
         if (!mounted) return;
@@ -211,6 +263,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       setState(() {});
     } on ApiException catch (error) {
       if (!mounted) return;
+      _closeProcessingDialog();
       _unfocusInputs();
       if (error.code == MessageCodes.topupAccountNotFound) {
         await _showAccountNotFoundModal();
@@ -227,6 +280,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       await showApiErrorModal(context, error);
     } catch (_) {
       if (!mounted) return;
+      _closeProcessingDialog();
       _unfocusInputs();
       await showAppFailureModal(
         context,
@@ -396,7 +450,6 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                   fontSize: 14,
                   onPressed:
                       _canSubmit && !topUpState.isSubmitting ? _submit : null,
-                  isLoading: topUpState.isSubmitting,
                 ),
               ],
             ),

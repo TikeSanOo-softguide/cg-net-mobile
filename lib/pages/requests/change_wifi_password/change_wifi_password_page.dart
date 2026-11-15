@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +17,7 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
+import '../request_detail_page.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -176,16 +179,18 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
   Future<void> _confirmCancel(ChangePasswordRequestModel request) async {
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'change_wifi.cancel_title'.tr(),
+      title: 'common.cancel_ask'.tr(),
       body: 'change_wifi.cancel_confirm'.tr(),
       confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
     );
     if (confirmed != true || !mounted) return;
 
-    final result = await ref
-        .read(changeWifiPasswordControllerProvider.notifier)
-        .cancelRequest(request);
+    final result = await LoadingHelper.runWithLoading(
+      () => ref
+          .read(changeWifiPasswordControllerProvider.notifier)
+          .cancelRequest(request),
+    );
     if (!mounted) return;
 
     if (result == null) {
@@ -239,7 +244,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
           : AppAddFloatingActionButton(
               onPressed: _openNewRequestPage,
             ),
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _fetchRequests,
         child: _buildBody(state, requests),
       ),
@@ -328,7 +333,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
         AppStyle.spaceLg,
         AppStyle.spaceLg,
         AppStyle.spaceLg,
-        80,
+        AppStyle.listPaddingAboveFab,
       ),
       itemCount: requests.length + (hasError ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 2),
@@ -1034,7 +1039,6 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                         : 'common.submit'.tr() != 'common.submit'
                             ? 'common.submit'.tr()
                             : 'Submit',
-                    isLoading: controllerState.isSubmitting,
                     onPressed:
                         controllerState.isSubmitting ? null : _submitForm,
                   ),

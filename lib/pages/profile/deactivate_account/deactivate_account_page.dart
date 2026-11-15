@@ -174,7 +174,6 @@ class _DeactivateAccountPageState extends ConsumerState<DeactivateAccountPage>
                       label: 'profile.deactivate_account_confirm'.tr(),
                       height: 44,
                       fontSize: 14,
-                      isLoading: isLoading,
                       backgroundColor: AppColors.error,
                       onPressed: isLoading ? null : _confirmDeactivation,
                     ),

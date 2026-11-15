@@ -196,7 +196,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           label: 'login.send_otp'.tr(),
           height: 44,
           fontSize: 14,
-          isLoading: isSubmitting,
           onPressed: isSubmitting ? null : _continueLogin,
         ),
         child: Form(

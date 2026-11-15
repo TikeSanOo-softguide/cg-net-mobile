@@ -1,6 +1,8 @@
 import 'package:cg_net_mobile/core/utils/date_time_format.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
@@ -11,12 +13,14 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/requests/installation_application/installation_application_repository.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 import '../../profile/profile/profile_controller.dart';
+import '../request_detail_page.dart';
 import 'installation_application_controller.dart';
 import 'installation_application_form_page.dart';
 import 'installation_request_draft.dart';
@@ -79,7 +83,7 @@ class _InstallationApplicationPageState
   }) async {
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'installationApplication.cancel_title'.tr(),
+      title: 'common.cancel_ask'.tr(),
       body: 'installationApplication.cancel_confirm'.tr(),
       confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
@@ -88,7 +92,9 @@ class _InstallationApplicationPageState
 
     final controller =
         ref.read(installationApplicationControllerProvider.notifier);
-    final code = await controller.cancelRequest(request.id);
+    final code = await LoadingHelper.runWithLoading(
+      () => controller.cancelRequest(request.id),
+    );
     if (!mounted) return;
 
     if (code == null) {
@@ -136,7 +142,7 @@ class _InstallationApplicationPageState
               onPressed: () => _openForm(),
             )
           : null,
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _refresh,
         child: _buildBody(state),
       ),
@@ -252,7 +258,7 @@ class _InstallationApplicationPageState
         AppStyle.spaceLg,
         AppStyle.spaceLg,
         AppStyle.spaceLg,
-        80,
+        AppStyle.listPaddingAboveFab,
       ),
       children: [
         if (hasError)
@@ -363,6 +369,53 @@ class _InstallationApplicationCardState
     final canManage = _canManageRequest(request);
     final detail = request.packageDetail;
 
+    final lines = [
+      RequestDetailLine(
+        label: 'installationApplication.service_type'.tr(),
+        value: _serviceLabel(request.serviceType),
+      ),
+      RequestDetailLine(
+        label: 'requests.contact_name'.tr(),
+        value: request.name,
+      ),
+      RequestDetailLine(
+        label: 'requests.phone'.tr(),
+        value: request.phone,
+      ),
+      RequestDetailLine(
+        label: 'requests.package'.tr(),
+        value: request.productName ?? '',
+      ),
+      RequestDetailLine(
+        label: 'installationApplication.network_provider'.tr(),
+        value: detail?['product_line']?.toString() ?? '',
+      ),
+      RequestDetailLine(
+        label: 'installationApplication.internet_speed'.tr(),
+        value: _speedLabel(detail?['product_speed']),
+      ),
+      RequestDetailLine(
+        label: 'installationApplication.billing_period'.tr(),
+        value: _periodLabel(detail),
+      ),
+      RequestDetailLine(
+        label: 'requests.package_price'.tr(),
+        value: _pointsLabel(detail?['product_price']),
+      ),
+      RequestDetailLine(
+        label: 'installationApplication.installation_fee'.tr(),
+        value: _pointsLabel(detail?['installation_fee']),
+      ),
+      RequestDetailLine(
+        label: 'requests.address'.tr(),
+        value: request.address ?? '',
+      ),
+      RequestDetailLine(
+        label: 'requests.note'.tr(),
+        value: request.note ?? '',
+      ),
+    ];
+
     return RequestTicketCard(
       statusLabel: _statusLabel,
       statusColor: _statusColor,
@@ -371,53 +424,15 @@ class _InstallationApplicationCardState
       onEdit: canManage ? widget.onEdit : null,
       onCancel: canManage ? widget.onCancel : null,
       cancelTooltip: 'installationApplication.cancel_action'.tr(),
-      details: [
-        _RequestDetail(
-          label: 'installationApplication.service_type'.tr(),
-          value: _serviceLabel(request.serviceType),
-        ),
-        _RequestDetail(
-          label: 'requests.contact_name'.tr(),
-          value: request.name,
-        ),
-        _RequestDetail(
-          label: 'requests.phone'.tr(),
-          value: request.phone,
-        ),
-        _RequestDetail(
-          label: 'requests.package'.tr(),
-          value: request.productName ?? '',
-        ),
-        _RequestDetail(
-          label: 'installationApplication.network_provider'.tr(),
-          value: detail?['product_line']?.toString() ?? '',
-        ),
-        _RequestDetail(
-          label: 'installationApplication.internet_speed'.tr(),
-          value: _speedLabel(detail?['product_speed']),
-        ),
-        _RequestDetail(
-          label: 'installationApplication.billing_period'.tr(),
-          value: _periodLabel(detail),
-        ),
-        _RequestDetail(
-          label: 'requests.package_price'.tr(),
-          value: _pointsLabel(detail?['product_price']),
-        ),
-        _RequestDetail(
-          label: 'installationApplication.installation_fee'.tr(),
-          value: _pointsLabel(detail?['installation_fee']),
-        ),
-        _RequestDetail(
-          label: 'requests.address'.tr(),
-          value: request.address ?? '',
-        ),
-        if (request.note?.trim().isNotEmpty == true)
-          _RequestDetail(
-            label: 'requests.note'.tr(),
-            value: request.note!,
-          ),
-      ],
+      onOpen: () => openRequestDetail(
+        context,
+        title: 'home.service_packages'.tr(),
+        statusLabel: _statusLabel,
+        statusColor: _statusColor,
+        ticketNumber: request.ticketNumber,
+        createdAt: createdAt,
+        lines: lines,
+      ),
     );
   }
 }
@@ -460,42 +475,3 @@ String _pointsLabel(Object? value) {
   return '${NumberFormat('#,##0').format(amount)} ${'topup.pts'.tr()}';
 }
 
-class _RequestDetail extends StatelessWidget {
-  const _RequestDetail({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value.trim().isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              label,
-              style: AppTheme.caption().copyWith(fontSize: 13),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: AppTheme.body(
-                weight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ).copyWith(fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

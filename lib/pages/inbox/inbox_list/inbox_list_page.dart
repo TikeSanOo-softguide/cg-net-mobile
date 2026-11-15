@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -209,7 +211,7 @@ class _InboxList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return RefreshIndicator(
+      return AppRefreshIndicator(
         onRefresh: onRefresh,
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
@@ -223,11 +225,11 @@ class _InboxList extends StatelessWidget {
       );
     }
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(height: 2),
         itemBuilder: (context, index) {

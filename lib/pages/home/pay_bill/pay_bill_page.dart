@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../components/app_button/app_button.dart';
+import '../../../components/processing_status/processing_status.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
@@ -17,6 +18,7 @@ import '../../../components/app_input/app_input.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/storage/local_prefs/local_prefs.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -151,10 +153,12 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
     try {
       while (true) {
         try {
-          final quote = await ref.read(payBillRepositoryProvider).check(
-                accountNumber: account,
-                serviceType: _selectedService(),
-              );
+          final quote = await LoadingHelper.runWithLoading(
+            () => ref.read(payBillRepositoryProvider).check(
+                  accountNumber: account,
+                  serviceType: _selectedService(),
+                ),
+          );
           if (!mounted) return;
           final saved = _favorites.any(
             (item) => item.account == quote.account && item.serviceType == quote.serviceType,
@@ -216,32 +220,8 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
       pageBuilder: (ctx, animation, secondaryAnimation) {
         if (!opened.isCompleted) opened.complete();
         return Center(
-          child: Material(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2.4),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'home.pay_bill_processing'.tr(),
-                    style: AppTheme.english(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.15,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          child: ProcessingStatus(
+            label: 'common.processing'.tr(),
           ),
         );
       },
@@ -483,7 +463,6 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                       _PayStep.confirm => 'common.continue'.tr(),
                       _PayStep.pay => 'home.pay_bill_confirm'.tr(),
                     },
-                    isLoading: _checking,
                     onPressed: (_checking ||
                             _paying ||
                             (_step == _PayStep.account &&

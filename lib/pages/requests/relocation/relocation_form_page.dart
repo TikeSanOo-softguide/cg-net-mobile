@@ -13,6 +13,7 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/api_field_error.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../core/utils/max_length_limiter.dart';
 import '../../../core/utils/phone_number.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
@@ -182,9 +183,11 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
     );
 
     try {
-      final savedRequest = await ref
-          .read(relocationControllerProvider.notifier)
-          .saveRequest(request);
+      final savedRequest = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(relocationControllerProvider.notifier)
+            .saveRequest(request),
+      );
       if (savedRequest != null && mounted) {
         Navigator.of(context).pop<RelocationSaveResult>(savedRequest);
       }
@@ -454,7 +457,6 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                   child: AppButton(
                     label: 'common.submit'.tr(),
-                    isLoading: isSubmitting,
                     onPressed: isSubmitting ? null : _submit,
                   ),
                 ),

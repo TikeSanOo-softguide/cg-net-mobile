@@ -223,7 +223,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                     label: 'common.save'.tr(),
                     height: 44,
                     fontSize: 14,
-                    isLoading: loading,
                     onPressed: loading
                         ? null
                         : () async {

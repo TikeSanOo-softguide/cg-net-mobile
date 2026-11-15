@@ -6,7 +6,7 @@ Customer-facing ISP mobile app scaffold (Flutter).
 
 - Flutter 3.24+ / Dart 3.5+
 - Riverpod, go_router, easy_localization (EN / MY / ZH)
-- Dio, flutter_secure_storage, Lottie, shimmer
+- Dio, flutter_secure_storage, shimmer
 - Material 3 — primary `#0100CA`, primary light `#EBEBFB`, accent `#FFEE13`, surfaces `#EDF3F8`
 
 ## Setup
@@ -27,7 +27,7 @@ flutter run --dart-define=API_BASE_URL=https://your-api.example.com
 ## App flow
 
 1. Language selection (EN / MY / ZH) → saved in local prefs (`my` = Myanmar)  
-2. Splash (token check) → Onboarding → Login (phone, MM/TH/CN) → OTP → success (Lottie) → set username/password → Home  
+2. Splash (token check) → Onboarding → Login (phone, MM/TH/CN) → OTP → success → set username/password → Home  
 3. Bottom nav: Home · Package · Inbox · Support · Profile  
 
 Billing / payment / plan-change are deferred.

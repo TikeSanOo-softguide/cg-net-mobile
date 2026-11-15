@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
-import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 
 const _cancelRed = Color(0xFFFF0000);
@@ -13,8 +12,9 @@ const _alert = Color(0xFFF97A00);
 const _successSoft = Color(0xFFE8F5DC); // light of #3D7A12
 const _alertSoft = Color(0xFFFFF0E5); // light of #F97A00
 const double _dialogRadius = 16;
-const double _modalBtnHeight = 32;
-const double _modalBtnFontSize = 11;
+const double _modalBtnHeight = 38;
+const double _modalBtnRadius = 6;
+const double _modalBtnFontSize = 13;
 const String _successIconAsset = 'assets/images/dialogs/success.png';
 const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
 const String _alertIconAsset = 'assets/images/dialogs/alert.png';
@@ -25,11 +25,11 @@ const Color _failureSoft = Color(0xFFFCE6E6); // light of #D90000
 const double _dialogIconChip = 36;
 const double _dialogIconSize = 23;
 const double _dialogIconRadius = 8;
-const EdgeInsets _dialogPadding = EdgeInsets.fromLTRB(18, 16, 18, 16);
+const EdgeInsets _dialogPadding = EdgeInsets.fromLTRB(15, 16, 15, 16);
 const double _gapIconTitle = 8;
 const double _gapTitleBody = 6;
 const double _gapBodyButton = 14;
-const EdgeInsets _dialogInset = EdgeInsets.symmetric(horizontal: 44);
+const EdgeInsets _dialogInset = EdgeInsets.symmetric(horizontal: 30);
 const Duration _dialogDuration = Duration(milliseconds: 220);
 const Color _barrier = Color(0x6B000000); // ~42% black
 
@@ -55,18 +55,42 @@ Widget _dialogPngIcon({
   );
 }
 
-ButtonStyle _primaryModalBtnStyle() => FilledButton.styleFrom(
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.onPrimary,
-      elevation: 0,
-      minimumSize: const Size(0, _modalBtnHeight),
-      maximumSize: const Size(double.infinity, _modalBtnHeight),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppStyle.radiusInput),
+Widget _modalPrimaryButton({
+  required VoidCallback onPressed,
+  required String label,
+  FontWeight weight = FontWeight.w600,
+}) {
+  final radius = BorderRadius.circular(_modalBtnRadius);
+  return Material(
+    color: AppColors.primary,
+    shape: RoundedRectangleBorder(borderRadius: radius),
+    child: InkWell(
+      onTap: onPressed,
+      borderRadius: radius,
+      splashColor: Colors.white.withValues(alpha: 0.12),
+      highlightColor: Colors.white.withValues(alpha: 0.06),
+      child: SizedBox(
+        height: _modalBtnHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _modalBtnText(
+                color: AppColors.onPrimary,
+                weight: weight,
+              ),
+            ),
+          ),
+        ),
       ),
-    );
+    ),
+  );
+}
 
 ButtonStyle _cancelOutlineModalBtnStyle() => OutlinedButton.styleFrom(
       foregroundColor: _cancelRed,
@@ -78,7 +102,7 @@ ButtonStyle _cancelOutlineModalBtnStyle() => OutlinedButton.styleFrom(
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       side: const BorderSide(color: _cancelRed, width: 1),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppStyle.radiusInput),
+        borderRadius: BorderRadius.circular(_modalBtnRadius),
       ),
     );
 
@@ -187,17 +211,12 @@ Future<void> showAppSuccessModal(
               style: _dialogMessageStyle(),
             ),
             const SizedBox(height: _gapBodyButton),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 120),
-              child: SizedBox(
-                height: _modalBtnHeight,
-                child: FilledButton(
+            Align(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 108),
+                child: _modalPrimaryButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  style: _primaryModalBtnStyle(),
-                  child: Text(
-                    buttonLabel ?? 'common.done'.tr(),
-                    style: _modalBtnText(color: AppColors.onPrimary),
-                  ),
+                  label: buttonLabel ?? 'common.done'.tr(),
                 ),
               ),
             ),
@@ -245,17 +264,12 @@ Future<void> showAppFailureModal(
               _FailureRetryCountdown(seconds: retryAfterSeconds),
             ],
             const SizedBox(height: _gapBodyButton),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 120),
-              child: SizedBox(
-                height: _modalBtnHeight,
-                child: FilledButton(
+            Align(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 108),
+                child: _modalPrimaryButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  style: _primaryModalBtnStyle(),
-                  child: Text(
-                    buttonLabel ?? 'common.ok'.tr(),
-                    style: _modalBtnText(color: AppColors.onPrimary),
-                  ),
+                  label: buttonLabel ?? 'common.ok'.tr(),
                 ),
               ),
             ),
@@ -323,18 +337,10 @@ Future<bool> showAppRetryFailureModal(
                 Expanded(
                   child: SizedBox(
                     height: _modalBtnHeight,
-                    child: FilledButton(
+                    child: _modalPrimaryButton(
                       onPressed: () => Navigator.of(dialogContext).pop(true),
-                      style: _primaryModalBtnStyle(),
-                      child: Text(
-                        retryLabel ?? 'common.try_again'.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _modalBtnText(
-                          color: AppColors.onPrimary,
-                          weight: FontWeight.w700,
-                        ),
-                      ),
+                      label: retryLabel ?? 'common.try_again'.tr(),
+                      weight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -433,17 +439,12 @@ Future<void> showAppAlertModal(
               style: _dialogMessageStyle(),
             ),
             const SizedBox(height: _gapBodyButton),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 120),
-              child: SizedBox(
-                height: _modalBtnHeight,
-                child: FilledButton(
+            Align(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 108),
+                child: _modalPrimaryButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  style: _primaryModalBtnStyle(),
-                  child: Text(
-                    buttonLabel ?? 'common.ok'.tr(),
-                    style: _modalBtnText(color: AppColors.onPrimary),
-                  ),
+                  label: buttonLabel ?? 'common.ok'.tr(),
                 ),
               ),
             ),
@@ -511,18 +512,10 @@ Future<bool> showAppConfirmModal(
                 Expanded(
                   child: SizedBox(
                     height: _modalBtnHeight,
-                    child: FilledButton(
+                    child: _modalPrimaryButton(
                       onPressed: () => Navigator.of(dialogContext).pop(true),
-                      style: _primaryModalBtnStyle(),
-                      child: Text(
-                        confirmLabel ?? 'common.confirm'.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _modalBtnText(
-                          color: AppColors.onPrimary,
-                          weight: FontWeight.w700,
-                        ),
-                      ),
+                      label: confirmLabel ?? 'common.confirm'.tr(),
+                      weight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -612,18 +605,10 @@ Future<bool> showOfflineModal(BuildContext context) async {
                 Expanded(
                   child: SizedBox(
                     height: _modalBtnHeight,
-                    child: FilledButton(
+                    child: _modalPrimaryButton(
                       onPressed: () => Navigator.of(dialogContext).pop(true),
-                      style: _primaryModalBtnStyle(),
-                      child: Text(
-                        'common.retry'.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _modalBtnText(
-                          color: AppColors.onPrimary,
-                          weight: FontWeight.w700,
-                        ),
-                      ),
+                      label: 'common.retry'.tr(),
+                      weight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -660,6 +645,7 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
   var _busy = false;
+  var _handlingPin = false;
 
   @override
   void initState() {
@@ -685,6 +671,7 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
   String get _pin => _controllers.map((c) => c.text).join();
 
   void _onDigitChanged(int index, String value) {
+    if (_handlingPin) return;
     final digits = value.replaceAll(RegExp(r'\D'), '');
     if (digits.length > 1) {
       for (var i = 0; i < _pinLength; i++) {
@@ -705,6 +692,24 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
       _focusNodes[index - 1].requestFocus();
     }
     if (_pin.length == _pinLength) _submit();
+  }
+
+  KeyEventResult _onKey(int index, KeyEvent event) {
+    if (_handlingPin) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    if (event.logicalKey != LogicalKeyboardKey.backspace) {
+      return KeyEventResult.ignored;
+    }
+    if (_controllers[index].text.isEmpty && index > 0) {
+      _handlingPin = true;
+      _controllers[index - 1].text = '';
+      _focusNodes[index - 1].requestFocus();
+      _handlingPin = false;
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   Future<void> _submit() async {
@@ -736,7 +741,7 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
       child: Dialog(
       backgroundColor: AppColors.surface,
       elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(_dialogRadius),
       ),
@@ -819,6 +824,7 @@ class _AppPasswordDialogState extends State<_AppPasswordDialog> {
                           controller: _controllers[i],
                           focusNode: _focusNodes[i],
                           onChanged: (v) => _onDigitChanged(i, v),
+                          onKeyEvent: (event) => _onKey(i, event),
                         ),
                       ],
                     ],
@@ -851,12 +857,14 @@ class _AppPinBox extends StatefulWidget {
     required this.controller,
     required this.focusNode,
     required this.onChanged,
+    required this.onKeyEvent,
   });
 
   final double size;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
+  final KeyEventResult Function(KeyEvent event) onKeyEvent;
 
   @override
   State<_AppPinBox> createState() => _AppPinBoxState();
@@ -899,7 +907,11 @@ class _AppPinBoxState extends State<_AppPinBox> {
             width: focused ? 1.5 : 1,
           ),
         ),
-        child: TextField(
+        child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onKeyEvent: (node, event) => widget.onKeyEvent(event),
+          child: TextField(
           controller: widget.controller,
           focusNode: widget.focusNode,
           textAlign: TextAlign.center,
@@ -908,11 +920,11 @@ class _AppPinBoxState extends State<_AppPinBox> {
           textInputAction: TextInputAction.next,
           obscureText: true,
           obscuringCharacter: '•',
-          maxLength: 1,
           showCursor: true,
           cursorColor: AppColors.primary,
           cursorWidth: 2,
           cursorHeight: fontSize,
+          enableInteractiveSelection: false,
           style: AppTheme.english(
             fontSize: fontSize,
             fontWeight: FontWeight.w700,
@@ -941,6 +953,7 @@ class _AppPinBoxState extends State<_AppPinBox> {
             }
             widget.onChanged(digit);
           },
+          ),
         ),
       ),
     );

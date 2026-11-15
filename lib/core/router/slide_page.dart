@@ -3,11 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import '../theme/app_colors/app_colors.dart';
 
-const _slideDuration = Duration(milliseconds: 280);
-const _slideReverseDuration = Duration(milliseconds: 240);
+const _slideDuration = Duration(milliseconds: 200);
+const _slideReverseDuration = Duration(milliseconds: 180);
 
-const _enterCurve = Cubic(0.22, 1.0, 0.36, 1.0);
-const _exitCurve = Cubic(0.4, 0.0, 1.0, 1.0);
+/// Starts immediately and settles briefly. The same curve is used for pop
+/// so the page does not hesitate before it leaves.
+const _motionCurve = Cubic(0.2, 0.9, 0.25, 1.0);
 
 /// Full-screen push. The page stays opaque so the route canvas does not flash.
 CustomTransitionPage<T> slidePage<T>({
@@ -74,20 +75,19 @@ class _SmoothSlideState extends State<_SmoothSlide> {
   late final CurvedAnimation _secondary;
   late final Animation<Offset> _incoming;
   late final Animation<Offset> _outgoing;
-  late final Animation<double> _edgeShadow;
 
   @override
   void initState() {
     super.initState();
     _primary = CurvedAnimation(
       parent: widget.animation,
-      curve: _enterCurve,
-      reverseCurve: _exitCurve,
+      curve: _motionCurve,
+      reverseCurve: _motionCurve,
     );
     _secondary = CurvedAnimation(
       parent: widget.secondaryAnimation,
-      curve: _enterCurve,
-      reverseCurve: _exitCurve,
+      curve: _motionCurve,
+      reverseCurve: _motionCurve,
     );
     _incoming = Tween<Offset>(
       begin: const Offset(1, 0),
@@ -95,9 +95,8 @@ class _SmoothSlideState extends State<_SmoothSlide> {
     ).animate(_primary);
     _outgoing = Tween<Offset>(
       begin: Offset.zero,
-      end: const Offset(-0.3, 0),
+      end: const Offset(-0.2, 0),
     ).animate(_secondary);
-    _edgeShadow = Tween<double>(begin: 1, end: 0).animate(_primary);
   }
 
   @override
@@ -114,19 +113,17 @@ class _SmoothSlideState extends State<_SmoothSlide> {
       child: SlideTransition(
         position: _incoming,
         child: AnimatedBuilder(
-          animation: _edgeShadow,
+          animation: _primary,
           child: RepaintBoundary(child: widget.child),
           builder: (context, child) {
-            final strength = _edgeShadow.value;
+            final strength = 1 - _primary.value;
             return DecoratedBox(
               decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.16 * strength),
-                    blurRadius: 18,
-                    offset: const Offset(-8, 0),
+                border: Border(
+                  left: BorderSide(
+                    color: Color.fromRGBO(0, 0, 0, 0.12 * strength),
                   ),
-                ],
+                ),
               ),
               child: child,
             );

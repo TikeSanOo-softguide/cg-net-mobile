@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
+import '../../../components/processing_status/processing_status.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/empty_state/empty_state.dart';
@@ -60,32 +61,8 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       pageBuilder: (ctx, animation, secondaryAnimation) {
         if (!opened.isCompleted) opened.complete();
         return Center(
-          child: Material(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2.4),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'package.processing'.tr(),
-                    style: AppTheme.english(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.15,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          child: ProcessingStatus(
+            label: 'common.processing'.tr(),
           ),
         );
       },

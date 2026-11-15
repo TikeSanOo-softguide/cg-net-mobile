@@ -19,7 +19,6 @@ class InstallationWizardScaffold extends StatelessWidget {
     required this.onAction,
     this.totalSteps = 3,
     this.actionEnabled = true,
-    this.actionLoading = false,
     this.onBack,
     this.onStepSelected,
     this.stepLabels,
@@ -35,7 +34,6 @@ class InstallationWizardScaffold extends StatelessWidget {
   final String actionLabel;
   final VoidCallback? onAction;
   final bool actionEnabled;
-  final bool actionLoading;
   final VoidCallback? onBack;
   final ValueChanged<int>? onStepSelected;
 
@@ -98,7 +96,6 @@ class InstallationWizardScaffold extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                   child: AppButton(
                     label: actionLabel,
-                    isLoading: actionLoading,
                     onPressed: actionEnabled ? onAction : null,
                   ),
                 ),

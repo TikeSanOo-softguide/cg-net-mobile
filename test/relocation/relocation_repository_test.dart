@@ -125,7 +125,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'contact_phone': '09123456789',
+      'phone': '09123456789',
       'details': null,
       'status': 'under_review',
     });
@@ -211,7 +211,7 @@ void main() {
         'new_address': 'New address',
         'preferred_date': '2026-12-01',
         'contact_name': 'Alex Example',
-        'contact_phone': '09123456789',
+        'phone': '09123456789',
         'details': 'Move upstairs',
         'status': 'under_review',
       },

@@ -389,10 +389,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     setState(() => _inlineError = null);
 
     final controller = ref.read(otpVerificationControllerProvider.notifier);
-    final next = await LoadingHelper.runWithLoading(
-      () => controller.resend(widget.phone),
-      dismissAnimation: false,
-    );
+    final next = await controller.resend(widget.phone);
     if (!mounted) return;
 
     if (next != null) {

@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
@@ -14,11 +16,13 @@ import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/date_time_format.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
+import '../../../core/utils/loading_helper.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 import '../../home/home/bound_broadband_provider.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'relocation_controller.dart';
+import '../request_detail_page.dart';
 import 'relocation_form_page.dart';
 
 class RelocationPage extends ConsumerStatefulWidget {
@@ -83,7 +87,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
   }) async {
     final confirmed = await showAppConfirmModal(
       context,
-      title: 'relocation.cancel_title'.tr(),
+      title: 'common.cancel_ask'.tr(),
       body: 'relocation.cancel_confirm'.tr(),
       confirmLabel: 'common.confirm'.tr(),
       cancelLabel: 'common.no'.tr(),
@@ -91,7 +95,9 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
     if (confirmed != true) return;
 
     final controller = ref.read(relocationControllerProvider.notifier);
-    final code = await controller.cancelRequest(request.id);
+    final code = await LoadingHelper.runWithLoading(
+      () => controller.cancelRequest(request.id),
+    );
     if (!mounted) return;
 
     if (code == null) {
@@ -149,7 +155,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       floatingActionButton: canSubmitNewRequest
           ? AppAddFloatingActionButton(onPressed: () => _openForm())
           : null,
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _refresh,
         child: _buildBody(state),
       ),
@@ -258,7 +264,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
         AppStyle.spaceLg,
         AppStyle.spaceLg,
         AppStyle.spaceLg,
-        80,
+        AppStyle.listPaddingAboveFab,
       ),
       children: [
         if (hasError)
@@ -386,76 +392,41 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
       onEdit: _canManage ? widget.onEdit : null,
       onCancel: _canManage ? widget.onCancel : null,
       cancelTooltip: 'relocation.cancel_action'.tr(),
-      details: [
-        if (request.broadbandAccountNumber?.trim().isNotEmpty == true)
-          _RelocationDetail(
+      onOpen: () => openRequestDetail(
+        context,
+        title: 'relocation.title'.tr(),
+        statusLabel: _statusLabel,
+        statusColor: _statusColor,
+        ticketNumber: request.ticketNumber,
+        createdAt: createdAt,
+        lines: [
+          RequestDetailLine(
             label: 'requests.broadband_account'.tr(),
-            value: request.broadbandAccountNumber!,
+            value: request.broadbandAccountNumber ?? '',
           ),
-        _RelocationDetail(
-          label: 'requests.contact_name'.tr(),
-          value: request.contactName,
-        ),
-        _RelocationDetail(
-          label: 'requests.phone'.tr(),
-          value: request.phone,
-        ),
-        _RelocationDetail(
-          label: 'relocation.current_address'.tr(),
-          value: request.currentAddress,
-        ),
-        _RelocationDetail(
-          label: 'relocation.new_address'.tr(),
-          value: request.newAddress,
-        ),
-        if (preferredDate != null)
-          _RelocationDetail(
+          RequestDetailLine(
+            label: 'requests.contact_name'.tr(),
+            value: request.contactName,
+          ),
+          RequestDetailLine(
+            label: 'requests.phone'.tr(),
+            value: request.phone,
+          ),
+          RequestDetailLine(
+            label: 'relocation.current_address'.tr(),
+            value: request.currentAddress,
+          ),
+          RequestDetailLine(
+            label: 'relocation.new_address'.tr(),
+            value: request.newAddress,
+          ),
+          RequestDetailLine(
             label: 'relocation.preferred_date'.tr(),
-            value: preferredDate,
+            value: preferredDate ?? '',
           ),
-        if (request.details?.trim().isNotEmpty == true)
-          _RelocationDetail(
+          RequestDetailLine(
             label: 'requests.note'.tr(),
-            value: request.details!,
-          ),
-      ],
-    );
-  }
-}
-
-class _RelocationDetail extends StatelessWidget {
-  const _RelocationDetail({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value.trim().isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              label,
-              style: AppTheme.caption().copyWith(fontSize: 13),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: AppTheme.body(
-                weight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ).copyWith(fontSize: 13),
-            ),
+            value: request.details ?? '',
           ),
         ],
       ),

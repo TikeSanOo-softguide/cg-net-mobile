@@ -152,6 +152,7 @@ class AppInput extends StatefulWidget {
 class _AppInputState extends State<AppInput> {
   FocusNode? _ownedFocus;
   late FocusNode _focusNode;
+  FormFieldState<String>? _field;
 
   FocusNode get _effectiveFocus => widget.focusNode ?? _focusNode;
 
@@ -186,9 +187,28 @@ class _AppInputState extends State<AppInput> {
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_syncControllerToField);
     _effectiveFocus.removeListener(_onFocusChange);
     _ownedFocus?.dispose();
     super.dispose();
+  }
+
+  void _syncControllerToField() {
+    final field = _field;
+    final text = widget.controller?.text;
+    if (field == null || text == null || field.value == text) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _field != field || field.value == text) return;
+      field.didChange(text);
+    });
+  }
+
+  String? _validationValue(String? formValue) {
+    final controllerText = widget.controller?.text;
+    if (controllerText != null && controllerText.trim().isNotEmpty) {
+      return controllerText;
+    }
+    return formValue;
   }
 
   void _onFocusChange() {
@@ -227,9 +247,10 @@ class _AppInputState extends State<AppInput> {
       key: widget.formFieldKey,
       validator: widget.validator == null
           ? null
-          : (_) => widget.validator!(widget.controller?.text),
+          : (value) => widget.validator!(_validationValue(value)),
       initialValue: widget.controller?.text ?? '',
       builder: (field) {
+        _field = field;
         final hasError = field.hasError;
         final errorText = field.errorText;
 

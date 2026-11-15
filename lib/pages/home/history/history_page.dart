@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/activity_filter_drawer/activity_filter_drawer.dart';
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
@@ -130,13 +131,23 @@ class _HistoryList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(quickActionHistoryProvider(type));
 
-    return history.when(
+    return AppRefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        ref.invalidate(quickActionHistoryProvider(type));
+        try {
+          await ref.read(quickActionHistoryProvider(type).future);
+        } catch (_) {}
+      },
+      child: history.when(
+      skipLoadingOnReload: true,
+      skipLoadingOnRefresh: true,
       data: (items) {
         final filteredItems = items
             .where((item) => filter.matches(item.createdAt.toLocal()))
             .toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        if (filteredItems.isEmpty) return _emptyState();
+        if (filteredItems.isEmpty) return _pullableFill(_emptyState());
 
         final groupedItems = <DateTime, List<HistoryModel>>{};
         for (final item in filteredItems) {
@@ -146,7 +157,8 @@ class _HistoryList extends ConsumerWidget {
         }
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
             for (final group in groupedItems.entries) ...[
               Padding(
@@ -162,7 +174,7 @@ class _HistoryList extends ConsumerWidget {
         );
       },
       loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
-      error: (error, _) => EmptyState(
+      error: (error, _) => _pullableFill(EmptyState(
         icon: LucideIcons.wifi_off,
         iconAsset: isOfflineError(error)
             ? null
@@ -191,7 +203,19 @@ class _HistoryList extends ConsumerWidget {
           }
           ref.invalidate(quickActionHistoryProvider(type));
         },
+      )),
       ),
+    );
+  }
+
+  Widget _pullableFill(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(height: constraints.maxHeight, child: child),
+        );
+      },
     );
   }
 
