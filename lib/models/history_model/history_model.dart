@@ -18,6 +18,8 @@ class HistoryModel {
     this.remark = '',
     this.productName = '',
     this.productSpeed = '',
+    this.productId = '',
+    this.serialMasked = '',
   });
 
   final String id;
@@ -36,6 +38,8 @@ class HistoryModel {
   final String remark;
   final String productName;
   final String productSpeed;
+  final String productId;
+  final String serialMasked;
 
   bool get isCredit => direction.toLowerCase() == 'credit';
   bool get isDebit => direction.toLowerCase() == 'debit';
@@ -85,6 +89,8 @@ class HistoryModel {
       remark: remark,
       productName: packageName,
       productSpeed: productSpeed,
+      productId: packageMap['product_id']?.toString().trim() ?? '',
+      serialMasked: json['serial_masked']?.toString().trim() ?? '',
     );
   }
 

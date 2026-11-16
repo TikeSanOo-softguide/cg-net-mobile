@@ -14,13 +14,19 @@ import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../core/utils/date_time_format.dart';
 import '../../../data/history/history_repository.dart';
 import '../../../models/history_model/history_model.dart';
+import '../../package/package_detail/package_buy_result.dart';
+import '../pay_bill/pay_bill_result.dart';
+import '../top_up/top_up_result.dart';
 
 final quickActionHistoryProvider =
     FutureProvider.autoDispose.family<List<HistoryModel>, String?>(
@@ -149,28 +155,18 @@ class _HistoryList extends ConsumerWidget {
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         if (filteredItems.isEmpty) return _pullableFill(_emptyState());
 
-        final groupedItems = <DateTime, List<HistoryModel>>{};
-        for (final item in filteredItems) {
-          final createdAt = item.createdAt.toLocal();
-          final date = DateTime(createdAt.year, createdAt.month, createdAt.day);
-          groupedItems.putIfAbsent(date, () => []).add(item);
-        }
-
-        return ListView(
+        return ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          children: [
-            for (final group in groupedItems.entries) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-                child: _HistoryDateHeader(date: group.key),
-              ),
-              for (final item in group.value) ...[
-                _HistoryRow(item: item),
-                const SizedBox(height: 2),
-              ],
-            ],
-          ],
+          itemCount: filteredItems.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 2),
+          itemBuilder: (context, index) {
+            final item = filteredItems[index];
+            return _HistoryRow(
+              item: item,
+              onTap: _canOpen(item) ? () => _openDetail(context, ref, item) : null,
+            );
+          },
         );
       },
       loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
@@ -227,52 +223,214 @@ class _HistoryList extends ConsumerWidget {
       );
 }
 
+bool _canOpen(HistoryModel item) {
+  final type = item.type.toLowerCase();
+  final status = item.status.toLowerCase();
+  final pending = PayBillResult.isPendingStatus(status);
+  return switch (type) {
+    'topup' => status == 'completed' || status == 'failed' || pending,
+    'wifi_package' => status == 'completed' || status == 'failed',
+    'ftth_bill' || 'cg_bill' => status == 'completed' || pending,
+    _ => false,
+  };
+}
+
+String? _speedMbps(String raw) {
+  final match = RegExp(r'^(\d+(?:\.\d+)?)').firstMatch(raw.trim());
+  return match?.group(1);
+}
+
+Future<void> _openDetail(
+  BuildContext context,
+  WidgetRef ref,
+  HistoryModel item,
+) async {
+  final HistoryModel detail;
+  try {
+    detail = await ref.read(historyRepositoryProvider).fetchById(item.id);
+  } catch (_) {
+    return;
+  }
+  if (!context.mounted) return;
+
+  final type = detail.type.toLowerCase();
+  final status = detail.status.toLowerCase();
+  final pending = PayBillResult.isPendingStatus(status);
+  final amount = detail.amount?.round() ?? 0;
+  final transactionId = detail.transactionNo ?? '';
+
+  if (type == 'topup') {
+    final serial = detail.serialMasked;
+    final result = status == 'failed'
+        ? TopUpResult.failure(
+            amountPoints: amount,
+            serialRaw: serial,
+            transactionId: transactionId,
+            occurredAt: detail.createdAt,
+          )
+        : pending
+            ? TopUpResult.pending(
+                amountPoints: amount,
+                serialRaw: serial,
+                transactionId: transactionId,
+                occurredAt: detail.createdAt,
+              )
+            : TopUpResult.success(
+                amountPoints: amount,
+                serialRaw: serial,
+                transactionId: transactionId,
+                occurredAt: detail.createdAt,
+              );
+    final route = status == 'failed'
+        ? RouteNames.topUpFailure
+        : pending
+            ? RouteNames.topUpPending
+            : RouteNames.topUpSuccess;
+    await context.pushNamed(
+      route,
+      extra: result,
+      queryParameters: status == 'completed' ? const {'hideDone': '1'} : const {},
+    );
+    return;
+  }
+
+  if (type == 'wifi_package') {
+    final title = detail.productName.trim().isEmpty
+        ? 'history.tab_package'.tr()
+        : detail.productName.trim();
+    final result = status == 'failed'
+        ? PackageBuyResult.failure(
+            packageId: detail.productId,
+            packageTitle: title,
+            pricePoints: amount,
+            autoRenew: false,
+            transactionId: transactionId,
+            speedMbps: _speedMbps(detail.productSpeed),
+            occurredAt: detail.createdAt,
+            errorTitleKey: 'package.result_failure_title',
+            errorBodyKey: 'package.result_failure_body',
+          )
+        : PackageBuyResult.success(
+            packageId: detail.productId,
+            packageTitle: title,
+            pricePoints: amount,
+            autoRenew: false,
+            transactionId: transactionId,
+            speedMbps: _speedMbps(detail.productSpeed),
+            occurredAt: detail.createdAt,
+          );
+    await context.pushNamed(
+      status == 'failed'
+          ? RouteNames.packageBuyFailure
+          : RouteNames.packageBuySuccess,
+      extra: result,
+      queryParameters: status == 'completed' ? const {'hideDone': '1'} : const {},
+    );
+    return;
+  }
+
+  if (type == 'ftth_bill' || type == 'cg_bill') {
+    final result = pending
+        ? PayBillResult.pending(
+            amountPoints: amount,
+            account: detail.account,
+            serviceType: detail.serviceType,
+            productLabel: detail.productName,
+            speed: detail.productSpeed,
+            transactionId: transactionId,
+            occurredAt: detail.createdAt,
+            remark: detail.remark,
+          )
+        : PayBillResult.success(
+            amountPoints: amount,
+            account: detail.account,
+            serviceType: detail.serviceType,
+            productLabel: detail.productName,
+            speed: detail.productSpeed,
+            transactionId: transactionId,
+            occurredAt: detail.createdAt,
+            remark: detail.remark,
+          );
+    await context.pushNamed(
+      pending ? RouteNames.payBillPending : RouteNames.payBillSuccess,
+      extra: result,
+      queryParameters: pending ? const {} : const {'hideDone': '1'},
+    );
+  }
+}
+
 class _HistoryRow extends StatelessWidget {
-  const _HistoryRow({required this.item});
+  const _HistoryRow({required this.item, this.onTap});
 
   final HistoryModel item;
+  final VoidCallback? onTap;
 
-  String get _titleKey => switch (item.type.toLowerCase()) {
-        'topup' => 'history.tab_topup',
-        'wifi_package' => 'history.tab_package',
-        'ftth_bill' || 'cg_bill' => 'history.tab_bill',
-        _ => 'history.tab_all',
-      };
+  String get _type => item.type.toLowerCase();
 
-  String get _asset => switch (item.type.toLowerCase()) {
+  bool get _isCredit =>
+      item.isCredit || (!item.isDebit && (_type == 'topup' || _type == 'refund'));
+
+  String get _asset => switch (_type) {
         'topup' => QuickActionIconChip.topUpAsset,
-        'wifi_package' => QuickActionIconChip.packageAsset,
+        'wifi_package' => 'assets/images/services/subscription.png',
         'ftth_bill' || 'cg_bill' => QuickActionIconChip.billAsset,
         _ => QuickActionIconChip.historyAsset,
       };
 
-  Color get _iconBackground => switch (item.type.toLowerCase()) {
+  Color get _iconBackground => switch (_type) {
         'topup' => QuickActionIconChip.topUpSoft,
-        'wifi_package' => QuickActionIconChip.packageSoft,
+        'wifi_package' => AppColors.primaryLight,
         'ftth_bill' || 'cg_bill' => QuickActionIconChip.billSoft,
         _ => QuickActionIconChip.historySoft,
+      };
+
+  String get _fallbackTitleKey => switch (_type) {
+        'topup' => 'history.item_topup_title',
+        'wifi_package' => item.status.toLowerCase() == 'failed'
+            ? 'history.item_package_fail_title'
+            : 'history.item_package_success_title',
+        'ftth_bill' || 'cg_bill' => 'history.item_bill_title',
+        _ => 'history.tab_all',
+      };
+
+  String get _fallbackBodyKey => switch (_type) {
+        'topup' => 'history.item_topup_body',
+        'wifi_package' => item.status.toLowerCase() == 'failed'
+            ? 'history.item_package_fail_body'
+            : 'history.item_package_success_body',
+        'ftth_bill' || 'cg_bill' => 'history.item_bill_body',
+        _ => 'history.empty_body',
       };
 
   @override
   Widget build(BuildContext context) {
     final locale = context.locale;
+    final title = item.titleCode.isNotEmpty
+        ? MessageCodes.locKey(item.titleCode).tr()
+        : _fallbackTitleKey.tr();
+    final body = item.descriptionCode.isNotEmpty
+        ? MessageCodes.locKeyBody(item.descriptionCode).tr()
+        : _fallbackBodyKey.tr();
     final amount = item.amount == null
         ? '-'
-        : NumberFormat('#,##0.##', locale.toString()).format(item.amount);
-    final transactionNo = item.transactionNo?.trim();
+        : '${_isCredit ? '+' : '-'}${NumberFormat('#,##0.##', 'en').format(item.amount)} ${'topup.pts'.tr()}';
+    final date = formatDate(item.createdAt.toIso8601String());
 
     return AppCard(
+      onTap: onTap,
       elevated: false,
       bordered: false,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       borderRadius: AppStyle.borderRadiusListCard,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           QuickActionIconChip(
             asset: _asset,
             background: _iconBackground,
             size: 38,
             iconSize: 22,
+            tint: _type == 'wifi_package' ? AppColors.primary : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -280,109 +438,62 @@ class _HistoryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(
-                        item.description.isEmpty ? _titleKey.tr() : item.description,
+                        title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.english(
-                          fontSize: 13,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primary,
+                          height: locale.languageCode == 'my'
+                              ? AppTheme.lineHeightMyanmarSafe
+                              : 1.25,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      DateFormat('hh:mm:ss a', locale.toString())
-                          .format(item.createdAt.toLocal()),
+                      amount,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTheme.english(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: _isCredit
+                            ? AppColors.success
+                            : const Color(0xFFD90000),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                RichText(
-                  maxLines: 1,
+                Text(
+                  body,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '${'history.amount'.tr()}: ',
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      TextSpan(
-                        text: amount,
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ' Pts',
-                        style: AppTheme.english(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
+                  style: AppTheme.english(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textMuted,
                   ),
                 ),
-                if (transactionNo != null && transactionNo.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '${'history.transaction_no'.tr()}: $transactionNo',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.english(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textMuted,
-                    ),
+                const SizedBox(height: 4),
+                Text(
+                  date,
+                  style: AppTheme.english(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
                   ),
-                ],
+                ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _HistoryDateHeader extends StatelessWidget {
-  const _HistoryDateHeader({required this.date});
-
-  final DateTime date;
-
-  @override
-  Widget build(BuildContext context) {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final headerDate = DateUtils.dateOnly(date);
-    final relativeLabel = headerDate == today
-        ? 'history.today'.tr()
-        : headerDate == today.subtract(const Duration(days: 1))
-            ? 'history.yesterday'.tr()
-            : null;
-    final formattedDate =
-        DateFormat('MM/dd/yyyy (EEEE)', context.locale.toString()).format(date);
-
-    return Text(
-      relativeLabel == null ? formattedDate : '$relativeLabel $formattedDate',
-      style: AppTheme.english(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textSecondary,
       ),
     );
   }

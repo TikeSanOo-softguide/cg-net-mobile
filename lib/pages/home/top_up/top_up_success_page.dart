@@ -7,9 +7,14 @@ import 'top_up_result.dart';
 import 'top_up_result_shell.dart';
 
 class TopUpSuccessPage extends StatelessWidget {
-  const TopUpSuccessPage({super.key, required this.result});
+  const TopUpSuccessPage({
+    super.key,
+    required this.result,
+    this.showPrimary = true,
+  });
 
   final TopUpResult result;
+  final bool showPrimary;
 
   void _leave(BuildContext context) {
     if (context.canPop()) {
@@ -32,6 +37,7 @@ class TopUpSuccessPage extends StatelessWidget {
         onBack: () => _leave(context),
         primaryLabel: 'common.done'.tr(),
         onPrimary: () => _leave(context),
+        showPrimary: showPrimary,
       ),
     );
   }

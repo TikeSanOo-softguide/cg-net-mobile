@@ -7,9 +7,14 @@ import 'package_buy_result.dart';
 import 'package_buy_result_shell.dart';
 
 class PackageBuySuccessPage extends StatelessWidget {
-  const PackageBuySuccessPage({super.key, required this.result});
+  const PackageBuySuccessPage({
+    super.key,
+    required this.result,
+    this.showPrimary = true,
+  });
 
   final PackageBuyResult result;
+  final bool showPrimary;
 
   void _leave(BuildContext context) {
     if (context.canPop()) {
@@ -32,6 +37,7 @@ class PackageBuySuccessPage extends StatelessWidget {
         onBack: () => _leave(context),
         primaryLabel: 'common.done'.tr(),
         onPrimary: () => _leave(context),
+        showPrimary: showPrimary,
       ),
     );
   }

@@ -60,6 +60,7 @@ class ApiEndpoints {
   static const String broadbandBind = '/broadband-account/bind';
   static const String broadbandUnbind = '/broadband-account/unbind';
   static const String transactions = '/customer/transactions';
+  static String transactionDetail(String id) => '/customer/transactions/$id';
   static const String profile = '/customer/profile';
   static const String customerPackages = '/customer/packages';
   static String packageCredentials(int id) =>

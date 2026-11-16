@@ -258,8 +258,8 @@ class _PlanCard extends StatelessWidget {
     return AppCard(
       elevated: false,
       bordered: false,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      borderRadius: AppStyle.borderRadiusListCard,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -293,10 +293,10 @@ class _PlanCard extends StatelessWidget {
                   plan.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    color: AppColors.primary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    style: AppTheme.english(
+                      color: AppColors.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     height: AppTheme.lineHeightMyanmarSafe,
                     letterSpacing: 0,
                   ),
@@ -306,73 +306,53 @@ class _PlanCard extends StatelessWidget {
               _StatusPill(active: active),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.lerp(AppColors.primaryLight, Colors.white, 0.62)!,
+                  Color.lerp(AppColors.primaryLight, Colors.white, 0.34)!,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.85),
+              ),
             ),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _MetricTile(
-                    label: 'home.valid_until'.tr(),
-                    value: plan.expiry,
-                    valueColor: AppColors.textPrimary,
-                  ),
+                _DetailLine(
+                  label: 'home.valid_until'.tr(),
+                  value: plan.expiry,
                 ),
-                Container(
-                  width: 1,
-                  height: 22,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  color: AppColors.borderLight,
+                const SizedBox(height: 12),
+                _DetailLine(
+                  label: 'home.remaining'.tr(),
+                  value: remaining,
+                  valueColor: active ? AppColors.success : AppColors.error,
                 ),
-                Expanded(
-                  child: _MetricTile(
-                    label: 'home.remaining'.tr(),
-                    value: remaining,
-                    valueColor: active ? AppColors.success : AppColors.error,
-                  ),
+                const SizedBox(height: 12),
+                _CredentialField(
+                  label: 'home.username'.tr(),
+                  value: username,
+                  visible: showUsername,
+                  loading: loading,
+                  onToggleVisibility: onToggleUsername,
+                ),
+                const SizedBox(height: 12),
+                _CredentialField(
+                  label: 'home.password'.tr(),
+                  value: password,
+                  visible: showPassword,
+                  loading: loading,
+                  onToggleVisibility: onTogglePassword,
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(LucideIcons.wifi, size: 12, color: AppColors.primary),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  'home.wifi_credential'.tr(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    height: AppTheme.lineHeightMyanmarSafe,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          _CredentialField(
-            label: 'home.username'.tr(),
-            value: username,
-            visible: showUsername,
-            loading: loading,
-            onToggleVisibility: onToggleUsername,
-          ),
-          const Divider(height: 1, thickness: 0.5, color: AppColors.borderLight),
-          _CredentialField(
-            label: 'home.password'.tr(),
-            value: password,
-            visible: showPassword,
-            loading: loading,
-            onToggleVisibility: onTogglePassword,
           ),
         ],
       ),
@@ -380,44 +360,46 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({
+class _DetailLine extends StatelessWidget {
+  const _DetailLine({
     required this.label,
     required this.value,
-    required this.valueColor,
+    this.valueColor,
   });
 
   final String label;
   final String value;
-  final Color valueColor;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.english(
-            color: AppColors.textMuted,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            height: AppTheme.lineHeightMyanmarSafe,
-            letterSpacing: 0,
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            style: AppTheme.english(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+              height: 1.35,
+            ),
           ),
         ),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.english(
-            color: valueColor,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            height: AppTheme.lineHeightMyanmarSafe,
-            letterSpacing: 0,
+        const SizedBox(width: 10),
+        Expanded(
+          flex: 6,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: AppTheme.english(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: valueColor ?? AppColors.textPrimary,
+              height: 1.35,
+            ),
           ),
         ),
       ],
@@ -498,39 +480,38 @@ class _CredentialField extends StatelessWidget {
         ? value
         : '•' * (value.isEmpty ? 8 : value.length.clamp(6, 12));
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 72,
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                color: AppColors.textMuted,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: AppTheme.lineHeightMyanmarSafe,
-                letterSpacing: 0,
-              ),
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.english(
+              color: AppColors.textMuted,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
             ),
           ),
-          Expanded(
-            child: Text(
-              display,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                color: AppColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                height: AppTheme.lineHeightMyanmarSafe,
-                letterSpacing: 0,
-              ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          flex: 6,
+          child: Text(
+            display,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: AppTheme.english(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
             ),
           ),
+        ),
           if (loading)
             const SizedBox(
               width: 30,
@@ -549,8 +530,7 @@ class _CredentialField extends StatelessWidget {
             icon: LucideIcons.copy,
             onTap: value.isEmpty ? () {} : () => _copy(context),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

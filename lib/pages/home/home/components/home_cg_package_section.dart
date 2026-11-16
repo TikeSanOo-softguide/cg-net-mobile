@@ -58,15 +58,22 @@ class _HomePackageStrip extends ConsumerWidget {
                   ),
                 ),
               ),
-              GestureDetector(
+              InkWell(
                 onTap: () => context.goNamed(RouteNames.packageList),
-                child: Text(
-                  'common.see_more'.tr(),
-                  style: AppTheme.english(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    height: 1.2,
+                borderRadius: BorderRadius.circular(8),
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    'home.see_all'.tr(),
+                    style: AppTheme.caption(
+                      color: AppColors.primary,
+                      weight: FontWeight.w500,
+                    ).copyWith(
+                      fontSize: 11,
+                      height: AppTheme.lineHeightMyanmarSafe,
+                    ),
                   ),
                 ),
               ),

@@ -225,7 +225,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               result.status != TopUpTxnStatus.success) {
             child = const NotFoundPage();
           } else {
-            child = TopUpSuccessPage(result: result);
+            child = TopUpSuccessPage(
+              result: result,
+              showPrimary: state.uri.queryParameters['hideDone'] != '1',
+            );
           }
           return slidePage<void>(
             key: state.pageKey,
@@ -333,7 +336,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               result.status != PackageBuyTxnStatus.success) {
             child = const NotFoundPage();
           } else {
-            child = PackageBuySuccessPage(result: result);
+            child = PackageBuySuccessPage(
+              result: result,
+              showPrimary: state.uri.queryParameters['hideDone'] != '1',
+            );
           }
           return slidePage<void>(
             key: state.pageKey,

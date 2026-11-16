@@ -31,18 +31,46 @@ class HistoryRepository {
     );
   }
 
+  Future<HistoryModel> fetchById(
+    String id, {
+    CancelToken? cancelToken,
+  }) {
+    return _loadOne(
+      path: ApiEndpoints.transactionDetail(_requiredId(id)),
+      cancelToken: cancelToken,
+    );
+  }
+
   Future<HistoryModel> fetchServiceById(
     String id, {
     CancelToken? cancelToken,
-  }) async {
+  }) {
+    return _loadOne(
+      path: ApiEndpoints.internetBillHistoryDetail(_requiredId(id)),
+      cancelToken: cancelToken,
+    );
+  }
+
+  String _requiredId(String id) {
     final historyId = id.trim();
     if (historyId.isEmpty) {
       throw ArgumentError.value(id, 'id', 'Must not be empty.');
     }
+    return historyId;
+  }
+
+  Future<HistoryModel> _loadOne({
+    required String path,
+    CancelToken? cancelToken,
+  }) async {
+    final historyPath = path.trim();
+    if (historyPath.isEmpty) {
+      throw ArgumentError.value(path, 'path', 'Must not be empty.');
+    }
 
     try {
       final response = await _dio.get<dynamic>(
-        ApiEndpoints.internetBillHistoryDetail(historyId),
+        historyPath,
         cancelToken: cancelToken,
       );
       final data = response.data;

@@ -200,6 +200,34 @@ void main() {
     expect(item.descriptionCode, 'MSG-FTTH-010');
   });
 
+  test('fetches one customer transaction by id', () async {
+    final adapter = _HistoryAdapter('''
+      {
+        "data": {
+          "id": 17,
+          "type": "topup",
+          "status": "completed",
+          "amount": 10000,
+          "transaction_no": "TXN-17",
+          "title_code": "MSG-TOPUP-010",
+          "description_code": "MSG-TOPUP-010",
+          "serial_masked": "1234****3456",
+          "created_at": "2026-10-14T09:00:00Z"
+        }
+      }
+    ''');
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'))
+      ..httpClientAdapter = adapter;
+
+    final item = await HistoryRepository(dio).fetchById('17');
+
+    expect(adapter.request?.path, '/customer/transactions/17');
+    expect(item.id, '17');
+    expect(item.serialMasked, '1234****3456');
+    expect(item.titleCode, 'MSG-TOPUP-010');
+    expect(item.amount, 10000);
+  });
+
   test('fetches all transaction types when type is omitted', () async {
     final adapter = _HistoryAdapter('''
       {

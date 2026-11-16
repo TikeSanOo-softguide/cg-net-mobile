@@ -26,12 +26,14 @@ class TopUpResultShell extends StatelessWidget {
     required this.primaryLabel,
     required this.onPrimary,
     this.onBack,
+    this.showPrimary = true,
   });
 
   final TopUpResult result;
   final String primaryLabel;
   final VoidCallback onPrimary;
   final VoidCallback? onBack;
+  final bool showPrimary;
 
   bool get _isSuccess => result.status == TopUpTxnStatus.success;
   bool get _isPending => result.status == TopUpTxnStatus.pending;
@@ -208,18 +210,20 @@ class TopUpResultShell extends StatelessWidget {
                         ? _successSoft
                         : _failureSoft,
               ),
-              const SizedBox(height: 40),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 150),
-                  child: AppButton(
-                    label: primaryLabel,
-                    onPressed: onPrimary,
-                    height: 38,
-                    fontSize: 13,
+              if (showPrimary) ...[
+                const SizedBox(height: 40),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 150),
+                    child: AppButton(
+                      label: primaryLabel,
+                      onPressed: onPrimary,
+                      height: 38,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
