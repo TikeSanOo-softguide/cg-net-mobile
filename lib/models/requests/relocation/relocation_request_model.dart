@@ -7,7 +7,7 @@ class RelocationRequestModel {
     required this.currentAddress,
     required this.newAddress,
     required this.contactName,
-    required this.phone,
+    required this.contactPhone,
     this.preferredDate,
     this.details,
     this.status = 'under_review',
@@ -23,7 +23,7 @@ class RelocationRequestModel {
   final String newAddress;
   final DateTime? preferredDate;
   final String contactName;
-  final String phone;
+  final String contactPhone;
   final String? details;
   final String status;
   final DateTime? createdAt;
@@ -44,9 +44,7 @@ class RelocationRequestModel {
       preferredDate:
           DateTime.tryParse(data['preferred_date']?.toString() ?? ''),
       contactName: data['contact_name']?.toString() ?? '',
-      phone: data['phone']?.toString() ??
-          data['contact_phone']?.toString() ??
-          '',
+      contactPhone: data['contact_phone']?.toString() ?? '',
       details: data['details']?.toString(),
       status: data['status']?.toString() ?? 'under_review',
       createdAt: DateTime.tryParse(data['created_at']?.toString() ?? ''),
@@ -61,7 +59,7 @@ class RelocationRequestModel {
         'new_address': newAddress,
         'preferred_date': preferredDate?.toIso8601String().split('T').first,
         'contact_name': contactName,
-        'phone': phone,
+        'contact_phone': contactPhone,
         'details': details,
         'status': status,
       };

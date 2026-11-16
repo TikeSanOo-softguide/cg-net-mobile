@@ -25,7 +25,7 @@ void main() {
       currentAddress: 'Old address',
       newAddress: 'New address',
       contactName: 'Alex Example',
-      phone: '09123456789',
+      contactPhone: '09977456789',
     );
 
     await expectLater(
@@ -43,7 +43,7 @@ void main() {
       (_) => _jsonResponse(
         '{"data":[{"id":11,"user_id":8,"broadband_account_number":"BB-OLD",'
         '"current_address":"Old address","new_address":"New address",'
-        '"contact_name":"Alex Example","contact_phone":"09123456789"}]}',
+        '"contact_name":"Alex Example","contact_phone":"09977456789"}]}',
       ),
     );
     final controller = RelocationController(RelocationRepository(dio));
@@ -108,7 +108,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'contact_phone': '09123456789',
+      'contact_phone': '09977456789',
       'details': null,
       'status': 'under_review',
       'created_at': '2026-10-19T10:00:00Z',
@@ -125,7 +125,7 @@ void main() {
       'new_address': 'New address',
       'preferred_date': null,
       'contact_name': 'Alex Example',
-      'phone': '09123456789',
+      'contact_phone': '09977456789',
       'details': null,
       'status': 'under_review',
     });
@@ -140,7 +140,7 @@ void main() {
           '{"data":[{"id":11,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"contact_phone":"09123456789",'
+          '"contact_phone":"09977456789",'
           '"details":"Move upstairs","status":"under_review"}]}',
         );
       }
@@ -149,7 +149,7 @@ void main() {
           '{"code":"MSG-REQ-002","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"contact_phone":"09123456789",'
+          '"contact_phone":"09977456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
       }
@@ -158,7 +158,7 @@ void main() {
           '{"code":"MSG-REQ-003","data":{"id":12,"user_id":8,"broadband_account_number":"BB-22",'
           '"current_address":"Old address","new_address":"New address",'
           '"preferred_date":"2026-12-01","contact_name":"Alex Example",'
-          '"contact_phone":"09123456789",'
+          '"contact_phone":"09977456789",'
           '"details":"Move upstairs","status":"under_review"}}',
         );
       }
@@ -176,7 +176,7 @@ void main() {
       newAddress: 'New address',
       contactName: 'Alex Example',
       preferredDate: DateTime(2026, 12, 1),
-      phone: '09123456789',
+      contactPhone: '09977456789',
       details: 'Move upstairs',
     );
 
@@ -211,7 +211,7 @@ void main() {
         'new_address': 'New address',
         'preferred_date': '2026-12-01',
         'contact_name': 'Alex Example',
-        'phone': '09123456789',
+        'contact_phone': '09977456789',
         'details': 'Move upstairs',
         'status': 'under_review',
       },

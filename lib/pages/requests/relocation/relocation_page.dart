@@ -315,8 +315,7 @@ List<Widget> _relocationCards(
   return [
     for (var index = 0; index < requests.length; index++) ...[
       cardFor(requests[index]),
-      if (index != requests.length - 1)
-        const SizedBox(height: 2),
+      if (index != requests.length - 1) const SizedBox(height: 2),
     ],
   ];
 }
@@ -410,7 +409,7 @@ class _RelocationRequestCardState extends State<_RelocationRequestCard> {
           ),
           RequestDetailLine(
             label: 'requests.phone'.tr(),
-            value: request.phone,
+            value: request.contactPhone,
           ),
           RequestDetailLine(
             label: 'relocation.current_address'.tr(),
