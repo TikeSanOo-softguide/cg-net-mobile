@@ -17,8 +17,6 @@ import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../data/profile/profile_repository.dart';
-import '../../../models/user_model/user_model.dart';
-import '../../profile/profile/profile_controller.dart';
 
 /// Active plans. Each plan keeps its own expiry and WiFi credentials.
 class SubscriptionDetailPage extends ConsumerStatefulWidget {
@@ -32,45 +30,51 @@ class SubscriptionDetailPage extends ConsumerStatefulWidget {
 class _SubscriptionDetailPageState
     extends ConsumerState<SubscriptionDetailPage> {
   final Set<String> _shown = {};
-  final Set<int> _loading = {};
   final Map<int, PackageCredentials> _credentials = {};
+  List<_SubscriptionPlan> _plans = const [];
+  var _pageLoading = true;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(profileControllerProvider.notifier).fetchProfile();
-    });
+    Future.microtask(_load);
   }
 
   bool _visible(int id, String field) => _shown.contains('$id:$field');
 
-  Future<void> _toggle(int id, String field) async {
-    final key = '$id:$field';
-    if (_shown.contains(key)) {
-      setState(() => _shown.remove(key));
-      return;
-    }
-    if (_credentials.containsKey(id)) {
-      setState(() => _shown.add(key));
-      return;
-    }
-    if (_loading.contains(id)) return;
-
-    setState(() => _loading.add(id));
+  Future<void> _load() async {
+    if (mounted) setState(() => _pageLoading = _plans.isEmpty);
     try {
-      final credentials = await ref
-          .read(profileRepositoryProvider)
-          .fetchPackageCredentials(id);
+      final repository = ref.read(profileRepositoryProvider);
+      final ids = await repository.fetchCustomerPackageIds();
+      final loaded = await Future.wait(
+        ids.map(repository.fetchPackageCredentials),
+      );
       if (!mounted) return;
       setState(() {
-        _credentials[id] = credentials;
-        _loading.remove(id);
-        _shown.add(key);
+        _credentials
+          ..clear()
+          ..addEntries([
+            for (final item in loaded)
+              if (item.customerPackageId != null)
+                MapEntry(item.customerPackageId!, item),
+          ]);
+        _plans = [
+          for (final item in loaded)
+            if (item.customerPackageId != null)
+              _SubscriptionPlan(
+                id: item.customerPackageId!,
+                title: (item.productName ?? '').trim().isEmpty
+                    ? 'home.my_subscription'.tr()
+                    : item.productName!.trim(),
+                expiry: _expiryLabel(item.expiresAt),
+              ),
+        ];
+        _pageLoading = false;
       });
     } on ApiException catch (error) {
       if (!mounted) return;
-      setState(() => _loading.remove(id));
+      setState(() => _pageLoading = false);
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
@@ -79,42 +83,22 @@ class _SubscriptionDetailPageState
     }
   }
 
-  List<_SubscriptionPlan> _plans(String locale, UserProfileModel profile) {
-    return [
-      for (final package in profile.packages)
-        if (package.customerPackageId != null)
-          _SubscriptionPlan(
-            id: package.customerPackageId!,
-            title: _credentials[package.customerPackageId!]?.productName ??
-                _planTitle(package, locale),
-            expiry: _expiryLabel(
-              _credentials[package.customerPackageId!]?.expiresAt ??
-                  package.expiresAt,
-            ),
-          ),
-    ];
-  }
-
-  String _planTitle(UserPackageSnapshot package, String locale) {
-    final network = package.networkLabel(locale).trim();
-    final speed = package.speedMbps?.trim() ?? '';
-    final title = [
-      if (network.isNotEmpty) network,
-      if (speed.isNotEmpty) speed,
-    ].join(' · ');
-    return title.isEmpty ? 'home.my_subscription'.tr() : title;
+  void _toggle(int id, String field) {
+    final key = '$id:$field';
+    setState(() {
+      if (!_shown.add(key)) _shown.remove(key);
+    });
   }
 
   String _expiryLabel(DateTime? expiry) {
     if (expiry == null) return '—';
-    return DateFormat('yyyy.MM.dd').format(expiry.toLocal());
+    return DateFormat('yyyy.MM.dd HH:mm').format(expiry.toLocal());
   }
 
   @override
   Widget build(BuildContext context) {
-    final locale = context.locale.languageCode;
-    final plans = _plans(locale, ref.watch(profileControllerProvider));
-    final loading = ref.watch(profileHeaderLoadingProvider) && plans.isEmpty;
+    final plans = _plans;
+    final loading = _pageLoading && plans.isEmpty;
 
     return AppCurvedScaffold(
       title: Text('home.my_subscription'.tr()),
@@ -122,8 +106,7 @@ class _SubscriptionDetailPageState
       onBack: () => context.pop(),
       body: AppRefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () =>
-            ref.read(profileControllerProvider.notifier).fetchProfile(),
+        onRefresh: _load,
         child: loading
             ? _loadingList()
             : plans.isEmpty
@@ -140,7 +123,7 @@ class _SubscriptionDetailPageState
                         plan: plan,
                         username: credentials?.account ?? '',
                         password: credentials?.password ?? '',
-                        loading: _loading.contains(plan.id),
+                        loading: false,
                         showUsername: _visible(plan.id, 'user'),
                         showPassword: _visible(plan.id, 'pass'),
                         onToggleUsername: () => _toggle(plan.id, 'user'),
@@ -246,7 +229,7 @@ class _PlanCard extends StatelessWidget {
   final VoidCallback onTogglePassword;
 
   static DateTime? _parseExpiry(String raw) {
-    final parts = raw.split(RegExp(r'[.\-/]'));
+    final parts = raw.split(' ').first.split(RegExp(r'[.\-/]'));
     if (parts.length != 3) return null;
     final year = int.tryParse(parts[0]);
     final month = int.tryParse(parts[1]);

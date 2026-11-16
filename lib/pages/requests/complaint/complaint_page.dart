@@ -390,7 +390,7 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
   }
 }
 
-class _ComplaintCard extends StatefulWidget {
+class _ComplaintCard extends StatelessWidget {
   const _ComplaintCard({
     required this.report,
     this.onEdit,
@@ -401,13 +401,8 @@ class _ComplaintCard extends StatefulWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
 
-  @override
-  State<_ComplaintCard> createState() => _ComplaintCardState();
-}
-
-class _ComplaintCardState extends State<_ComplaintCard> {
   Color get _statusColor {
-    switch (_normalizedReportStatus(widget.report.status)) {
+    switch (_normalizedReportStatus(report.status)) {
       case 'under_review':
       case 'pending':
       case 'review':
@@ -428,7 +423,7 @@ class _ComplaintCardState extends State<_ComplaintCard> {
   }
 
   String get _statusLabel {
-    switch (_normalizedReportStatus(widget.report.status)) {
+    switch (_normalizedReportStatus(report.status)) {
       case 'under_review':
       case 'pending':
       case 'review':
@@ -444,7 +439,7 @@ class _ComplaintCardState extends State<_ComplaintCard> {
       case 'rejected':
         return 'requests.status_cancelled'.tr();
       default:
-        return widget.report.status;
+        return report.status;
     }
   }
 
@@ -454,77 +449,44 @@ class _ComplaintCardState extends State<_ComplaintCard> {
 
   @override
   Widget build(BuildContext context) {
-    final report = widget.report;
     final createdAt = report.createdAt == null
         ? null
-        : formatDate(report.createdAt!.toLocal().toIso8601String());
+        : formatDate(report.createdAt!.toUtc().toIso8601String());
     final complaintType = ComplaintType.fromKey(report.complaintType);
     return RequestTicketCard(
       statusLabel: _statusLabel,
       statusColor: _statusColor,
       ticketNumber: report.ticketNumber,
       createdAt: createdAt,
-      onEdit: widget.onEdit,
-      onCancel: widget.onCancel,
-      details: [
-        _ReportDetail(
-          label: 'complaint.card_account'.tr(),
-          value: _displayAccount(report.broadbandAccountNumber),
-        ),
-        _ReportDetail(
-          label: 'requests.contact_name'.tr(),
-          value: report.contactName,
-        ),
-        _ReportDetail(
-          label: 'requests.phone'.tr(),
-          value: UserProfileModel.formatLocalPhone(report.contactPhone),
-        ),
-        _ReportDetail(
-          label: 'complaint.complaint_type'.tr(),
-          value: 'complaint.${complaintType.localizationKey}'.tr(),
-        ),
-        _ReportDetail(
-          label: 'requests.note'.tr(),
-          value: report.description,
-        ),
-      ],
-    );
-  }
-}
-
-class _ReportDetail extends StatelessWidget {
-  const _ReportDetail({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value.trim().isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              label,
-              style: AppTheme.caption().copyWith(fontSize: 13),
-            ),
+      onEdit: onEdit,
+      onCancel: onCancel,
+      onOpen: () => openRequestDetail(
+        context,
+        title: 'complaint.title'.tr(),
+        statusLabel: _statusLabel,
+        statusColor: _statusColor,
+        ticketNumber: report.ticketNumber,
+        createdAt: createdAt,
+        lines: [
+          RequestDetailLine(
+            label: 'complaint.card_account'.tr(),
+            value: _displayAccount(report.broadbandAccountNumber),
           ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: AppTheme.body(
-                weight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ).copyWith(fontSize: 13),
-            ),
+          RequestDetailLine(
+            label: 'requests.contact_name'.tr(),
+            value: report.contactName,
+          ),
+          RequestDetailLine(
+            label: 'requests.phone'.tr(),
+            value: UserProfileModel.formatLocalPhone(report.contactPhone),
+          ),
+          RequestDetailLine(
+            label: 'complaint.complaint_type'.tr(),
+            value: 'complaint.${complaintType.localizationKey}'.tr(),
+          ),
+          RequestDetailLine(
+            label: 'requests.note'.tr(),
+            value: report.description,
           ),
         ],
       ),

@@ -29,6 +29,18 @@ void main() {
     expect(result.productName, '10M');
     expect(result.expiresAt, isNotNull);
   });
+
+  test('customer package ids are read from the list response', () async {
+    final adapter = _RecordingAdapter('{"data":[{"id":8},{"id":12}]}');
+    final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = adapter;
+
+    final ids =
+        await ProfileRepository(dio, SecureStorage()).fetchCustomerPackageIds();
+
+    expect(adapter.path, '/customer/packages');
+    expect(ids, [8, 12]);
+  });
 }
 
 class _RecordingAdapter implements HttpClientAdapter {

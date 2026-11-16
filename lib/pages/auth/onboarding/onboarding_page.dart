@@ -167,31 +167,38 @@ class _GlassSkipButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         overlayColor: WidgetStateProperty.all(
-          AppColors.primary.withValues(alpha: 0.06),
+          Colors.white.withValues(alpha: 0.16),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.62),
+                    Colors.white.withValues(alpha: 0.22),
+                  ],
+                ),
                 border: Border.all(
-                  color: AppColors.borderLight,
+                  color: Colors.white.withValues(alpha: 0.7),
                   width: 0.8,
                 ),
               ),
               child: Text(
                 'common.skip'.tr(),
                 style: AppTheme.english(
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
-                  letterSpacing: 0.3,
+                  letterSpacing: 0.2,
                   height: AppTheme.lineHeightMyanmarSafe,
                 ),
               ),

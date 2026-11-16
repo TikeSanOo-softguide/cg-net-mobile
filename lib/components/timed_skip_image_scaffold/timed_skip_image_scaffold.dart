@@ -171,21 +171,28 @@ class _SkipChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onSkip,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         overlayColor: WidgetStateProperty.all(
-          Colors.white.withValues(alpha: 0.10),
+          Colors.white.withValues(alpha: 0.12),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.34),
+                    Colors.white.withValues(alpha: 0.10),
+                  ],
+                ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.38),
+                  color: Colors.white.withValues(alpha: 0.5),
                   width: 0.8,
                 ),
               ),
@@ -195,17 +202,17 @@ class _SkipChip extends StatelessWidget {
                   Text(
                     'common.skip'.tr(),
                     style: AppTheme.english(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                       letterSpacing: 0.2,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Text(
                     '$remaining',
                     style: AppTheme.english(
-                      fontSize: 13,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),

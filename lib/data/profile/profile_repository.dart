@@ -69,6 +69,23 @@ class ProfileRepository {
     }
   }
 
+  Future<List<int>> fetchCustomerPackageIds() async {
+    try {
+      final response = await _dio.get<dynamic>(ApiEndpoints.customerPackages);
+      final root = response.data;
+      final data = root is Map ? root['data'] : null;
+      if (data is! List) return const [];
+      return [
+        for (final item in data)
+          if (item is Map)
+            if (int.tryParse('${item['id'] ?? ''}') != null)
+              int.parse('${item['id']}'),
+      ];
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
+
   Future<PackageCredentials> fetchPackageCredentials(int customerPackageId) async {
     try {
       final response = await _dio.get<dynamic>(

@@ -371,7 +371,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
   }
 }
 
-class _RequestItemCard extends StatefulWidget {
+class _RequestItemCard extends StatelessWidget {
   const _RequestItemCard({
     required this.item,
     this.onEdit,
@@ -381,12 +381,6 @@ class _RequestItemCard extends StatefulWidget {
   final ChangePasswordRequestModel item;
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
-
-  @override
-  State<_RequestItemCard> createState() => _RequestItemCardState();
-}
-
-class _RequestItemCardState extends State<_RequestItemCard> {
   Color _statusColor(String status) {
     switch (_normalizeStatus(status)) {
       case 'under_review':
@@ -435,65 +429,41 @@ class _RequestItemCardState extends State<_RequestItemCard> {
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
     final statusColor = _statusColor(item.status);
-
     final dateStr = item.createdAt == null
         ? null
-        : formatDate(item.createdAt!.toLocal().toIso8601String());
+        : formatDate(item.createdAt!.toUtc().toIso8601String());
 
     return RequestTicketCard(
       statusLabel: _statusLabel(item.status),
       statusColor: statusColor,
       ticketNumber: item.ticketNumber,
       createdAt: dateStr,
-      onEdit: widget.onEdit,
-      onCancel: widget.onCancel,
-      details: [
-        if (item.broadbandAccountNumber?.isNotEmpty == true)
-          _buildDetailRow(
-            'change_wifi.account_number'.tr(),
-            item.broadbandAccountNumber!,
+      onEdit: onEdit,
+      onCancel: onCancel,
+      onOpen: () => openRequestDetail(
+        context,
+        title: 'change_wifi.title'.tr(),
+        statusLabel: _statusLabel(item.status),
+        statusColor: statusColor,
+        ticketNumber: item.ticketNumber,
+        createdAt: dateStr,
+        lines: [
+          RequestDetailLine(
+            label: 'change_wifi.account_number'.tr(),
+            value: item.broadbandAccountNumber ?? '',
           ),
-        _buildDetailRow(
-          'requests.contact_name'.tr(),
-          item.contactName,
-        ),
-        _buildDetailRow(
-          'requests.phone'.tr(),
-          UserProfileModel.formatLocalPhone(item.contactPhone),
-        ),
-        if (item.newWifiName?.isNotEmpty == true)
-          _buildDetailRow(
-            'change_wifi.new_wifi_name_hint'.tr(),
-            item.newWifiName!,
+          RequestDetailLine(
+            label: 'requests.contact_name'.tr(),
+            value: item.contactName,
           ),
-      ],
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              label,
-              style: AppTheme.caption().copyWith(fontSize: 13),
-            ),
+          RequestDetailLine(
+            label: 'requests.phone'.tr(),
+            value: UserProfileModel.formatLocalPhone(item.contactPhone),
           ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: AppTheme.body(
-                weight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ).copyWith(fontSize: 13),
-            ),
+          RequestDetailLine(
+            label: 'change_wifi.new_wifi_name_hint'.tr(),
+            value: item.newWifiName ?? '',
           ),
         ],
       ),

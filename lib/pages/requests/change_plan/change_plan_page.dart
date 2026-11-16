@@ -330,20 +330,15 @@ String _statusKey(ChangePlanRequestModel request) {
       .replaceAll('-', '_');
 }
 
-class _ChangePlanCard extends StatefulWidget {
+class _ChangePlanCard extends StatelessWidget {
   const _ChangePlanCard({required this.request, this.onEdit, this.onCancel});
 
   final ChangePlanRequestModel request;
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
 
-  @override
-  State<_ChangePlanCard> createState() => _ChangePlanCardState();
-}
-
-class _ChangePlanCardState extends State<_ChangePlanCard> {
   Color get _statusColor {
-    switch (_statusKey(widget.request)) {
+    switch (_statusKey(request)) {
       case 'under_review':
       case 'pending':
         return AppColors.warning;
@@ -359,7 +354,7 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
   }
 
   String get _statusLabel {
-    switch (_statusKey(widget.request)) {
+    switch (_statusKey(request)) {
       case 'under_review':
       case 'pending':
         return 'requests.status_under_review'.tr();
@@ -371,16 +366,15 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
       case 'rejected':
         return 'requests.status_rejected'.tr();
       default:
-        return widget.request.status;
+        return request.status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final request = widget.request;
     final createdAt = request.createdAt == null
         ? null
-        : formatDate(request.createdAt!.toLocal().toIso8601String());
+        : formatDate(request.createdAt!.toUtc().toIso8601String());
     final preferred = request.preferredDate == null
         ? ''
         : formatDate(
@@ -392,77 +386,45 @@ class _ChangePlanCardState extends State<_ChangePlanCard> {
       statusColor: _statusColor,
       ticketNumber: request.ticketNumber,
       createdAt: createdAt,
-      onEdit: widget.onEdit,
-      onCancel: widget.onCancel,
-      details: [
-        _DetailRow(
-          label: 'installationApplication.service_type'.tr(),
-          value: request.serviceType == 'CG'
-              ? 'installationApplication.cg_router'.tr()
-              : (request.serviceType ?? ''),
-        ),
-        _DetailRow(
-          label: 'requests.contact_name'.tr(),
-          value: request.contactName,
-        ),
-        _DetailRow(
-          label: 'requests.phone'.tr(),
-          value: UserProfileModel.formatLocalPhone(request.contactPhone),
-        ),
-        _DetailRow(
-          label: 'changePlan.current_plan'.tr(),
-          value: _packageLabel(request.currentPackageDetail),
-        ),
-        _DetailRow(
-          label: 'changePlan.change_plan'.tr(),
-          value: _packageLabel(request.newPackageDetail),
-        ),
-        _DetailRow(
-          label: 'changePlan.preferred_date'.tr(),
-          value: preferred,
-        ),
-        _DetailRow(
-          label: 'requests.note'.tr(),
-          value: request.note ?? '',
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value.trim().isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 108,
-            child: Text(
-              label,
-              style: AppTheme.caption().copyWith(fontSize: 13),
-            ),
+      onEdit: onEdit,
+      onCancel: onCancel,
+      onOpen: () => openRequestDetail(
+        context,
+        title: 'home.service_change_plan'.tr(),
+        statusLabel: _statusLabel,
+        statusColor: _statusColor,
+        ticketNumber: request.ticketNumber,
+        createdAt: createdAt,
+        lines: [
+          RequestDetailLine(
+            label: 'installationApplication.service_type'.tr(),
+            value: request.serviceType == 'CG'
+                ? 'installationApplication.cg_router'.tr()
+                : (request.serviceType ?? ''),
           ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: AppTheme.body(
-                weight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ).copyWith(fontSize: 13),
-            ),
+          RequestDetailLine(
+            label: 'requests.contact_name'.tr(),
+            value: request.contactName,
+          ),
+          RequestDetailLine(
+            label: 'requests.phone'.tr(),
+            value: UserProfileModel.formatLocalPhone(request.contactPhone),
+          ),
+          RequestDetailLine(
+            label: 'changePlan.current_plan'.tr(),
+            value: _packageLabel(request.currentPackageDetail),
+          ),
+          RequestDetailLine(
+            label: 'changePlan.change_plan'.tr(),
+            value: _packageLabel(request.newPackageDetail),
+          ),
+          RequestDetailLine(
+            label: 'changePlan.preferred_date'.tr(),
+            value: preferred,
+          ),
+          RequestDetailLine(
+            label: 'requests.note'.tr(),
+            value: request.note ?? '',
           ),
         ],
       ),
