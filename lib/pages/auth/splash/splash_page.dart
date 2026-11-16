@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cg_net_mobile/core/utils/loading_helper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_logo/app_logo.dart';
+import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/launch_promo/launch_promo_repository.dart';
 import 'splash_controller.dart';
 
 /// Splash — logo, then titles word-by-word with metallic gold gradient.
@@ -34,10 +38,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   late final Animation<double> _titleZhProgress;
   late final Animation<double> _titleMyProgress;
+  late final Future<void> _startupAssetsFuture;
+  bool _bootstrapStarted = false;
 
   @override
   void initState() {
     super.initState();
+    _startupAssetsFuture = _prefetchStartupAssets(ref.read(appLocaleProvider));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LoadingHelper.hide();
     });
@@ -82,9 +89,49 @@ class _SplashPageState extends ConsumerState<SplashPage>
     _controller.forward();
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
-        ref.read(splashControllerProvider.notifier).bootstrap(context);
+        unawaited(_finishSplash());
       }
     });
+  }
+
+  Future<void> _finishSplash() async {
+    if (_bootstrapStarted) return;
+    _bootstrapStarted = true;
+    await _startupAssetsFuture;
+    if (!mounted) return;
+    await ref.read(splashControllerProvider.notifier).bootstrap(context);
+  }
+
+  Future<void> _prefetchStartupAssets(String language) async {
+    LaunchBannerAssets? assets;
+    try {
+      assets = await ref.read(launchBannerAssetsProvider(language).future);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[Splash] Launch asset fetch failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return;
+    }
+
+    if (!mounted || assets == null) return;
+    final imageUrls = <String>{
+      if (assets.skipTimerPromo case final promo?) promo.image,
+      ...assets.activeAdvertisements.map((ad) => ad.image),
+      ...assets.homeBanners.map((banner) => banner.image),
+    };
+    await Future.wait(imageUrls.map(_precacheStartupImage));
+  }
+
+  Future<void> _precacheStartupImage(String imageUrl) async {
+    try {
+      await precacheImage(NetworkImage(imageUrl), context);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[Splash] Launch image preload failed: $imageUrl ($error)');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
   }
 
   @override
