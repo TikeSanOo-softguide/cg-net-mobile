@@ -78,8 +78,8 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
         profile.fullName.isNotEmpty) {
       _contactNameController.text = profile.fullName;
     }
-    _phoneController =
-        TextEditingController(text: request?.phone ?? profile.displayPhone);
+    _phoneController = TextEditingController(
+        text: request?.contactPhone ?? profile.displayPhone);
     _detailsController = TextEditingController(text: request?.details ?? '');
     _preferredDate = request?.preferredDate;
     _preferredDateController = TextEditingController();
@@ -175,7 +175,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
       newAddress: _newAddressController.text.trim(),
       preferredDate: _preferredDate,
       contactName: _contactNameController.text.trim(),
-      phone: _phoneController.text.trim(),
+      contactPhone: _phoneController.text.trim(),
       details: _detailsController.text.trim().isEmpty
           ? null
           : _detailsController.text.trim(),
@@ -198,7 +198,6 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
         error,
         fields: {
           'contact_name': _contactNameFieldKey,
-          'phone': _phoneFieldKey,
           'contact_phone': _phoneFieldKey,
           'new_address': _newAddressFieldKey,
           'preferred_date': _preferredDateFieldKey,
@@ -358,10 +357,6 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
                               ],
                               validator: _phoneError,
                               onChanged: (_) {
-                                clearApiFieldError(
-                                  'phone',
-                                  key: _phoneFieldKey,
-                                );
                                 clearApiFieldError(
                                   'contact_phone',
                                   key: _phoneFieldKey,
@@ -634,7 +629,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
     if (normalized == null || !PhoneNumber.isSupported(normalized)) {
       return 'login.phone_invalid'.tr();
     }
-    return apiFieldError('phone') ?? apiFieldError('contact_phone');
+    return apiFieldError('contact_phone');
   }
 
   String? _currentAddressError(String? value) =>
