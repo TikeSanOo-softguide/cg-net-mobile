@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
+import '../../core/utils/image_url_helper.dart';
 
 enum ChatConversationStatus {
   unknown,
@@ -253,6 +254,7 @@ class ChatMessageModel {
     this.conversationId,
     this.selectedOption,
     this.flowOptions = const [],
+    this.attachmentUrl,
   });
 
   final String? id;
@@ -262,6 +264,7 @@ class ChatMessageModel {
   final String? conversationId;
   final ChatFlowOption? selectedOption;
   final List<ChatFlowOption> flowOptions;
+  final String? attachmentUrl;
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
     final text = _stringValue(
@@ -322,6 +325,11 @@ class ChatMessageModel {
             .map(ChatFlowOption.fromJson)
             .where((option) => option.id.isNotEmpty)
             .toList();
+    final attachment = json['attachment'];
+    final attachmentValue = json['attachment_url'] ??
+        json['attachment_path'] ??
+        json['image_url'] ??
+        (attachment is Map ? attachment['url'] ?? attachment['path'] : null);
 
     return ChatMessageModel(
       id: _nullableString(json['id'] ?? json['message_id']),
@@ -333,6 +341,7 @@ class ChatMessageModel {
       ),
       selectedOption: selectedOption,
       flowOptions: flowOptions,
+      attachmentUrl: ImageUrlHelper.resolve({'image_url': attachmentValue}),
     );
   }
 
@@ -639,21 +648,35 @@ class ChatRepository {
     required String conversationId,
     required String text,
     required String clientMessageId,
+    Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     final trimmed = text.trim();
     final parsedConversationId = int.tryParse(conversationId);
-    if (trimmed.isEmpty || parsedConversationId == null) {
+    if ((trimmed.isEmpty && imageBytes == null) ||
+        parsedConversationId == null) {
       throw const ApiException(ApiFailure.validation, detail: 'validation');
     }
 
     try {
+      final requestData = imageBytes == null
+          ? {
+              'conversation_id': parsedConversationId,
+              'message': trimmed,
+              'client_message_id': clientMessageId,
+            }
+          : FormData.fromMap({
+              'conversation_id': parsedConversationId,
+              if (trimmed.isNotEmpty) 'message': trimmed,
+              'client_message_id': clientMessageId,
+              'image': MultipartFile.fromBytes(
+                imageBytes,
+                filename: imageFileName ?? 'image.jpg',
+              ),
+            });
       final response = await _dio.post<dynamic>(
         ApiEndpoints.chatSendMessage,
-        data: {
-          'conversation_id': parsedConversationId,
-          'message': trimmed,
-          'client_message_id': clientMessageId,
-        },
+        data: requestData,
       );
       final root = response.data;
       final data = root is Map ? root['data'] : null;

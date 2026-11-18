@@ -242,8 +242,12 @@ Future<void> _verifyAndContinue(
     await tester.enterText(otpFields.at(index), '${index + 1}');
     await tester.pump();
   }
+  final verifyButton = find.ancestor(
+    of: find.text('Verify'),
+    matching: find.byType(AppButton),
+  );
   expect(
-    tester.widget<AppButton>(find.byType(AppButton)).onPressed,
+    tester.widget<AppButton>(verifyButton).onPressed,
     isNotNull,
     reason: 'Verify should become enabled after all six digits are entered.',
   );
@@ -257,7 +261,22 @@ Future<void> _verifyAndContinue(
   await tester.pump(const Duration(milliseconds: 500));
   expect(flow.authApi.verifyCalls, 1);
   await tester.tap(find.text('Continue'));
-  await _pumpTransientUi(tester);
+  for (var attempt = 0; attempt < 20; attempt++) {
+    final leftOtpRoute =
+        flow.router.routeInformationProvider.value.uri.path !=
+            RoutePaths.otpVerification;
+    final continuationErrorVisible = find
+        .text('Your number was verified, but we couldn\'t continue. '
+            'Please return to login and try again.')
+        .evaluate()
+        .isNotEmpty;
+    if (leftOtpRoute) {
+      await tester.pumpAndSettle();
+      break;
+    }
+    if (continuationErrorVisible) break;
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 Future<void> _pumpTransientUi(WidgetTester tester) async {

@@ -43,6 +43,43 @@ void main() {
       expect(message.createdAt, DateTime.parse('2026-10-07T01:00:00.000Z'));
     });
 
+    test('sends image-only messages as multipart form data', () async {
+      late RequestOptions request;
+      final imageBytes = Uint8List.fromList([1, 2, 3]);
+      final dio = _dio((options) {
+        request = options;
+        return _jsonResponse(
+          201,
+          '''
+          {"success":true,"data":{"conversation_id":12,"message":{"id":44,"conversation_id":12,"client_message_id":"client-image-1","sender_type":"customer","message":"","attachment_path":"support-chat/photo.png","created_at":"2026-10-07T01:00:00.000Z"}}}
+          ''',
+        );
+      });
+
+      final message = await ChatRepository(dio).sendMessage(
+        conversationId: '12',
+        text: '',
+        clientMessageId: 'client-image-1',
+        imageBytes: imageBytes,
+        imageFileName: 'photo.png',
+      );
+
+      final formData = request.data as FormData;
+      expect(request.method, 'POST');
+      expect(request.path, '/chat/messages');
+      expect(Map.fromEntries(formData.fields), {
+        'conversation_id': '12',
+        'client_message_id': 'client-image-1',
+      });
+      expect(formData.files.single.key, 'image');
+      expect(formData.files.single.value.filename, 'photo.png');
+      expect(formData.files.single.value.length, imageBytes.length);
+      expect(
+        Uri.parse(message.attachmentUrl!).path,
+        '/storage/support-chat/photo.png',
+      );
+    });
+
     test('loads persisted history from current in server order and shape',
         () async {
       late RequestOptions request;
@@ -981,6 +1018,39 @@ void main() {
       expect(controller.state.isSendingMessage, isFalse);
     });
 
+    test('sends an image without requiring message text', () async {
+      final repository = _FakeChatRepository(
+        _conversation(ChatConversationStatus.open),
+        onSendMessage: (_) async => ChatMessageModel(
+          id: '1',
+          text: '',
+          role: 'customer',
+          createdAt: DateTime.parse('2026-10-07T01:00:00.000Z'),
+          attachmentUrl: 'https://api.example.test/storage/photo.png',
+        ),
+      );
+      final controller = await _controller(repository);
+      final imageBytes = Uint8List.fromList([1, 2, 3]);
+
+      expect(
+        await controller.sendText(
+          '',
+          imageBytes: imageBytes,
+          imageFileName: 'photo.png',
+        ),
+        isTrue,
+      );
+      expect(repository.lastText, '');
+      expect(repository.lastImageBytes, same(imageBytes));
+      expect(repository.lastImageFileName, 'photo.png');
+      expect(controller.state.messages.single.text, 'photo.png');
+      expect(controller.state.messages.single.imageBytes, [imageBytes]);
+      expect(
+        controller.state.messages.single.imageUrl,
+        'https://api.example.test/storage/photo.png',
+      );
+    });
+
     test('does not send an empty message', () async {
       final repository = _FakeChatRepository(
         _conversation(ChatConversationStatus.open),
@@ -1261,6 +1331,8 @@ class _FakeChatRepository extends ChatRepository {
   int selectCount = 0;
   int navigateCount = 0;
   String? lastText;
+  Uint8List? lastImageBytes;
+  String? lastImageFileName;
   String? lastCloseConversationId;
   String? lastConversationId;
   String? lastClientMessageId;
@@ -1351,11 +1423,15 @@ class _FakeChatRepository extends ChatRepository {
     required String conversationId,
     required String text,
     required String clientMessageId,
+    Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     sendCount++;
     lastConversationId = conversationId;
     lastText = text;
     lastClientMessageId = clientMessageId;
+    lastImageBytes = imageBytes;
+    lastImageFileName = imageFileName;
     return onSendMessage?.call(text) ??
         _message(
           id: '1',

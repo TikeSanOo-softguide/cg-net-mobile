@@ -57,6 +57,8 @@ class ApiEndpoints {
   static const String internetBillHistory = '/internet-bills/history';
   static String internetBillHistoryDetail(String id) =>
       '/internet-bills/history/$id';
+  static const String broadbandCheckAccount =
+      '/broadband-account/check-account';
   static const String broadbandBind = '/broadband-account/bind';
   static const String broadbandUnbind = '/broadband-account/unbind';
   static const String transactions = '/customer/transactions';

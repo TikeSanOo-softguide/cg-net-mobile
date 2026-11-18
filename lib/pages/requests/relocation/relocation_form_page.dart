@@ -403,10 +403,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
                                 ],
                               ),
                             ),
-                            const SizedBox(
-                              height:
-                                  AppStyle.spaceXs + AppStyle.errorSlotHeight,
-                            ),
+                            const SizedBox(height: AppStyle.spaceXs),
                             AppInput(
                               controller: _detailsController,
                               formFieldKey: _detailsFieldKey,
