@@ -65,6 +65,8 @@ class _SetUsernamePasswordPageState
   final _confirm = TextEditingController();
   String? _usernameServerError;
   bool _submitting = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -249,11 +251,19 @@ class _SetUsernamePasswordPageState
                 label: '${'set_credentials.password'.tr()} *',
                 hint: 'set_credentials.password_hint'.tr(),
                 suffixIcon: LucideIcons.lock,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textInputAction: TextInputAction.next,
+                suffix: AppInput.iconChip(
+                  icon: _obscurePassword
+                      ? LucideIcons.eye_off
+                      : LucideIcons.eye,
+                  onTap: () => setState(
+                    () => _obscurePassword = !_obscurePassword,
+                  ),
+                ),
                 validator: _validatePassword,
               ),
               const SizedBox(height: 2),
@@ -262,12 +272,21 @@ class _SetUsernamePasswordPageState
                 label: '${'set_credentials.confirm_password'.tr()} *',
                 hint: 'set_credentials.password_hint'.tr(),
                 suffixIcon: LucideIcons.lock,
-                obscureText: true,
+                obscureText: _obscureConfirmPassword,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _submit(),
+                suffix: AppInput.iconChip(
+                  icon: _obscureConfirmPassword
+                      ? LucideIcons.eye_off
+                      : LucideIcons.eye,
+                  onTap: () => setState(
+                    () => _obscureConfirmPassword =
+                        !_obscureConfirmPassword,
+                  ),
+                ),
                 validator: _validateConfirm,
               ),
             ],

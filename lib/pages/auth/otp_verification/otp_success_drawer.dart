@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/app_button/app_button.dart';
-import '../../../core/utils/loading_helper.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -138,10 +137,7 @@ class _ContinueButtonState extends State<_ContinueButton> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await LoadingHelper.runWithLoading(
-        widget.onContinue,
-        dismissAnimation: false,
-      );
+      await widget.onContinue();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
