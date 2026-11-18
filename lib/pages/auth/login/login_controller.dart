@@ -12,6 +12,21 @@ enum CountryDial {
   const CountryDial(this.dialCode, this.flag);
   final String dialCode;
   final String flag;
+
+  String get dialCodeDigits => dialCode.replaceAll(RegExp(r'\D'), '');
+
+  static CountryDial? fromPhoneNumber(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+
+    for (final country in values) {
+      final prefix = country.dialCodeDigits;
+      if (digits.startsWith(prefix) && digits.length > prefix.length) {
+        return country;
+      }
+    }
+
+    return null;
+  }
 }
 
 class LoginState {
