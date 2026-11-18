@@ -10,6 +10,33 @@ class BroadbandRepository {
 
   final Dio _dio;
 
+  Future<Map<String, dynamic>> checkAccount({
+    required String accountNumber,
+    required String serviceType,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiEndpoints.broadbandCheckAccount,
+        data: {
+          'account_number': accountNumber,
+          'service_type': serviceType,
+        },
+      );
+
+      return response.data ?? {};
+    } on DioException catch (error) {
+      final apiException = ApiException.fromDio(error);
+      throw ApiException(
+        apiException.failure,
+        detail: _responseMessage(error.response?.data) ?? apiException.detail,
+        statusCode: apiException.statusCode,
+        responseData: apiException.responseData,
+        code: apiException.code,
+        level: apiException.level,
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> connect({
     required String accountNumber,
     required String serviceType,

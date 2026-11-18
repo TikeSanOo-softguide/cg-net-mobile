@@ -20,6 +20,7 @@ import '../../../core/utils/date_time_format.dart';
 import '../../../data/broadband/broadband_repository.dart';
 import '../../../data/profile/profile_repository.dart';
 import '../../../models/user_model/user_model.dart';
+import 'bind_broadband_confirm_drawer.dart';
 import '../../profile/profile/profile_controller.dart';
 import '../home/bound_broadband.dart';
 import '../home/bound_broadband_provider.dart';
@@ -100,16 +101,103 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
     });
 
     try {
+      Map<String, dynamic> response;
       while (true) {
         try {
-          final response = await LoadingHelper.runWithLoading(
+          response = await LoadingHelper.runWithLoading(
+            () => ref.read(broadbandRepositoryProvider).checkAccount(
+                  accountNumber: bound.account,
+                  serviceType: bound.serviceType,
+                ),
+          );
+          break;
+        } on ApiException catch (error) {
+          if (!mounted) return;
+
+          if (isOfflineError(error)) {
+            final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+
+          await showAppFailureModal(
+            context,
+            title: 'broadband.validation.bind_fail_title'.tr(),
+            body: _broadbandMessage(error),
+          );
+          return;
+        } catch (error, stackTrace) {
+          debugPrint('Broadband account check failed: $error');
+          debugPrintStack(stackTrace: stackTrace);
+
+          if (!mounted) return;
+
+          await showAppFailureModal(
+            context,
+            title: 'broadband.validation.bind_fail_title'.tr(),
+            body: 'broadband.validation.bind_fail_body'.tr(),
+          );
+          return;
+        }
+      }
+
+      if (!mounted) return;
+
+      Map<String, dynamic> accountDetails;
+      try {
+        accountDetails = _unwrapAccountDetails(response);
+      } on FormatException catch (error, stackTrace) {
+        debugPrint('Invalid broadband account check response: $error');
+        debugPrintStack(stackTrace: stackTrace);
+        if (!mounted) return;
+        await showAppFailureModal(
+          context,
+          title: 'broadband.validation.bind_fail_title'.tr(),
+          body: 'broadband.validation.bind_fail_body'.tr(),
+        );
+        return;
+      }
+
+      final shouldBind = await showBindBroadbandConfirmDrawer(
+        context,
+        title: 'broadband.details_title'.tr(),
+        details: [
+          MapEntry('broadband.detail_service_type'.tr(), bound.serviceType),
+          MapEntry(
+            'broadband.detail_account'.tr(),
+            _accountDetail(
+              accountDetails,
+              ['account_number', 'account'],
+              fallback: bound.account,
+            ),
+          ),
+          MapEntry(
+            'broadband.detail_name'.tr(),
+            _accountDetail(accountDetails, ['account_name', 'name']),
+          ),
+          MapEntry(
+            'broadband.detail_mobile'.tr(),
+            _accountDetail(accountDetails, ['phone', 'mobile']),
+          ),
+          MapEntry(
+            'broadband.detail_address'.tr(),
+            _accountDetail(accountDetails, ['address']),
+          ),
+        ],
+        cancelLabel: 'common.cancel'.tr(),
+        confirmLabel: 'broadband.bind_now'.tr(),
+      );
+
+      if (!mounted || !shouldBind) return;
+
+      while (true) {
+        try {
+          await LoadingHelper.runWithLoading(
             () => ref.read(broadbandRepositoryProvider).connect(
                   accountNumber: bound.account,
                   serviceType: bound.serviceType,
                 ),
           );
-
-          debugPrint('BROADBAND CONNECT RESPONSE: $response');
           break;
         } on ApiException catch (error) {
           if (!mounted) return;
@@ -168,6 +256,41 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         });
       }
     }
+  }
+
+  Map<String, dynamic> _unwrapAccountDetails(Map<String, dynamic> response) {
+    var details = response;
+    for (var depth = 0; depth < 3; depth++) {
+      final nested = details['data'];
+      if (nested is! Map) break;
+      details = Map<String, dynamic>.from(nested);
+    }
+
+    const accountFields = {
+      'account_number',
+      'account',
+      'account_name',
+      'name',
+      'phone',
+      'mobile',
+      'address',
+    };
+    if (!details.keys.any(accountFields.contains)) {
+      throw const FormatException('Account check response has no account data');
+    }
+    return details;
+  }
+
+  String _accountDetail(
+    Map<String, dynamic> details,
+    List<String> keys, {
+    String? fallback,
+  }) {
+    for (final key in keys) {
+      final value = details[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return fallback ?? '—';
   }
 
   Future<void> _onRemove(BoundBroadband bound) async {
@@ -440,7 +563,7 @@ class _BoundAccountCard extends StatelessWidget {
                     value: profile.accountPhone,
                   ),
                 _DetailRow(
-                  label: context.tr('broadband.detail_plan'),
+                  label: context.tr('installationApplication.network_provider'),
                   value: profile.productLine.trim(),
                 ),
                 _DetailRow(
@@ -465,12 +588,6 @@ class _BoundAccountCard extends StatelessWidget {
                   _DetailRow(
                     label: context.tr('broadband.detail_end_time'),
                     value: formatDate(profile.endTime),
-                  ),
-                if (profile.accountStatus.trim().isNotEmpty)
-                  _DetailRow(
-                    label: context.tr('broadband.detail_status'),
-                    value: profile.accountStatus,
-                    showDivider: false,
                   ),
               ],
             ),

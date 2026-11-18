@@ -11,7 +11,7 @@ class ApiEndpoints {
   /// `--dart-define=API_BASE_URL=http://127.0.0.1:8080/api`.
   static const _devBaseUrl = String.fromEnvironment(
     'DEV_API_BASE_URL',
-    defaultValue: 'http://192.168.10.148:8080/api',
+    defaultValue: 'http://192.168.10.203:8080/api',
   );
   static const _healthOverride =
       String.fromEnvironment('API_HEALTHCHECK_PATH', defaultValue: '');
@@ -57,6 +57,8 @@ class ApiEndpoints {
   static const String internetBillHistory = '/internet-bills/history';
   static String internetBillHistoryDetail(String id) =>
       '/internet-bills/history/$id';
+  static const String broadbandCheckAccount =
+      '/broadband-account/check-account';
   static const String broadbandBind = '/broadband-account/bind';
   static const String broadbandUnbind = '/broadband-account/unbind';
   static const String transactions = '/customer/transactions';
