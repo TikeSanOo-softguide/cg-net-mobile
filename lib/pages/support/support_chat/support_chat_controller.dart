@@ -21,6 +21,8 @@ class ChatMessage {
     this.conversationId,
     this.senderType = '',
     this.fileName,
+    this.imageBytes = const [],
+    this.imageUrl,
   });
 
   final String? id;
@@ -32,6 +34,8 @@ class ChatMessage {
   final ChatFlowOption? selectedOption;
   final List<ChatFlowOption> flowOptions;
   final String? fileName;
+  final List<Uint8List> imageBytes;
+  final String? imageUrl;
 }
 
 int _compareChatMessages(ChatMessage left, ChatMessage right) {
@@ -145,6 +149,7 @@ class SupportChatState {
         sentAt: message.createdAt ?? DateTime.now(),
         selectedOption: message.selectedOption,
         flowOptions: message.flowOptions,
+        imageUrl: message.attachmentUrl,
       ));
     }
     messages.sort(_compareChatMessages);
@@ -299,6 +304,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       'isMine': message.isMine,
       'sentAt': message.sentAt.toUtc().toIso8601String(),
       'fileName': message.fileName,
+      'imageUrl': message.imageUrl,
       'selectedOption': message.selectedOption == null
           ? null
           : _optionJson(message.selectedOption!),
@@ -320,6 +326,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       isMine: json['isMine'] == true,
       sentAt: DateTime.tryParse('${json['sentAt'] ?? ''}') ?? DateTime.now(),
       fileName: json['fileName']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
       selectedOption: selected is Map
           ? _optionFromJson(Map<String, dynamic>.from(selected))
           : null,
@@ -331,6 +338,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
           : const [],
     );
   }
+
   int _clientMessageSequence = 0;
   int _activeRequestId = 0;
   String? _retryMessageText;
@@ -622,6 +630,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
         sentAt: lastMsg.sentAt,
         flowOptions: currentFlowOpts,
         fileName: lastMsg.fileName,
+        imageUrl: lastMsg.imageUrl,
       );
     } else if (currentFlowMsg != null && currentFlowMsg.isNotEmpty) {
       updatedMessages.add(ChatMessage(
@@ -663,7 +672,8 @@ class SupportChatController extends StateNotifier<SupportChatState> {
 
       final updatedState = SupportChatState.fromConversation(conversation);
       final isNextStep = result.action == ChatFlowOptionAction.goToStep;
-      final shouldKeepCurrentStep = result.action == ChatFlowOptionAction.goToUrl;
+      final shouldKeepCurrentStep =
+          result.action == ChatFlowOptionAction.goToUrl;
       final actionReply = updatedState.flowMessage?.trim() ?? '';
       final mergedMessages = shouldKeepCurrentStep
           ? _mergeMessages(updatedMessages, const <ChatMessage>[])
@@ -692,9 +702,8 @@ class SupportChatController extends StateNotifier<SupportChatState> {
                 ? updatedState.options
                 : const [],
         messages: mergedMessages,
-        status: shouldKeepCurrentStep
-            ? ChatConversationStatus.chatFlow
-            : status,
+        status:
+            shouldKeepCurrentStep ? ChatConversationStatus.chatFlow : status,
         isSubmittingOption: false,
         realtimeReconnectRevision: state.realtimeReconnectRevision,
       );
@@ -877,6 +886,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
           senderType: message.role,
           sentAt: message.createdAt ?? DateTime.now(),
           flowOptions: message.flowOptions,
+          imageUrl: message.attachmentUrl,
         );
         state = state.copyWith(
           messages: _mergeMessages(state.messages, [incoming]),
@@ -925,12 +935,14 @@ class SupportChatController extends StateNotifier<SupportChatState> {
   Future<bool> sendText(
     String text, {
     String language = 'en',
+    Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     final trimmed = text.trim();
     final conversationId = state.conversationId;
     if (state.isSendingMessage ||
         state.isSubmittingOption ||
-        trimmed.isEmpty ||
+        (trimmed.isEmpty && imageBytes == null) ||
         !state.composerEnabled ||
         conversationId == null) {
       return false;
@@ -955,8 +967,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
         return false;
       }
     } on ApiException {
-    } catch (_) {
-    }
+    } catch (_) {}
 
     final clientMessageId = _retryMessageText == trimmed &&
             _retryClientMessageId != null
@@ -967,12 +978,17 @@ class SupportChatController extends StateNotifier<SupportChatState> {
         conversationId: conversationId,
         text: trimmed,
         clientMessageId: clientMessageId,
+        imageBytes: imageBytes,
+        imageFileName: imageFileName,
       );
       final sentMessage = ChatMessage(
         id: message.id,
-        text: message.text,
+        text: message.text.isEmpty ? imageFileName ?? '' : message.text,
         isMine: _isCustomerMessage(message.role),
         sentAt: message.createdAt ?? DateTime.now(),
+        fileName: imageFileName,
+        imageBytes: imageBytes == null ? const [] : [imageBytes],
+        imageUrl: message.attachmentUrl,
       );
       state = state.copyWith(
         messages: _mergeMessages(state.messages, [sentMessage]),
@@ -1004,23 +1020,20 @@ class SupportChatController extends StateNotifier<SupportChatState> {
     if (response is! Map) return false;
 
     final directStatus = response['status'];
-    if (directStatus is String &&
-        directStatus.toLowerCase() == 'closed') {
+    if (directStatus is String && directStatus.toLowerCase() == 'closed') {
       return true;
     }
 
     final nestedData = response['data'];
     if (nestedData is Map) {
       final nestedStatus = nestedData['status'];
-      if (nestedStatus is String &&
-          nestedStatus.toLowerCase() == 'closed') {
+      if (nestedStatus is String && nestedStatus.toLowerCase() == 'closed') {
         return true;
       }
     }
 
     final message = response['message'];
-    if (message is String &&
-        message.toLowerCase().contains('closed')) {
+    if (message is String && message.toLowerCase().contains('closed')) {
       return true;
     }
 
@@ -1056,6 +1069,8 @@ class SupportChatController extends StateNotifier<SupportChatState> {
             sentAt: previous.sentAt,
             flowOptions: message.flowOptions,
             fileName: previous.fileName,
+            imageBytes: previous.imageBytes,
+            imageUrl: previous.imageUrl,
           );
         }
         continue;

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
@@ -30,12 +31,17 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
   final _scroll = ScrollController();
   final _inputFocus = FocusNode();
   bool _hasInitializedChat = false;
-  String? _pendingFileName;
+  bool _isSendingPendingImages = false;
+  String? _submittingOptionId;
+  final List<PlatformFile> _pendingImages = [];
   String? _localeCode;
+  bool _showJumpToLatest = false;
+  int _unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_onScroll);
     WidgetsBinding.instance.addObserver(this);
     debugPrint('[ChatPage] initState entered');
     _inputFocus.addListener(() {
@@ -50,6 +56,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
     _input.dispose();
     _scroll.dispose();
     _inputFocus.dispose();
+    _scroll.removeListener(_onScroll);
     super.dispose();
   }
 
@@ -99,45 +106,178 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
     });
   }
 
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scroll.hasClients) return;
-      _scroll.animateTo(
-        _scroll.position.maxScrollExtent + 80,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOut,
-      );
-    });
+  bool get _isNearBottom {
+    if (!_scroll.hasClients) return true;
+    final p = _scroll.position;
+    return p.maxScrollExtent - p.pixels < 80;
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+
+    final near = _isNearBottom;
+    final shouldShow = !near;
+
+    if (shouldShow != _showJumpToLatest || (near && _unreadCount > 0)) {
+      setState(() {
+        _showJumpToLatest = shouldShow;
+        if (near) _unreadCount = 0;
+      });
+    }
+  }
+
+  void _scrollToBottom({bool animated = true}) {
+    var attempts = 0;
+
+    void tick() {
+      if (!mounted) return;
+
+      if (!_scroll.hasClients || !_scroll.position.hasContentDimensions) {
+        // ListView အသစ် မတည်ဆောက်ရသေးရင် နောက် frame မှာ ပြန်စမ်း
+        if (attempts++ < 10) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => tick());
+        }
+        return;
+      }
+
+      final max = _scroll.position.maxScrollExtent;
+      final atBottom = (max - _scroll.offset).abs() < 1;
+
+      if (!atBottom) {
+        if (animated && attempts == 0) {
+          _scroll.animateTo(
+            max,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+          );
+        } else if (!animated) {
+          _scroll.jumpTo(max);
+        }
+      }
+
+      // extent ပြောင်းနေနိုင်လို့ frame အနည်းငယ် ထပ်စစ်
+      if (!animated && attempts++ < 6) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => tick());
+      } else if (animated) {
+        // animation ပြီးရင် နောက်ဆုံး ပြင်ဆင်ချက်
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (!mounted || !_scroll.hasClients) return;
+          final m = _scroll.position.maxScrollExtent;
+          if ((_scroll.offset - m).abs() > 1) _scroll.jumpTo(m);
+        });
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => tick());
   }
 
   Future<void> _onSendText() async {
     final text = _input.text.trim();
-    if (text.isEmpty) return;
-    final state = ref.read(supportChatControllerProvider);
-    if (!state.composerEnabled) return;
-    final sent =
-        await ref.read(supportChatControllerProvider.notifier).sendText(
-              text,
-              language: context.locale.languageCode,
-            );
-    if (!mounted || !sent) return;
-    _input.clear();
-    _scrollToBottom();
-  }
 
-  Future<void> _onSelectOption(String optionId) async {
-    final result =
-        await ref.read(supportChatControllerProvider.notifier).selectOption(
-              optionId,
-              language: context.locale.languageCode,
-            );
-    if (!mounted ||
-        result == null ||
-        result.action != ChatFlowOptionAction.goToUrl) {
+    if (text.isEmpty && _pendingImages.isEmpty) return;
+
+    final state = ref.read(supportChatControllerProvider);
+
+    if (!state.composerEnabled ||
+        state.isSendingMessage ||
+        _isSendingPendingImages) {
       return;
     }
 
-    await _openFlowUrl(result.url);
+    final controller = ref.read(supportChatControllerProvider.notifier);
+    if (_pendingImages.isEmpty) {
+      final sent = await controller.sendText(
+        text,
+        language: context.locale.languageCode,
+      );
+
+      if (!mounted || !sent) return;
+
+      _input.clear();
+      _scrollToBottom();
+      return;
+    }
+
+    setState(() => _isSendingPendingImages = true);
+
+    try {
+      final images = List<PlatformFile>.of(_pendingImages);
+      if (images.length == 1) {
+        final image = images.first;
+
+        final sent = await controller.sendText(
+          text,
+          language: context.locale.languageCode,
+          imageBytes: image.bytes!,
+          imageFileName: image.name,
+        );
+
+        if (!mounted || !sent) return;
+
+        setState(() {
+          _pendingImages.remove(image);
+          _input.clear();
+        });
+
+        _scrollToBottom();
+        return;
+      }
+      for (final image in images) {
+        final sent = await controller.sendText(
+          '',
+          language: context.locale.languageCode,
+          imageBytes: image.bytes!,
+          imageFileName: image.name,
+        );
+
+        if (!mounted || !sent) return;
+
+        setState(() {
+          _pendingImages.remove(image);
+        });
+
+        _scrollToBottom();
+      }
+      if (text.isNotEmpty) {
+        final sent = await controller.sendText(
+          text,
+          language: context.locale.languageCode,
+        );
+
+        if (!mounted || !sent) return;
+
+        _input.clear();
+        _scrollToBottom();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingPendingImages = false);
+      }
+    }
+  }
+
+  Future<void> _onSelectOption(String optionId) async {
+    if (_submittingOptionId != null) return;
+
+    setState(() => _submittingOptionId = optionId);
+    try {
+      final result =
+          await ref.read(supportChatControllerProvider.notifier).selectOption(
+                optionId,
+                language: context.locale.languageCode,
+              );
+      if (!mounted) return;
+      setState(() => _submittingOptionId = null);
+      if (result == null || result.action != ChatFlowOptionAction.goToUrl) {
+        return;
+      }
+
+      await _openFlowUrl(result.url);
+    } finally {
+      if (mounted && _submittingOptionId != null) {
+        setState(() => _submittingOptionId = null);
+      }
+    }
   }
 
   Future<void> _openFlowUrl(String? value) async {
@@ -193,12 +333,86 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
     return DateFormat('dd/MM/yy, h:mma').format(datetime);
   }
 
+  Future<void> _onAttachFile() async {
+    const maxImages = 4;
+    const maxImageSize = 5 * 1024 * 1024;
+
+    final remaining = maxImages - _pendingImages.length;
+
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum 4 images allowed per message'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+      withData: true,
+    );
+
+    if (result == null || !mounted) return;
+
+    final validImages = result.files
+        .where((file) {
+          final extension = file.extension?.toLowerCase();
+
+          return file.bytes != null &&
+              file.size <= maxImageSize &&
+              ['jpg', 'jpeg', 'png', 'webp'].contains(extension);
+        })
+        .take(remaining)
+        .toList();
+
+    setState(() {
+      _pendingImages.addAll(validImages);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(
       supportChatControllerProvider.select((state) => state.messages.length),
       (previous, next) {
-        if (previous == null || next > previous) _scrollToBottom();
+        if (previous == null || next < previous) {
+          _scrollToBottom(animated: false);
+          return;
+        }
+        if (next == previous) return;
+
+        final newest = ref.read(supportChatControllerProvider).messages.last;
+
+        if (newest.isMine || _isNearBottom) {
+          _scrollToBottom();
+        } else {
+          setState(() => _unreadCount += next - previous);
+        }
+      },
+    );
+    ref.listen(
+      supportChatControllerProvider.select((state) => state.status),
+      (previous, next) {
+        if (previous == next) return;
+        if (next == ChatConversationStatus.waiting &&
+            previous != ChatConversationStatus.waiting) {
+          _scrollToBottom(animated: false);
+          return;
+        }
+        if (next == ChatConversationStatus.waiting) {
+          _scrollToBottom(animated: false);
+        }
+      },
+    );
+    ref.listen(
+      supportChatControllerProvider.select((state) => state.isStartingChat),
+      (previous, next) {
+        if (previous == true && next == false) {
+          _scrollToBottom(animated: false);
+        }
       },
     );
     ref.listen(
@@ -491,11 +705,14 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                     child: ElevatedButton(
                       onPressed: state.isStartingChat
                           ? null
-                          : () => ref
-                              .read(supportChatControllerProvider.notifier)
-                              .startConversation(
-                                language: context.locale.languageCode,
-                              ),
+                          : () async {
+                              await ref
+                                  .read(supportChatControllerProvider.notifier)
+                                  .startConversation(
+                                    language: context.locale.languageCode,
+                                  );
+                              if (mounted) _scrollToBottom(animated: false);
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.onPrimary,
@@ -555,56 +772,8 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_pendingFileName != null) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySoft,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            LucideIcons.paperclip,
-                            size: 14,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _pendingFileName!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () =>
-                                setState(() => _pendingFileName = null),
-                            borderRadius: BorderRadius.circular(8),
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            child: const Padding(
-                              padding: EdgeInsets.all(4),
-                              child: Icon(
-                                LucideIcons.x,
-                                size: 14,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  if (_pendingImages.isNotEmpty) ...[
+                    _buildImagePreviews(),
                   ],
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -639,9 +808,31 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              GestureDetector(
+                                onTap: state.isSendingMessage ||
+                                        _isSendingPendingImages
+                                    ? null
+                                    : _onAttachFile,
+                                child: SizedBox(
+                                  width: 32,
+                                  height: 36,
+                                  child: Center(
+                                    child: Icon(
+                                      LucideIcons.paperclip,
+                                      size: 18,
+                                      color: state.isSendingMessage ||
+                                              _isSendingPendingImages
+                                          ? AppColors.textMuted
+                                          : AppColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
                               Expanded(
                                 child: TextField(
-                                  enabled: !state.isSendingMessage,
+                                  enabled: !state.isSendingMessage &&
+                                      !_isSendingPendingImages,
                                   controller: _input,
                                   focusNode: _inputFocus,
                                   minLines: 1,
@@ -669,8 +860,8 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 8),
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(vertical: 8),
                                   ),
                                 ),
                               ),
@@ -680,7 +871,9 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
-                        onTap: state.composerEnabled ? _onSendText : null,
+                        onTap: state.composerEnabled && !_isSendingPendingImages
+                            ? _onSendText
+                            : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 160),
                           curve: Curves.easeOut,
@@ -768,6 +961,74 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
     );
   }
 
+  Widget _buildImagePreviews() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (var index = 0; index < _pendingImages.length; index++)
+            _buildImagePreview(_pendingImages[index], index),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(PlatformFile image, int index) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.paperBorder,
+            ),
+            boxShadow: AppStyle.cardShadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(11),
+            child: Image.memory(
+              image.bytes!,
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        Positioned(
+          top: -7,
+          right: -7,
+          child: Material(
+            color: AppColors.textPrimary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _pendingImages.removeAt(index);
+                });
+              },
+              customBorder: const CircleBorder(),
+              child: const SizedBox(
+                width: 24,
+                height: 24,
+                child: Icon(
+                  LucideIcons.x,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHistoryList(
     SupportChatState state, {
     bool showCurrentOptions = false,
@@ -803,76 +1064,178 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
         ),
       );
     }
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: _scroll,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            if (index < state.messages.length) {
+              final message = state.messages[index];
+              final time = _formatTime(message.sentAt);
+              final isLast = index == state.messages.length - 1;
 
-    return ListView.builder(
-      controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        if (index < state.messages.length) {
-          final message = state.messages[index];
-          final time = _formatTime(message.sentAt);
-          final isLast = index == state.messages.length - 1;
+              if (isLast && attachOptionsToLastMsg) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _BotFlowCard(
+                    text: message.text,
+                    time: time,
+                    options: activeOptions,
+                    isSubmitting: state.isSubmittingOption,
+                    submittingOptionId: _submittingOptionId,
+                    errorMessage: state.errorMessage?.tr(),
+                    onSelectOption: (id) => unawaited(_onSelectOption(id)),
+                  ),
+                );
+              }
 
-          if (isLast && attachOptionsToLastMsg) {
+              if (!message.isMine && message.flowOptions.isNotEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _BotFlowCard(
+                    text: message.text,
+                    time: time,
+                    options: message.flowOptions,
+                    localizeOptions: false,
+                    isSubmitting: false,
+                    onSelectOption: null,
+                  ),
+                );
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: message.isMine
+                    ? _UserMessageCard(
+                        text: message.text,
+                        time: time,
+                        imageBytes: message.imageBytes,
+                        imageUrl: message.imageUrl,
+                      )
+                    : _BotMessageCard(
+                        text: message.text,
+                        time: time,
+                        imageUrl: message.imageUrl,
+                      ),
+              );
+            }
+
+            final promptText =
+                state.flowMessage ?? 'support.select_option_prompt'.tr();
+            final currentTime = _formatTime(DateTime.now());
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: _BotFlowCard(
-                text: message.text,
-                time: time,
+                text: promptText,
+                time: currentTime,
                 options: activeOptions,
                 isSubmitting: state.isSubmittingOption,
+                submittingOptionId: _submittingOptionId,
                 errorMessage: state.errorMessage?.tr(),
                 onSelectOption: (id) => unawaited(_onSelectOption(id)),
               ),
             );
-          }
-
-          if (!message.isMine && message.flowOptions.isNotEmpty) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _BotFlowCard(
-                text: message.text,
-                time: time,
-                options: message.flowOptions,
-                localizeOptions: false,
-                isSubmitting: false,
-                onSelectOption: null,
-              ),
-            );
-          }
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: message.isMine
-                ? _UserMessageCard(
-                    text: message.text,
-                    time: time,
-                    fileName: message.fileName,
-                  )
-                : _BotMessageCard(
-                    text: message.text,
-                    time: time,
-                  ),
-          );
-        }
-
-        final promptText =
-            state.flowMessage ?? 'support.select_option_prompt'.tr();
-        final currentTime = _formatTime(DateTime.now());
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 14),
-          child: _BotFlowCard(
-            text: promptText,
-            time: currentTime,
-            options: activeOptions,
-            isSubmitting: state.isSubmittingOption,
-            errorMessage: state.errorMessage?.tr(),
-            onSelectOption: (id) => unawaited(_onSelectOption(id)),
+          },
+        ),
+        Positioned(
+          right: 16,
+          bottom: 12,
+          child: _JumpToLatestButton(
+            visible: _showJumpToLatest,
+            count: _unreadCount,
+            onTap: () {
+              _scrollToBottom();
+              setState(() => _unreadCount = 0);
+            },
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+}
+
+class _JumpToLatestButton extends StatelessWidget {
+  const _JumpToLatestButton({
+    required this.visible,
+    required this.count,
+    required this.onTap,
+  });
+
+  final bool visible;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedScale(
+        scale: visible ? 1 : 0.6,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 160),
+          child: SizedBox(
+            width: 52,
+            height: 52,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Material(
+                  color: AppColors.surface,
+                  shape: const CircleBorder(),
+                  elevation: 3,
+                  shadowColor: Colors.black.withValues(alpha: 0.25),
+                  child: InkWell(
+                    onTap: onTap,
+                    customBorder: const CircleBorder(),
+                    child: const SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        LucideIcons.arrow_down,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                if (count > 0)
+                  Positioned(
+                    top: 0,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        count > 99 ? '99+' : '$count',
+                        style: AppTheme.english(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onPrimary,
+                          height: 1.2,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1012,14 +1375,70 @@ class _BotAvatar extends StatelessWidget {
   }
 }
 
+Widget _chatNetworkImage(String url) {
+  return Image.network(
+    url,
+    width: 220,
+    height: 220,
+    fit: BoxFit.cover,
+    loadingBuilder: (context, child, loadingProgress) {
+      if (loadingProgress == null) return child;
+      return const SizedBox(
+        width: 220,
+        height: 220,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    },
+    errorBuilder: (context, error, stackTrace) => Container(
+      width: 220,
+      height: 220,
+      alignment: Alignment.center,
+      color: AppColors.surface,
+      child: const Icon(Icons.broken_image_outlined),
+    ),
+  );
+}
+
+void _showImageUrlPreview(BuildContext context, String url) {
+  showDialog<void>(
+    context: context,
+    barrierColor: Colors.black87,
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(12),
+      child: Stack(
+        alignment: Alignment.topRight,
+        children: [
+          InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4,
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image_outlined, color: Colors.white),
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close, color: Colors.white),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _BotMessageCard extends StatelessWidget {
   const _BotMessageCard({
     required this.text,
     required this.time,
+    this.imageUrl,
   });
 
   final String text;
   final String time;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -1041,12 +1460,29 @@ class _BotMessageCard extends StatelessWidget {
                   border: Border.all(color: AppColors.borderLight),
                   boxShadow: AppStyle.cardShadow,
                 ),
-                child: Text(
-                  text,
-                  style: AppTheme.body(
-                    color: AppColors.textPrimary,
-                    weight: FontWeight.w400,
-                  ).copyWith(fontSize: 14, height: 1.4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (imageUrl != null && imageUrl!.isNotEmpty) ...[
+                      GestureDetector(
+                        onTap: () => _showImageUrlPreview(context, imageUrl!),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: _chatNetworkImage(imageUrl!),
+                        ),
+                      ),
+                      if (text.trim().isNotEmpty) const SizedBox(height: 6),
+                    ],
+                    if (text.trim().isNotEmpty)
+                      Text(
+                        text,
+                        style: AppTheme.body(
+                          color: AppColors.textPrimary,
+                          weight: FontWeight.w400,
+                        ).copyWith(fontSize: 14, height: 1.4),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -1079,6 +1515,7 @@ class _BotFlowCard extends StatelessWidget {
     required this.options,
     this.localizeOptions = true,
     this.isSubmitting = false,
+    this.submittingOptionId,
     this.errorMessage,
     this.onSelectOption,
   });
@@ -1088,6 +1525,7 @@ class _BotFlowCard extends StatelessWidget {
   final List<ChatFlowOption> options;
   final bool localizeOptions;
   final bool isSubmitting;
+  final String? submittingOptionId;
   final String? errorMessage;
   final ValueChanged<String>? onSelectOption;
 
@@ -1142,16 +1580,13 @@ class _BotFlowCard extends StatelessWidget {
                         if (i > 0) const SizedBox(height: 6),
                         _CGNetOptionButton(
                           label: _optionLabel(context, options[i]),
+                          isLoading: isSubmitting &&
+                              submittingOptionId == options[i].id,
                           onPressed: isSubmitting || onSelectOption == null
                               ? null
                               : () => onSelectOption!(options[i].id),
                         ),
                       ],
-                      if (isSubmitting)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 10),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
                     ],
                     if (errorMessage != null) ...[
                       const SizedBox(height: 8),
@@ -1190,15 +1625,164 @@ class _UserMessageCard extends StatelessWidget {
   const _UserMessageCard({
     required this.text,
     required this.time,
-    this.fileName,
+    this.imageBytes = const [],
+    this.imageUrl,
   });
 
   final String text;
   final String time;
-  final String? fileName;
+  final List<Uint8List> imageBytes;
+  final String? imageUrl;
+
+  Widget _buildNetworkImage(BuildContext context) {
+    final url = imageUrl;
+    if (url == null || url.isEmpty) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () => _showImageUrlPreview(context, url),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: _chatNetworkImage(url),
+      ),
+    );
+  }
+
+  void _showImagePreview(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(12),
+          child: Stack(
+            alignment: Alignment.topRight,
+            children: [
+              InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4,
+                child: Image.memory(
+                  imageBytes[index],
+                  fit: BoxFit.contain,
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildImages(BuildContext context) {
+    if (imageBytes.isEmpty) return _buildNetworkImage(context);
+
+    // One image: normal chat image layout.
+    if (imageBytes.length == 1) {
+      return GestureDetector(
+        onTap: () => _showImagePreview(context, 0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            imageBytes.first,
+            width: 220,
+            height: 220,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+
+    // Multiple images: 2-column grid.
+    return SizedBox(
+      width: 220,
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: imageBytes.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 4,
+          mainAxisSpacing: 4,
+        ),
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () => _showImagePreview(context, index),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: Image.memory(
+                imageBytes[index],
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasImages =
+        imageBytes.isNotEmpty || (imageUrl != null && imageUrl!.isNotEmpty);
+
+    final hasText = text.trim().isNotEmpty;
+
+    final isMultipleImages = imageBytes.length > 1;
+
+    // Multiple images: images and text must be separate.
+    if (isMultipleImages) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(width: 48),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildImages(context),
+                if (hasText) ...[
+                  const SizedBox(height: 6),
+                  _buildTextBubble(),
+                ],
+                const SizedBox(height: 4),
+                _buildTimestamp(),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Single image without text: no background.
+    if (hasImages && !hasText) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const SizedBox(width: 48),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildImages(context),
+                const SizedBox(height: 4),
+                _buildTimestamp(),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Single image + text OR text only.
+    // Keep them inside one background bubble.
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1209,8 +1793,7 @@ class _UserMessageCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(10),
@@ -1219,46 +1802,62 @@ class _UserMessageCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (fileName != null && fileName!.isNotEmpty) ...[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            LucideIcons.paperclip,
-                            size: 12,
+                    if (hasImages) _buildImages(context),
+                    if (hasText) ...[
+                      if (hasImages) const SizedBox(height: 6),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          text,
+                          style: AppTheme.body(
                             color: AppColors.onPrimary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            fileName!,
-                            style: AppTheme.bodySecondary(
-                                    color: AppColors.onPrimary)
-                                .copyWith(fontSize: 11),
-                          ),
-                        ],
+                            weight: FontWeight.w400,
+                          ).copyWith(fontSize: 13, height: 1.4),
+                        ),
                       ),
-                      const SizedBox(height: 6),
                     ],
-                    Text(
-                      text,
-                      style: AppTheme.body(
-                        color: AppColors.onPrimary,
-                        weight: FontWeight.w400,
-                      ).copyWith(fontSize: 13, height: 1.4),
-                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                time,
-                style: AppTheme.captionSm(color: AppColors.textMuted)
-                    .copyWith(fontSize: 10),
-              ),
+              _buildTimestamp(),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTextBubble() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: AppStyle.cardShadow,
+      ),
+      child: Text(
+        text,
+        style: AppTheme.body(
+          color: AppColors.onPrimary,
+          weight: FontWeight.w400,
+        ).copyWith(fontSize: 13, height: 1.4),
+      ),
+    );
+  }
+
+  Widget _buildTimestamp() {
+    return Text(
+      time,
+      style: AppTheme.captionSm(
+        color: AppColors.textMuted,
+      ).copyWith(fontSize: 10),
     );
   }
 }
@@ -1267,13 +1866,27 @@ class _CGNetOptionButton extends StatelessWidget {
   const _CGNetOptionButton({
     required this.label,
     this.onPressed,
+    this.isLoading = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final labelText = Text(
+      label,
+      textAlign: TextAlign.center,
+      style: AppTheme.english(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: onPressed == null ? AppColors.textMuted : AppColors.primary,
+        height: AppStyle.lineHeightCaption,
+        letterSpacing: 0,
+      ),
+    );
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -1291,18 +1904,26 @@ class _CGNetOptionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: AppTheme.english(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: onPressed == null ? AppColors.textMuted : AppColors.primary,
-              height: AppStyle.lineHeightCaption,
-              letterSpacing: 0,
-            ),
-          ),
-        ),
+        child: isLoading
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.6,
+                      color: onPressed == null
+                          ? AppColors.textMuted
+                          : AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  labelText,
+                ],
+              )
+            : labelText,
+      ),
     );
   }
 }
