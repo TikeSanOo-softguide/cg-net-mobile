@@ -28,12 +28,6 @@ class LoginQaPage extends ConsumerWidget {
     'login.qa_a4',
   ];
 
-  static const _hotlines = [
-    (CountryDial.myanmar, 'login.hotline_mm_local'),
-    (CountryDial.thailand, 'login.hotline_th_local'),
-    (CountryDial.china, 'login.hotline_cn_local'),
-  ];
-
   static TextStyle get _bodyStyle => AppTheme.english(
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -47,6 +41,27 @@ class LoginQaPage extends ConsumerWidget {
         color: AppColors.primary,
         height: AppTheme.lineHeightMyanmarSafe,
       );
+
+  static Widget _hotlineContent(List<SupportContactModel> items) {
+    final hotlineNumbers = <(CountryDial, String)>[];
+
+    for (final contact in items) {
+      final digits = contact.phone.replaceAll(RegExp(r'\D'), '');
+      final country = CountryDial.fromPhoneNumber(contact.phone);
+      if (country == null) continue;
+
+      final localNumber = digits.substring(country.dialCodeDigits.length);
+      hotlineNumbers.add((country, localNumber));
+    }
+
+    if (hotlineNumbers.isEmpty) return const SizedBox.shrink();
+
+    return _HotlineSection(
+      hotlines: hotlineNumbers,
+      titleStyle: _titleStyle,
+      bodyStyle: _bodyStyle,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -74,40 +89,29 @@ class LoginQaPage extends ConsumerWidget {
       error: (_, __) => <_QaItemData>[],
     );
 
-    final hotlineNumbers = supportContactsAsync.when(
-      data: (items) {
-        final phonesByCountry = <CountryDial, List<String>>{};
-
-        for (final contact in items) {
-          final phone = contact.phone.replaceAll(
-            RegExp(r'[^\d+]'),
-            '',
+    final cachedContacts = supportContactsAsync.valueOrNull;
+    final hotlineContent = cachedContacts != null
+        ? _hotlineContent(cachedContacts)
+        : supportContactsAsync.when(
+            data: _hotlineContent,
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, __) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('common.error'.tr(), style: _bodyStyle),
+                  TextButton(
+                    onPressed: () => ref.invalidate(supportContactProvider),
+                    child: Text('common.retry'.tr()),
+                  ),
+                ],
+              ),
+            ),
           );
-
-          for (final country in CountryDial.values) {
-            if (phone.startsWith(country.dialCode)) {
-              final localNumber = phone.substring(country.dialCode.length);
-
-              if (localNumber.isNotEmpty) {
-                phonesByCountry
-                    .putIfAbsent(country, () => <String>[])
-                    .add(localNumber);
-              }
-
-              break;
-            }
-          }
-        }
-
-        return [
-          for (final country in CountryDial.values)
-            for (final phone in phonesByCountry[country] ?? <String>[])
-              (country, phone),
-        ];
-      },
-      loading: () => const <(CountryDial, String)>[],
-      error: (_, __) => const <(CountryDial, String)>[],
-    );
 
     final qaWidgets = faqItems.isNotEmpty
         ? faqItems
@@ -177,20 +181,7 @@ class LoginQaPage extends ConsumerWidget {
           const SizedBox(height: 12),
           ...qaWidgets,
           const SizedBox(height: 10),
-          _HotlineSection(
-            hotlines: hotlineNumbers.isNotEmpty
-                ? hotlineNumbers
-                : supportContactsAsync.hasValue &&
-                        supportContactsAsync.value!.isNotEmpty
-                    ? const []
-                    : _hotlines
-                        .map(
-                          (entry) => (entry.$1, entry.$2.tr()),
-                        )
-                        .toList(),
-            titleStyle: _titleStyle,
-            bodyStyle: _bodyStyle,
-          ),
+          hotlineContent,
         ],
       ),
     );
