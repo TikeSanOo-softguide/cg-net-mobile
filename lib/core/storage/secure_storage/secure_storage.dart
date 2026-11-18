@@ -13,6 +13,7 @@ class SecureStorage {
   static const _tokenKey = 'auth_token';
   static const _profileCacheKey = 'cached_user_profile';
   static const _onboardingKey = 'onboarding_done';
+  static const _deviceIdKey = 'device_id';
 
   Future<void> writeToken(String token) async {
     await _storage.delete(key: _profileCacheKey);
@@ -47,6 +48,11 @@ class SecureStorage {
     final value = await _storage.read(key: _onboardingKey);
     return value == 'true';
   }
+
+  Future<String?> readDeviceId() => _storage.read(key: _deviceIdKey);
+
+  Future<void> writeDeviceId(String id) =>
+      _storage.write(key: _deviceIdKey, value: id);
 
   Future<void> clearAll() => _storage.deleteAll();
 }

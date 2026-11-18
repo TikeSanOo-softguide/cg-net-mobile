@@ -6,6 +6,11 @@ import 'message_codes.dart';
 String apiErrorText(Object error) {
   if (error is ApiException) {
     if (MessageCodes.isKnown(error.code)) {
+      if (error.code == MessageCodes.authAlreadySignedIn) {
+        return MessageCodes.locKey(error.code!).tr(
+          namedArgs: {'device': _signedInDevice(error)},
+        );
+      }
       return MessageCodes.locKey(error.code!).tr();
     }
 
@@ -30,6 +35,13 @@ String apiErrorText(Object error) {
     };
   }
   return MessageCodes.locKey(MessageCodes.sysUnexpected).tr();
+}
+
+String _signedInDevice(ApiException error) {
+  final data = error.responseData;
+  final name = data is Map ? data['device_name']?.toString().trim() : null;
+  if (name != null && name.isNotEmpty) return name;
+  return 'msg.auth_012_other'.tr();
 }
 
 String apiErrorOrFallback(

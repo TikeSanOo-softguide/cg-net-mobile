@@ -55,6 +55,29 @@ void main() {
     expect(requests.single.uri.path, '/api/auth/session/check');
     expect(requests.single.data, {'phone': '+959123456789'});
     expect(result.showAlert, isTrue);
+    expect(result.deviceName, isNull);
+  });
+
+  test('reads the phone that already holds the session', () async {
+    final api = AuthApi(
+      _recordingDio(
+        [],
+        responseData: {
+          'code': 'MSG-AUTH-012',
+          'level': 'warning',
+          'show_alert': true,
+          'device_name': 'Samsung SM-A155F',
+        },
+      ),
+      () => 'en',
+    );
+
+    final result = await api.checkPhoneSession('+959123456789');
+
+    expect(result.showAlert, isTrue);
+    expect(result.deviceName, 'Samsung SM-A155F');
+    expect(result.code, 'MSG-AUTH-012');
+    expect(result.level, 'warning');
   });
 
   test('parses a phone session with no conflict', () async {

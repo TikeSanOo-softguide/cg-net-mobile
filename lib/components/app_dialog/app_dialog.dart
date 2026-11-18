@@ -253,12 +253,14 @@ Future<void> showAppFailureModal(
               textAlign: TextAlign.center,
               style: _dialogTitleStyle(_failure),
             ),
-            const SizedBox(height: _gapTitleBody),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: _dialogMessageStyle(),
-            ),
+            if (body.trim().isNotEmpty) ...[
+              const SizedBox(height: _gapTitleBody),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: _dialogMessageStyle(),
+              ),
+            ],
             if (retryAfterSeconds != null && retryAfterSeconds > 0) ...[
               const SizedBox(height: _gapTitleBody),
               _FailureRetryCountdown(seconds: retryAfterSeconds),

@@ -16,6 +16,8 @@ import '../../../components/app_input/app_input.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
 import '../../../core/locale/app_locale_provider.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/network/api_message_modal.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -94,10 +96,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
 
     if (checkedSession.showAlert) {
-      await showAppAlertModal(
+      await showApiMessageModal(
         context,
-        title: 'login.device_conflict_title'.tr(),
-        message: 'login.registered_on_another_device'.tr(),
+        ApiException(
+          ApiFailure.unknown,
+          code: checkedSession.code ?? MessageCodes.authAlreadySignedIn,
+          level: checkedSession.level ?? 'warning',
+          responseData: {'device_name': checkedSession.deviceName},
+        ),
       );
       return;
     }

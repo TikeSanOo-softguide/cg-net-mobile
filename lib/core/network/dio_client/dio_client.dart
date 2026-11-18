@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../device/device_header_interceptor.dart';
+import '../../device/device_identity.dart';
 import '../api_endpoints/api_endpoints.dart';
 import '../auth_interceptor/auth_interceptor.dart';
 import '../get_retry_interceptor.dart';
@@ -11,6 +13,7 @@ class DioClient {
   DioClient({
     required AuthInterceptor authInterceptor,
     required String Function() languageCode,
+    DeviceIdentity? device,
   }) {
     final baseUrl = ApiEndpoints.baseUrl;
     // Helps confirm real-phone builds are not still pointing at 127.0.0.1.
@@ -28,6 +31,7 @@ class DioClient {
       ),
     );
     _dio.interceptors.addAll([
+      if (device != null) DeviceHeaderInterceptor(device),
       LocaleInterceptor(languageCode),
       authInterceptor,
       GetRetryInterceptor(_dio),
@@ -62,6 +66,7 @@ final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient(
     authInterceptor: ref.watch(authInterceptorProvider),
     languageCode: ref.watch(languageCodeProvider),
+    device: ref.watch(deviceIdentityProvider),
   );
 });
 

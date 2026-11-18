@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'components/glass_notification_banner/glass_notification_banner.dart';
+import 'core/device/device_identity.dart';
+import 'core/device/device_identity_store.dart';
 import 'core/network/network_recovery_controller.dart';
+import 'core/storage/secure_storage/secure_storage.dart';
 import 'core/push/push_notification_service.dart';
 import 'pages/inbox/inbox_list/inbox_unread_count.dart';
 import 'core/router/app_router/app_router.dart';
@@ -22,6 +25,7 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final savedLanguageRaw = prefs.getString(LocalPrefs.languageKey) ?? 'en';
   final savedLanguage = savedLanguageRaw == 'mm' ? 'my' : savedLanguageRaw;
+  final device = await DeviceIdentityStore(SecureStorage()).load();
 
   runApp(
     EasyLocalization(
@@ -36,6 +40,7 @@ Future<void> main() async {
       child: ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          deviceIdentityProvider.overrideWithValue(device),
         ],
         child: const CgNetApp(),
       ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui' show ImageFilter;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/message_codes.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../core/utils/loading_helper.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -133,17 +135,21 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
     return 'FTTH';
   }
 
+  bool get _linked => _myAccount != null;
+
+  String get _payMode => _linked ? _mode : 'other';
+
   String? _selectedAccount() {
-    if (_mode == 'mine') return _myAccount;
+    if (_payMode == 'mine') return _myAccount;
     final account = _account.text.trim();
     return account.isEmpty ? null : account;
   }
 
-  String _selectedService() => _mode == 'mine' ? _myServiceType : _serviceType;
+  String _selectedService() => _payMode == 'mine' ? _myServiceType : _serviceType;
 
   Future<void> _check() async {
     if (_checking) return;
-    if (_mode == 'other' && !(_formKey.currentState?.validate() ?? false)) {
+    if (_payMode == 'other' && !(_formKey.currentState?.validate() ?? false)) {
       return;
     }
     final account = _selectedAccount();
@@ -177,10 +183,11 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
             if (!mounted || !retry) return;
             continue;
           }
+          final failure = _billCheckFailure(error);
           await showAppFailureModal(
             context,
-            title: 'common.error'.tr(),
-            body: apiErrorText(error),
+            title: failure.$1,
+            body: failure.$2,
           );
           return;
         }
@@ -190,9 +197,18 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
     }
   }
 
+  (String, String) _billCheckFailure(ApiException error) {
+    final code = error.code;
+    if (code == MessageCodes.ftthAccountMissing ||
+        code == MessageCodes.ftthBillingFailed) {
+      return ('${MessageCodes.locKey(code!)}_title'.tr(), apiErrorText(error));
+    }
+    return ('common.error'.tr(), apiErrorText(error));
+  }
+
   Future<void> _toggleFavorite(bool value) async {
     final quote = _quote;
-    if (quote == null || _mode != 'other') return;
+    if (quote == null || _payMode != 'other') return;
     setState(() => _favorite = value);
     final next = _favorites
         .where((item) => !(item.account == quote.account && item.serviceType == quote.serviceType))
@@ -406,7 +422,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                 if (_step == _PayStep.account)
                   _AccountSheet(
                     myAccount: myAccount,
-                    mode: _mode,
+                    mode: myAccount.isEmpty ? 'other' : _mode,
                     account: _account,
                     formKey: _formKey,
                     serviceType: _serviceType,
@@ -432,7 +448,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                 else if (_step == _PayStep.confirm && _quote != null)
                   _ConfirmCard(
                     quote: _quote!,
-                    showFavorite: _mode == 'other',
+                    showFavorite: _payMode == 'other',
                     favorite: _favorite,
                     onFavorite: _toggleFavorite,
                   )
@@ -466,7 +482,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                     onPressed: (_checking ||
                             _paying ||
                             (_step == _PayStep.account &&
-                                _mode == 'mine' &&
+                                _payMode == 'mine' &&
                                 myAccount.isEmpty))
                         ? null
                         : () {
@@ -519,11 +535,35 @@ class _AccountSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final mine = mode == 'mine';
     final linked = myAccount.isNotEmpty;
+    final otherForm = _OtherAccountForm(
+      formKey: formKey,
+      controller: account,
+      serviceType: serviceType,
+      favorites: favorites,
+      onServiceType: onServiceType,
+      onPickFavorite: onPickFavorite,
+      onRemoveFavorite: onRemoveFavorite,
+    );
+    if (!linked) {
+      return AppCard(
+        elevated: false,
+        bordered: false,
+        padding: EdgeInsets.zero,
+        borderRadius: AppStyle.borderRadiusListCard,
+        child: _ChoiceBlock(
+          asset: 'assets/images/pay_bill/bank.png',
+          label: 'home.pay_bill_other_account'.tr(),
+          selected: true,
+          showMark: false,
+          child: otherForm,
+        ),
+      );
+    }
     return AppCard(
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusMd,
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -541,17 +581,7 @@ class _AccountSheet extends StatelessWidget {
             label: 'home.pay_bill_other_account'.tr(),
             selected: mode == 'other',
             onTap: () => onMode('other'),
-            child: mode == 'other'
-                ? _OtherAccountForm(
-                    formKey: formKey,
-                    controller: account,
-                    serviceType: serviceType,
-                    favorites: favorites,
-                    onServiceType: onServiceType,
-                    onPickFavorite: onPickFavorite,
-                    onRemoveFavorite: onRemoveFavorite,
-                  )
-                : null,
+            child: mode == 'other' ? otherForm : null,
           ),
         ],
       ),
@@ -580,7 +610,8 @@ class _ChoiceBlock extends StatelessWidget {
     required this.asset,
     required this.label,
     required this.selected,
-    required this.onTap,
+    this.onTap,
+    this.showMark = true,
     this.value,
     this.valueMuted = false,
     this.child,
@@ -589,7 +620,8 @@ class _ChoiceBlock extends StatelessWidget {
   final String asset;
   final String label;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool showMark;
   final String? value;
   final bool valueMuted;
   final Widget? child;
@@ -641,8 +673,10 @@ class _ChoiceBlock extends StatelessWidget {
             ),
             ),
           ),
-          const SizedBox(width: 8),
-          _ChoiceMark(selected: selected),
+          if (showMark) ...[
+            const SizedBox(width: 8),
+            _ChoiceMark(selected: selected),
+          ],
         ],
       ),
     );
@@ -650,14 +684,16 @@ class _ChoiceBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: header,
-        ),
+        onTap == null
+            ? header
+            : GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: header,
+              ),
         if (child != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(64, 0, 14, 12),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
             child: child,
           ),
       ],
@@ -752,34 +788,41 @@ class _OtherAccountForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Form(
       key: formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-            Row(
-              children: [
-                Expanded(child: _serviceCheck('FTTH')),
-                const SizedBox(width: 12),
-                Expanded(child: _serviceCheck('CG')),
-              ],
+            Text(
+              'home.pay_bill_service'.tr(),
+              style: AppTheme.english(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
+            _pair(),
+            const SizedBox(height: 12),
             AppInput(
               controller: controller,
               label: 'home.pay_bill_account_number'.tr(),
               hint: 'home.pay_bill_account_hint'.tr(),
               textInputAction: TextInputAction.done,
+              reserveErrorSpace: true,
               validator: (value) {
                 final account = value?.trim() ?? '';
-                if (account.isEmpty) return 'home.pay_bill_account_required'.tr();
-                if (account.length > 32) return 'home.pay_bill_account_max'.tr();
+                if (account.isEmpty) return 'broadband.validation.account_required'.tr();
+                if (account.length > 32) {
+                  return 'broadband.validation.account_max_length'.tr();
+                }
                 return null;
               },
             ),
             if (favorites.isNotEmpty) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 'home.pay_bill_favorites'.tr(),
-                style: const TextStyle(
+                style: AppTheme.english(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMuted,
@@ -799,59 +842,76 @@ class _OtherAccountForm extends StatelessWidget {
     );
   }
 
-  Widget _serviceCheck(String value) {
+  Widget _pair() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: AppStyle.borderRadiusListCard,
+        border: Border.all(color: AppColors.glassBorder, width: 0.6),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _choice('FTTH')),
+          const SizedBox(width: 3),
+          Expanded(child: _choice('CG')),
+        ],
+      ),
+    );
+  }
+
+  Widget _choice(String value) {
     final selected = serviceType == value;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onServiceType(value),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            _ClearCheck(selected: selected),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                _serviceLabel(value),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-                ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: selected ? 8 : 0,
+            sigmaY: selected ? 8 : 0,
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.primaryLight.withValues(alpha: 0.72)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : Colors.transparent,
+                width: 0.6,
               ),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (selected) ...[
+                  const Icon(LucideIcons.check, size: 15, color: AppColors.primary),
+                  const SizedBox(width: 4),
+                ],
+                Flexible(
+                  child: Text(
+                    _serviceLabel(value),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.english(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? AppColors.primary : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-    );
-  }
-}
-
-class _ClearCheck extends StatelessWidget {
-  const _ClearCheck({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      width: 18,
-      height: 18,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: selected ? AppColors.primary : AppColors.surface,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: selected ? AppColors.primary : AppColors.border,
-          width: 1.5,
-        ),
-      ),
-      child: selected
-          ? const Icon(Icons.check_rounded, size: 14, color: AppColors.onPrimary)
-          : null,
     );
   }
 }
@@ -872,32 +932,25 @@ class _FavoriteRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: 8),
       child: Material(
-        color: selected ? AppColors.primarySoft : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        color: selected ? AppColors.primaryLight : AppColors.background,
+        borderRadius: AppStyle.borderRadiusListCard,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
-            child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
             child: Row(
               children: [
-                Icon(
-                  Icons.star_rounded,
-                  size: 16,
-                  color: selected ? AppColors.primary : AppColors.textMuted,
-                ),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     item.account,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: AppTheme.english(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      height: AppStyle.lineHeightCaption,
                       color: selected ? AppColors.primary : AppColors.textPrimary,
                     ),
                   ),
@@ -905,7 +958,7 @@ class _FavoriteRow extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   _serviceLabel(item.serviceType),
-                  style: const TextStyle(
+                  style: AppTheme.english(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textMuted,
@@ -950,13 +1003,7 @@ class _ConfirmCard extends StatelessWidget {
       label: 'home.pay_bill_outstanding'.tr(),
       amount: quote.outstandingAmount,
       children: [
-        if (quote.customerName.trim().isNotEmpty)
-          _line('home.pay_bill_name'.tr(), quote.customerName),
-        _line('home.pay_bill_account_number'.tr(), quote.account),
-        _line('home.pay_bill_service'.tr(), _serviceLabel(quote.serviceType)),
-        _line('home.pay_bill_product'.tr(), _product(quote)),
-        if (quote.productSpeed.trim().isNotEmpty)
-          _line('home.pay_bill_speed'.tr(), quote.productSpeed.trim()),
+        ..._accountLines(quote),
         if (showFavorite)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -1120,11 +1167,7 @@ class _PaymentCard extends StatelessWidget {
       label: 'home.pay_bill_amount'.tr(),
       amount: quote.outstandingAmount,
       children: [
-        _line('home.pay_bill_account_number'.tr(), quote.account),
-        _line('home.pay_bill_service'.tr(), _serviceLabel(quote.serviceType)),
-        _line('home.pay_bill_product'.tr(), _product(quote)),
-        if (quote.productSpeed.trim().isNotEmpty)
-          _line('home.pay_bill_speed'.tr(), quote.productSpeed.trim()),
+        ..._accountLines(quote),
       ],
     );
   }
@@ -1279,12 +1322,19 @@ class _DashLinePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-String _product(PayBillQuote quote) {
-  final name = quote.productName.trim();
-  final id = quote.productId.trim();
-  if (name.isEmpty) return id;
-  if (id.isEmpty) return name;
-  return '$name · $id';
+List<Widget> _accountLines(PayBillQuote quote) {
+  final plan = quote.productLine.trim().isNotEmpty
+      ? quote.productLine
+      : quote.productName;
+  return [
+    _line('home.pay_bill_service'.tr(), quote.serviceType),
+    _line('home.pay_bill_account'.tr(), quote.account),
+    _line('home.pay_bill_name'.tr(), quote.customerName),
+    _line('home.pay_bill_plan'.tr(), plan),
+    _line('home.pay_bill_speed'.tr(), quote.productSpeed),
+    _line('home.pay_bill_duration'.tr(), quote.duration),
+    _line('home.pay_bill_end_time'.tr(), quote.endTime),
+  ];
 }
 
 Widget _line(String label, String value, {bool emphasize = false}) {

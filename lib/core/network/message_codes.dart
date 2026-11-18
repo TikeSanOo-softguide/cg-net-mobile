@@ -84,6 +84,8 @@ class MessageCodes {
   static const userSuspended = 'MSG-USER-004';
 
   static const ftthInsufficientBalance = 'MSG-FTTH-003';
+  static const ftthAccountMissing = 'MSG-FTTH-004';
+  static const ftthBillingFailed = 'MSG-FTTH-005';
   static const ftthPaid = 'MSG-FTTH-008';
   static const ftthProcessing = 'MSG-FTTH-010';
 
@@ -161,6 +163,8 @@ class MessageCodes {
     userDeactivated,
     userSuspended,
     ftthInsufficientBalance,
+    ftthAccountMissing,
+    ftthBillingFailed,
     ftthPaid,
     ftthProcessing,
     reqCancelled,

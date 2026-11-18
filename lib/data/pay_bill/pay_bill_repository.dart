@@ -11,8 +11,11 @@ class PayBillQuote {
     required this.serviceType,
     required this.productId,
     required this.productName,
+    required this.productLine,
     required this.productPrice,
     required this.productSpeed,
+    required this.duration,
+    required this.endTime,
     required this.customerName,
     required this.phone,
     required this.address,
@@ -23,8 +26,11 @@ class PayBillQuote {
   final String serviceType;
   final String productId;
   final String productName;
+  final String productLine;
   final num productPrice;
   final String productSpeed;
+  final String duration;
+  final String endTime;
   final String customerName;
   final String phone;
   final String address;
@@ -36,8 +42,11 @@ class PayBillQuote {
       serviceType: json['service_type']?.toString() ?? '',
       productId: json['product_id']?.toString() ?? '',
       productName: json['product_name']?.toString() ?? '',
+      productLine: json['product_line']?.toString() ?? '',
       productPrice: _num(json['product_price']),
       productSpeed: json['product_speed']?.toString() ?? '',
+      duration: json['duration']?.toString() ?? '',
+      endTime: json['end_time']?.toString() ?? '',
       customerName: json['customer_name']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
       address: json['address']?.toString() ?? '',

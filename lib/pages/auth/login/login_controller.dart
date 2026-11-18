@@ -43,10 +43,16 @@ class LoginSessionCheck {
   const LoginSessionCheck({
     required this.phone,
     required this.showAlert,
+    this.deviceName,
+    this.code,
+    this.level,
   });
 
   final String phone;
   final bool showAlert;
+  final String? deviceName;
+  final String? code;
+  final String? level;
 }
 
 class LoginController extends StateNotifier<LoginState> {
@@ -76,6 +82,9 @@ class LoginController extends StateNotifier<LoginState> {
       return LoginSessionCheck(
         phone: apiPhone,
         showAlert: result.showAlert,
+        deviceName: result.deviceName,
+        code: result.code,
+        level: result.level,
       );
     } on ApiException catch (error) {
       if (!mounted) return null;

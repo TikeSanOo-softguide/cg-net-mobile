@@ -25,16 +25,30 @@ class OtpChallengeResult {
 class AccountSessionCheckResult {
   const AccountSessionCheckResult({
     required this.showAlert,
+    this.deviceName,
+    this.code,
+    this.level,
   });
 
   final bool showAlert;
+  final String? deviceName;
+  final String? code;
+  final String? level;
 
   factory AccountSessionCheckResult.fromJson(Map<String, dynamic> data) {
     final showAlert = data['show_alert'];
     if (showAlert is! bool) {
       throw const ApiException(ApiFailure.unknown);
     }
-    return AccountSessionCheckResult(showAlert: showAlert);
+    final deviceName = data['device_name']?.toString().trim();
+    final code = data['code']?.toString().trim().toUpperCase();
+    final level = data['level']?.toString().trim().toLowerCase();
+    return AccountSessionCheckResult(
+      showAlert: showAlert,
+      deviceName: deviceName == null || deviceName.isEmpty ? null : deviceName,
+      code: code == null || code.isEmpty ? null : code,
+      level: level == null || level.isEmpty ? null : level,
+    );
   }
 }
 
