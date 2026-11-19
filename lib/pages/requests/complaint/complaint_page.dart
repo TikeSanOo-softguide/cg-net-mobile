@@ -856,10 +856,13 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
     }
 
     final submitting = controllerState.isSubmitting;
+    final title = widget.initialReport == null
+        ? 'complaint.new_complaint'.tr()
+        : 'complaint.edit_complaint'.tr();
 
     return AppCurvedScaffold(
       title: Text(
-        'complaint.title'.tr(),
+        title,
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
@@ -956,6 +959,7 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
                                   'contact_phone',
                                   key: _phoneFieldKey,
                                 );
+                                _phoneFieldKey.currentState?.validate();
                               },
                             ),
                           ],

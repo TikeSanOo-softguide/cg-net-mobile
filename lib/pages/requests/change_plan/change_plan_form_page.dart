@@ -113,10 +113,7 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
                 .trim();
         final nextServiceType = next?.serviceType ??
             ref.read(profileControllerProvider).serviceType;
-        if (account == _formAccountNumber &&
-            (nextServiceType == null || nextServiceType == _serviceType)) {
-          return;
-        }
+        if (account == _formAccountNumber) return;
         _formAccountNumber = account;
         _accountChangeSequence++;
         if (initial != null) {
@@ -396,6 +393,9 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
   @override
   Widget build(BuildContext context) {
     final product = _matchedProduct;
+    final barTitle = widget.initialRequest == null
+        ? 'changePlan.new_request'.tr()
+        : 'changePlan.edit_request'.tr();
 
     return PopScope(
       canPop: _step <= 1,
@@ -406,7 +406,7 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
       child: InstallationWizardScaffold(
         step: _step,
         totalSteps: 2,
-        barTitle: 'home.service_change_plan'.tr(),
+        barTitle: barTitle,
         title: '',
         description: '',
         stepLabels: const [
@@ -659,10 +659,13 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
                   ],
                   formFieldKey: _phoneFieldKey,
                   validator: _validateContactPhone,
-                  onChanged: (_) => clearApiFieldError(
-                    'contact_phone',
-                    key: _phoneFieldKey,
-                  ),
+                  onChanged: (_) {
+                    clearApiFieldError(
+                      'contact_phone',
+                      key: _phoneFieldKey,
+                    );
+                    _phoneFieldKey.currentState?.validate();
+                  },
                 ),
                 const SizedBox(height: AppStyle.spaceXs),
                 AppInput(

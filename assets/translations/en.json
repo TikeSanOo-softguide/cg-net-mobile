@@ -682,6 +682,8 @@
   },
   "change_wifi": {
     "title": "Change WiFi",
+    "new_request": "Update Change WiFi",
+    "edit_request": "Edit Change WiFi",
     "no_requests": "No Password Change Requests",
     "no_requests_desc": "Tap the + button at the bottom right to request a WiFi name or password change.",
     "form_desc": "Update your WiFi settings.",
@@ -733,6 +735,8 @@
   "changePlan": {
     "no_requests": "No change plan requests",
     "no_requests_desc": "Tap the + button to submit a change plan request.",
+    "new_request": "New Change Plan",
+    "edit_request": "Edit Change Plan",
     "current_plan": "Current plan",
     "select_plan": "Select a new plan",
     "no_current_plan": "No current package on this account.",
@@ -790,6 +794,8 @@
   },
   "complaint": {
     "title": "Complaint",
+    "new_complaint": "New Complaint",
+    "edit_complaint": "Edit Complaint",
     "no_reports": "No Complaints",
     "no_reports_desc": "Tap the + button at the bottom right to submit a complaint.",
     "load_error": "Unable to load complaints.",
