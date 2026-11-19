@@ -231,9 +231,12 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
 
     final errorMessage = state.errorMessage;
     final isSubmitting = state.isSubmitting || _submitting;
+    final barTitle = widget.request == null
+        ? 'relocation.new_request'.tr()
+        : 'relocation.edit_request'.tr();
     return AppCurvedScaffold(
       title: Text(
-        'relocation.title'.tr(),
+        barTitle,
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
@@ -554,18 +557,9 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
     Color valueColor = AppColors.textPrimary,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, size: 18, color: AppColors.primary),
-        ),
+        Icon(icon, size: 16, color: AppColors.primary),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
