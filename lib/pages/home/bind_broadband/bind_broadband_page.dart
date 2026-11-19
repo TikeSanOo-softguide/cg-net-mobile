@@ -122,7 +122,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           await showAppFailureModal(
             context,
-            title: 'broadband.validation.bind_fail_title'.tr(),
+            title: 'broadband.validation.fail_title'.tr(),
             body: _broadbandMessage(error),
           );
           return;
@@ -134,7 +134,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           await showAppFailureModal(
             context,
-            title: 'broadband.validation.bind_fail_title'.tr(),
+            title: 'broadband.validation.fail_title'.tr(),
             body: 'broadband.validation.bind_fail_body'.tr(),
           );
           return;
@@ -152,7 +152,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         if (!mounted) return;
         await showAppFailureModal(
           context,
-          title: 'broadband.validation.bind_fail_title'.tr(),
+          title: 'broadband.validation.fail_title'.tr(),
           body: 'broadband.validation.bind_fail_body'.tr(),
         );
         return;
@@ -162,7 +162,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         context,
         title: 'broadband.details_title'.tr(),
         details: [
-          MapEntry('broadband.detail_service_type'.tr(), bound.serviceType),
+          MapEntry('home.service_type'.tr(), bound.serviceType),
           MapEntry(
             'broadband.detail_account'.tr(),
             _accountDetail(
@@ -210,7 +210,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           await showAppFailureModal(
             context,
-            title: 'broadband.validation.bind_fail_title'.tr(),
+            title: 'broadband.validation.fail_title'.tr(),
             body: _broadbandMessage(error),
           );
           return;
@@ -222,7 +222,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           await showAppFailureModal(
             context,
-            title: 'broadband.validation.bind_fail_title'.tr(),
+            title: 'broadband.validation.fail_title'.tr(),
             body: 'broadband.validation.bind_fail_body'.tr(),
           );
           return;
@@ -347,7 +347,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           await showAppFailureModal(
             context,
-            title: 'broadband.validation.unbind_fail_title'.tr(),
+            title: 'broadband.validation.fail_title'.tr(),
             body: _broadbandMessage(error),
           );
           return;
@@ -356,7 +356,7 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
           await showAppFailureModal(
             context,
-            title: 'broadband.validation.unbind_fail_title'.tr(),
+            title: 'broadband.validation.fail_title'.tr(),
             body: 'broadband.validation.unbind_fail_body'.tr(),
           );
           return;
@@ -546,7 +546,7 @@ class _BoundAccountCard extends StatelessWidget {
             child: Column(
               children: [
                 _DetailRow(
-                  label: context.tr('broadband.detail_service_type'),
+                  label: context.tr('home.service_type'),
                   value: bound.serviceType,
                 ),
                 _DetailRow(
