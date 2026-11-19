@@ -718,9 +718,13 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
       _phoneController.text = profile.displayPhone;
     }
 
+    final title = widget.request == null
+        ? 'change_wifi.new_request'.tr()
+        : 'change_wifi.edit_request'.tr();
+
     return AppCurvedScaffold(
       title: Text(
-        'change_wifi.title'.tr(),
+        title,
         style: AppTheme.topBarTitle(),
       ),
       showBack: true,
@@ -840,10 +844,13 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                                 maxLengthLimiter(16),
                               ],
                               validator: _validateContactPhone,
-                              onChanged: (_) => clearApiFieldError(
-                                'contact_phone',
-                                key: _phoneFieldKey,
-                              ),
+                              onChanged: (_) {
+                                clearApiFieldError(
+                                  'contact_phone',
+                                  key: _phoneFieldKey,
+                                );
+                                _phoneFieldKey.currentState?.validate();
+                              },
                             ),
                           ],
                         ),
