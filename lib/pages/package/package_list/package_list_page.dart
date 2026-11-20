@@ -49,17 +49,17 @@ class PackageListPage extends ConsumerWidget {
             const SliverToBoxAdapter(child: _PackagePageIntro()),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
-                16,
-                14,
-                16,
+                10,
+                10,
+                10,
                 AppStyle.listPaddingBottom,
               ),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 12,
-                  mainAxisExtent: 220,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  mainAxisExtent: 232,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => hasPackages
@@ -67,7 +67,7 @@ class PackageListPage extends ConsumerWidget {
                       : LayoutBuilder(
                           builder: (context, constraints) => ShimmerBox(
                             width: constraints.maxWidth,
-                            height: 220,
+                            height: 232,
                             borderRadius: 8,
                           ),
                         ),
@@ -168,7 +168,7 @@ class PackageListPage extends ConsumerWidget {
   ) {
     final data = _PackageListData.fromModel(state.packages[index]);
     return LuxuryPackageCard(
-      title: LuxuryPackageCard.planName(index),
+      title: data.line.isNotEmpty ? data.line : state.packages[index].name,
       productId: data.id,
       lineLabel: data.line,
       priceLabel: data.price,
@@ -189,7 +189,7 @@ class _PackagePageIntro extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -204,33 +204,12 @@ class _PackagePageIntro extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'package.brand'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                        letterSpacing: 0.8,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
                       'package.popular_plan'.tr(),
                       style: AppTheme.english(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
                         height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'package.unlimited_internet'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
                       ),
                     ),
                   ],

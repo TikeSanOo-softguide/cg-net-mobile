@@ -30,13 +30,15 @@ class HomePlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final _ = context.locale;
 
-    return AppCard(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openDetail(context),
+      child: AppCard(
       margin: AppStyle.pagePaddingH,
       elevated: false,
       bordered: false,
       borderRadius: AppStyle.borderRadiusMd,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      onTap: () => _openDetail(context),
       child: Row(
         children: [
           Container(
@@ -81,6 +83,7 @@ class HomePlanCard extends StatelessWidget {
             color: AppColors.textMuted,
           ),
         ],
+      ),
       ),
     );
   }

@@ -20,6 +20,7 @@ import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/utils/date_time_format.dart';
 import '../../../core/utils/loading_helper.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/storage/local_prefs/local_prefs.dart';
@@ -343,6 +344,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                 speed: paid.productSpeed,
                 transactionId: paid.transactionNo,
                 occurredAt: paid.createdAt,
+                accountName: _quote?.customerName ?? '',
                 remark: note,
               )
             : PayBillResult.success(
@@ -353,6 +355,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                 speed: paid.productSpeed,
                 transactionId: paid.transactionNo,
                 occurredAt: paid.createdAt,
+                accountName: _quote?.customerName ?? '',
                 remark: note,
               );
         context.pushReplacementNamed(
@@ -646,10 +649,9 @@ class _ChoiceBlock extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: AppTheme.english(
                     fontSize: 14,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    height: 1.2,
                     color: selected ? AppColors.textPrimary : AppColors.textSecondary,
                   ),
                 ),
@@ -659,10 +661,9 @@ class _ChoiceBlock extends StatelessWidget {
                     value!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTheme.english(
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      height: 1.2,
                       color: valueMuted
                           ? AppColors.textMuted
                           : (selected ? AppColors.primary : AppColors.textPrimary),
@@ -795,7 +796,7 @@ class _OtherAccountForm extends StatelessWidget {
             Text(
               'home.pay_bill_service'.tr(),
               style: AppTheme.english(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
               ),
@@ -823,7 +824,7 @@ class _OtherAccountForm extends StatelessWidget {
               Text(
                 'home.pay_bill_favorites'.tr(),
                 style: AppTheme.english(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textMuted,
                 ),
@@ -959,7 +960,7 @@ class _FavoriteRow extends StatelessWidget {
                 Text(
                   _serviceLabel(item.serviceType),
                   style: AppTheme.english(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textMuted,
                   ),
@@ -1050,7 +1051,7 @@ class _RemarkCard extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
-      borderRadius: AppStyle.borderRadiusLg,
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1074,7 +1075,7 @@ class _RemarkCard extends StatelessWidget {
               Text(
                 'home.pay_bill_remark'.tr(),
                 style: AppTheme.english(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
@@ -1087,7 +1088,7 @@ class _RemarkCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.english(
-                    fontSize: 11,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textMuted,
                   ),
@@ -1113,7 +1114,6 @@ class _RemarkCard extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
-              height: 1.45,
             ),
             decoration: InputDecoration(
               isDense: true,
@@ -1124,10 +1124,9 @@ class _RemarkCard extends StatelessWidget {
               counterText: '',
               hintText: 'home.pay_bill_remark_placeholder'.tr(),
               hintStyle: AppTheme.english(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: AppColors.textMuted,
-                height: 1.45,
               ),
               contentPadding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
             ),
@@ -1191,7 +1190,7 @@ class _Ticket extends StatelessWidget {
       elevated: false,
       bordered: false,
       padding: EdgeInsets.zero,
-      borderRadius: AppStyle.borderRadiusLg,
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Column(
         children: [
           Padding(
@@ -1220,7 +1219,7 @@ class _Ticket extends StatelessWidget {
                     Text(
                       'topup.pts'.tr(),
                       style: AppTheme.english(
-                        fontSize: AppStyle.fontSecondary,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
                       ),
@@ -1328,19 +1327,19 @@ List<Widget> _accountLines(PayBillQuote quote) {
       : quote.productName;
   return [
     _line('home.pay_bill_service'.tr(), quote.serviceType),
-    _line('home.pay_bill_account'.tr(), quote.account),
-    _line('home.pay_bill_name'.tr(), quote.customerName),
+    _line('home.pay_bill_account_number'.tr(), quote.account),
+    _line('home.pay_bill_account_name'.tr(), quote.customerName),
     _line('home.pay_bill_plan'.tr(), plan),
     _line('home.pay_bill_speed'.tr(), quote.productSpeed),
     _line('home.pay_bill_duration'.tr(), quote.duration),
-    _line('home.pay_bill_end_time'.tr(), quote.endTime),
+    _line('home.pay_bill_end_time'.tr(), formatReceiptDateTimeText(quote.endTime)),
   ];
 }
 
 Widget _line(String label, String value, {bool emphasize = false}) {
   final shown = value.trim().isEmpty ? '—' : value.trim();
   return Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.only(bottom: 14),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [

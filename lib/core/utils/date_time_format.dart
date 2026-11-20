@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 final _dateTimeDisplay = DateFormat('dd/MM/yyyy hh:mm a');
+final _receiptDateTime = DateFormat('d MMM yyyy, hh:mm a', 'en');
 
 final _dateOnlyPattern = RegExp(r'^\d{4}[-/]\d{2}[-/]\d{2}$');
 final _dateTimePrefixPattern = RegExp(r'^\d{4}-\d{2}-\d{2}[T ]');
@@ -66,4 +67,17 @@ String formatDateTimeOf(DateTime? value, {bool isUTC = false}) {
   if (value == null) return '—';
   final displayDate = isUTC ? value.toUtc() : value;
   return _dateTimeDisplay.format(displayDate);
+}
+
+String formatReceiptDateTime(DateTime? value) {
+  if (value == null) return '—';
+  return _receiptDateTime.format(value.toLocal());
+}
+
+String formatReceiptDateTimeText(String? value) {
+  final trimmed = value?.trim() ?? '';
+  if (trimmed.isEmpty) return '—';
+  final date = DateTime.tryParse(trimmed.replaceFirst(' ', 'T'));
+  if (date == null) return trimmed;
+  return formatReceiptDateTime(date);
 }

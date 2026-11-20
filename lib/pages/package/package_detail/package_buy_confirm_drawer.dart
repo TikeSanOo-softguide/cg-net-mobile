@@ -108,27 +108,41 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            _InfoRow(
-              label: 'package.confirm_package'.tr(),
-              value: packageTitle,
-            ),
-            const SizedBox(height: 12),
-            _InfoRow(
-              label: 'package.internet_speed'.tr(),
-              value: speedLabel,
-            ),
-            const SizedBox(height: 12),
-            _InfoRow(
-              label: 'package.price'.tr(),
-              value: priceLabel,
-            ),
-            if (periodLabel.trim().isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _InfoRow(
-                label: 'package.month_label'.tr(),
-                value: periodLabel.trim(),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                child: Column(
+                  children: [
+                    _InfoRow(
+                      label: 'package.package_name'.tr(),
+                      value: packageTitle,
+                    ),
+                    const SizedBox(height: 14),
+                    _InfoRow(
+                      label: 'package.internet_speed'.tr(),
+                      value: speedLabel,
+                    ),
+                    const SizedBox(height: 14),
+                    _InfoRow(
+                      label: 'package.detail_duration'.tr(),
+                      value: periodLabel.trim().isEmpty
+                          ? '—'
+                          : periodLabel.trim(),
+                    ),
+                    const SizedBox(height: 14),
+                    _InfoRow(
+                      label: 'package.price'.tr(),
+                      value: priceLabel,
+                      valueColor: AppColors.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: AppStyle.spaceXl),
             AppButton(
               label: 'package.confirm_buy'.tr(),
@@ -167,10 +181,15 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.valueColor = AppColors.textPrimary,
+  });
 
   final String label;
   final String value;
+  final Color valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +218,7 @@ class _InfoRow extends StatelessWidget {
             style: AppTheme.english(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: valueColor,
               height: 1.5,
               letterSpacing: 0,
             ),

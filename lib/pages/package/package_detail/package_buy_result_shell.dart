@@ -16,8 +16,15 @@ const _successGreen = Color(0xFF3D7A12);
 const _successSoft = Color(0xFFE8F5DC);
 const _failureRed = Color(0xFFD90000);
 const _failureSoft = Color(0xFFFCE6E6);
-const _successIconAsset = 'assets/images/dialogs/success.png';
+const _successIconAsset = 'assets/images/dialogs/check.png';
 const _failureIconAsset = 'assets/images/dialogs/failure.png';
+
+String _speedLabel(String? raw) {
+  final text = raw?.trim() ?? '';
+  if (text.isEmpty) return '—';
+  if (text.toLowerCase().contains('mbps')) return text;
+  return '$text Mbps';
+}
 
 class PackageBuyResultShell extends StatelessWidget {
   const PackageBuyResultShell({
@@ -54,27 +61,55 @@ class PackageBuyResultShell extends StatelessWidget {
           result.errorBody,
           fallbackKey: result.errorBodyKey ?? 'package.result_failure_body',
         );
-    final statusLabel = _isSuccess
-        ? 'package.status_completed'.tr()
-        : 'package.status_failed'.tr();
-
-    final when = formatDateTimeOf(result.occurredAt);
+    final when = formatReceiptDateTime(result.occurredAt);
     final priceLabel =
         '${NumberFormat('#,##0').format(result.pricePoints)} ${'topup.pts'.tr()}';
+    final statusTitle = 'package.detail_status'.tr();
+    final transactionId = result.transactionId.trim();
+    final packageName = result.packageTitle.trim();
+    final duration = result.duration?.trim() ?? '';
 
     final detailRows = <(String, String)>[
       ('package.detail_type'.tr(), 'package.type_purchase'.tr()),
-      ('package.confirm_package'.tr(), result.packageTitle),
-      if (result.speedMbps != null && result.speedMbps!.isNotEmpty)
-        (
-          'package.internet_speed'.tr(),
-          '${result.speedMbps} Mbps',
-        ),
-      ('package.price'.tr(), priceLabel),
-      ('package.detail_txn'.tr(), result.transactionId),
       ('package.detail_datetime'.tr(), when),
-      ('package.detail_status'.tr(), statusLabel),
+      (
+        'package.detail_txn'.tr(),
+        transactionId.isEmpty ? '—' : transactionId,
+      ),
+      (
+        'package.package_name'.tr(),
+        packageName.isEmpty ? '—' : packageName,
+      ),
+      ('package.internet_speed'.tr(), _speedLabel(result.speedMbps)),
+      (
+        'package.detail_duration'.tr(),
+        duration.isEmpty ? '—' : duration,
+      ),
+      ('package.price'.tr(), priceLabel),
     ];
+
+    final statusIcon = _isSuccess
+        ? Image.asset(
+            _successIconAsset,
+            width: 43,
+            height: 43,
+            fit: BoxFit.contain,
+          )
+        : Container(
+            width: 43,
+            height: 43,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Image.asset(
+              _failureIconAsset,
+              width: 28,
+              height: 28,
+              fit: BoxFit.contain,
+            ),
+          );
 
     return AppCurvedScaffold(
       title: Text('package.detail_page_title'.tr()),
@@ -85,100 +120,101 @@ class PackageBuyResultShell extends StatelessWidget {
         child: AppCard(
           elevated: false,
           bordered: false,
-          borderRadius: AppStyle.borderRadiusLg,
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          borderRadius: AppStyle.borderRadiusListCard,
+          padding: EdgeInsets.zero,
           child: Column(
             children: [
-              Container(
-                width: 43,
-                height: 43,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Image.asset(
-                  _isSuccess ? _successIconAsset : _failureIconAsset,
-                  width: 28,
-                  height: 28,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                titleText,
-                textAlign: TextAlign.center,
-                style: AppTheme.english(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: titleColor,
-                  height: 1.25,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              if (_isSuccess) ...[
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+                child: Column(
                   children: [
+                    statusIcon,
+                    const SizedBox(height: 16),
                     Text(
-                      '-${NumberFormat('#,##0').format(result.pricePoints)}',
+                      titleText,
+                      textAlign: TextAlign.center,
                       style: AppTheme.english(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                        height: AppTheme.lineHeightMyanmarSafe,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor,
+                        height: 1.25,
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'topup.pts'.tr(),
-                      style: AppTheme.english(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                        height: AppTheme.lineHeightMyanmarSafe,
+                    if (_isSuccess && result.pricePoints > 0) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '-${NumberFormat('#,##0').format(result.pricePoints)}',
+                            style: AppTheme.english(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                              height: 1.0,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'topup.pts'.tr(),
+                            style: AppTheme.english(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
+                    if (!_isSuccess) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        bodyText,
+                        textAlign: TextAlign.center,
+                        style: AppTheme.english(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 40),
-              ] else ...[
-                const SizedBox(height: 6),
-                Text(
-                  bodyText,
-                  textAlign: TextAlign.center,
-                  style: AppTheme.english(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
-              _DetailRows(
-                rows: detailRows,
-                statusColor: titleColor,
-                statusBackground: _isSuccess ? _successSoft : _failureSoft,
               ),
-              if (showPrimary) ...[
-                const SizedBox(height: 40),
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 150),
-                    child: AppButton(
-                      label: primaryLabel,
-                      onPressed: onPrimary,
-                      height: 38,
-                      fontSize: 13,
+              const _TicketPerforation(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                child: Column(
+                  children: [
+                    _DetailRows(
+                      rows: detailRows,
+                      statusTitle: statusTitle,
+                      statusColor: titleColor,
+                      statusBackground:
+                          _isSuccess ? _successSoft : _failureSoft,
                     ),
-                  ),
+                    if (showPrimary) ...[
+                      const SizedBox(height: 40),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 150),
+                          child: AppButton(
+                            label: primaryLabel,
+                            onPressed: onPrimary,
+                            height: 38,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -187,14 +223,97 @@ class PackageBuyResultShell extends StatelessWidget {
   }
 }
 
+class _TicketPerforation extends StatelessWidget {
+  const _TicketPerforation();
+
+  static const _notch = 8.0;
+  static const _gap = 16.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: _gap),
+      child: SizedBox(
+        height: _notch * 2,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            const Positioned.fill(
+              child: CustomPaint(painter: _DashLinePainter()),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Transform.translate(
+                offset: const Offset(-_notch, 0),
+                child: const _TicketNotch(),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Transform.translate(
+                offset: const Offset(_notch, 0),
+                child: const _TicketNotch(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TicketNotch extends StatelessWidget {
+  const _TicketNotch();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: _TicketPerforation._notch * 2,
+      height: _TicketPerforation._notch * 2,
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _DashLinePainter extends CustomPainter {
+  const _DashLinePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.paperBorder
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    const dash = 4.0;
+    const gap = 3.0;
+    const inset = 18.0;
+    var x = inset;
+    final y = size.height / 2;
+    final end = size.width - inset;
+    while (x < end) {
+      final next = (x + dash).clamp(x, end);
+      canvas.drawLine(Offset(x, y), Offset(next, y), paint);
+      x += dash + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _DetailRows extends StatelessWidget {
   const _DetailRows({
     required this.rows,
+    required this.statusTitle,
     required this.statusColor,
     required this.statusBackground,
   });
 
   final List<(String, String)> rows;
+  final String statusTitle;
   final Color statusColor;
   final Color statusBackground;
 
@@ -203,57 +322,64 @@ class _DetailRows extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 5,
-                child: Text(
-                  rows[i].$1,
-                  style: AppTheme.english(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textMuted,
+          if (i > 0) const SizedBox(height: 14),
+          Builder(
+            builder: (context) {
+              final isStatus = rows[i].$1 == statusTitle;
+              return Row(
+                crossAxisAlignment: isStatus
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Text(
+                      rows[i].$1,
+                      style: AppTheme.english(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 6,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: i == rows.length - 1
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusBackground,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 6,
+                    child: isStatus
+                        ? Align(
+                            alignment: Alignment.centerRight,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusBackground,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                rows[i].$2,
+                                style: AppTheme.english(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Text(
                             rows[i].$2,
+                            textAlign: TextAlign.right,
                             style: AppTheme.english(
-                              fontSize: 12,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: statusColor,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        )
-                      : Text(
-                          rows[i].$2,
-                          textAlign: TextAlign.right,
-                          style: AppTheme.english(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ],

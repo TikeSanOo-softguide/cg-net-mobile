@@ -278,7 +278,9 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
                   _PackageDetailCard(
-                    name: LuxuryPackageCard.planName(info.planIndex),
+                    name: info.lineLabel.trim().isNotEmpty
+                        ? info.lineLabel.trim()
+                        : info.title,
                     priceLabel: info.priceLabel,
                     periodLabel: info.periodLabel,
                     speedLabel: info.speedMbps.toLowerCase().contains('mbps')
@@ -403,7 +405,6 @@ class _PackageDetailCard extends StatelessWidget {
     return Material(
       color: AppColors.surface,
       elevation: 0,
-      shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
@@ -425,58 +426,83 @@ class _PackageDetailCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1C1C1E),
-                height: 1.25,
-                letterSpacing: 0.2,
-              ),
-            ),
-            const SizedBox(height: 8),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Flexible(
-                  child: Text(
-                    priceLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.english(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: accent,
-                      height: 1,
-                      letterSpacing: -0.6,
-                    ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.english(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: accent,
+                                height: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (period.isNotEmpty)
-                  Text(
-                    period,
-                    style: AppTheme.english(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: accent,
-                      height: 1,
+                const SizedBox(width: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      priceLabel,
+                      maxLines: 1,
+                      style: AppTheme.english(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: accent,
+                        height: 1,
+                      ),
                     ),
-                  ),
-                if (speed.value.isNotEmpty) ...[
-                  const Spacer(),
-                  const SizedBox(width: 12),
+                    if (period.isNotEmpty)
+                      Text(
+                        period,
+                        maxLines: 1,
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: accent,
+                          height: 1,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            if (speed.value.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
                   Text(
                     speed.value,
                     style: AppTheme.english(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1C1C1E),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: accent,
                       height: 1,
-                      letterSpacing: -0.3,
                     ),
                   ),
                   if (speed.unit.isNotEmpty) ...[
@@ -485,15 +511,15 @@ class _PackageDetailCard extends StatelessWidget {
                       speed.unit,
                       style: AppTheme.english(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: accent,
                         height: 1,
                       ),
                     ),
                   ],
                 ],
-              ],
-            ),
+              ),
+            ],
             const SizedBox(height: 18),
             Text(
               'package.detail_about'.tr(),
@@ -531,28 +557,25 @@ class _PackageDetailCard extends StatelessWidget {
             for (var i = 0; i < _featureKeys.length; i++) ...[
               if (i > 0) const SizedBox(height: 6),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: accent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const SizedBox(width: 4, height: 4),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       _featureKeys[i].tr(),
                       style: AppTheme.english(
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textMuted,
-                        height: 1.5,
-                        letterSpacing: 0,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF6B7280),
+                        height: 1.2,
                       ),
                     ),
                   ),

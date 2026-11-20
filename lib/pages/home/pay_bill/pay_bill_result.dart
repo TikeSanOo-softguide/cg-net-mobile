@@ -10,6 +10,7 @@ class PayBillResult {
     required this.speed,
     required this.transactionId,
     this.occurredAt,
+    this.accountName = '',
     String? remark,
   }) : remark = remark ?? '';
 
@@ -21,6 +22,7 @@ class PayBillResult {
   final String speed;
   final String transactionId;
   final DateTime? occurredAt;
+  final String accountName;
   final String remark;
 
   factory PayBillResult.success({
@@ -31,6 +33,7 @@ class PayBillResult {
     required String speed,
     required String transactionId,
     DateTime? occurredAt,
+    String accountName = '',
     String remark = '',
   }) {
     return PayBillResult(
@@ -42,6 +45,7 @@ class PayBillResult {
       speed: speed,
       transactionId: transactionId,
       occurredAt: occurredAt,
+      accountName: accountName,
       remark: remark,
     );
   }
@@ -54,6 +58,7 @@ class PayBillResult {
     required String speed,
     required String transactionId,
     DateTime? occurredAt,
+    String accountName = '',
     String remark = '',
   }) {
     return PayBillResult(
@@ -65,6 +70,7 @@ class PayBillResult {
       speed: speed,
       transactionId: transactionId,
       occurredAt: occurredAt,
+      accountName: accountName,
       remark: remark,
     );
   }

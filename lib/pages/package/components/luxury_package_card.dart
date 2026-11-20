@@ -98,13 +98,11 @@ class LuxuryPackageCard extends StatelessWidget {
       child: Material(
         color: AppColors.surface,
         elevation: 0,
-        shadowColor: Colors.transparent,
         borderRadius: BorderRadius.circular(radius),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: onTap ?? onBuy,
-          splashColor: accent.withValues(alpha: 0.08),
-          highlightColor: accent.withValues(alpha: 0.04),
           child: Column(
             mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
             children: [
@@ -173,25 +171,38 @@ class _CardBody extends StatelessWidget {
             compact ? 14 : 20,
             facts.isEmpty ? 18 : (compact ? 24 : 30),
             compact ? 14 : 20,
-            facts.isEmpty ? 22 : (compact ? 36 : 48),
+            facts.isEmpty ? 22 : (compact ? 30 : 42),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.english(
-                  fontSize: compact ? 13 : 18,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1A28),
-                  height: 1.15,
-                  letterSpacing: 0.2,
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    child: Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.english(
+                        fontSize: compact ? 12 : 16,
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                        height: 1,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(height: compact ? 6 : 10),
+              SizedBox(height: compact ? 10 : 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -237,20 +248,35 @@ class _CardBody extends StatelessWidget {
                 ),
               ],
               if (facts.isNotEmpty) ...[
-              SizedBox(height: compact ? 12 : 16),
+              SizedBox(height: compact ? 20 : 24),
               for (var i = 0; i < facts.length; i++) ...[
-                if (i > 0) SizedBox(height: compact ? 4 : 8),
-                Text(
-                  facts[i],
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    fontSize: compact ? 12 : 14,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6B7280),
-                    height: 1.2,
-                  ),
+                if (i > 0) const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        facts[i],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.english(
+                          fontSize: compact ? 12 : 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF6B7280),
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               ],
@@ -266,7 +292,7 @@ class _CardBody extends StatelessWidget {
               child: Text(
                 'home.buy_now'.tr().toUpperCase(),
                 style: AppTheme.english(
-                  fontSize: compact ? 9 : 11,
+                  fontSize: compact ? 11 : 12,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: 0.7,
@@ -295,11 +321,10 @@ class _SpeedBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: accent.withValues(alpha: 0.28)),
+    return CustomPaint(
+      painter: _DashedRRectPainter(
+        color: accent.withValues(alpha: 0.4),
+        radius: 6,
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -314,20 +339,19 @@ class _SpeedBadge extends StatelessWidget {
             Text(
               value,
               style: AppTheme.english(
-                fontSize: compact ? 20 : 26,
+                fontSize: compact ? 22 : 28,
                 fontWeight: FontWeight.w800,
                 color: accent,
                 height: 1,
-                letterSpacing: -0.6,
               ),
             ),
             const SizedBox(width: 4),
             Text(
               unit,
               style: AppTheme.english(
-                fontSize: compact ? 11 : 13,
+                fontSize: compact ? 12 : 14,
                 fontWeight: FontWeight.w700,
-                color: accent.withValues(alpha: 0.75),
+                color: accent,
                 height: 1,
               ),
             ),
@@ -335,6 +359,49 @@ class _SpeedBadge extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  const _DashedRRectPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          (Offset.zero & size).deflate(0.5),
+          Radius.circular(radius - 0.5),
+        ),
+      );
+    canvas.drawPath(_dashed(path), paint);
+  }
+
+  Path _dashed(Path source) {
+    const dash = 4.0;
+    const gap = 3.0;
+    final result = Path();
+    for (final metric in source.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = (distance + dash).clamp(0.0, metric.length);
+        result.addPath(metric.extractPath(distance, end), Offset.zero);
+        distance = end + gap;
+      }
+    }
+    return result;
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.radius != radius;
   }
 }
 
