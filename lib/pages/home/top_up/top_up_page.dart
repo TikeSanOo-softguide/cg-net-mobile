@@ -54,7 +54,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   bool get _canCheckSerial => _serial.text.trim().length == _serialLength;
 
   bool get _canSubmit =>
-      _account.text.trim().length >= 10 &&
+      _account.text.trim().length >= 9 &&
       _account.text.trim().length <= _accountMaxLength &&
       _pin.text.trim().isNotEmpty;
 
