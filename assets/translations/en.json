@@ -376,7 +376,7 @@
     "account_required": "Account number is required",
     "account_too_long": "Account number must not exceed 15 digits.",
     "phone_invalid_title": "Invalid Phone Number",
-    "phone_invalid_body": "Please enter a valid phone number and try again.",
+    "phone_invalid_body": "Please enter a valid phone number and try again",
     "pin_label": "Pin Number",
     "pin_hint": "Enter 16-digit PIN",
     "pin_required": "PIN is required",

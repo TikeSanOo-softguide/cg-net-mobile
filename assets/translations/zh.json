@@ -374,7 +374,7 @@
     "account_required": "请填写账号",
     "account_too_long": "账号不能超过 15 位数字。",
     "phone_invalid_title": "手机号码无效",
-    "phone_invalid_body": "请输入有效的手机号码，然后重试。",
+    "phone_invalid_body": "请输入有效的手机号码，然后重试",
     "pin_label": "PIN 码",
     "pin_hint": "请输入 16 位 PIN",
     "pin_required": "请填写 PIN",
