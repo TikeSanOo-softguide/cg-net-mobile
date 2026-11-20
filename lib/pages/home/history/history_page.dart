@@ -215,12 +215,32 @@ class _HistoryList extends ConsumerWidget {
     );
   }
 
-  Widget _emptyState() => EmptyState(
-        iconAsset: QuickActionIconChip.historyAsset,
-        iconBackground: QuickActionIconChip.historySoft,
-        title: 'history.empty_title'.tr(),
-        message: 'history.empty_body'.tr(),
-      );
+  Widget _emptyState() {
+    final (asset, background) = switch (type) {
+      'topup' => (
+          QuickActionIconChip.topUpAsset,
+          QuickActionIconChip.topUpSoft,
+        ),
+      'wifi_package' => (
+          QuickActionIconChip.packageAsset,
+          QuickActionIconChip.packageSoft,
+        ),
+      'ftth_bill' => (
+          QuickActionIconChip.billAsset,
+          QuickActionIconChip.billSoft,
+        ),
+      _ => (
+          QuickActionIconChip.historyAsset,
+          QuickActionIconChip.historySoft,
+        ),
+    };
+    return EmptyState(
+      iconAsset: asset,
+      iconBackground: background,
+      title: 'history.empty_title'.tr(),
+      message: 'history.empty_body'.tr(),
+    );
+  }
 }
 
 bool _canOpen(HistoryModel item) {
@@ -235,9 +255,8 @@ bool _canOpen(HistoryModel item) {
   };
 }
 
-String? _speedMbps(String raw) {
-  final match = RegExp(r'^(\d+(?:\.\d+)?)').firstMatch(raw.trim());
-  return match?.group(1);
+String _packageDuration(String cycle, String unit) {
+  return [cycle.trim(), unit.trim()].where((part) => part.isNotEmpty).join();
 }
 
 Future<void> _openDetail(
@@ -305,7 +324,8 @@ Future<void> _openDetail(
             pricePoints: amount,
             autoRenew: false,
             transactionId: transactionId,
-            speedMbps: _speedMbps(detail.productSpeed),
+            speedMbps: detail.productSpeed,
+            duration: _packageDuration(detail.monthCycle, detail.monthCycleUnit),
             occurredAt: detail.createdAt,
             errorTitleKey: 'package.result_failure_title',
             errorBodyKey: 'package.result_failure_body',
@@ -316,7 +336,8 @@ Future<void> _openDetail(
             pricePoints: amount,
             autoRenew: false,
             transactionId: transactionId,
-            speedMbps: _speedMbps(detail.productSpeed),
+            speedMbps: detail.productSpeed,
+            duration: _packageDuration(detail.monthCycle, detail.monthCycleUnit),
             occurredAt: detail.createdAt,
           );
     await context.pushNamed(
@@ -372,14 +393,14 @@ class _HistoryRow extends StatelessWidget {
 
   String get _asset => switch (_type) {
         'topup' => QuickActionIconChip.topUpAsset,
-        'wifi_package' => 'assets/images/services/subscription.png',
+        'wifi_package' => QuickActionIconChip.packageAsset,
         'ftth_bill' || 'cg_bill' => QuickActionIconChip.billAsset,
         _ => QuickActionIconChip.historyAsset,
       };
 
   Color get _iconBackground => switch (_type) {
         'topup' => QuickActionIconChip.topUpSoft,
-        'wifi_package' => AppColors.primaryLight,
+        'wifi_package' => QuickActionIconChip.packageSoft,
         'ftth_bill' || 'cg_bill' => QuickActionIconChip.billSoft,
         _ => QuickActionIconChip.historySoft,
       };
@@ -430,7 +451,6 @@ class _HistoryRow extends StatelessWidget {
             background: _iconBackground,
             size: 38,
             iconSize: 22,
-            tint: _type == 'wifi_package' ? AppColors.primary : null,
           ),
           const SizedBox(width: 12),
           Expanded(

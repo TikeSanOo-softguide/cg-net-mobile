@@ -18,6 +18,8 @@ class HistoryModel {
     this.remark = '',
     this.productName = '',
     this.productSpeed = '',
+    this.monthCycle = '',
+    this.monthCycleUnit = '',
     this.productId = '',
     this.serialMasked = '',
   });
@@ -38,6 +40,8 @@ class HistoryModel {
   final String remark;
   final String productName;
   final String productSpeed;
+  final String monthCycle;
+  final String monthCycleUnit;
   final String productId;
   final String serialMasked;
 
@@ -89,6 +93,8 @@ class HistoryModel {
       remark: remark,
       productName: packageName,
       productSpeed: productSpeed,
+      monthCycle: packageMap['month_cycle']?.toString().trim() ?? '',
+      monthCycleUnit: packageMap['month_cycle_unit']?.toString().trim() ?? '',
       productId: packageMap['product_id']?.toString().trim() ?? '',
       serialMasked: json['serial_masked']?.toString().trim() ?? '',
     );

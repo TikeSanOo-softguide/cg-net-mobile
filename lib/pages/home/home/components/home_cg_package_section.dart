@@ -23,7 +23,7 @@ class HomeCgPackageSection extends StatelessWidget {
 class _HomePackageStrip extends ConsumerWidget {
   const _HomePackageStrip();
 
-  static const _cardHeight = 140.0;
+  static const _cardHeight = 148.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,7 +89,7 @@ class _HomePackageStrip extends ConsumerWidget {
                   : const BouncingScrollPhysics(),
               clipBehavior: Clip.none,
               itemCount: showSkeleton ? 2 : items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
                 return SizedBox(
                   width: cardWidth,
@@ -132,6 +132,8 @@ class _WidePlanCard extends StatelessWidget {
     ].join();
     final period =
         cycle.isEmpty ? '' : (cycle.startsWith('/') ? cycle : '/$cycle');
+    final line = model.currency.trim();
+    final productLine = line.isNotEmpty ? line : model.name.trim();
     void open() {
       context.pushNamed(
         RouteNames.packageDetail,
@@ -144,13 +146,10 @@ class _WidePlanCard extends StatelessWidget {
       elevation: 0,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: open,
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Stack(
+        child: Stack(
             children: [
               Positioned.fill(
                 child: IgnorePointer(
@@ -160,7 +159,7 @@ class _WidePlanCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 26),
+                padding: const EdgeInsets.only(bottom: 18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -170,17 +169,34 @@ class _WidePlanCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(
-                              LuxuryPackageCard.planName(index),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.english(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1C1C1E),
-                                height: 1.2,
-                                letterSpacing: 0.2,
-                              ),
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: accent.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      child: Text(
+                                        productLine,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTheme.english(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: accent,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -217,7 +233,7 @@ class _WidePlanCard extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 72, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 72, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -232,11 +248,10 @@ class _WidePlanCard extends StatelessWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: AppTheme.english(
-                                      fontSize: 26,
+                                      fontSize: 28,
                                       fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF1C1C1E),
+                                      color: accent,
                                       height: 1,
-                                      letterSpacing: -0.8,
                                     ),
                                   ),
                                 ),
@@ -245,11 +260,10 @@ class _WidePlanCard extends StatelessWidget {
                                   Text(
                                     speedUnit,
                                     style: AppTheme.english(
-                                      fontSize: 13,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                       color: accent,
                                       height: 1,
-                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ],
@@ -257,26 +271,41 @@ class _WidePlanCard extends StatelessWidget {
                             ),
                           Padding(
                             padding: EdgeInsets.only(
-                              top: speedValue.isNotEmpty ? 6 : 0,
+                              top: speedValue.isNotEmpty ? 15 : 0,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 for (var i = 0; i < 2; i++) ...[
-                                  if (i > 0) const SizedBox(height: 3),
-                                  Text(
-                                    i == 0
-                                        ? 'package.feature_unlimited'.tr()
-                                        : 'package.feature_speed'.tr(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTheme.english(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF6B7280),
-                                      height: 1.2,
-                                      letterSpacing: 0.15,
-                                    ),
+                                  if (i > 0) const SizedBox(height: 6),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: accent,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          i == 0
+                                              ? 'package.feature_unlimited'.tr()
+                                              : 'package.feature_speed'.tr(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTheme.english(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF6B7280),
+                                            height: 1.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ],
@@ -296,7 +325,7 @@ class _WidePlanCard extends StatelessWidget {
                   child: Text(
                     'home.buy_now'.tr().toUpperCase(),
                     style: AppTheme.english(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: 0.7,
@@ -307,7 +336,6 @@ class _WidePlanCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
       ),
     );
   }
