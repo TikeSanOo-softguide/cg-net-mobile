@@ -315,7 +315,7 @@ class _InstallationApplicationFormPageState
     );
     final barTitle = isEditing
         ? 'installationApplication.edit_request'.tr()
-        : 'installationApplication.new_installation'.tr();
+        : 'installationApplication.new_request'.tr();
     final product = _matchedProduct;
     final submitting =
         ref.watch(installationApplicationControllerProvider).isSubmitting;
