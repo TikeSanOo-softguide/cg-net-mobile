@@ -639,9 +639,7 @@ class _ChoiceBlock extends StatelessWidget {
           _ChoiceIcon(asset: asset),
           const SizedBox(width: 10),
           Expanded(
-            child: SizedBox(
-              height: 40,
-              child: Column(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -671,7 +669,6 @@ class _ChoiceBlock extends StatelessWidget {
                   ),
                 ],
               ],
-            ),
             ),
           ),
           if (showMark) ...[
