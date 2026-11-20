@@ -23,7 +23,7 @@ class HomeCgPackageSection extends StatelessWidget {
 class _HomePackageStrip extends ConsumerWidget {
   const _HomePackageStrip();
 
-  static const _cardHeight = 148.0;
+  static const _cardHeight = 152.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
