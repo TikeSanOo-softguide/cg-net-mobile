@@ -11,6 +11,7 @@ class PackageBuyResult {
     required this.transactionId,
     required this.occurredAt,
     this.speedMbps,
+    this.duration,
     this.errorTitleKey,
     this.errorBodyKey,
     this.errorTitle,
@@ -25,6 +26,7 @@ class PackageBuyResult {
   final String transactionId;
   final DateTime occurredAt;
   final String? speedMbps;
+  final String? duration;
   final String? errorTitleKey;
   final String? errorBodyKey;
   final String? errorTitle;
@@ -37,6 +39,7 @@ class PackageBuyResult {
     required bool autoRenew,
     required String transactionId,
     String? speedMbps,
+    String? duration,
     DateTime? occurredAt,
   }) {
     return PackageBuyResult(
@@ -47,6 +50,7 @@ class PackageBuyResult {
       autoRenew: autoRenew,
       transactionId: transactionId,
       speedMbps: speedMbps,
+      duration: duration,
       occurredAt: occurredAt ?? DateTime.now(),
     );
   }
@@ -58,6 +62,7 @@ class PackageBuyResult {
     required bool autoRenew,
     required String transactionId,
     String? speedMbps,
+    String? duration,
     DateTime? occurredAt,
     String? errorTitleKey,
     String? errorBodyKey,
@@ -72,6 +77,7 @@ class PackageBuyResult {
       autoRenew: autoRenew,
       transactionId: transactionId,
       speedMbps: speedMbps,
+      duration: duration,
       occurredAt: occurredAt ?? DateTime.now(),
       errorTitleKey: errorTitleKey,
       errorBodyKey: errorBodyKey,

@@ -53,29 +53,29 @@ class PayBillResultShell extends StatelessWidget {
     final bodyText = bodyKey.tr();
     final occurredAt = result.occurredAt;
     final account = result.account.trim();
-    final product = result.productLabel.trim();
-    final speed = result.speed.trim();
     final transactionId = result.transactionId.trim();
     final remark = result.remark.trim();
 
     final statusTitle = 'home.pay_bill_status'.tr();
     final detailRows = <(String, String)>[
-      if (account.isNotEmpty)
-        ('home.pay_bill_account_number'.tr(), account),
-      if (occurredAt != null)
-        (
-          'home.pay_bill_detail_datetime'.tr(),
-          formatDateTimeOf(occurredAt),
-        ),
-      if (transactionId.isNotEmpty)
-        ('home.pay_bill_transaction'.tr(), transactionId),
-      if (product.isNotEmpty) ('home.pay_bill_product'.tr(), product),
-      if (speed.isNotEmpty) ('home.pay_bill_speed'.tr(), speed),
-      if (result.amountPoints > 0)
-        (
-          'home.pay_bill_amount'.tr(),
-          '-${NumberFormat('#,##0').format(result.amountPoints)} ${'topup.pts'.tr()}',
-        ),
+      (
+        'home.pay_bill_account_number'.tr(),
+        account.isEmpty ? '—' : account,
+      ),
+      (
+        'home.pay_bill_transaction_date'.tr(),
+        formatReceiptDateTime(occurredAt),
+      ),
+      (
+        'home.pay_bill_transaction_no'.tr(),
+        transactionId.isEmpty ? '—' : transactionId,
+      ),
+      (
+        'home.pay_bill_amount'.tr(),
+        result.amountPoints > 0
+            ? '${NumberFormat('#,##0').format(result.amountPoints)} ${'topup.pts'.tr()}'
+            : '—',
+      ),
       (statusTitle, statusLabel),
       (
         'home.pay_bill_remark'.tr(),
@@ -114,7 +114,7 @@ class PayBillResultShell extends StatelessWidget {
         child: AppCard(
           elevated: false,
           bordered: false,
-          borderRadius: AppStyle.borderRadiusMd,
+          borderRadius: AppStyle.borderRadiusListCard,
           padding: EdgeInsets.zero,
           child: Column(
             children: [
@@ -171,10 +171,9 @@ class PayBillResultShell extends StatelessWidget {
                         bodyText,
                         textAlign: TextAlign.center,
                         style: AppTheme.english(
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: FontWeight.w400,
                           color: AppColors.textMuted,
-                          height: 1.45,
                         ),
                       ),
                     ],
@@ -317,11 +316,10 @@ class _DetailRows extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
+          if (i > 0) const SizedBox(height: 14),
           Builder(
             builder: (context) {
               final isStatus = rows[i].$1 == statusTitle;
-              const lineHeight = 1.35;
               return Row(
                 crossAxisAlignment: isStatus
                     ? CrossAxisAlignment.center
@@ -335,7 +333,6 @@ class _DetailRows extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textMuted,
-                        height: lineHeight,
                       ),
                     ),
                   ),
@@ -357,7 +354,7 @@ class _DetailRows extends StatelessWidget {
                               child: Text(
                                 rows[i].$2,
                                 style: AppTheme.english(
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: statusColor,
                                 ),
@@ -371,7 +368,6 @@ class _DetailRows extends StatelessWidget {
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
-                              height: lineHeight,
                             ),
                           ),
                   ),
