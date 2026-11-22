@@ -12,7 +12,7 @@ import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/activity_skeletons.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
@@ -152,7 +152,7 @@ class _HistoryList extends ConsumerWidget {
       child: cached != null
           ? _historyItems(context, ref, cached)
           : history.isLoading
-              ? const ShimmerLoading(itemCount: 5, itemHeight: 88)
+              ? const HistoryListSkeleton()
               : _pullableFill(
                   isUnreachableError(history.error)
                       ? OfflineEmptyState(

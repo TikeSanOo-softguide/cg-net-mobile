@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../components/app_card/app_card.dart';
-import '../../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../../components/page_skeletons/home_skeletons.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -76,11 +76,7 @@ class HomeSpecialOfferSection extends ConsumerWidget {
                   width: layout.cardWidth,
                   height: layout.listHeight,
                   child: showSkeleton
-                      ? ShimmerBox(
-                          width: layout.cardWidth,
-                          height: layout.listHeight,
-                          borderRadius: 12,
-                        )
+                      ? HomeOfferCardSkeleton(imageHeight: layout.imageHeight)
                       : _OfferCard(
                           item: items[index],
                           locale: locale,

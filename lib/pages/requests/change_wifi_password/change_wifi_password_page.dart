@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/account_number_row/account_number_row.dart';
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/request_ticket_skeleton.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
@@ -278,7 +278,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
     List<ChangePasswordRequestModel> requests,
   ) {
     if (state.status == ChangeWifiPasswordStatus.loading && requests.isEmpty) {
-      return const CardListShimmer();
+      return const RequestTicketListSkeleton();
     }
 
     if (state.status == ChangeWifiPasswordStatus.error && requests.isEmpty) {

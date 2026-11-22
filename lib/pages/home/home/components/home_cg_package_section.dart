@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../../components/page_skeletons/home_skeletons.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -94,11 +94,7 @@ class _HomePackageStrip extends ConsumerWidget {
                 return SizedBox(
                   width: cardWidth,
                   child: showSkeleton
-                      ? ShimmerBox(
-                          width: cardWidth,
-                          height: _cardHeight,
-                          borderRadius: 8,
-                        )
+                      ? const HomePackageCardSkeleton()
                       : _WidePlanCard(model: items[index], index: index),
                 );
               },

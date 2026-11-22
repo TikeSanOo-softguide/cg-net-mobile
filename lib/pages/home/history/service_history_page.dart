@@ -9,7 +9,7 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/activity_skeletons.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
@@ -66,11 +66,7 @@ class ServiceHistoryPage extends ConsumerWidget {
       showBack: true,
       onBack: () => context.pop(),
       body: showSkeleton
-          ? const CardListShimmer(
-              itemCount: 5,
-              itemHeight: 96,
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
-            )
+          ? const ServiceHistoryListSkeleton()
           : AppRefreshIndicator(
               color: AppColors.primary,
               onRefresh: () async {

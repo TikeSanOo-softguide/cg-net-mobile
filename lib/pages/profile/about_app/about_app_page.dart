@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/about_skeleton.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/network/api_error_text.dart';
@@ -36,7 +36,7 @@ class AboutAppPage extends ConsumerWidget {
             const _AboutLogo(),
             const SizedBox(height: 20),
             appVersion.when(
-              loading: () => const ShimmerLoading(itemCount: 2, itemHeight: 250),
+              loading: () => const AboutVersionSkeleton(),
               error: (error, _) => _LoadError(
                 message: error is ApiException
                     ? apiErrorOrFallback(error)

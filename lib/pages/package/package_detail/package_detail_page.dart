@@ -12,7 +12,7 @@ import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/package_skeletons.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/idempotency_key.dart';
@@ -313,18 +313,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     PackageListState state,
   ) {
     if (state.status == PackageListStatus.loading) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) => ShimmerBox(
-              width: constraints.maxWidth,
-              height: 280,
-              borderRadius: 8,
-            ),
-          ),
-        ],
-      );
+      return const PackageDetailSkeleton();
     }
     if (state.status == PackageListStatus.error) {
       if (isServerUnavailableMessage(state.errorMessage)) {

@@ -11,7 +11,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/show_room_skeleton.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
 import '../../../data/show_room/show_room_repository.dart';
@@ -68,11 +68,7 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
       title: Text('home.service_show_room'.tr()),
       showBack: true,
       body: showSkeleton
-          ? const CardListShimmer(
-              itemHeight: 168,
-              separator: 12,
-              borderRadius: 12,
-            )
+          ? const ShowRoomListSkeleton()
           : AppRefreshIndicator(
               color: AppColors.primary,
               onRefresh: () => _loadShowRooms(retry: true),

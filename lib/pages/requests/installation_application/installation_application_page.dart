@@ -6,7 +6,7 @@ import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/request_ticket_skeleton.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
@@ -174,7 +174,7 @@ class _InstallationApplicationPageState
   Widget _buildBody(InstallationApplicationState state) {
     if (state.status == InstallationApplicationStatus.loading &&
         state.requests.isEmpty) {
-      return const CardListShimmer();
+      return const RequestTicketListSkeleton();
     }
 
     if (state.status == InstallationApplicationStatus.error &&

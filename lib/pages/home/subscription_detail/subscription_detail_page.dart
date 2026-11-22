@@ -11,7 +11,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/subscription_skeleton.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/network_recovery_controller.dart';
@@ -197,19 +197,7 @@ class _SubscriptionDetailPageState
   }
 
   Widget _loadingList() {
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: 2,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, __) => LayoutBuilder(
-        builder: (context, constraints) => ShimmerBox(
-          width: constraints.maxWidth,
-          height: 148,
-          borderRadius: 12,
-        ),
-      ),
-    );
+    return const SubscriptionListSkeleton();
   }
 
   Widget _emptyList() {

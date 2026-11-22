@@ -11,7 +11,7 @@ import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/inbox_skeleton.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/network_recovery_controller.dart';
@@ -109,7 +109,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
           ),
           Expanded(
             child: state.when(
-              loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
+              loading: () => const InboxListSkeleton(),
               error: (e, _) => _inboxPullable(
                 onRefresh: _refreshInbox,
                 child: isOfflineError(e)

@@ -11,7 +11,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_logo/app_logo.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/profile_header_skeleton.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/router/route_names/route_names.dart';
@@ -93,7 +93,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           children: [
             headerLoading
-                ? const _AccountHeaderSkeleton()
+                ? const ProfileHeaderSkeleton()
                 : AppCard(
                     elevated: false,
                     bordered: false,
@@ -247,38 +247,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AccountHeaderSkeleton extends StatelessWidget {
-  const _AccountHeaderSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppCard(
-      elevated: false,
-      bordered: false,
-      padding: EdgeInsets.all(AppStyle.spaceMd),
-      borderRadius: AppStyle.borderRadiusListCard,
-      child: Row(
-        children: [
-          ShimmerBox(width: 38, height: 38, borderRadius: 8),
-          SizedBox(width: AppStyle.spaceMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ShimmerBox(width: 88, height: 11, borderRadius: 4),
-                SizedBox(height: 6),
-                ShimmerBox(width: 140, height: 16, borderRadius: 4),
-              ],
-            ),
-          ),
-          SizedBox(width: AppStyle.spaceSm),
-          ShimmerBox(width: 32, height: 32, borderRadius: 8),
-        ],
       ),
     );
   }
