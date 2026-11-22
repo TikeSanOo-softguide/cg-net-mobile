@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../data/requests/complaint/complaint_repository.dart';
 import '../../../models/requests/complaint/complaint_model.dart';
 
@@ -48,9 +49,19 @@ class ComplaintController extends StateNotifier<ComplaintState> {
         _hasFetchedAccount && _lastFetchAccount != accountKey;
     _hasFetchedAccount = true;
     _lastFetchAccount = accountKey;
-    final showLoading =
-        accountChanged || state.status == ComplaintStatus.initial;
-    if (showLoading) {
+    final showLoading = accountChanged ||
+        state.status == ComplaintStatus.initial ||
+        (state.status == ComplaintStatus.error && state.reports.isEmpty);
+    final cached = _repository.readCachedComplaints();
+    final cachedReports =
+        cached == null ? null : _forAccount(cached, accountNumber);
+    if (showLoading && cachedReports != null) {
+      state = state.copyWith(
+        status: ComplaintStatus.success,
+        reports: cachedReports,
+        errorMessage: null,
+      );
+    } else if (showLoading) {
       state = state.copyWith(
         status: ComplaintStatus.loading,
         reports: accountChanged ? const [] : null,
@@ -60,16 +71,7 @@ class ComplaintController extends StateNotifier<ComplaintState> {
     try {
       final items = await _repository.fetchComplaints();
       if (sequence != _fetchSequence) return;
-      final normalizedAccount = accountNumber?.trim().toUpperCase();
-      final reports = normalizedAccount == null || normalizedAccount.isEmpty
-          ? items
-          : items
-              .where(
-                (report) =>
-                    report.broadbandAccountNumber?.trim().toUpperCase() ==
-                    normalizedAccount,
-              )
-              .toList();
+      final reports = _forAccount(items, accountNumber);
       state = state.copyWith(
         status: ComplaintStatus.success,
         reports: reports,
@@ -80,10 +82,25 @@ class ComplaintController extends StateNotifier<ComplaintState> {
       state = state.copyWith(
         status: ComplaintStatus.error,
         errorMessage: error is ApiException
-            ? error.detail ?? error.messageKey
+            ? storedApiMessage(error)
             : error.toString(),
       );
     }
+  }
+
+  List<ComplaintModel> _forAccount(
+    List<ComplaintModel> items,
+    String? accountNumber,
+  ) {
+    final normalizedAccount = accountNumber?.trim().toUpperCase();
+    if (normalizedAccount == null || normalizedAccount.isEmpty) return items;
+    return items
+        .where(
+          (report) =>
+              report.broadbandAccountNumber?.trim().toUpperCase() ==
+              normalizedAccount,
+        )
+        .toList();
   }
 
   String? _accountKey(String? accountNumber) {
@@ -112,7 +129,7 @@ class ComplaintController extends StateNotifier<ComplaintState> {
       return result;
     } on ApiException catch (error) {
       state = state.copyWith(
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
       return null;
     } catch (e) {
@@ -211,7 +228,7 @@ class ComplaintController extends StateNotifier<ComplaintState> {
 
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.detail ?? e.messageKey,
+        errorMessage: storedApiMessage(e),
       );
       rethrow;
     } catch (e) {

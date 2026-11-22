@@ -21,7 +21,7 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 20),
+        connectTimeout: const Duration(seconds: 8),
         sendTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
         headers: const {

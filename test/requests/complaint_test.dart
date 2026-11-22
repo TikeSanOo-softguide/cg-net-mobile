@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
 import 'package:cg_net_mobile/core/network/api_exception.dart';
+import 'package:cg_net_mobile/core/network/network_status.dart';
 import 'package:cg_net_mobile/data/requests/complaint/complaint_repository.dart';
 import 'package:cg_net_mobile/models/requests/complaint/complaint_model.dart';
 import 'package:cg_net_mobile/pages/requests/complaint/complaint_controller.dart';
@@ -360,6 +361,8 @@ void main() {
 
     test('stores offline submission failures like installation requests',
         () async {
+      NetworkStatusSnapshot.update(NetworkStatus.offline);
+      addTearDown(() => NetworkStatusSnapshot.update(NetworkStatus.checking));
       dio.httpClientAdapter = _JsonAdapter(
         errorType: DioExceptionType.connectionError,
       );

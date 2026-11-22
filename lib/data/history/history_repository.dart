@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_endpoints/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
+import '../../core/storage/list_snapshot_store.dart';
 import '../../models/history_model/history_model.dart';
 
 class HistoryRepository {
-  HistoryRepository(this._dio);
+  HistoryRepository(this._dio, {ListSnapshotStore? snapshots})
+      : _snapshots = snapshots;
 
   final Dio _dio;
+  final ListSnapshotStore? _snapshots;
 
   Future<List<HistoryModel>> fetch({
     String? type,
@@ -28,6 +31,15 @@ class HistoryRepository {
     return _load(
       path: ApiEndpoints.internetBillHistory,
       cancelToken: cancelToken,
+      snapshotFeature: ListSnapshotStore.serviceHistory,
+    );
+  }
+
+  List<HistoryModel>? readCachedServiceHistory() {
+    return decodeSnapshot(
+      _snapshots,
+      ListSnapshotStore.serviceHistory,
+      HistoryModel.fromJson,
     );
   }
 
@@ -92,6 +104,7 @@ class HistoryRepository {
     required String path,
     String? type,
     CancelToken? cancelToken,
+    String? snapshotFeature,
   }) async {
     final normalizedType = type?.trim();
     if (normalizedType != null && normalizedType.isEmpty) {
@@ -108,8 +121,14 @@ class HistoryRepository {
       );
 
       final items = _responseItems(response.data);
-      return items
+      final maps = items
           .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+      if (snapshotFeature != null) {
+        await _snapshots?.write(snapshotFeature, maps);
+      }
+      return maps
           .where((item) {
             if (normalizedType == null) {
               return true;
@@ -141,5 +160,8 @@ class HistoryRepository {
 }
 
 final historyRepositoryProvider = Provider<HistoryRepository>((ref) {
-  return HistoryRepository(ref.watch(dioProvider));
+  return HistoryRepository(
+    ref.watch(dioProvider),
+    snapshots: ref.watch(listSnapshotStoreProvider),
+  );
 });

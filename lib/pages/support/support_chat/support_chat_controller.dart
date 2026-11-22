@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/storage/local_prefs/local_prefs.dart';
 import '../../../data/chat/chat_repository.dart';
 import '../../../data/chat/chat_realtime_service.dart';
@@ -472,7 +473,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       }
       state = state.copyWith(
         isLoading: false,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
         isSendingMessage: false,
       );
     } catch (_) {
@@ -574,7 +575,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       state = state.copyWith(
         isStartingChat: false,
         isLoading: false,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
       );
     } catch (_) {
       if (requestId != _activeRequestId) return;
@@ -723,7 +724,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       }
       state = state.copyWith(
         isSubmittingOption: false,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
       );
       return null;
     } catch (_) {
@@ -782,7 +783,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       if (requestId != _activeRequestId) return false;
       state = state.copyWith(
         isNavigatingToMainMenu: false,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
       );
       return false;
     } catch (_) {
@@ -830,7 +831,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       if (requestId != _activeRequestId) return false;
       state = state.copyWith(
         isClosingConversation: false,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
       );
       return false;
     } catch (error, stackTrace) {
@@ -1009,7 +1010,7 @@ class SupportChatController extends StateNotifier<SupportChatState> {
       _retryClientMessageId = clientMessageId;
       state = state.copyWith(
         isSendingMessage: false,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
       );
       return false;
     }

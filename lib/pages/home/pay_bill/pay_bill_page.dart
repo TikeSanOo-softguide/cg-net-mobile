@@ -179,8 +179,13 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
           return;
         } on ApiException catch (error) {
           if (!mounted) return;
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final retry = await showOfflineModal(context);
+            if (!mounted || !retry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final retry = await showServerUnavailableModal(context);
             if (!mounted || !retry) return;
             continue;
           }
@@ -302,9 +307,16 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
                 return;
               } on ApiException catch (error) {
                 if (!mounted) return;
-                if (isOfflineError(error)) {
+                if (isUnreachableError(error)) {
                   _closeProcessingDialog();
                   final retry = await showOfflineModal(context);
+                  if (!mounted || !retry) return;
+                  await _showProcessing();
+                  continue;
+                }
+                if (isServerUnavailableError(error)) {
+                  _closeProcessingDialog();
+                  final retry = await showServerUnavailableModal(context);
                   if (!mounted || !retry) return;
                   await _showProcessing();
                   continue;
@@ -367,7 +379,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
       if (wrongPassword) {
         final retry = await showAppRetryFailureModal(
           context,
-          title: 'msg.user_002'.tr(),
+          title: 'common.incorrect_password'.tr(),
           body: 'msg.user_002_body'.tr(),
         );
         if (!mounted || !retry) return;
@@ -378,7 +390,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
       await showAppFailureModal(
         context,
         title: isInsufficientWalletError(error)
-            ? 'msg.ftth_003'.tr()
+            ? 'common.insufficient_balance'.tr()
             : 'home.pay_bill_result_failure_title'.tr(),
         body: isInsufficientWalletError(error)
             ? 'msg.ftth_003_body'.tr()

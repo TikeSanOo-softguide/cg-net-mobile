@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,6 +9,7 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
@@ -33,7 +33,6 @@ class InboxListPage extends ConsumerStatefulWidget {
 class _InboxListPageState extends ConsumerState<InboxListPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-
   static const _tabLabels = [
     'inbox.tab_all',
     'inbox.tab_announcement',
@@ -85,7 +84,6 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inboxListControllerProvider);
-    final offline = ref.watch(inboxListOfflineProvider);
     final locale = ref.watch(appLocaleProvider);
     ref.listen(inboxListOfflineProvider, (previous, next) {
       _syncInboxRecovery(ref, next);
@@ -109,28 +107,43 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
               labels: _tabLabels,
             ),
           ),
-          if (offline && state.hasValue)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: _InboxOfflineLine(),
-            ),
           Expanded(
             child: state.when(
               loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
-              error: (e, _) => EmptyState(
-                icon: LucideIcons.wifi_off,
-                iconAsset:
-                    isOfflineError(e) ? null : InboxCategoryIcon.messageAsset,
-                title: isOfflineError(e)
-                    ? 'shared.no_internet_title'.tr()
-                    : 'common.error'.tr(),
-                message: isOfflineError(e)
-                    ? 'shared.no_internet_body'.tr()
-                    : apiErrorText(e),
-                actionLabel: 'common.retry'.tr(),
-                onAction: () {
-                  ref.read(inboxListControllerProvider.notifier).load();
-                },
+              error: (e, _) => _inboxPullable(
+                onRefresh: _refreshInbox,
+                child: isOfflineError(e)
+                    ? OfflineEmptyState(
+                        scrollable: false,
+                        onRetry: () {
+                          armOfflineRetry(
+                            recovery:
+                                ref.read(networkRecoveryControllerProvider),
+                            key: 'inbox-list-reload',
+                            reload: () => ref
+                                .read(inboxListControllerProvider.notifier)
+                                .load(rethrowOffline: true),
+                          );
+                        },
+                      )
+                    : isServerUnavailableError(e)
+                        ? ServerUnavailableEmptyState(
+                            scrollable: false,
+                            onRetry: () {
+                              ref
+                                  .read(inboxListControllerProvider.notifier)
+                                  .load();
+                            },
+                          )
+                    : EmptyState(
+                        iconAsset: InboxCategoryIcon.messageAsset,
+                        title: 'common.error'.tr(),
+                        message: apiErrorText(e),
+                        actionLabel: 'common.retry'.tr(),
+                        onAction: () {
+                          ref.read(inboxListControllerProvider.notifier).load();
+                        },
+                      ),
               ),
               data: (messages) {
                 return TabBarView(
@@ -141,9 +154,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                         key: ValueKey('inbox-list-$locale-$t'),
                         items: _itemsForTab(messages, t),
                         emptyIcon: _emptyIconForTab(t),
-                        onRefresh: () => ref
-                            .read(inboxListControllerProvider.notifier)
-                            .load(silent: true),
+                        onRefresh: _refreshInbox,
                       ),
                   ],
                 );
@@ -153,6 +164,10 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
         ],
       ),
     );
+  }
+
+  Future<void> _refreshInbox() {
+    return ref.read(inboxListControllerProvider.notifier).load(silent: true);
   }
 }
 
@@ -172,30 +187,6 @@ void _syncInboxRecovery(WidgetRef ref, bool waitingForNetwork) {
   );
 }
 
-class _InboxOfflineLine extends StatelessWidget {
-  const _InboxOfflineLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'shared.no_internet_title'.tr(),
-        textAlign: TextAlign.center,
-        style: AppTheme.caption(
-          color: AppColors.primary,
-          weight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
 class _InboxList extends StatelessWidget {
   const _InboxList({
     super.key,
@@ -211,17 +202,9 @@ class _InboxList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return AppRefreshIndicator(
+      return _inboxPullable(
         onRefresh: onRefresh,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              height: constraints.maxHeight,
-              child: _InboxEmpty(iconAsset: emptyIcon),
-            ),
-          ),
-        ),
+        child: _InboxEmpty(iconAsset: emptyIcon),
       );
     }
 
@@ -245,6 +228,34 @@ class _InboxList extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Empty inbox content is exactly one screen tall inside the tabs, so a plain
+/// scroll view never overscrolls and pull-to-refresh does not start. One extra
+/// pixel gives the list a real drag range.
+Widget _inboxPullable({
+  required Future<void> Function() onRefresh,
+  required Widget child,
+}) {
+  return AppRefreshIndicator(
+    onRefresh: onRefresh,
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight;
+        return ListView(
+          primary: false,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          children: [
+            SizedBox(
+              height: height.isFinite ? height + 1 : null,
+              child: child,
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 class _InboxEmpty extends StatelessWidget {

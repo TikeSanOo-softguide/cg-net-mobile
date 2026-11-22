@@ -44,7 +44,6 @@ import '../../../pages/profile/deactivate_account/deactivate_account_page.dart';
 import '../../../pages/profile/edit_profile/edit_profile_page.dart';
 import '../../../pages/profile/notification_preferences/notification_preferences_page.dart';
 import '../../../pages/profile/profile/profile_page.dart';
-import '../../../pages/shared_pages/error_no_internet/error_no_internet_page.dart';
 import '../../../pages/shared_pages/force_update/force_update_page.dart';
 import '../../../pages/shared_pages/not_found/not_found_page.dart';
 import '../../../pages/support/support_chat/support_chat_page.dart';
@@ -176,14 +175,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.advertisement,
         name: RouteNames.advertisement,
         builder: (context, state) => const AdvertisementPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.errorNoInternet,
-        name: RouteNames.errorNoInternet,
-        builder: (context, state) {
-          final returnTo = state.uri.queryParameters['return_to'];
-          return ErrorNoInternetPage(returnToPath: returnTo);
-        },
       ),
       GoRoute(
         path: RoutePaths.forceUpdate,

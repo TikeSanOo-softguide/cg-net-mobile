@@ -5,14 +5,17 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
+import '../../../core/storage/list_snapshot_store.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 
 typedef InstallationApplicationOptions = List<InstallationApplicationOption>;
 
 class InstallationApplicationRepository {
-  InstallationApplicationRepository(this._dio);
+  InstallationApplicationRepository(this._dio, {ListSnapshotStore? snapshots})
+      : _snapshots = snapshots;
 
   final Dio _dio;
+  final ListSnapshotStore? _snapshots;
 
   Future<InstallationApplicationOptions> fetchProducts(
     String serviceType,
@@ -40,17 +43,24 @@ class InstallationApplicationRepository {
               ? data
               : const [];
 
-      return items
+      final maps = items
           .whereType<Map>()
-          .map(
-            (item) => InstallationApplicationModel.fromJson(
-              Map<String, dynamic>.from(item),
-            ),
-          )
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
+      await _snapshots?.write(ListSnapshotStore.installation, maps);
+
+      return maps.map(InstallationApplicationModel.fromJson).toList();
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  List<InstallationApplicationModel>? readCachedRequests() {
+    return decodeSnapshot(
+      _snapshots,
+      ListSnapshotStore.installation,
+      InstallationApplicationModel.fromJson,
+    );
   }
 
   Map<String, dynamic> _payload(InstallationApplicationModel request) {
@@ -186,5 +196,6 @@ final installationApplicationRepositoryProvider =
     Provider<InstallationApplicationRepository>((ref) {
   return InstallationApplicationRepository(
     ref.watch(dioProvider),
+    snapshots: ref.watch(listSnapshotStoreProvider),
   );
 });

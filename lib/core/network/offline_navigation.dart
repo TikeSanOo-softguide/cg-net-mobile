@@ -1,29 +1,41 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-import '../router/route_names/route_names.dart';
 import 'api_exception.dart';
 
 bool isOfflineError(Object? error) {
   return error is ApiException && error.failure == ApiFailure.offline;
 }
 
-Future<bool?> openNoInternetPage(
-  BuildContext context, {
-  String? returnToPath,
-}) {
-  final currentPath = GoRouterState.of(context).matchedLocation;
-  if (currentPath == RoutePaths.errorNoInternet) {
-    return Future.value(false);
-  }
+bool isUnreachableError(Object? error) {
+  return isOfflineError(error);
+}
 
-  final target = (returnToPath ?? currentPath).trim();
-  final query = <String, String>{};
-  if (target.isNotEmpty) {
-    query['return_to'] = target;
-  }
-  return context.pushNamed<bool>(
-    RouteNames.errorNoInternet,
-    queryParameters: query,
-  );
+bool isUnreachableMessage(String? message) {
+  return message == 'api.offline';
+}
+
+/// Internet works, but the API host did not accept a connection.
+const serverUnavailableMessage = 'api.server_unavailable';
+
+bool isServerUnavailableError(Object? error) {
+  return error is ApiException &&
+      error.failure == ApiFailure.server &&
+      error.connectionFailed;
+}
+
+bool isServerUnavailableMessage(String? message) {
+  return message == serverUnavailableMessage;
+}
+
+String storedApiMessage(ApiException error, {bool messageKeyOnly = false}) {
+  if (isServerUnavailableError(error)) return serverUnavailableMessage;
+  if (messageKeyOnly) return error.messageKey;
+  final detail = error.detail?.trim();
+  if (detail != null && detail.isNotEmpty) return detail;
+  return error.messageKey;
+}
+
+/// Offline copy is only for a confirmed no-internet failure.
+/// A slow response stays a timeout. An API the internet can reach stays a
+/// server failure.
+bool shouldPresentAsOffline(Object? error) {
+  return isOfflineError(error);
 }

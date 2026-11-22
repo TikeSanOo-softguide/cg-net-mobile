@@ -292,7 +292,7 @@ class _CardBody extends StatelessWidget {
               child: Text(
                 'home.buy_now'.tr().toUpperCase(),
                 style: AppTheme.english(
-                  fontSize: compact ? 11 : 12,
+                  fontSize: compact ? 10 : 12,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: 0.7,

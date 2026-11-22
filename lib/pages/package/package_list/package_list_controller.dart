@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../models/package_model/package_model.dart';
 import 'package_list_repository.dart';
 
@@ -37,8 +38,13 @@ class PackageListController extends StateNotifier<PackageListState> {
 
   final PackageListRepository _repository;
 
-  Future<void> load() async {
-    state = state.copyWith(status: PackageListStatus.loading);
+  /// Returns true when a refresh kept the current list because the network
+  /// could not be reached.
+  Future<bool> load({bool silent = false, bool rethrowOffline = false}) async {
+    final keep = silent && state.packages.isNotEmpty;
+    if (!keep) {
+      state = state.copyWith(status: PackageListStatus.loading);
+    }
     try {
       final packages = await _repository.fetchPackages();
       if (packages.isEmpty) {
@@ -52,16 +58,27 @@ class PackageListController extends StateNotifier<PackageListState> {
           packages: packages,
         );
       }
+      return false;
     } on ApiException catch (e) {
+      final offline = isUnreachableError(e);
+      if (keep && offline) {
+        if (rethrowOffline) throw const ApiException(ApiFailure.offline);
+        return true;
+      }
       state = state.copyWith(
         status: PackageListStatus.error,
-        errorMessage: e.messageKey,
+        errorMessage: storedApiMessage(e, messageKeyOnly: true),
       );
+      if (rethrowOffline && offline) {
+        throw const ApiException(ApiFailure.offline);
+      }
+      return false;
     } catch (e) {
       state = state.copyWith(
         status: PackageListStatus.error,
         errorMessage: e.toString(),
       );
+      return false;
     }
   }
 }

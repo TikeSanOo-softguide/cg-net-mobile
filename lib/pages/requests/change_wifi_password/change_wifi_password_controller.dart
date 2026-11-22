@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../data/requests/change_wifi_password/change_wifi_password_repository.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
 
@@ -52,8 +53,19 @@ class ChangeWifiPasswordController
     _hasFetchedAccount = true;
     _lastFetchAccount = accountKey;
     final showLoading = accountChanged ||
-        state.status == ChangeWifiPasswordStatus.initial;
-    if (showLoading) {
+        state.status == ChangeWifiPasswordStatus.initial ||
+        (state.status == ChangeWifiPasswordStatus.error &&
+            state.requests.isEmpty);
+    final cached = _repository.readCachedRequests();
+    final cachedRequests =
+        cached == null ? null : _forAccount(cached, accountNumber);
+    if (showLoading && cachedRequests != null) {
+      state = state.copyWith(
+        status: ChangeWifiPasswordStatus.success,
+        requests: cachedRequests,
+        errorMessage: null,
+      );
+    } else if (showLoading) {
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.loading,
         requests: accountChanged ? const [] : null,
@@ -63,16 +75,7 @@ class ChangeWifiPasswordController
     try {
       final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
-      final normalizedAccount = accountNumber?.trim().toUpperCase();
-      final requests = normalizedAccount == null || normalizedAccount.isEmpty
-          ? items
-          : items
-              .where(
-                (request) =>
-                    request.broadbandAccountNumber?.trim().toUpperCase() ==
-                    normalizedAccount,
-              )
-              .toList();
+      final requests = _forAccount(items, accountNumber);
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.success,
         requests: requests,
@@ -82,7 +85,7 @@ class ChangeWifiPasswordController
       if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangeWifiPasswordStatus.error,
-        errorMessage: error.messageKey,
+        errorMessage: storedApiMessage(error, messageKeyOnly: true),
       );
     } catch (error) {
       if (sequence != _fetchSequence) return;
@@ -91,6 +94,21 @@ class ChangeWifiPasswordController
         errorMessage: error.toString(),
       );
     }
+  }
+
+  List<ChangePasswordRequestModel> _forAccount(
+    List<ChangePasswordRequestModel> items,
+    String? accountNumber,
+  ) {
+    final normalizedAccount = accountNumber?.trim().toUpperCase();
+    if (normalizedAccount == null || normalizedAccount.isEmpty) return items;
+    return items
+        .where(
+          (request) =>
+              request.broadbandAccountNumber?.trim().toUpperCase() ==
+              normalizedAccount,
+        )
+        .toList();
   }
 
   String? _accountKey(String? accountNumber) {
@@ -109,7 +127,7 @@ class ChangeWifiPasswordController
       );
       return result;
     } on ApiException catch (e) {
-      state = state.copyWith(errorMessage: e.detail ?? e.messageKey);
+      state = state.copyWith(errorMessage: storedApiMessage(e));
       return null;
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
@@ -162,7 +180,7 @@ class ChangeWifiPasswordController
     } on ApiException catch (error) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
       rethrow;
     } catch (error) {
@@ -233,7 +251,7 @@ class ChangeWifiPasswordController
       );
       return savedModel;
     } on ApiException catch (e) {
-      final detailRaw = e.detail ?? e.messageKey;
+      final detailRaw = storedApiMessage(e);
       final detail = detailRaw.toLowerCase();
 
       final isAlreadyUnderReview = detail.contains('already under review') ||
@@ -251,7 +269,7 @@ class ChangeWifiPasswordController
 
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.detail ?? e.messageKey,
+        errorMessage: storedApiMessage(e),
       );
       rethrow;
     } catch (e) {

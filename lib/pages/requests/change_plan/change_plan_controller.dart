@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../data/requests/change_plan/change_plan_repository.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 
@@ -50,9 +51,19 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
         _hasFetchedAccount && _lastFetchAccount != accountKey;
     _hasFetchedAccount = true;
     _lastFetchAccount = accountKey;
-    final showLoading =
-        accountChanged || state.status == ChangePlanStatus.initial;
-    if (showLoading) {
+    final showLoading = accountChanged ||
+        state.status == ChangePlanStatus.initial ||
+        (state.status == ChangePlanStatus.error && state.requests.isEmpty);
+    final cached = _repository.readCachedRequests();
+    final cachedRequests =
+        cached == null ? null : _forAccount(cached, accountNumber);
+    if (showLoading && cachedRequests != null) {
+      state = state.copyWith(
+        status: ChangePlanStatus.success,
+        requests: cachedRequests,
+        clearError: true,
+      );
+    } else if (showLoading) {
       state = state.copyWith(
         status: ChangePlanStatus.loading,
         requests: accountChanged ? const [] : null,
@@ -62,16 +73,7 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
     try {
       final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
-      final normalizedAccount = accountNumber?.trim().toUpperCase();
-      final requests = normalizedAccount == null || normalizedAccount.isEmpty
-          ? items
-          : items
-              .where(
-                (request) =>
-                    request.broadbandAccountNumber?.trim().toUpperCase() ==
-                    normalizedAccount,
-              )
-              .toList();
+      final requests = _forAccount(items, accountNumber);
       state = state.copyWith(
         status: ChangePlanStatus.success,
         requests: requests,
@@ -81,7 +83,7 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
       if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: ChangePlanStatus.error,
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
     } catch (error) {
       if (sequence != _fetchSequence) return;
@@ -90,6 +92,21 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
         errorMessage: error.toString(),
       );
     }
+  }
+
+  List<ChangePlanRequestModel> _forAccount(
+    List<ChangePlanRequestModel> items,
+    String? accountNumber,
+  ) {
+    final normalizedAccount = accountNumber?.trim().toUpperCase();
+    if (normalizedAccount == null || normalizedAccount.isEmpty) return items;
+    return items
+        .where(
+          (request) =>
+              request.broadbandAccountNumber?.trim().toUpperCase() ==
+              normalizedAccount,
+        )
+        .toList();
   }
 
   String? _accountKey(String? accountNumber) {
@@ -124,7 +141,7 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
     } on ApiException catch (error) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
       rethrow;
     } catch (error) {
@@ -149,7 +166,7 @@ class ChangePlanController extends StateNotifier<ChangePlanState> {
       );
       return code;
     } on ApiException catch (error) {
-      state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
+      state = state.copyWith(errorMessage: storedApiMessage(error));
       return null;
     } catch (error) {
       state = state.copyWith(errorMessage: error.toString());

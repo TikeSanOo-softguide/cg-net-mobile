@@ -41,7 +41,6 @@ class RouteNames {
   static const notificationPreferences = 'notificationPreferences';
   static const aboutApp = 'aboutApp';
 
-  static const errorNoInternet = 'errorNoInternet';
   static const forceUpdate = 'forceUpdate';
   static const notFound = 'notFound';
 }
@@ -89,7 +88,6 @@ class RoutePaths {
   static const notificationPreferences = '/profile/notifications';
   static const aboutApp = '/profile/about';
 
-  static const errorNoInternet = '/error/no-internet';
   static const forceUpdate = '/error/force-update';
   static const notFound = '/404';
 }

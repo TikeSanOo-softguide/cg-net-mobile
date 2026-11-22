@@ -114,8 +114,13 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         } on ApiException catch (error) {
           if (!mounted) return;
 
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final shouldRetry = await showServerUnavailableModal(context);
             if (!mounted || !shouldRetry) return;
             continue;
           }
@@ -202,8 +207,13 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         } on ApiException catch (error) {
           if (!mounted) return;
 
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final shouldRetry = await showServerUnavailableModal(context);
             if (!mounted || !shouldRetry) return;
             continue;
           }
@@ -339,8 +349,13 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         } on ApiException catch (error) {
           if (!mounted) return;
 
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final shouldRetry = await showServerUnavailableModal(context);
             if (!mounted || !shouldRetry) return;
             continue;
           }

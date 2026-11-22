@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../storage/list_snapshot_store.dart';
 import '../../storage/local_prefs/local_prefs.dart';
 import '../../storage/secure_storage/secure_storage.dart';
 import '../session_clock.dart';
@@ -43,9 +44,12 @@ final authInterceptorProvider = Provider<AuthInterceptor>((ref) {
   return AuthInterceptor(
     ref.watch(secureStorageProvider),
     () {
-      ref.read(sharedPreferencesProvider)
+      final preferences = ref.read(sharedPreferencesProvider);
+      preferences
         ..remove(LocalPrefs.inboxCacheKey)
-        ..remove(LocalPrefs.chatCacheKey);
+        ..remove(LocalPrefs.chatCacheKey)
+        ..remove(LocalPrefs.sessionUserIdKey);
+      ListSnapshotStore(preferences).clear();
       ref.read(sessionClockProvider).expire();
     },
   );

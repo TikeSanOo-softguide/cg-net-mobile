@@ -9,6 +9,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -421,7 +422,8 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
                                 key: _detailsFieldKey,
                               ),
                             ),
-                            if (errorMessage != null) ...[
+                            if (errorMessage != null &&
+                                !isUnreachableMessage(errorMessage)) ...[
                               const SizedBox(height: AppStyle.spaceXs),
                               Text(
                                 _localizedError(errorMessage),

@@ -14,6 +14,9 @@ import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_photo_picker/app_photo_picker.dart';
@@ -157,6 +160,17 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
     await _loadComplaints(refreshProfile: true);
   }
 
+  void _retryOfflineList() {
+    armOfflineRetry(
+      recovery: ref.read(networkRecoveryControllerProvider),
+      key: 'complaint-list-reload',
+      reload: () => _loadComplaints(),
+      stillOffline: () => isUnreachableMessage(
+        ref.read(complaintControllerProvider).errorMessage,
+      ),
+    );
+  }
+
   void _openNewComplaintPage({ComplaintModel? initialReport}) {
     Navigator.of(context)
         .push<Object?>(
@@ -194,12 +208,22 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
     if (confirmed != true || !mounted) return;
 
     final result = await LoadingHelper.runWithLoading(
-      () => ref.read(complaintControllerProvider.notifier).cancelComplaint(report),
+      () => ref
+          .read(complaintControllerProvider.notifier)
+          .cancelComplaint(report),
     );
     if (!mounted) return;
 
     if (result == null) {
       final message = ref.read(complaintControllerProvider).errorMessage;
+      if (isUnreachableMessage(message)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(message)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
@@ -262,6 +286,12 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
     }
 
     if (state.status == ComplaintStatus.error && reports.isEmpty) {
+      if (isUnreachableMessage(state.errorMessage)) {
+        return OfflineEmptyState(onRetry: _retryOfflineList);
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        return ServerUnavailableEmptyState(onRetry: _fetchComplaints);
+      }
       final errorMessage = state.errorMessage;
       final displayMessage = errorMessage == null
           ? 'complaint.load_error'.tr()
@@ -342,8 +372,9 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
       );
     }
 
-    final hasError =
-        state.status == ComplaintStatus.error && state.errorMessage != null;
+    final hasError = state.status == ComplaintStatus.error &&
+        state.errorMessage != null &&
+        !isUnreachableMessage(state.errorMessage);
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
@@ -819,6 +850,14 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
 
     final errorMessage = ref.read(complaintControllerProvider).errorMessage;
     if (errorMessage != null && mounted) {
+      if (isUnreachableMessage(errorMessage)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(errorMessage)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),

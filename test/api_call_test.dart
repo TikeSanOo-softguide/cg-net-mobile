@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_exception.dart';
+import 'package:cg_net_mobile/core/network/network_status.dart';
 import 'package:cg_net_mobile/core/network/idempotency_key.dart';
 import 'package:cg_net_mobile/core/network/message_codes.dart';
 import 'package:cg_net_mobile/data/change_password/change_password_repository.dart';
@@ -150,6 +151,8 @@ void main() {
   });
 
   test('connection errors become offline failures', () {
+    NetworkStatusSnapshot.update(NetworkStatus.offline);
+    addTearDown(() => NetworkStatusSnapshot.update(NetworkStatus.checking));
     final error = ApiException.fromDio(
       DioException(
         requestOptions: RequestOptions(path: '/inbox'),

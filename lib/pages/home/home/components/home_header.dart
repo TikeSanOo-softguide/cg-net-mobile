@@ -9,13 +9,40 @@ import '../../../../components/app_dialog/app_dialog.dart';
 import '../../../../components/app_logo/app_logo.dart';
 import '../../../../core/network/api_error_text.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/offline_navigation.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
 import '../../../../data/profile/profile_repository.dart';
+import '../../../../models/user_model/user_model.dart';
+import '../../../profile/profile/profile_controller.dart';
 import '../bound_broadband.dart';
 import '../bound_broadband_provider.dart';
+
+UserProfileModel? _loadedProfile(WidgetRef ref) {
+  final live = ref.read(profileControllerProvider);
+  if (live.fullName.isNotEmpty ||
+      live.phone.isNotEmpty ||
+      live.accountNumber.isNotEmpty) {
+    return live;
+  }
+  return ref.read(cachedUserProfileProvider).valueOrNull;
+}
+
+bool _rememberBound(WidgetRef ref, UserProfileModel profile) {
+  final accountNumber = profile.accountNumber.trim();
+  final serviceType = profile.serviceType?.trim();
+  if (accountNumber.isEmpty || serviceType == null || serviceType.isEmpty) {
+    return false;
+  }
+
+  ref.read(boundBroadbandProvider.notifier).state = BoundBroadband(
+    account: accountNumber,
+    serviceType: serviceType,
+  );
+  return true;
+}
 
 Future<bool?> ensureBoundBroadband(
   BuildContext context,
@@ -23,31 +50,35 @@ Future<bool?> ensureBoundBroadband(
 ) async {
   if (ref.read(boundBroadbandProvider) != null) return true;
 
-  try {
-    final profile = await ref.read(userProfileProvider.future);
-    if (!context.mounted) return null;
+  final loaded = _loadedProfile(ref);
+  if (loaded != null) return _rememberBound(ref, loaded);
 
-    final accountNumber = profile.accountNumber;
-    final serviceType = profile.serviceType;
-    if (accountNumber.isEmpty || serviceType == null || serviceType.isEmpty) {
-      return false;
-    }
-
-    ref.read(boundBroadbandProvider.notifier).state = BoundBroadband(
-      account: accountNumber,
-      serviceType: serviceType,
-    );
-    return true;
-  } on ApiException catch (error) {
-    if (context.mounted) {
+  while (true) {
+    try {
+      final profile = await ref.read(userProfileProvider.future);
+      if (!context.mounted) return null;
+      return _rememberBound(ref, profile);
+    } on ApiException catch (error) {
+      if (!context.mounted) return null;
+      if (isUnreachableError(error)) {
+        final retry = await showOfflineModal(context);
+        if (!context.mounted || !retry) return null;
+        ref.invalidate(userProfileProvider);
+        continue;
+      }
+      if (isServerUnavailableError(error)) {
+        final retry = await showServerUnavailableModal(context);
+        if (!context.mounted || !retry) return null;
+        ref.invalidate(userProfileProvider);
+        continue;
+      }
       await showAppAlertModal(context, message: apiErrorText(error));
-    }
-    return null;
-  } on FormatException catch (error) {
-    if (context.mounted) {
+      return null;
+    } on FormatException catch (error) {
+      if (!context.mounted) return null;
       await showAppAlertModal(context, message: error.message);
+      return null;
     }
-    return null;
   }
 }
 

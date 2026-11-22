@@ -325,7 +325,7 @@ class _WidePlanCard extends StatelessWidget {
                   child: Text(
                     'home.buy_now'.tr().toUpperCase(),
                     style: AppTheme.english(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: 0.7,

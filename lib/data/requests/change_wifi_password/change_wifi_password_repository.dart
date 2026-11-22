@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
+import '../../../core/storage/list_snapshot_store.dart';
 import '../../../models/requests/change_password/change_password_model.dart';
 
 class ChangeWifiPasswordRepository {
-  ChangeWifiPasswordRepository(this._dio);
+  ChangeWifiPasswordRepository(this._dio, {ListSnapshotStore? snapshots})
+      : _snapshots = snapshots;
 
   final Dio _dio;
+  final ListSnapshotStore? _snapshots;
 
   Future<List<ChangePasswordRequestModel>> fetchRequests() async {
     try {
@@ -22,18 +25,28 @@ class ChangeWifiPasswordRepository {
       final List list = data is Map && data['data'] is List
           ? data['data'] as List
           : (data is List ? data : []);
-
-      return list
+      final maps = list
           .whereType<Map>()
-          .map(
-            (item) => ChangePasswordRequestModel.fromJson(
-              Map<String, dynamic>.from(item),
-            ),
-          )
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
+      await _snapshots?.write(
+        ListSnapshotStore.changeWifi,
+        maps,
+        omitKeys: ListSnapshotStore.wifiSecretKeys,
+      );
+
+      return maps.map(ChangePasswordRequestModel.fromJson).toList();
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  List<ChangePasswordRequestModel>? readCachedRequests() {
+    return decodeSnapshot(
+      _snapshots,
+      ListSnapshotStore.changeWifi,
+      ChangePasswordRequestModel.fromJson,
+    );
   }
 
   Future<ChangeWifiPasswordCancelResult> cancelRequest(
@@ -164,5 +177,8 @@ class ChangeWifiPasswordCancelResult {
 
 final changeWifiPasswordRepositoryProvider =
     Provider<ChangeWifiPasswordRepository>((ref) {
-  return ChangeWifiPasswordRepository(ref.watch(dioProvider));
+  return ChangeWifiPasswordRepository(
+    ref.watch(dioProvider),
+    snapshots: ref.watch(listSnapshotStoreProvider),
+  );
 });

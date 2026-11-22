@@ -10,10 +10,12 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
@@ -137,6 +139,8 @@ class _HistoryList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(quickActionHistoryProvider(type));
 
+    final cached = history.valueOrNull;
+
     return AppRefreshIndicator(
       color: AppColors.primary,
       onRefresh: () async {
@@ -145,62 +149,84 @@ class _HistoryList extends ConsumerWidget {
           await ref.read(quickActionHistoryProvider(type).future);
         } catch (_) {}
       },
-      child: history.when(
-      skipLoadingOnReload: true,
-      skipLoadingOnRefresh: true,
-      data: (items) {
-        final filteredItems = items
-            .where((item) => filter.matches(item.createdAt.toLocal()))
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        if (filteredItems.isEmpty) return _pullableFill(_emptyState());
+      child: cached != null
+          ? _historyItems(context, ref, cached)
+          : history.isLoading
+              ? const ShimmerLoading(itemCount: 5, itemHeight: 88)
+              : _pullableFill(
+                  isUnreachableError(history.error)
+                      ? OfflineEmptyState(
+                          scrollable: false,
+                          onRetry: () {
+                            armOfflineRetry(
+                              recovery: ref
+                                  .read(networkRecoveryControllerProvider),
+                              key: 'history-${type ?? 'all'}-reload',
+                              reload: () async {
+                                ref.invalidate(
+                                  quickActionHistoryProvider(type),
+                                );
+                                try {
+                                  await ref.read(
+                                    quickActionHistoryProvider(type).future,
+                                  );
+                                } catch (error) {
+                                  if (isOfflineError(error)) {
+                                    throw const ApiException(
+                                      ApiFailure.offline,
+                                    );
+                                  }
+                                }
+                              },
+                            );
+                          },
+                        )
+                      : isServerUnavailableError(history.error)
+                          ? ServerUnavailableEmptyState(
+                              scrollable: false,
+                              onRetry: () {
+                                ref.invalidate(quickActionHistoryProvider(type));
+                              },
+                            )
+                      : EmptyState(
+                          iconAsset: QuickActionIconChip.historyAsset,
+                          iconBackground: QuickActionIconChip.historySoft,
+                          title: 'common.error'.tr(),
+                          message: apiErrorText(
+                            history.error ?? 'common.error',
+                          ),
+                          actionLabel: 'common.retry'.tr(),
+                          onAction: () {
+                            ref.invalidate(quickActionHistoryProvider(type));
+                          },
+                        ),
+                ),
+    );
+  }
 
-        return ListView.separated(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          itemCount: filteredItems.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 2),
-          itemBuilder: (context, index) {
-            final item = filteredItems[index];
-            return _HistoryRow(
-              item: item,
-              onTap: _canOpen(item) ? () => _openDetail(context, ref, item) : null,
-            );
-          },
+  Widget _historyItems(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryModel> items,
+  ) {
+    final filteredItems = items
+        .where((item) => filter.matches(item.createdAt.toLocal()))
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    if (filteredItems.isEmpty) return _pullableFill(_emptyState());
+
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      itemCount: filteredItems.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 2),
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+        return _HistoryRow(
+          item: item,
+          onTap: _canOpen(item) ? () => _openDetail(context, ref, item) : null,
         );
       },
-      loading: () => const ShimmerLoading(itemCount: 5, itemHeight: 88),
-      error: (error, _) => _pullableFill(EmptyState(
-        icon: LucideIcons.wifi_off,
-        iconAsset: isOfflineError(error)
-            ? null
-            : QuickActionIconChip.historyAsset,
-        iconBackground: QuickActionIconChip.historySoft,
-        title: isOfflineError(error)
-            ? 'shared.no_internet_title'.tr()
-            : 'common.error'.tr(),
-        message: isOfflineError(error)
-            ? 'shared.no_internet_body'.tr()
-            : apiErrorText(error),
-        actionLabel: 'common.retry'.tr(),
-        onAction: () async {
-          final recoveryKey = 'history-${type ?? 'all'}-reload';
-          if (isOfflineError(error)) {
-            ref.read(networkRecoveryControllerProvider).enqueue(
-                  recoveryKey,
-                  () async => ref.invalidate(quickActionHistoryProvider(type)),
-                );
-            final shouldRetry = await openNoInternetPage(context);
-            if (shouldRetry == true && context.mounted) {
-              ref.read(networkRecoveryControllerProvider).clear(recoveryKey);
-              ref.invalidate(quickActionHistoryProvider(type));
-            }
-            return;
-          }
-          ref.invalidate(quickActionHistoryProvider(type));
-        },
-      )),
-      ),
     );
   }
 
@@ -308,7 +334,8 @@ Future<void> _openDetail(
     await context.pushNamed(
       route,
       extra: result,
-      queryParameters: status == 'completed' ? const {'hideDone': '1'} : const {},
+      queryParameters:
+          status == 'completed' ? const {'hideDone': '1'} : const {},
     );
     return;
   }
@@ -325,7 +352,8 @@ Future<void> _openDetail(
             autoRenew: false,
             transactionId: transactionId,
             speedMbps: detail.productSpeed,
-            duration: _packageDuration(detail.monthCycle, detail.monthCycleUnit),
+            duration:
+                _packageDuration(detail.monthCycle, detail.monthCycleUnit),
             occurredAt: detail.createdAt,
             errorTitleKey: 'package.result_failure_title',
             errorBodyKey: 'package.result_failure_body',
@@ -337,7 +365,8 @@ Future<void> _openDetail(
             autoRenew: false,
             transactionId: transactionId,
             speedMbps: detail.productSpeed,
-            duration: _packageDuration(detail.monthCycle, detail.monthCycleUnit),
+            duration:
+                _packageDuration(detail.monthCycle, detail.monthCycleUnit),
             occurredAt: detail.createdAt,
           );
     await context.pushNamed(
@@ -345,7 +374,8 @@ Future<void> _openDetail(
           ? RouteNames.packageBuyFailure
           : RouteNames.packageBuySuccess,
       extra: result,
-      queryParameters: status == 'completed' ? const {'hideDone': '1'} : const {},
+      queryParameters:
+          status == 'completed' ? const {'hideDone': '1'} : const {},
     );
     return;
   }
@@ -389,7 +419,8 @@ class _HistoryRow extends StatelessWidget {
   String get _type => item.type.toLowerCase();
 
   bool get _isCredit =>
-      item.isCredit || (!item.isDebit && (_type == 'topup' || _type == 'refund'));
+      item.isCredit ||
+      (!item.isDebit && (_type == 'topup' || _type == 'refund'));
 
   String get _asset => switch (_type) {
         'topup' => QuickActionIconChip.topUpAsset,

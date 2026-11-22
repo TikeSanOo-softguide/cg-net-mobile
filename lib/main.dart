@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'components/glass_notification_banner/glass_notification_banner.dart';
+import 'components/network_status_host/network_status_host.dart';
 import 'core/device/device_identity.dart';
 import 'core/device/device_identity_store.dart';
+import 'core/network/network_monitor.dart';
 import 'core/network/network_recovery_controller.dart';
 import 'core/storage/secure_storage/secure_storage.dart';
 import 'core/push/push_notification_service.dart';
@@ -79,6 +81,7 @@ class _CgNetAppState extends ConsumerState<CgNetApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(inboxUnreadCountProvider.notifier).refresh();
+      ref.read(networkMonitorProvider.notifier).recheck();
     }
   }
 
@@ -95,9 +98,12 @@ class _CgNetAppState extends ConsumerState<CgNetApp>
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       builder: EasyLoading.init(
-        builder: (context, child) => GlassNotificationHost(
-          onTap: ref.read(pushNotificationServiceProvider).openInbox,
-          child: child ?? const SizedBox.shrink(),
+        builder: (context, child) => NetworkStatusHost(
+          router: router,
+          child: GlassNotificationHost(
+            onTap: ref.read(pushNotificationServiceProvider).openInbox,
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
       ),
     );

@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
+import '../../../data/promotion/promotion_repository.dart';
 import '../../../models/user_model/user_model.dart';
 import '../inbox_list/inbox_list_controller.dart';
 import 'inbox_detail_controller.dart';
@@ -34,6 +36,19 @@ class _InboxDetailPageState extends ConsumerState<InboxDetailPage> {
     });
   }
 
+  Future<void> _refresh() async {
+    final catalogId = promotionCatalogId(widget.id);
+    if (catalogId != null) {
+      ref.invalidate(homePromotionsProvider);
+      ref.invalidate(promotionDetailProvider(catalogId));
+      try {
+        await ref.read(promotionDetailProvider(catalogId).future);
+      } catch (_) {}
+      return;
+    }
+    await ref.read(inboxListControllerProvider.notifier).load(silent: true);
+  }
+
   static String _categoryLabel(InboxCategory category) {
     switch (category) {
       case InboxCategory.announcement:
@@ -48,153 +63,181 @@ class _InboxDetailPageState extends ConsumerState<InboxDetailPage> {
   @override
   Widget build(BuildContext context) {
     final message = ref.watch(inboxDetailControllerProvider(widget.id));
-    message.whenData(_markReadIfNeeded);
+    final item = message.valueOrNull;
+    if (item != null) _markReadIfNeeded(item);
 
     return AppCurvedScaffold(
       title: Text('inbox.detail_title'.tr()),
       showBack: true,
-      body: message.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(e.toString())),
-        data: (item) {
-          final dateText = DateFormat.yMMMd(context.locale.toString())
-              .add_jm()
-              .format(item.createdAt);
-          final isMy = context.locale.languageCode == 'my';
-          final accent = item.isFailure
-              ? InboxCategoryIcon.failureColor
-              : AppColors.primary;
-          final accentSoft = item.isFailure
-              ? InboxCategoryIcon.failureSoft
-              : AppColors.primaryLight;
-          final imageUrl = item.imageUrl?.trim();
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-            children: [
-              AppCard(
-                elevated: true,
-                bordered: false,
-                borderRadius: AppStyle.borderRadiusMd,
-                padding: EdgeInsets.zero,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (imageUrl != null && imageUrl.isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(AppStyle.radiusMd),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
-                            filterQuality: FilterQuality.high,
-                            errorBuilder: (_, __, ___) => const ColoredBox(
-                              color: AppColors.primaryLight,
-                              child: Center(
-                                child: Icon(
-                                  LucideIcons.image,
-                                  color: AppColors.primary,
-                                  size: 28,
-                                ),
-                              ),
+      body: item != null
+          ? _messageList(context, item, _refresh)
+          : message.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _refreshableFill(
+                  onRefresh: _refresh,
+                  child: Center(child: Text('${message.error}')),
+                ),
+    );
+  }
+
+  Widget _messageList(
+    BuildContext context,
+    InboxMessageModel item,
+    Future<void> Function() onRefresh,
+  ) {
+    final dateText = DateFormat.yMMMd(context.locale.toString())
+        .add_jm()
+        .format(item.createdAt);
+    final isMy = context.locale.languageCode == 'my';
+    final accent =
+        item.isFailure ? InboxCategoryIcon.failureColor : AppColors.primary;
+    final accentSoft =
+        item.isFailure ? InboxCategoryIcon.failureSoft : AppColors.primaryLight;
+    final imageUrl = item.imageUrl?.trim();
+    return AppRefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+        children: [
+          AppCard(
+            elevated: true,
+            bordered: false,
+            borderRadius: AppStyle.borderRadiusMd,
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (imageUrl != null && imageUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppStyle.radiusMd),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (_, __, ___) => const ColoredBox(
+                          color: AppColors.primaryLight,
+                          child: Center(
+                            child: Icon(
+                              LucideIcons.image,
+                              color: AppColors.primary,
+                              size: 28,
                             ),
                           ),
                         ),
                       ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              InboxCategoryIcon(
-                                category: item.category,
-                                isFailure: item.isFailure,
-                                size: 28,
-                                iconSize: 16,
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: accentSoft,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  _categoryLabel(item.category),
-                                  style: AppTheme.english(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: isMy ? 0 : 0.2,
-                                    color: accent,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          InboxCategoryIcon(
+                            category: item.category,
+                            isFailure: item.isFailure,
+                            size: 28,
+                            iconSize: 16,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            item.titles == null
-                                ? item.titleKey.tr()
-                                : item.titleFor(context.locale.languageCode),
-                            style: AppTheme.english(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: isMy ? 0 : 0.2,
-                              color: accent,
-                              height:
-                                  isMy ? AppTheme.lineHeightMyanmarSafe : 1.35,
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            dateText,
-                            style: AppTheme.english(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          DecoratedBox(
                             decoration: BoxDecoration(
-                              color: AppColors.backgroundAlt,
-                              borderRadius: BorderRadius.circular(12),
+                              color: accentSoft,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(14, 14, 14, 16),
-                              child: Text(
-                                item.bodies == null
-                                    ? (item.detailKey ?? item.bodyKey).tr()
-                                    : item.bodyFor(
-                                        context.locale.languageCode,
-                                      ),
-                                style: AppTheme.english(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  letterSpacing: 0,
-                                  color: AppColors.textPrimary,
-                                  height: 1.65,
-                                ),
+                            child: Text(
+                              _categoryLabel(item.category),
+                              style: AppTheme.english(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: isMy ? 0 : 0.2,
+                                color: accent,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        item.titles == null
+                            ? item.titleKey.tr()
+                            : item.titleFor(context.locale.languageCode),
+                        style: AppTheme.english(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: isMy ? 0 : 0.2,
+                          color: accent,
+                          height: isMy ? AppTheme.lineHeightMyanmarSafe : 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        dateText,
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundAlt,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+                          child: Text(
+                            item.bodies == null
+                                ? (item.detailKey ?? item.bodyKey).tr()
+                                : item.bodyFor(
+                                    context.locale.languageCode,
+                                  ),
+                            style: AppTheme.english(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0,
+                              color: AppColors.textPrimary,
+                              height: 1.65,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+Widget _refreshableFill({
+  required Future<void> Function() onRefresh,
+  required Widget child,
+}) {
+  return AppRefreshIndicator(
+    onRefresh: onRefresh,
+    child: LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: child,
+        ),
+      ),
+    ),
+  );
 }

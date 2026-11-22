@@ -7,7 +7,7 @@ import 'api_exception.dart';
 import 'offline_navigation.dart';
 
 /// Shows the common success / warning / failure dialog from backend `level`.
-/// Offline errors open the no-internet page instead.
+/// Offline errors use the shared offline modal.
 Future<void> showApiMessageModal(
   BuildContext context,
   Object? error, {
@@ -16,8 +16,12 @@ Future<void> showApiMessageModal(
   if (error == null) return;
   if (!context.mounted) return;
 
-  if (isOfflineError(error)) {
-    await openNoInternetPage(context);
+  if (shouldPresentAsOffline(error)) {
+    await showOfflineModal(context);
+    return;
+  }
+  if (isServerUnavailableError(error)) {
+    await showServerUnavailableModal(context);
     return;
   }
   if (!context.mounted) return;

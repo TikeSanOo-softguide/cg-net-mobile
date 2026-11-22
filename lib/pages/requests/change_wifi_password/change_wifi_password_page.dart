@@ -13,6 +13,9 @@ import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../core/network/message_codes.dart';
@@ -148,6 +151,17 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
 
   Future<void> _fetchRequests() => _loadRequests(refreshProfile: true);
 
+  void _retryOfflineList() {
+    armOfflineRetry(
+      recovery: ref.read(networkRecoveryControllerProvider),
+      key: 'change-wifi-list-reload',
+      reload: () => _loadRequests(),
+      stillOffline: () => isUnreachableMessage(
+        ref.read(changeWifiPasswordControllerProvider).errorMessage,
+      ),
+    );
+  }
+
   void _openNewRequestPage({ChangePasswordRequestModel? request}) {
     Navigator.of(context)
         .push<Object?>(
@@ -196,6 +210,14 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
     if (result == null) {
       final errorMessage =
           ref.read(changeWifiPasswordControllerProvider).errorMessage;
+      if (isUnreachableMessage(errorMessage)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(errorMessage)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
@@ -260,6 +282,12 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
     }
 
     if (state.status == ChangeWifiPasswordStatus.error && requests.isEmpty) {
+      if (isUnreachableMessage(state.errorMessage)) {
+        return OfflineEmptyState(onRetry: _retryOfflineList);
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        return ServerUnavailableEmptyState(onRetry: _fetchRequests);
+      }
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(AppStyle.spaceLg),
@@ -327,7 +355,8 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
     }
 
     final hasError = state.status == ChangeWifiPasswordStatus.error &&
-        state.errorMessage != null;
+        state.errorMessage != null &&
+        !isUnreachableMessage(state.errorMessage);
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppStyle.spaceLg,
@@ -684,6 +713,14 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
     final errorMessage =
         ref.read(changeWifiPasswordControllerProvider).errorMessage;
     if (errorMessage != null) {
+      if (isUnreachableMessage(errorMessage)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(errorMessage)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),

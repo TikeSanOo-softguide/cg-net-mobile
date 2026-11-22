@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
 import 'package:cg_net_mobile/core/network/api_exception.dart';
+import 'package:cg_net_mobile/core/network/network_status.dart';
 import 'package:cg_net_mobile/core/network/dio_client/dio_client.dart';
 import 'package:cg_net_mobile/data/settings/general_setting_repository.dart';
 import 'package:dio/dio.dart';
@@ -89,6 +90,8 @@ void main() {
     });
 
     test('converts Dio failures to ApiException', () async {
+      NetworkStatusSnapshot.update(NetworkStatus.offline);
+      addTearDown(() => NetworkStatusSnapshot.update(NetworkStatus.checking));
       final dio = _dio((options) {
         throw DioException(
           requestOptions: options,

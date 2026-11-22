@@ -10,6 +10,9 @@ import '../../../components/shimmer_loading/shimmer_loading.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
@@ -49,6 +52,17 @@ class _InstallationApplicationPageState
   Future<void> _refresh() => ref
       .read(installationApplicationControllerProvider.notifier)
       .fetchRequests();
+
+  void _retryOfflineList() {
+    armOfflineRetry(
+      recovery: ref.read(networkRecoveryControllerProvider),
+      key: 'installation-list-reload',
+      reload: _refresh,
+      stillOffline: () => isUnreachableMessage(
+        ref.read(installationApplicationControllerProvider).errorMessage,
+      ),
+    );
+  }
 
   Future<void> _openForm([InstallationApplicationModel? request]) async {
     final profile = ref.read(profileControllerProvider);
@@ -99,6 +113,14 @@ class _InstallationApplicationPageState
 
     if (code == null) {
       final state = ref.read(installationApplicationControllerProvider);
+      if (isUnreachableMessage(state.errorMessage)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
@@ -157,6 +179,12 @@ class _InstallationApplicationPageState
 
     if (state.status == InstallationApplicationStatus.error &&
         state.requests.isEmpty) {
+      if (isUnreachableMessage(state.errorMessage)) {
+        return OfflineEmptyState(onRetry: _retryOfflineList);
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        return ServerUnavailableEmptyState(onRetry: _refresh);
+      }
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
@@ -223,7 +251,8 @@ class _InstallationApplicationPageState
     }
 
     final hasError = state.status == InstallationApplicationStatus.error &&
-        state.errorMessage != null;
+        state.errorMessage != null &&
+        !isUnreachableMessage(state.errorMessage);
     final underReview = state.requests
         .where((item) =>
             _statusKey(item) == 'pending' || _statusKey(item) == 'under_review')
@@ -474,4 +503,3 @@ String _pointsLabel(Object? value) {
   if (amount == null) return '';
   return '${NumberFormat('#,##0').format(amount)} ${'topup.pts'.tr()}';
 }
-

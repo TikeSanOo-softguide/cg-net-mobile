@@ -10,7 +10,12 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/network_status_host/network_status_host.dart';
+import '../../../components/app_dialog/app_dialog.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -416,6 +421,27 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
       },
     );
     ref.listen(
+      supportChatControllerProvider.select((state) => state.errorMessage),
+      (previous, next) {
+        if (isServerUnavailableMessage(next)) {
+          final current = ref.read(supportChatControllerProvider);
+          final hasChat = current.hasConversation ||
+              current.messages.isNotEmpty ||
+              current.flowMessage != null;
+          if (hasChat && context.mounted) {
+            unawaited(showServerUnavailableModal(context));
+          }
+          return;
+        }
+        if (!isUnreachableMessage(next)) return;
+        final current = ref.read(supportChatControllerProvider);
+        final hasChat = current.hasConversation ||
+            current.messages.isNotEmpty ||
+            current.flowMessage != null;
+        if (hasChat) GlobalOfflineNotice.show();
+      },
+    );
+    ref.listen(
       supportChatControllerProvider
           .select((state) => state.realtimeReconnectRevision),
       (previous, next) {
@@ -575,6 +601,11 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
     if (!mounted || !closed) return;
   }
 
+  String? _shownChatError(String? message) {
+    if (message == null || isUnreachableMessage(message)) return null;
+    return message.tr();
+  }
+
   Widget _buildBody(SupportChatState state, bool inputFocused) {
     if (state.isChatFlow) {
       return Column(
@@ -646,11 +677,11 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
               ],
             ),
           ),
-          if (state.errorMessage != null)
+          if (_shownChatError(state.errorMessage) != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
-                state.errorMessage!.tr(),
+                _shownChatError(state.errorMessage)!,
                 style: AppTheme.bodySecondary(color: AppColors.error),
               ),
             ),
@@ -689,10 +720,10 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                     ],
                   ),
                 ),
-                if (state.errorMessage != null) ...[
+                if (_shownChatError(state.errorMessage) != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    state.errorMessage!.tr(),
+                    _shownChatError(state.errorMessage)!,
                     textAlign: TextAlign.center,
                     style: AppTheme.bodySecondary(color: AppColors.error),
                   ),
@@ -756,11 +787,11 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
       return Column(
         children: [
           Expanded(child: _buildHistoryList(state)),
-          if (state.errorMessage != null)
+          if (_shownChatError(state.errorMessage) != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
-                state.errorMessage!.tr(),
+                _shownChatError(state.errorMessage)!,
                 style: AppTheme.bodySecondary(color: AppColors.error),
               ),
             ),
@@ -919,6 +950,30 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
             ),
           ),
         ],
+      );
+    }
+
+    if (isUnreachableMessage(state.errorMessage)) {
+      return OfflineEmptyState(
+        onRetry: () {
+          armOfflineRetry(
+            recovery: ref.read(networkRecoveryControllerProvider),
+            key: 'support-chat-reload',
+            reload: () => ref
+                .read(supportChatControllerProvider.notifier)
+                .loadCurrentConversation(),
+            stillOffline: () => isUnreachableMessage(
+              ref.read(supportChatControllerProvider).errorMessage,
+            ),
+          );
+        },
+      );
+    }
+    if (isServerUnavailableMessage(state.errorMessage)) {
+      return ServerUnavailableEmptyState(
+        onRetry: () => ref
+            .read(supportChatControllerProvider.notifier)
+            .loadCurrentConversation(),
       );
     }
 
@@ -1085,7 +1140,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                     options: activeOptions,
                     isSubmitting: state.isSubmittingOption,
                     submittingOptionId: _submittingOptionId,
-                    errorMessage: state.errorMessage?.tr(),
+                    errorMessage: _shownChatError(state.errorMessage),
                     onSelectOption: (id) => unawaited(_onSelectOption(id)),
                   ),
                 );
@@ -1134,7 +1189,7 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
                 options: activeOptions,
                 isSubmitting: state.isSubmittingOption,
                 submittingOptionId: _submittingOptionId,
-                errorMessage: state.errorMessage?.tr(),
+                errorMessage: _shownChatError(state.errorMessage),
                 onSelectOption: (id) => unawaited(_onSelectOption(id)),
               ),
             );

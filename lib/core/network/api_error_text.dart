@@ -24,7 +24,9 @@ String apiErrorText(Object error) {
         MessageCodes.locKey(MessageCodes.authSessionExpired).tr(),
       ApiFailure.tooManyRequests =>
         MessageCodes.locKey(MessageCodes.authTooManyRequests).tr(),
-      ApiFailure.server => MessageCodes.locKey(MessageCodes.sysUnexpected).tr(),
+      ApiFailure.server => error.connectionFailed
+          ? 'api.server'.tr()
+          : MessageCodes.locKey(MessageCodes.sysUnexpected).tr(),
       ApiFailure.validation =>
         (error.detail != null && error.detail!.isNotEmpty)
             ? error.detail!

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/push/push_notification_service.dart';
+import '../../../core/storage/list_snapshot_store.dart';
+import '../../../core/storage/local_prefs/local_prefs.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../data/inbox/inbox_repository.dart';
 import '../../../data/profile/profile_repository.dart';
@@ -57,6 +59,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       final cachedProfile = await _profileRepository.readCachedProfile();
       if (cachedProfile != null && !_hasIdentity(state)) {
         state = cachedProfile;
+        _rememberSessionUser(cachedProfile);
       }
     } catch (error, stackTrace) {
       FlutterError.reportError(
@@ -85,6 +88,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       final user = await _profileRepository.fetchProfile();
       if (seq != _fetchSeq) return;
       state = user;
+      _rememberSessionUser(user);
       _syncBoundBroadband(user);
       _ref.invalidate(cachedUserProfileProvider);
     } catch (_) {
@@ -101,6 +105,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
 
   void updateProfile(UserProfileModel profile) {
     state = profile;
+    _rememberSessionUser(profile);
   }
 
   void clearProfile() {
@@ -112,8 +117,23 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       username: '',
     );
     _ref.read(boundBroadbandProvider.notifier).state = null;
+    _ref.read(localPrefsProvider).clearSessionUserId();
+    _ref.read(listSnapshotStoreProvider).clear();
     _ref.invalidate(userProfileProvider);
     _ref.invalidate(cachedUserProfileProvider);
+  }
+
+  void _rememberSessionUser(UserProfileModel profile) {
+    final id = profile.id.trim();
+    if (id.isEmpty) return;
+    final current = _ref
+        .read(sharedPreferencesProvider)
+        .getString(LocalPrefs.sessionUserIdKey)
+        ?.trim();
+    if (current != null && current.isNotEmpty && current != id) {
+      _ref.read(listSnapshotStoreProvider).clear();
+    }
+    _ref.read(localPrefsProvider).setSessionUserId(id);
   }
 
   void _syncBoundBroadband(UserProfileModel profile) {

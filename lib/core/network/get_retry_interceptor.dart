@@ -4,7 +4,7 @@ class GetRetryInterceptor extends Interceptor {
   GetRetryInterceptor(this._dio);
 
   final Dio _dio;
-  static const _maxAttempts = 2;
+  static const _maxAttempts = 0;
 
   /// Set to `true` in `Options.extra` to fail fast instead of retrying.
   static const skipKey = 'skip_retry';

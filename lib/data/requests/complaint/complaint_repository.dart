@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
+import '../../../core/storage/list_snapshot_store.dart';
 import '../../../models/requests/complaint/complaint_model.dart';
 
 List<dynamic> _complaintItemsFromResponse(Object? payload) {
@@ -30,9 +31,11 @@ List<dynamic> _complaintItemsFromResponse(Object? payload) {
 }
 
 class ComplaintRepository {
-  ComplaintRepository(this._dio);
+  ComplaintRepository(this._dio, {ListSnapshotStore? snapshots})
+      : _snapshots = snapshots;
 
   final Dio _dio;
+  final ListSnapshotStore? _snapshots;
 
   String? _messageCode(Object? data) {
     if (data is! Map) return null;
@@ -51,16 +54,24 @@ class ComplaintRepository {
         ApiEndpoints.complaints,
       );
       final list = _complaintItemsFromResponse(response.data);
-
-      return list
+      final maps = list
           .whereType<Map>()
-          .map(
-            (item) => ComplaintModel.fromJson(Map<String, dynamic>.from(item)),
-          )
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
+      await _snapshots?.write(ListSnapshotStore.complaint, maps);
+
+      return maps.map(ComplaintModel.fromJson).toList();
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  List<ComplaintModel>? readCachedComplaints() {
+    return decodeSnapshot(
+      _snapshots,
+      ListSnapshotStore.complaint,
+      ComplaintModel.fromJson,
+    );
   }
 
   Future<ComplaintModel> fetchComplaint(String complaintId) async {
@@ -281,5 +292,8 @@ class ComplaintCancelResult {
 }
 
 final complaintRepositoryProvider = Provider<ComplaintRepository>((ref) {
-  return ComplaintRepository(ref.watch(dioProvider));
+  return ComplaintRepository(
+    ref.watch(dioProvider),
+    snapshots: ref.watch(listSnapshotStoreProvider),
+  );
 });
