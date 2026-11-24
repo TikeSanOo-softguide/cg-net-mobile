@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../app_colors/app_colors.dart';
 import '../app_style/app_style.dart';
@@ -30,9 +29,8 @@ class AppTheme {
     systemNavigationBarDividerColor: Color(0x00000000),
   );
 
-  /// Primary UI typeface (EN + shared Latin).
-  static String? get englishFontFamily =>
-      GoogleFonts.plusJakartaSans().fontFamily;
+  /// Bundled Latin typeface (assets/fonts/PlusJakartaSans-*.ttf).
+  static const String englishFontFamily = 'PlusJakartaSans';
 
   /// Bundled Burmese typeface (assets/fonts, declared in pubspec.yaml).
   /// Same family/weights (400, 600) as greenwaymyanmar.com.
@@ -56,14 +54,14 @@ class AppTheme {
     double? height,
     double? letterSpacing,
   }) {
-    return GoogleFonts.plusJakartaSans(
+    return TextStyle(
+      fontFamily: englishFontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
       height: height,
       letterSpacing: letterSpacing,
-    ).copyWith(
-      fontFamilyFallback: fontFamilyFallback,
       // Extra line height is split above and below. Proportional leading
       // leaves most of it under Myanmar glyphs, so button labels sit high.
       leadingDistribution: TextLeadingDistribution.even,
@@ -215,11 +213,12 @@ class AppTheme {
   static ThemeData get light {
     final colorScheme = _colorScheme;
 
-    final baseText = GoogleFonts.plusJakartaSansTextTheme().apply(
-      bodyColor: AppColors.textPrimary,
-      displayColor: AppColors.textPrimary,
-      fontFamilyFallback: fontFamilyFallback,
-    );
+    final baseText = ThemeData(useMaterial3: true).textTheme.apply(
+          fontFamily: englishFontFamily,
+          bodyColor: AppColors.textPrimary,
+          displayColor: AppColors.textPrimary,
+          fontFamilyFallback: fontFamilyFallback,
+        );
 
     return ThemeData(
       useMaterial3: true,

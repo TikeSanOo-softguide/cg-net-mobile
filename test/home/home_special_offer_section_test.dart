@@ -1,3 +1,4 @@
+import 'package:cg_net_mobile/core/storage/local_prefs/local_prefs.dart';
 import 'package:cg_net_mobile/data/promotion/promotion_repository.dart';
 import 'package:cg_net_mobile/models/promotion_model/promotion_model.dart';
 import 'package:cg_net_mobile/pages/home/home/components/home_special_offer_section.dart';
@@ -5,12 +6,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
   test('keeps a compact card that still scales with phone width', () {
     const smallPhone = 320.0;
@@ -28,6 +27,7 @@ void main() {
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+    final preferences = await SharedPreferences.getInstance();
 
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
@@ -41,6 +41,7 @@ void main() {
         fallbackLocale: const Locale('en'),
         child: ProviderScope(
           overrides: [
+            sharedPreferencesProvider.overrideWithValue(preferences),
             homePromotionsProvider.overrideWith(
               (ref) async => const [
                 HomePromotion(

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../components/app_card/app_card.dart';
 import '../../../../components/page_skeletons/home_skeletons.dart';
+import '../../../../core/network/offline_navigation.dart';
 import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
@@ -44,13 +45,16 @@ class HomeSpecialOfferSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = context.locale.languageCode;
     final promotions = ref.watch(homePromotionsProvider);
-    final cached = promotions.valueOrNull;
-    final showSkeleton = cached == null && promotions.isLoading;
-    if (!showSkeleton && (cached == null || cached.isEmpty)) {
+    final stored = ref.watch(homePromotionsCacheProvider);
+    final live = promotions.valueOrNull;
+    final keepStored = promotions.isLoading || isUnreachableError(promotions.error);
+    final items = live ?? (keepStored ? stored : null);
+    final showSkeleton = items == null && promotions.isLoading;
+    if (!showSkeleton && (items == null || items.isEmpty)) {
       return const SizedBox.shrink();
     }
 
-    final items = cached ?? const <HomePromotion>[];
+    final visible = items ?? const <HomePromotion>[];
     final layout = layoutFor(MediaQuery.sizeOf(context).width);
     return Padding(
       padding: AppStyle.pagePaddingH.add(
@@ -69,7 +73,7 @@ class HomeSpecialOfferSection extends ConsumerWidget {
                   ? const NeverScrollableScrollPhysics()
                   : null,
               padding: EdgeInsets.zero,
-              itemCount: showSkeleton ? 2 : items.length,
+              itemCount: showSkeleton ? 2 : visible.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 return SizedBox(
@@ -78,11 +82,11 @@ class HomeSpecialOfferSection extends ConsumerWidget {
                   child: showSkeleton
                       ? HomeOfferCardSkeleton(imageHeight: layout.imageHeight)
                       : _OfferCard(
-                          item: items[index],
+                          item: visible[index],
                           locale: locale,
                           imageHeight: layout.imageHeight,
                           onSeeMore: () {
-                            final id = _inboxId(items[index]);
+                            final id = _inboxId(visible[index]);
                             if (id.isEmpty) return;
                             context.pushNamed(
                               RouteNames.inboxDetail,

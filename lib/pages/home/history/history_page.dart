@@ -248,8 +248,8 @@ class _HistoryList extends ConsumerWidget {
           QuickActionIconChip.topUpSoft,
         ),
       'wifi_package' => (
-          QuickActionIconChip.packageAsset,
-          QuickActionIconChip.packageSoft,
+          'assets/images/services/subscription.png',
+          AppColors.primaryLight,
         ),
       'ftth_bill' => (
           QuickActionIconChip.billAsset,
@@ -262,6 +262,7 @@ class _HistoryList extends ConsumerWidget {
     };
     return EmptyState(
       iconAsset: asset,
+      iconTint: type == 'wifi_package' ? AppColors.primary : null,
       iconBackground: background,
       title: 'history.empty_title'.tr(),
       message: 'history.empty_body'.tr(),
@@ -424,14 +425,14 @@ class _HistoryRow extends StatelessWidget {
 
   String get _asset => switch (_type) {
         'topup' => QuickActionIconChip.topUpAsset,
-        'wifi_package' => QuickActionIconChip.packageAsset,
+        'wifi_package' => 'assets/images/services/subscription.png',
         'ftth_bill' || 'cg_bill' => QuickActionIconChip.billAsset,
         _ => QuickActionIconChip.historyAsset,
       };
 
   Color get _iconBackground => switch (_type) {
         'topup' => QuickActionIconChip.topUpSoft,
-        'wifi_package' => QuickActionIconChip.packageSoft,
+        'wifi_package' => AppColors.primaryLight,
         'ftth_bill' || 'cg_bill' => QuickActionIconChip.billSoft,
         _ => QuickActionIconChip.historySoft,
       };
@@ -480,6 +481,7 @@ class _HistoryRow extends StatelessWidget {
           QuickActionIconChip(
             asset: _asset,
             background: _iconBackground,
+            tint: _type == 'wifi_package' ? AppColors.primary : null,
             size: 38,
             iconSize: 22,
           ),

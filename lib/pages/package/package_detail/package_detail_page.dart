@@ -224,6 +224,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
             packageTitle: info.title,
             pricePoints: info.pricePoints,
             speedMbps: info.speedMbps,
+            duration: info.periodLabel,
             autoRenew: false,
             transactionId: bought.transactionNo ?? 'PKG-UNKNOWN',
           ),

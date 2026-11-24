@@ -57,25 +57,6 @@ Future<bool> showBindBroadbandConfirmDrawer(
                   ),
                 ),
                 const SizedBox(height: AppStyle.spaceLg),
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Image.asset(
-                      'assets/images/dialogs/confirm.png',
-                      width: 23,
-                      height: 23,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppStyle.spaceLg),
                 Text(
                   title,
                   textAlign: TextAlign.center,
@@ -90,58 +71,42 @@ Future<bool> showBindBroadbandConfirmDrawer(
                 const SizedBox(height: AppStyle.spaceLg),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppStyle.spaceMd,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
                   decoration: BoxDecoration(
                     color: AppColors.primarySoft,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     children: [
-                      for (var index = 0; index < details.length; index++) ...[
+                      for (final detail in details)
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppStyle.spaceMd,
-                          ),
+                          padding: const EdgeInsets.only(bottom: 14),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 88,
-                                child: Text(
-                                  details[index].key,
-                                  style: AppTheme.english(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.textSecondary,
-                                    height: AppTheme.lineHeightMyanmarSafe,
-                                  ),
+                              Text(
+                                detail.key,
+                                style: AppTheme.english(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textMuted,
                                 ),
                               ),
-                              const SizedBox(width: AppStyle.spaceSm),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  details[index].value,
+                                  detail.value,
                                   textAlign: TextAlign.end,
                                   style: AppTheme.english(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.textPrimary,
-                                    height: AppTheme.lineHeightMyanmarSafe,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        if (index < details.length - 1)
-                          const Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: AppColors.borderLight,
-                          ),
-                      ],
                     ],
                   ),
                 ),

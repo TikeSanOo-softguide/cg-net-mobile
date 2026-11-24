@@ -40,6 +40,7 @@ void main() {
       overrides: [
         appLocaleProvider.overrideWith((ref) => 'en'),
         launchPromoRepositoryProvider.overrideWithValue(repository),
+        homeBannerCacheStoreProvider.overrideWithValue(null),
       ],
     );
     addTearDown(container.dispose);

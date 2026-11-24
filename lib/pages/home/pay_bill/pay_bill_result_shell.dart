@@ -343,10 +343,7 @@ class _DetailRows extends StatelessWidget {
                         ? Align(
                             alignment: Alignment.centerRight,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 3,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(8, 2, 6, 2),
                               decoration: BoxDecoration(
                                 color: statusBackground,
                                 borderRadius: BorderRadius.circular(8),
@@ -354,7 +351,7 @@ class _DetailRows extends StatelessWidget {
                               child: Text(
                                 rows[i].$2,
                                 style: AppTheme.english(
-                                  fontSize: 14,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   color: statusColor,
                                 ),

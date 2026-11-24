@@ -9,6 +9,8 @@ class LocalPrefs {
   static const languageKey = 'selected_language';
   static const languageChosenKey = 'language_chosen';
   static const inboxCacheKey = 'inbox_messages_v1';
+  static const homePromotionsCacheKey = 'home_promotions_v1';
+  static const homeBannersCacheKey = 'home_banners_v1';
   static const inboxUnreadCountKey = 'inbox_unread_count_v1';
   static const chatCacheKey = 'support_chat_v1';
   static const sessionUserIdKey = 'session_user_id';

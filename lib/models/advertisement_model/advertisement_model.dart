@@ -21,7 +21,11 @@ class SkipTimerPromo {
 class BannerModel {
   const BannerModel({
     required this.image,
+    this.localPath,
   });
 
   final String image;
+
+  /// Downloaded file on this phone. Empty until the image is saved.
+  final String? localPath;
 }

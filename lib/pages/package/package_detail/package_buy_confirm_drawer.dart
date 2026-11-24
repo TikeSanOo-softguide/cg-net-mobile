@@ -90,57 +90,40 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
               style: AppTheme.english(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppColors.primary,
                 height: 1.25,
                 letterSpacing: 0.2,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'package.confirm_buy_body'.tr(),
-              textAlign: TextAlign.center,
-              style: AppTheme.english(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textMuted,
-                height: 1.5,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 18),
-            DecoratedBox(
+            const SizedBox(height: AppStyle.spaceLg),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
               decoration: BoxDecoration(
                 color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                child: Column(
-                  children: [
-                    _InfoRow(
-                      label: 'package.package_name'.tr(),
-                      value: packageTitle,
-                    ),
-                    const SizedBox(height: 14),
-                    _InfoRow(
-                      label: 'package.internet_speed'.tr(),
-                      value: speedLabel,
-                    ),
-                    const SizedBox(height: 14),
-                    _InfoRow(
-                      label: 'package.detail_duration'.tr(),
-                      value: periodLabel.trim().isEmpty
-                          ? '—'
-                          : periodLabel.trim(),
-                    ),
-                    const SizedBox(height: 14),
-                    _InfoRow(
-                      label: 'package.price'.tr(),
-                      value: priceLabel,
-                      valueColor: AppColors.primary,
-                    ),
-                  ],
-                ),
+              child: Column(
+                children: [
+                  _InfoRow(
+                    label: 'package.package_name'.tr(),
+                    value: packageTitle,
+                  ),
+                  _InfoRow(
+                    label: 'package.internet_speed'.tr(),
+                    value: speedLabel,
+                  ),
+                  _InfoRow(
+                    label: 'package.detail_duration'.tr(),
+                    value: periodLabel.trim().isEmpty
+                        ? '—'
+                        : periodLabel.trim(),
+                  ),
+                  _InfoRow(
+                    label: 'package.price'.tr(),
+                    value: priceLabel,
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppStyle.spaceXl),
@@ -184,47 +167,40 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.label,
     required this.value,
-    this.valueColor = AppColors.textPrimary,
   });
 
   final String label;
   final String value;
-  final Color valueColor;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 4,
-          child: Text(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
             label,
             style: AppTheme.english(
               fontSize: 14,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
               color: AppColors.textMuted,
-              height: 1.5,
-              letterSpacing: 0,
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 6,
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: AppTheme.english(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: valueColor,
-              height: 1.5,
-              letterSpacing: 0,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTheme.english(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

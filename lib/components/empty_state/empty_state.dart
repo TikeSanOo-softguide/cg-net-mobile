@@ -12,6 +12,7 @@ class EmptyState extends StatelessWidget {
     required this.message,
     this.icon = LucideIcons.inbox,
     this.iconAsset,
+    this.iconTint,
     this.iconBackground = AppColors.primaryLight,
     this.actionLabel,
     this.onAction,
@@ -21,6 +22,7 @@ class EmptyState extends StatelessWidget {
   final String message;
   final IconData icon;
   final String? iconAsset;
+  final Color? iconTint;
   final Color iconBackground;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -42,12 +44,25 @@ class EmptyState extends StatelessWidget {
                   color: iconBackground,
                   borderRadius: AppStyle.borderRadiusLg,
                 ),
-                child: Image.asset(
-                  iconAsset!,
-                  width: 40,
-                  height: 40,
-                  filterQuality: FilterQuality.high,
-                ),
+                child: iconTint == null
+                    ? Image.asset(
+                        iconAsset!,
+                        width: 40,
+                        height: 40,
+                        filterQuality: FilterQuality.high,
+                      )
+                    : ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          iconTint!,
+                          BlendMode.srcIn,
+                        ),
+                        child: Image.asset(
+                          iconAsset!,
+                          width: 40,
+                          height: 40,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      ),
               )
             else
               Icon(icon, size: 40, color: AppColors.error),

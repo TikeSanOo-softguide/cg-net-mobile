@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_style/app_style.dart';
 import '../../core/widgets/shimmer/shimmer.dart';
 
 /// Home plan card: line chip, price, speed, two features. Height 152.
@@ -36,6 +37,28 @@ class HomePackageCardSkeleton extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Home banner: same 1024×340 frame as the real carousel.
+class HomeBannerSkeleton extends StatelessWidget {
+  const HomeBannerSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: AppStyle.pagePaddingH,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          return ShimmerBox(
+            width: width,
+            height: width * 340 / 1024,
+            radius: AppStyle.borderRadiusMd,
+          );
+        },
       ),
     );
   }
