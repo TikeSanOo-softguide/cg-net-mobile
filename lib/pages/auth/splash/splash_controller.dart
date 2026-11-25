@@ -23,13 +23,18 @@ class SplashController extends StateNotifier<AsyncValue<void>> {
     final sessionValid = storedToken ? await _sessionIsValid() : false;
     final hasToken = storedToken && sessionValid != false;
 
-    if (hasToken) {
-      _push.activateAuthenticatedSession();
-    }
-
     final onboardingDone = await _secureStorage.isOnboardingDone();
 
     if (!context.mounted) return;
+    if (hasToken) {
+      _push.activateAuthenticatedSession();
+    }
+    final openInbox = _push.completeSessionBootstrap(authenticated: hasToken);
+    if (openInbox) {
+      context.goNamed(RouteNames.inboxList);
+      return;
+    }
+
     if (hasToken) {
       context.goNamed(RouteNames.skipTimerImage);
     } else if (onboardingDone) {

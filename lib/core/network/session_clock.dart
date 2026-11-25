@@ -22,8 +22,9 @@ class SessionClock extends ChangeNotifier {
   }
 
   void clearAuthentication() {
-    if (!_authenticated) return;
+    if (!_authenticated && !_expiredByUnauthorized) return;
     _authenticated = false;
+    _expiredByUnauthorized = false;
     notifyListeners();
   }
 

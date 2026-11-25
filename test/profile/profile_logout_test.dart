@@ -46,11 +46,18 @@ class _TestPushNotificationService implements PushNotificationService {
 
   final List<String> events;
   int unregisterCalls = 0;
+  int syncCalls = 0;
 
   @override
   Future<void> unregister() async {
     unregisterCalls++;
     events.add('unregister');
+  }
+
+  @override
+  Future<void> syncToken() async {
+    syncCalls++;
+    events.add('sync');
   }
 
   @override
@@ -109,7 +116,8 @@ void main() {
       container.read(profileControllerProvider).fullName,
       'Test User',
     );
-    expect(events, ['unregister', 'logout']);
+    expect(push.syncCalls, 1);
+    expect(events, ['unregister', 'logout', 'sync']);
   });
 
   test('clears the local session after the logout API succeeds', () async {
@@ -190,6 +198,7 @@ void main() {
 
     expect(storage.clearTokenCalls, 1);
     expect(container.read(profileControllerProvider).fullName, isEmpty);
+    expect(push.syncCalls, 0);
     expect(events, ['unregister', 'logout']);
   });
 }

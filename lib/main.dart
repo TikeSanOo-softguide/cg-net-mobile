@@ -77,9 +77,10 @@ class _CgNetAppState extends ConsumerState<CgNetApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        ref.read(sessionClockProvider).authenticated) {
-      ref.read(inboxUnreadCountProvider.notifier).refresh();
+    if (state == AppLifecycleState.resumed) {
+      if (ref.read(sessionClockProvider).authenticated) {
+        ref.read(inboxUnreadCountProvider.notifier).refresh();
+      }
       ref.read(networkMonitorProvider.notifier).recheck();
     }
   }

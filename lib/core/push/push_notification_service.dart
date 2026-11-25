@@ -22,6 +22,8 @@ class PushNotificationService {
   final _localNotifications = FlutterLocalNotificationsPlugin();
   final _subscriptions = <StreamSubscription<dynamic>>[];
   bool _started = false;
+  bool _sessionBootstrapCompleted = false;
+  bool _pendingInboxOpen = false;
 
   /// Must match `default_notification_channel_id` in AndroidManifest.xml.
   static const _channel = AndroidNotificationChannel(
@@ -80,6 +82,18 @@ class PushNotificationService {
     _ref.read(sessionClockProvider).authenticate();
     unawaited(syncToken());
     unawaited(_ref.read(inboxUnreadCountProvider.notifier).refresh());
+  }
+
+  bool completeSessionBootstrap({required bool authenticated}) {
+    _sessionBootstrapCompleted = true;
+    if (!authenticated) {
+      _pendingInboxOpen = false;
+      return false;
+    }
+
+    final shouldOpenInbox = _pendingInboxOpen;
+    _pendingInboxOpen = false;
+    return shouldOpenInbox;
   }
 
   /// Sends the current FCM token to the backend when the user is signed in.
@@ -143,7 +157,17 @@ class PushNotificationService {
   }
 
   void openInbox() {
-    _ref.read(appRouterProvider).go(RoutePaths.inboxList);
+    if (!_sessionBootstrapCompleted) {
+      _pendingInboxOpen = true;
+      return;
+    }
+
+    final router = _ref.read(appRouterProvider);
+    if (_ref.read(sessionClockProvider).authenticated) {
+      router.go(RoutePaths.inboxList);
+    } else {
+      router.go(RoutePaths.login);
+    }
   }
 
   void dispose() {

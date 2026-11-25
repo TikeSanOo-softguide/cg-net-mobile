@@ -164,6 +164,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
         await _clearLocalSession();
         return;
       }
+      await _push.syncToken();
       rethrow;
     }
 

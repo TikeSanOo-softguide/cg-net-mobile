@@ -16,6 +16,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('explicit local logout clears an unauthorized-expiration flag', () {
+    final sessionClock = SessionClock()..expire();
+
+    sessionClock.clearAuthentication();
+
+    expect(sessionClock.authenticated, isFalse);
+    expect(sessionClock.expiredByUnauthorized, isFalse);
+  });
+
   for (final (code, expectedKey) in [
     (MessageCodes.userDeactivated, 'msg.user_003'),
     (MessageCodes.userSuspended, 'msg.user_004'),
