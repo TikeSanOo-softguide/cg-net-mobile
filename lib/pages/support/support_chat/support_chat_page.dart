@@ -11,11 +11,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/network_status_host/network_status_host.dart';
-import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/page_skeletons/support_chat_skeleton.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/network/server_availability.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -431,8 +431,14 @@ class _SupportChatPageState extends ConsumerState<SupportChatPage>
           final hasChat = current.hasConversation ||
               current.messages.isNotEmpty ||
               current.flowMessage != null;
-          if (hasChat && context.mounted) {
-            unawaited(showServerUnavailableModal(context));
+          if (hasChat) {
+            GlobalServerNotice.showDown();
+            ref.read(serverListRecoveryProvider).arm(
+              'support-chat',
+              () => ref
+                  .read(supportChatControllerProvider.notifier)
+                  .loadCurrentConversation(),
+            );
           }
           return;
         }

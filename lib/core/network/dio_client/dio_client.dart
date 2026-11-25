@@ -8,6 +8,7 @@ import '../api_endpoints/api_endpoints.dart';
 import '../auth_interceptor/auth_interceptor.dart';
 import '../get_retry_interceptor.dart';
 import '../locale_interceptor.dart';
+import '../server_availability.dart';
 
 class DioClient {
   DioClient({
@@ -35,6 +36,7 @@ class DioClient {
       LocaleInterceptor(languageCode),
       authInterceptor,
       GetRetryInterceptor(_dio),
+      ServerAvailabilityInterceptor(),
       if (kDebugMode)
         InterceptorsWrapper(
           onRequest: (options, handler) {

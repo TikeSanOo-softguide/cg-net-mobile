@@ -92,3 +92,16 @@ class PackageDetailSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// Title card on the package list, shown until products arrive.
+class PackageTitleSkeleton extends StatelessWidget {
+  const PackageTitleSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(10, 16, 10, 0),
+      child: ShimmerBox(height: 46, borderRadius: 8),
+    );
+  }
+}

@@ -123,9 +123,9 @@ Future<bool> showBindBroadbandConfirmDrawer(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(sheetContext).pop(false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFFF0000),
+                      foregroundColor: const Color(0xFFD90000),
                       backgroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFFFF0000)),
+                      side: const BorderSide(color: Color(0xFFD90000)),
                       shape: RoundedRectangleBorder(
                         borderRadius:
                             BorderRadius.circular(AppStyle.radiusButton),
@@ -136,7 +136,7 @@ Future<bool> showBindBroadbandConfirmDrawer(
                       style: AppTheme.english(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFFFF0000),
+                        color: const Color(0xFFD90000),
                       ),
                     ),
                   ),

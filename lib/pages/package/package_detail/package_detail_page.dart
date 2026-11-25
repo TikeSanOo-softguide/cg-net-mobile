@@ -319,6 +319,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     if (state.status == PackageListStatus.error) {
       if (isServerUnavailableMessage(state.errorMessage)) {
         return ServerUnavailableEmptyState(
+          recoveryKey: 'package-detail',
           onRetry: () => ref.read(packageListControllerProvider.notifier).load(),
         );
       }

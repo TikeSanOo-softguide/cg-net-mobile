@@ -246,11 +246,14 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
       });
     } catch (error) {
       if (!mounted || sequence != _productLoadSequence) return;
-      setState(() {
-        _optionsFailed = true;
-        _loadingOptions = false;
-      });
-      await showApiMessageModal(context, error);
+      setState(() => _loadingOptions = false);
+      final retry = await showApiMessageModal(context, error);
+      if (!mounted || sequence != _productLoadSequence) return;
+      if (retry) {
+        await _loadProducts();
+        return;
+      }
+      setState(() => _optionsFailed = true);
     }
   }
 
@@ -366,8 +369,10 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
           'preferred_date': _dateFieldKey,
         },
       );
-      if (!handledInline) {
-        await showApiErrorModal(context, error);
+      if (!handledInline &&
+          await showApiErrorModal(context, error) &&
+          mounted) {
+        await _continue();
       }
     }
   }

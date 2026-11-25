@@ -13,6 +13,7 @@ import '../../../components/empty_state/empty_state.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
 import '../../../components/page_skeletons/activity_skeletons.dart';
+import '../../../components/page_skeletons/glass_tab_bar_skeleton.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
@@ -34,6 +35,9 @@ final quickActionHistoryProvider =
     FutureProvider.autoDispose.family<List<HistoryModel>, String?>(
   (ref, type) => ref.watch(historyRepositoryProvider).fetch(type: type),
 );
+
+/// Stays true after any history tab receives a list, including an empty one.
+final historyTabsReadyProvider = StateProvider.autoDispose<bool>((ref) => false);
 
 /// History — tabs: All / Top-Up / Package / Bill.
 class HistoryPage extends ConsumerStatefulWidget {
@@ -87,6 +91,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(appLocaleProvider);
+    final tabsReady = ref.watch(historyTabsReadyProvider);
+    final opening = ref.watch(quickActionHistoryProvider(null));
+    final showTabs = tabsReady || opening.hasValue;
+    final showTabSkeleton = !showTabs && opening.isLoading;
 
     return AppCurvedScaffold(
       key: ValueKey('history-$locale'),
@@ -97,16 +105,22 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
       onTrailingPressed: _openFilter,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: AppGlassTabBar(
-              controller: _tabController,
-              labels: _tabLabels,
-            ),
-          ),
+          if (showTabs)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: AppGlassTabBar(
+                controller: _tabController,
+                labels: _tabLabels,
+              ),
+            )
+          else if (showTabSkeleton)
+            const GlassTabBarSkeleton(),
           Expanded(
             child: TabBarView(
               controller: _tabController,
+              physics: showTabs
+                  ? null
+                  : const NeverScrollableScrollPhysics(),
               children: [
                 for (var t = 0; t < 4; t++)
                   _HistoryList(
@@ -140,9 +154,16 @@ class _HistoryList extends ConsumerWidget {
     final history = ref.watch(quickActionHistoryProvider(type));
 
     final cached = history.valueOrNull;
+    if (cached != null && !ref.read(historyTabsReadyProvider)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ref.read(historyTabsReadyProvider.notifier).state = true;
+      });
+    }
 
     return AppRefreshIndicator(
       color: AppColors.primary,
+      recoveryKey: 'history-${type ?? 'all'}',
       onRefresh: () async {
         ref.invalidate(quickActionHistoryProvider(type));
         try {
@@ -184,6 +205,7 @@ class _HistoryList extends ConsumerWidget {
                       : isServerUnavailableError(history.error)
                           ? ServerUnavailableEmptyState(
                               scrollable: false,
+                              recoveryKey: 'history-${type ?? 'all'}',
                               onRetry: () {
                                 ref.invalidate(quickActionHistoryProvider(type));
                               },

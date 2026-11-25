@@ -200,14 +200,15 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
     );
     if (confirmed != true || !mounted) return;
 
-    final result = await LoadingHelper.runWithLoading(
-      () => ref
-          .read(changeWifiPasswordControllerProvider.notifier)
-          .cancelRequest(request),
-    );
-    if (!mounted) return;
-
-    if (result == null) {
+    ChangeWifiPasswordCancelResult? result;
+    while (mounted) {
+      result = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(changeWifiPasswordControllerProvider.notifier)
+            .cancelRequest(request),
+      );
+      if (!mounted) return;
+      if (result != null) break;
       final errorMessage =
           ref.read(changeWifiPasswordControllerProvider).errorMessage;
       if (isUnreachableMessage(errorMessage)) {
@@ -215,8 +216,9 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
         return;
       }
       if (isServerUnavailableMessage(errorMessage)) {
-        await showServerUnavailableModal(context);
-        return;
+        final retry = await showServerUnavailableModal(context);
+        if (!retry || !mounted) return;
+        continue;
       }
       await showAppFailureModal(
         context,
@@ -225,6 +227,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
       );
       return;
     }
+    if (!mounted || result == null) return;
 
     await showAppSuccessModal(
       context,
@@ -267,6 +270,7 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
               onPressed: _openNewRequestPage,
             ),
       body: AppRefreshIndicator(
+        recoveryKey: 'change-wifi-list',
         onRefresh: _fetchRequests,
         child: _buildBody(state, requests),
       ),
@@ -286,7 +290,10 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
         return OfflineEmptyState(onRetry: _retryOfflineList);
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        return ServerUnavailableEmptyState(onRetry: _fetchRequests);
+        return ServerUnavailableEmptyState(
+          recoveryKey: 'change-wifi-list',
+          onRetry: _fetchRequests,
+        );
       }
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -356,7 +363,8 @@ class _ChangeWifiPasswordPageState extends ConsumerState<ChangeWifiPasswordPage>
 
     final hasError = state.status == ChangeWifiPasswordStatus.error &&
         state.errorMessage != null &&
-        !isUnreachableMessage(state.errorMessage);
+        !isUnreachableMessage(state.errorMessage) &&
+        !isServerUnavailableMessage(state.errorMessage);
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppStyle.spaceLg,
@@ -697,8 +705,10 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
           if (_isChangingWifiName) 'new_wifi_name': _wifiNameFieldKey,
         },
       );
-      if (!handledInline) {
-        await showApiErrorModal(context, error);
+      if (!handledInline &&
+          await showApiErrorModal(context, error) &&
+          mounted) {
+        await _submitForm();
       }
       return;
     }
@@ -718,7 +728,8 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
         return;
       }
       if (isServerUnavailableMessage(errorMessage)) {
-        await showServerUnavailableModal(context);
+        final retry = await showServerUnavailableModal(context);
+        if (retry && mounted) await _submitForm();
         return;
       }
       await showAppFailureModal(

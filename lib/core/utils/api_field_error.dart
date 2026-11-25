@@ -113,18 +113,18 @@ bool isInsufficientWalletError(Object error) {
       error.code == MessageCodes.pkgInsufficientBalance;
 }
 
-Future<void> showApiErrorModal(BuildContext context, Object error) async {
+Future<bool> showApiErrorModal(BuildContext context, Object error) async {
   if (shouldPresentAsOffline(error)) {
     await showOfflineModal(context);
-    return;
+    return false;
   }
   if (isServerUnavailableError(error)) {
-    await showServerUnavailableModal(context);
-    return;
+    return showServerUnavailableModal(context);
   }
   await showAppFailureModal(
     context,
     title: 'common.error'.tr(),
     body: apiErrorText(error),
   );
+  return false;
 }

@@ -3,8 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/network_status.dart';
+import '../../core/network/server_availability.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../app_spinner/app_spinner.dart';
 import '../network_status_host/network_status_host.dart';
@@ -23,6 +25,7 @@ class AppRefreshIndicator extends StatefulWidget {
     required this.child,
     this.edgeOffset = 0,
     this.color = AppColors.primary,
+    this.recoveryKey,
   });
 
   static const triggerDistance = 80.0;
@@ -31,6 +34,9 @@ class AppRefreshIndicator extends StatefulWidget {
   final Widget child;
   final double edgeOffset;
   final Color color;
+
+  /// Reloaded when the server comes back after this pull failed to reach it.
+  final String? recoveryKey;
 
   @override
   State<AppRefreshIndicator> createState() => _AppRefreshIndicatorState();
@@ -159,8 +165,17 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator>
     try {
       await widget.onRefresh();
     } catch (_) {}
+    if (!mounted) return;
     if (NetworkStatusSnapshot.current == NetworkStatus.offline) {
       GlobalOfflineNotice.show();
+    } else if (BackendStatusSnapshot.current == BackendStatus.unavailable) {
+      GlobalServerNotice.showDown();
+      final key = widget.recoveryKey;
+      if (key != null) {
+        ProviderScope.containerOf(context)
+            .read(serverListRecoveryProvider)
+            .arm(key, () => widget.onRefresh());
+      }
     }
     if (!mounted) return;
     _motionGeneration++;

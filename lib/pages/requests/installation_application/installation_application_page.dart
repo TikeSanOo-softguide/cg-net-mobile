@@ -106,20 +106,22 @@ class _InstallationApplicationPageState
 
     final controller =
         ref.read(installationApplicationControllerProvider.notifier);
-    final code = await LoadingHelper.runWithLoading(
-      () => controller.cancelRequest(request.id),
-    );
-    if (!mounted) return;
-
-    if (code == null) {
+    String? code;
+    while (mounted) {
+      code = await LoadingHelper.runWithLoading(
+        () => controller.cancelRequest(request.id),
+      );
+      if (!mounted) return;
+      if (code != null) break;
       final state = ref.read(installationApplicationControllerProvider);
       if (isUnreachableMessage(state.errorMessage)) {
         await showOfflineModal(context);
         return;
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        await showServerUnavailableModal(context);
-        return;
+        final retry = await showServerUnavailableModal(context);
+        if (!retry || !mounted) return;
+        continue;
       }
       await showAppFailureModal(
         context,
@@ -128,6 +130,7 @@ class _InstallationApplicationPageState
       );
       return;
     }
+    if (!mounted || code == null) return;
 
     await showAppSuccessModal(
       context,
@@ -165,6 +168,7 @@ class _InstallationApplicationPageState
             )
           : null,
       body: AppRefreshIndicator(
+        recoveryKey: 'installation-list',
         onRefresh: _refresh,
         child: _buildBody(state),
       ),
@@ -183,7 +187,10 @@ class _InstallationApplicationPageState
         return OfflineEmptyState(onRetry: _retryOfflineList);
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        return ServerUnavailableEmptyState(onRetry: _refresh);
+        return ServerUnavailableEmptyState(
+          recoveryKey: 'installation-list',
+          onRetry: _refresh,
+        );
       }
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
@@ -252,7 +259,8 @@ class _InstallationApplicationPageState
 
     final hasError = state.status == InstallationApplicationStatus.error &&
         state.errorMessage != null &&
-        !isUnreachableMessage(state.errorMessage);
+        !isUnreachableMessage(state.errorMessage) &&
+        !isServerUnavailableMessage(state.errorMessage);
     final underReview = state.requests
         .where((item) =>
             _statusKey(item) == 'pending' || _statusKey(item) == 'under_review')
