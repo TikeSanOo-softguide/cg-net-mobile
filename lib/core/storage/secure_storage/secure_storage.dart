@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -23,18 +24,37 @@ class SecureStorage {
   Future<String?> readToken() => _storage.read(key: _tokenKey);
 
   Future<void> clearToken() async {
+    if (kDebugMode) {
+      debugPrint(
+          '[auth] clearToken requested; tokenPresent=${await hasToken()}');
+    }
     await _storage.delete(key: _profileCacheKey);
     await _storage.delete(key: _tokenKey);
+    if (kDebugMode) {
+      debugPrint(
+          '[auth] clearToken completed; tokenPresent=${await hasToken()}');
+    }
   }
 
-  Future<String?> readCachedProfile() =>
-      _storage.read(key: _profileCacheKey);
+  Future<bool> clearTokenIfMatches(String expectedToken) async {
+    final currentToken = await readToken();
+    if (currentToken != expectedToken) {
+      if (kDebugMode) {
+        debugPrint('[auth] skipped token clear; stored token has changed');
+      }
+      return false;
+    }
+
+    await clearToken();
+    return true;
+  }
+
+  Future<String?> readCachedProfile() => _storage.read(key: _profileCacheKey);
 
   Future<void> writeCachedProfile(String profile) =>
       _storage.write(key: _profileCacheKey, value: profile);
 
-  Future<void> clearCachedProfile() =>
-      _storage.delete(key: _profileCacheKey);
+  Future<void> clearCachedProfile() => _storage.delete(key: _profileCacheKey);
 
   Future<bool> hasToken() async {
     final token = await readToken();

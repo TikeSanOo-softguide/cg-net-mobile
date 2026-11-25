@@ -1,13 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/network/api_exception.dart';
+import 'package:cg_net_mobile/core/network/auth_interceptor/auth_interceptor.dart';
 import 'package:cg_net_mobile/core/network/network_status.dart';
 import 'package:cg_net_mobile/core/network/idempotency_key.dart';
 import 'package:cg_net_mobile/core/network/message_codes.dart';
-import 'package:cg_net_mobile/data/change_password/change_password_repository.dart';
+import 'package:cg_net_mobile/core/network/session_clock.dart';
+import 'package:cg_net_mobile/core/storage/secure_storage/secure_storage.dart';
+import 'package:cg_net_mobile/data/push/device_token_repository.dart';
 import 'package:cg_net_mobile/data/inbox/inbox_repository.dart';
 import 'package:cg_net_mobile/data/top_up/top_up_repository.dart';
-import 'package:cg_net_mobile/models/change_password_model/change_password_model.dart';
 import 'package:cg_net_mobile/models/user_model/user_model.dart';
 import 'package:cg_net_mobile/pages/home/top_up/top_up_controller.dart';
 import 'package:dio/dio.dart';
@@ -226,7 +228,8 @@ void main() {
     expect(result.items.single.titleFor('my'), 'မင်္ဂလာပါ');
   });
 
-  test('inbox repository reads notification read state and marks it read', () async {
+  test('inbox repository reads notification read state and marks it read',
+      () async {
     final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'));
     final adapter = _NotificationAdapter();
     dio.httpClientAdapter = adapter;
@@ -241,9 +244,208 @@ void main() {
     expect(result.items.single.titleFor('en'), 'Bill due');
 
     await repository.markAsRead('12');
-
     expect(adapter.paths.last, '/notifications/12/read');
     expect(adapter.methods.last, 'PATCH');
+
+    await repository.fetchUnreadCount();
+  });
+
+  test('public exact, prefix, and regex paths reach transport without a token',
+      () async {
+    for (final path in [
+      '/auth/otp/request',
+      '/web-app/banners',
+      '/inbox',
+      '/regions/3/areas',
+    ]) {
+      final adapter = _AuthGuardAdapter();
+      final dio = _guardedDio(
+        adapter,
+        _TestSecureStorage(null),
+        SessionClock(),
+      );
+
+      await dio.get<dynamic>(path);
+
+      expect(adapter.requestCount, 1, reason: path);
+    }
+  });
+
+  test('relative and full URL public paths are both normalized', () async {
+    final adapter = _AuthGuardAdapter();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage(null),
+      SessionClock(),
+    );
+
+    await dio.get<dynamic>('/api/auth/otp/request?phone=959123456789');
+    await dio.get<dynamic>(
+      'http://example.test:8080/api/auth/otp/request?phone=959123456789',
+    );
+
+    expect(adapter.requestCount, 2);
+  });
+
+  test('protected paths are rejected locally without a token', () async {
+    final adapter = _AuthGuardAdapter();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage(null),
+      SessionClock(),
+    );
+    for (final path in [
+      '/auth/logout',
+      '/areas',
+      '/notifications',
+      '/customer/profile',
+    ]) {
+      await expectLater(
+        dio.get<dynamic>(path),
+        throwsA(
+          isA<DioException>().having(
+            (error) => ApiException.fromDio(error).failure,
+            'failure',
+            ApiFailure.unauthorized,
+          ),
+        ),
+      );
+    }
+
+    expect(adapter.requestCount, 0);
+  });
+
+  test('protected path with token but unvalidated session is rejected',
+      () async {
+    final adapter = _AuthGuardAdapter();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage('stale-token'),
+      SessionClock(),
+    );
+
+    await expectLater(
+      dio.get<dynamic>('/customer/profile'),
+      throwsA(
+        isA<DioException>().having(
+          (error) => ApiException.fromDio(error).failure,
+          'failure',
+          ApiFailure.unauthorized,
+        ),
+      ),
+    );
+
+    expect(adapter.requestCount, 0);
+  });
+
+  test('protected path with validated session reaches transport with bearer',
+      () async {
+    final adapter = _AuthGuardAdapter();
+    final sessionClock = SessionClock()..authenticate();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage('valid-token'),
+      sessionClock,
+    );
+
+    await dio.get<dynamic>('/customer/profile');
+
+    expect(adapter.requestCount, 1);
+    expect(adapter.authorizationHeaders, ['Bearer valid-token']);
+  });
+
+  test('explicit public option overrides protected defaults', () async {
+    final adapter = _AuthGuardAdapter();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage(null),
+      SessionClock(),
+    );
+
+    await dio.get<dynamic>(
+      '/notifications',
+      options: Options(extra: {AuthInterceptor.publicKey: true}),
+    );
+
+    expect(adapter.requestCount, 1);
+  });
+
+  test('explicit require-auth option overrides public routes', () async {
+    final adapter = _AuthGuardAdapter();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage(null),
+      SessionClock(),
+    );
+
+    await expectLater(
+      dio.get<dynamic>(
+        '/auth/otp/request',
+        options: Options(extra: {AuthInterceptor.requireAuthKey: true}),
+      ),
+      throwsA(isA<DioException>()),
+    );
+
+    expect(adapter.requestCount, 0);
+  });
+
+  test('a 401 for an old token does not clear a newly stored token', () async {
+    final storage = _RotatingTokenSecureStorage('old-token');
+    final adapter = _UnauthorizedAfterRotationAdapter(storage);
+    var unauthorizedCallbackCalls = 0;
+    final dio = Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+      ..httpClientAdapter = adapter
+      ..interceptors.add(
+        AuthInterceptor(
+          storage,
+          SessionClock()..authenticate(),
+          () => unauthorizedCallbackCalls++,
+        ),
+      );
+
+    await expectLater(
+      dio.get<dynamic>(
+        '/protected',
+      ),
+      throwsA(isA<DioException>()),
+    );
+
+    expect(storage.token, 'new-token');
+    expect(storage.clearCalls, 0);
+    expect(unauthorizedCallbackCalls, 0);
+  });
+
+  test('device-token requests are protected by default', () async {
+    final adapter = _AuthGuardAdapter();
+    final dio = _guardedDio(
+      adapter,
+      _TestSecureStorage(null),
+      SessionClock(),
+    );
+    final repository = DeviceTokenRepository(dio);
+
+    await expectLater(
+      repository.register('fcm-token'),
+      throwsA(
+        isA<ApiException>().having(
+          (error) => error.failure,
+          'failure',
+          ApiFailure.unauthorized,
+        ),
+      ),
+    );
+    await expectLater(
+      repository.remove('fcm-token'),
+      throwsA(
+        isA<ApiException>().having(
+          (error) => error.failure,
+          'failure',
+          ApiFailure.unauthorized,
+        ),
+      ),
+    );
+
+    expect(adapter.requestCount, 0);
   });
 
   test('serial check keeps the backend response message', () async {
@@ -281,6 +483,18 @@ void main() {
     expect(used.status, TopUpSerialCheckStatus.alreadyUsed);
     expect(used.isValid, isFalse);
   });
+}
+
+Dio _guardedDio(
+  HttpClientAdapter adapter,
+  SecureStorage storage,
+  SessionClock sessionClock,
+) {
+  return Dio(BaseOptions(baseUrl: 'http://example.test/api'))
+    ..httpClientAdapter = adapter
+    ..interceptors.add(
+      AuthInterceptor(storage, sessionClock, () {}),
+    );
 }
 
 final _uuidV4Pattern = RegExp(
@@ -343,35 +557,6 @@ class _RetryTopUpAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-class _ChangePasswordAdapter implements HttpClientAdapter {
-  final requests = <({String path, Object? data})>[];
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add((path: options.path, data: options.data));
-    final challengeCount = requests
-        .where((request) => request.path.endsWith('/change-password'))
-        .length;
-    final response = options.path.endsWith('/verify-otp')
-        ? '{"message":"Password changed successfully."}'
-        : '{"challenge_id":"challenge-${challengeCount == 1 ? '123' : '456'}","debug_otp":"654321","resend_after":"60"}';
-    return ResponseBody.fromString(
-      response,
-      202,
-      headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
-
 class _NotificationAdapter implements HttpClientAdapter {
   final paths = <String>[];
   final methods = <String>[];
@@ -389,6 +574,94 @@ class _NotificationAdapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       body,
       200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _AuthGuardAdapter implements HttpClientAdapter {
+  int requestCount = 0;
+  final authorizationHeaders = <String?>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requestCount++;
+    authorizationHeaders.add(options.headers['Authorization'] as String?);
+    return ResponseBody.fromString(
+      '{}',
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _TestSecureStorage implements SecureStorage {
+  _TestSecureStorage(this.token);
+
+  final String? token;
+
+  @override
+  Future<String?> readToken() async => token;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _RotatingTokenSecureStorage implements SecureStorage {
+  _RotatingTokenSecureStorage(this.token);
+
+  String? token;
+  int clearCalls = 0;
+
+  @override
+  Future<String?> readToken() async => token;
+
+  @override
+  Future<void> clearToken() async {
+    clearCalls++;
+    token = null;
+  }
+
+  @override
+  Future<bool> clearTokenIfMatches(String expectedToken) async {
+    if (token != expectedToken) return false;
+    await clearToken();
+    return true;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _UnauthorizedAfterRotationAdapter implements HttpClientAdapter {
+  _UnauthorizedAfterRotationAdapter(this.storage);
+
+  final _RotatingTokenSecureStorage storage;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    storage.token = 'new-token';
+    return ResponseBody.fromString(
+      '{"message":"Unauthorized"}',
+      401,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },

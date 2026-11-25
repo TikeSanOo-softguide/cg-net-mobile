@@ -46,6 +46,9 @@ class ApiException implements Exception {
       };
 
   static ApiException fromDio(DioException error) {
+    final cause = error.error;
+    if (cause is ApiException) return cause;
+
     if (CancelToken.isCancel(error) || error.type == DioExceptionType.cancel) {
       return const ApiException(ApiFailure.cancelled);
     }

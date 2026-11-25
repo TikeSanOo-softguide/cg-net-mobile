@@ -4,20 +4,29 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
+import '../../../core/push/push_notification_service.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
 
 class SplashController extends StateNotifier<AsyncValue<void>> {
-  SplashController(this._secureStorage, this._authApi)
+  SplashController(this._secureStorage, this._authApi, this._push)
       : super(const AsyncValue.data(null));
 
   final SecureStorage _secureStorage;
   final AuthApi _authApi;
+  final PushNotificationService _push;
 
   Future<void> bootstrap(BuildContext context) async {
     if (!context.mounted) return;
 
-    final hasToken = await _secureStorage.hasToken() && await _sessionIsValid();
+    final storedToken = await _secureStorage.hasToken();
+    final sessionValid = storedToken ? await _sessionIsValid() : false;
+    final hasToken = storedToken && sessionValid != false;
+
+    if (hasToken) {
+      _push.activateAuthenticatedSession();
+    }
+
     final onboardingDone = await _secureStorage.isOnboardingDone();
 
     if (!context.mounted) return;
@@ -31,12 +40,13 @@ class SplashController extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Only a 401 ends the session; being offline keeps the user signed in.
-  Future<bool> _sessionIsValid() async {
+  Future<bool?> _sessionIsValid() async {
     try {
       await _authApi.checkSession();
       return true;
     } on ApiException catch (error) {
-      return error.failure != ApiFailure.unauthorized;
+      if (error.failure == ApiFailure.unauthorized) return false;
+      return null;
     }
   }
 }
@@ -46,6 +56,7 @@ final splashControllerProvider =
   return SplashController(
     ref.watch(secureStorageProvider),
     ref.watch(authApiProvider),
+    ref.watch(pushNotificationServiceProvider),
   );
 });
 

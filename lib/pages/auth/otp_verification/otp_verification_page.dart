@@ -315,7 +315,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
         return;
       }
       await ref.read(secureStorageProvider).writeToken(token);
-      ref.read(pushNotificationServiceProvider).syncToken();
+      ref.read(pushNotificationServiceProvider).activateAuthenticatedSession();
       try {
         await ref.read(authApiProvider).syncCurrentLanguage();
       } on ApiException catch (error) {

@@ -11,6 +11,7 @@ import 'core/device/device_identity.dart';
 import 'core/device/device_identity_store.dart';
 import 'core/network/network_monitor.dart';
 import 'core/network/network_recovery_controller.dart';
+import 'core/network/session_clock.dart';
 import 'core/storage/secure_storage/secure_storage.dart';
 import 'core/push/push_notification_service.dart';
 import 'pages/inbox/inbox_list/inbox_unread_count.dart';
@@ -66,9 +67,6 @@ class _CgNetAppState extends ConsumerState<CgNetApp>
     ref.read(pushNotificationServiceProvider).start();
     // Keep lightweight reconnect polling ready for queued retry actions.
     ref.read(networkRecoveryControllerProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(inboxUnreadCountProvider.notifier).refresh();
-    });
   }
 
   @override
@@ -79,7 +77,8 @@ class _CgNetAppState extends ConsumerState<CgNetApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed &&
+        ref.read(sessionClockProvider).authenticated) {
       ref.read(inboxUnreadCountProvider.notifier).refresh();
       ref.read(networkMonitorProvider.notifier).recheck();
     }

@@ -262,9 +262,8 @@ Future<void> _verifyAndContinue(
   expect(flow.authApi.verifyCalls, 1);
   await tester.tap(find.text('Continue'));
   for (var attempt = 0; attempt < 20; attempt++) {
-    final leftOtpRoute =
-        flow.router.routeInformationProvider.value.uri.path !=
-            RoutePaths.otpVerification;
+    final leftOtpRoute = flow.router.routeInformationProvider.value.uri.path !=
+        RoutePaths.otpVerification;
     final continuationErrorVisible = find
         .text('Your number was verified, but we couldn\'t continue. '
             'Please return to login and try again.')
@@ -401,7 +400,7 @@ class _TestPushNotificationService implements PushNotificationService {
   int syncCalls = 0;
 
   @override
-  Future<void> syncToken() async {
+  void activateAuthenticatedSession() {
     syncCalls++;
   }
 

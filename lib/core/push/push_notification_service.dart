@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/push/device_token_repository.dart';
 import '../../pages/inbox/inbox_list/inbox_unread_count.dart';
 import '../network/auth_interceptor/auth_interceptor.dart';
+import '../network/session_clock.dart';
 import '../router/app_router/app_router.dart';
 import '../router/route_names/route_names.dart';
 import '../storage/secure_storage/secure_storage.dart';
@@ -72,13 +73,21 @@ class PushNotificationService {
       ..add(messaging.onTokenRefresh.listen(_register));
 
     if (await messaging.getInitialMessage() != null) openInbox();
+  }
 
-    await syncToken();
+  /// Enables authenticated push and inbox calls after session validation.
+  void activateAuthenticatedSession() {
+    _ref.read(sessionClockProvider).authenticate();
+    unawaited(syncToken());
+    unawaited(_ref.read(inboxUnreadCountProvider.notifier).refresh());
   }
 
   /// Sends the current FCM token to the backend when the user is signed in.
   Future<void> syncToken() async {
-    if (Firebase.apps.isEmpty) return;
+    if (Firebase.apps.isEmpty ||
+        !_ref.read(sessionClockProvider).authenticated) {
+      return;
+    }
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) await _register(token);
@@ -101,7 +110,10 @@ class PushNotificationService {
   }
 
   Future<void> _register(String token) async {
-    if (!await _ref.read(secureStorageProvider).hasToken()) return;
+    if (!_ref.read(sessionClockProvider).authenticated ||
+        !await _ref.read(secureStorageProvider).hasToken()) {
+      return;
+    }
     try {
       await _ref.read(deviceTokenRepositoryProvider).register(token);
     } catch (error) {

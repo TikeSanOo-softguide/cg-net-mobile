@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pusher_reverb_flutter/pusher_reverb_flutter.dart' as reverb;
 
 import '../../core/network/api_endpoints/api_endpoints.dart';
+import '../../core/network/session_clock.dart';
 import '../../core/storage/secure_storage/secure_storage.dart';
 import 'chat_repository.dart';
 
@@ -120,9 +121,10 @@ class ChatRealtimeEventParser {
 }
 
 class ChatRealtimeService implements ChatRealtimeClient {
-  ChatRealtimeService(this._secureStorage);
+  ChatRealtimeService(this._secureStorage, this._sessionClock);
 
   final SecureStorage _secureStorage;
+  final SessionClock _sessionClock;
   final StreamController<ChatRealtimeEvent> _events =
       StreamController<ChatRealtimeEvent>.broadcast();
   reverb.ReverbClient? _client;
@@ -143,6 +145,11 @@ class ChatRealtimeService implements ChatRealtimeClient {
       authEndpoint:
           '${ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/+$'), '')}/broadcasting/auth',
       authorizer: (channelName, socketId) async {
+        if (!_sessionClock.authenticated) {
+          throw StateError(
+            'Cannot authorize chat channel before session validation.',
+          );
+        }
         final token = await _secureStorage.readToken();
         if (token == null || token.isEmpty) {
           throw StateError('Cannot authorize chat channel without a session.');
@@ -150,7 +157,7 @@ class ChatRealtimeService implements ChatRealtimeClient {
         return {'Authorization': 'Bearer $token'};
       },
       // production
-      // useTLS: ApiEndpoints.reverbScheme == 'https', 
+      // useTLS: ApiEndpoints.reverbScheme == 'https',
       onError: (error) {
         if (kDebugMode) {
           debugPrint('[Chat realtime] Reverb client error: $error');
@@ -361,7 +368,10 @@ class ChatRealtimeService implements ChatRealtimeClient {
 }
 
 final chatRealtimeClientProvider = Provider<ChatRealtimeClient>((ref) {
-  final service = ChatRealtimeService(ref.watch(secureStorageProvider));
+  final service = ChatRealtimeService(
+    ref.watch(secureStorageProvider),
+    ref.read(sessionClockProvider),
+  );
   ref.onDispose(() {
     unawaited(service.dispose());
   });

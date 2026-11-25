@@ -6,6 +6,7 @@ import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/list_snapshot_store.dart';
 import '../../../core/storage/local_prefs/local_prefs.dart';
+import '../../../core/network/session_clock.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
 import '../../../data/inbox/inbox_repository.dart';
 import '../../../data/profile/profile_repository.dart';
@@ -151,17 +152,27 @@ class ProfileController extends StateNotifier<UserProfileModel> {
 
   Future<void> logout() async {
     try {
-      await _authApi.logout();
-    } on ApiException catch (error) {
-      if (error.failure == ApiFailure.unauthorized) clearProfile();
-      rethrow;
-    }
-    try {
       await _push.unregister();
     } catch (_) {
       // Push token cleanup is non-blocking for user logout.
     }
+
+    try {
+      await _authApi.logout();
+    } on ApiException catch (error) {
+      if (error.failure == ApiFailure.unauthorized) {
+        await _clearLocalSession();
+        return;
+      }
+      rethrow;
+    }
+
+    await _clearLocalSession();
+  }
+
+  Future<void> _clearLocalSession() async {
     await _secureStorage.clearToken();
+    _ref.read(sessionClockProvider).clearAuthentication();
     await _ref.read(inboxRepositoryProvider).clearCache();
     _ref.read(inboxUnreadCountProvider.notifier).clear();
     clearProfile();

@@ -44,7 +44,7 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
         password: password,
       );
       await _secureStorage.writeToken(token);
-      _push.syncToken();
+      _push.activateAuthenticatedSession();
       if (!mounted) return true;
       return true;
     } on ApiException catch (error) {
