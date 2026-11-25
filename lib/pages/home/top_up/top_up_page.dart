@@ -24,7 +24,6 @@ import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
 import '../../../core/utils/api_field_error.dart';
 import '../../../core/utils/loading_helper.dart';
-import '../../../data/profile/profile_repository.dart';
 import '../../../data/top_up/top_up_repository.dart';
 import '../../profile/profile/profile_controller.dart';
 import 'top_up_controller.dart';
@@ -53,10 +52,12 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
 
   bool get _canCheckSerial => _serial.text.trim().length == _serialLength;
 
+  String get _pinDigits => _pin.text.replaceAll(RegExp(r'\D'), '');
+
   bool get _canSubmit =>
       _account.text.trim().length >= 9 &&
       _account.text.trim().length <= _accountMaxLength &&
-      _pin.text.trim().isNotEmpty;
+      _pinDigits.length == 16;
 
   bool _hasPhoneFieldError(ApiException error) {
     final data = error.responseData;
@@ -65,7 +66,10 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   }
 
   void _prefillAccount(String phone) {
-    final value = phone.trim();
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final value = digits.length > _accountMaxLength
+        ? digits.substring(0, _accountMaxLength)
+        : digits;
     if (_accountPrefillAttempted || value.isEmpty) return;
 
     _accountPrefillAttempted = true;
@@ -223,7 +227,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
 
     try {
       final account = _account.text.trim();
-      final pin = _pin.text.replaceAll(' ', '').trim();
+      final pin = _pinDigits;
       late final TopUpAccountResult response;
       while (true) {
         try {
@@ -292,8 +296,8 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
       if (_hasPhoneFieldError(error)) {
         await showAppFailureModal(
           context,
-          title: 'topup.phone_invalid_title'.tr(),
-          body: 'topup.phone_invalid_body'.tr(),
+          title: 'topup.account_invalid_title'.tr(),
+          body: 'topup.account_invalid_body'.tr(),
         );
         return;
       }
@@ -326,7 +330,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
     return showAppFailureModal(
       context,
       title: apiMessageText(MessageCodes.topupAccountNotFound),
-      body: 'topup.invalid_user_account_title'.tr(),
+      body: 'topup.invalid_user_account_body'.tr(),
     );
   }
 
@@ -337,12 +341,8 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
   @override
   Widget build(BuildContext context) {
     final topUpState = ref.watch(topUpControllerProvider);
-    final profile = ref.watch(userProfileProvider);
-    final cachedProfile = ref.watch(cachedUserProfileProvider);
-    profile.whenData((user) => _prefillAccount(user.phone));
-    cachedProfile.whenData((user) {
-      if (user != null) _prefillAccount(user.phone);
-    });
+    final profile = ref.watch(profileControllerProvider);
+    _prefillAccount(profile.phone);
 
     return AppCurvedScaffold(
       title: Text('topup.form_title'.tr()),
@@ -467,7 +467,7 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
                       if (v == null || v.trim().isEmpty) {
                         return 'topup.pin_required'.tr();
                       }
-                      if (v.replaceAll(RegExp(r'\D'), '').length != 16) {
+                      if (_pinDigits.length != 16) {
                         return 'topup.pin_invalid'.tr();
                       }
                       return null;
