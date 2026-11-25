@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
@@ -603,18 +604,99 @@ class _BoundAccountCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Center(
-            child: AppButton(
-              label: context.tr('broadband.remove_account'),
-              isExpanded: false,
-              onPressed: isSubmitting ? null : onRemove,
-              backgroundColor: AppColors.error,
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 8.0;
+              final natural = _actionWidth(context);
+              final fitted = (constraints.maxWidth - gap) / 2;
+              final width = natural < fitted ? natural : fitted;
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: width,
+                    height: 36,
+                    child: OutlinedButton(
+                      onPressed: () => context.pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        backgroundColor: Colors.white,
+                        side: const BorderSide(color: AppColors.primary),
+                        minimumSize: Size(width, 36),
+                        maximumSize: Size(width, 36),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppStyle.radiusButton),
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'common.back'.tr(),
+                          maxLines: 1,
+                          style: AppTheme.english(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: gap),
+                  SizedBox(
+                    width: width,
+                    child: AppButton(
+                      label: context.tr('broadband.remove_account'),
+                      height: 36,
+                      fontSize: 12,
+                      onPressed: isSubmitting ? null : onRemove,
+                      backgroundColor: AppColors.error,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
+}
+
+double _actionWidth(BuildContext context) {
+  final back = _labelWidth(
+    context,
+    'common.back'.tr(),
+    AppTheme.english(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.primary,
+    ),
+  );
+  final remove = _labelWidth(
+    context,
+    'broadband.remove_account'.tr(),
+    AppTheme.button().copyWith(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.4,
+      height: AppTheme.lineHeightMyanmarSafe,
+    ),
+  );
+  final wider = back > remove ? back : remove;
+  return wider + 32;
+}
+
+double _labelWidth(BuildContext context, String label, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: label, style: style),
+    textDirection: Directionality.of(context),
+    maxLines: 1,
+  )..layout();
+  return painter.width;
 }
 
 class _DetailRow extends StatelessWidget {
