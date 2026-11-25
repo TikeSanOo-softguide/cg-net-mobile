@@ -692,6 +692,8 @@
   },
   "change_wifi": {
     "title": "修改 WiFi",
+    "new_request": "更改 WiFi",
+    "edit_request": "编辑 WiFi 修改",
     "no_requests": "暂无密码修改申请",
     "no_requests_desc": "点击右下角 + 按钮申请修改 WiFi 名称或密码。",
     "form_desc": "修改您的 WiFi 设置。",
@@ -743,6 +745,8 @@
   "changePlan": {
     "no_requests": "暂无更换套餐申请",
     "no_requests_desc": "点击 + 按钮提交更换套餐申请。",
+    "new_request": "新建更换套餐申请",
+    "edit_request": "编辑更换套餐申请",
     "current_plan": "当前套餐",
     "select_plan": "请选择新套餐",
     "no_current_plan": "此账户暂无当前套餐。",
@@ -800,6 +804,8 @@
   },
   "complaint": {
     "title": "投诉",
+    "new_complaint": "新建投诉",
+    "edit_complaint": "编辑投诉",
     "no_reports": "暂无投诉记录",
     "no_reports_desc": "点击右下角 + 按钮提交投诉。",
     "load_error": "无法加载投诉。",
