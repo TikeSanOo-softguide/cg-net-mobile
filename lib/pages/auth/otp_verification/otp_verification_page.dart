@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_button/app_button.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../core/auth/otp_sms_consent.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
@@ -79,12 +80,15 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     ]).animate(CurvedAnimation(parent: _shake, curve: Curves.easeOut));
     _startCountdown(widget.resendAfter);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focusNodes.first.requestFocus();
+      if (!mounted) return;
+      _focusNodes.first.requestFocus();
+      OtpSmsConsent.instance.bind(_applyIncomingCode);
     });
   }
 
   @override
   void dispose() {
+    unawaited(OtpSmsConsent.instance.stop());
     _countdown?.cancel();
     _shake.dispose();
     for (final c in _controllers) {
@@ -154,18 +158,29 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
         TextSelection.collapsed(offset: text.length);
   }
 
-  /// SMS autofill / paste — fill boxes only; user taps Verify to submit.
+  /// Keyboard autofill, SMS consent, or paste. Fills the boxes. Verify stays manual.
+  void _applyIncomingCode(String code) {
+    if (!mounted || _submitting) return;
+    _applyDigits(code);
+  }
+
   void _applyDigits(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return;
 
-    for (var i = 0; i < _length; i++) {
-      _writeBox(i, i < digits.length ? digits[i] : '');
-    }
+    final alreadyHandling = _handlingOtpInput;
+    _handlingOtpInput = true;
+    try {
+      for (var i = 0; i < _length; i++) {
+        _writeBox(i, i < digits.length ? digits[i] : '');
+      }
 
-    final focusIndex = (digits.length.clamp(1, _length) - 1);
-    _focusBox(focusIndex);
-    setState(() => _inlineError = null);
+      final focusIndex = (digits.length.clamp(1, _length) - 1);
+      _focusBox(focusIndex);
+      setState(() => _inlineError = null);
+    } finally {
+      if (!alreadyHandling) _handlingOtpInput = false;
+    }
   }
 
   void _onDigitChanged(int index, String value) {
@@ -387,6 +402,9 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     if (state.isBusy || _submitting) return;
 
     setState(() => _inlineError = null);
+
+    await OtpSmsConsent.instance.restart();
+    if (!mounted) return;
 
     final controller = ref.read(otpVerificationControllerProvider.notifier);
     final next = await controller.resend(widget.phone);
@@ -762,6 +780,8 @@ class _OtpSquareState extends State<_OtpSquare> {
                 textInputAction: widget.autofill
                     ? TextInputAction.done
                     : TextInputAction.next,
+                autocorrect: false,
+                enableIMEPersonalizedLearning: false,
                 maxLength: 6,
                 showCursor: true,
                 cursorColor: AppColors.primary,

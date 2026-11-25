@@ -15,6 +15,7 @@ import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_logo/app_logo.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../core/auth/otp_sms_consent.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/api_message_modal.dart';
@@ -79,7 +80,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         () async {
           session = await controller.checkSession(_phoneController.text);
           if (session == null || session!.showAlert) return;
-          requestedPhone = await controller.requestOtp(session!.phone);
+          await OtpSmsConsent.instance.arm();
+          try {
+            requestedPhone = await controller.requestOtp(session!.phone);
+          } catch (_) {
+            await OtpSmsConsent.instance.stop();
+            rethrow;
+          }
         },
         dismissAnimation: false,
       );
@@ -126,6 +133,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
       return;
     }
+    await OtpSmsConsent.instance.stop();
     await _showLoginError();
   }
 

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_button/app_button.dart';
 import '../../../components/common_auth_card/common_auth_card.dart';
+import '../../../core/auth/otp_sms_consent.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
@@ -46,6 +47,7 @@ class _VerifyChangePasswordOtpPageState
   String? _inlineError;
   bool _submitting = false;
   bool _resending = false;
+  bool _handlingOtpInput = false;
 
   String get _code => _controllers.map((controller) => controller.text).join();
   bool get _isComplete => _code.length == _length;
@@ -61,11 +63,13 @@ class _VerifyChangePasswordOtpPageState
       if (!mounted) return;
       _focusNodes.first.requestFocus();
       _showDebugOtp(_challenge.debugOtp);
+      OtpSmsConsent.instance.bind(_applyIncomingCode);
     });
   }
 
   @override
   void dispose() {
+    unawaited(OtpSmsConsent.instance.stop());
     _countdown?.cancel();
     widget.session.clearPassword();
     for (final controller in _controllers) {
@@ -77,20 +81,38 @@ class _VerifyChangePasswordOtpPageState
     super.dispose();
   }
 
+  void _applyIncomingCode(String code) {
+    if (!mounted || _isBusy) return;
+    _applyDigits(code);
+  }
+
   void _applyDigits(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return;
 
-    for (var index = 0; index < _length; index++) {
-      _controllers[index].text = index < digits.length ? digits[index] : '';
-    }
+    final alreadyHandling = _handlingOtpInput;
+    _handlingOtpInput = true;
+    try {
+      for (var index = 0; index < _length; index++) {
+        final digit = index < digits.length ? digits[index] : '';
+        if (_controllers[index].text != digit) {
+          _controllers[index].value = TextEditingValue(
+            text: digit,
+            selection: TextSelection.collapsed(offset: digit.length),
+          );
+        }
+      }
 
-    final focusIndex = digits.length.clamp(1, _length) - 1;
-    _focusNodes[focusIndex].requestFocus();
-    setState(() => _inlineError = null);
+      final focusIndex = digits.length.clamp(1, _length) - 1;
+      _focusNodes[focusIndex].requestFocus();
+      setState(() => _inlineError = null);
+    } finally {
+      if (!alreadyHandling) _handlingOtpInput = false;
+    }
   }
 
   void _onDigitChanged(int index, String value) {
+    if (_handlingOtpInput) return;
     final digits = value.replaceAll(RegExp(r'\D'), '');
     if (digits.length > 1) {
       _applyDigits(digits);
@@ -178,6 +200,9 @@ class _VerifyChangePasswordOtpPageState
       _inlineError = null;
       _resending = true;
     });
+
+    await OtpSmsConsent.instance.restart();
+    if (!mounted) return;
 
     try {
       final nextChallenge = await ref
@@ -523,6 +548,8 @@ class _PasswordOtpSquareState extends State<_PasswordOtpSquare> {
             keyboardType: TextInputType.number,
             textInputAction:
                 widget.autofill ? TextInputAction.done : TextInputAction.next,
+            autocorrect: false,
+            enableIMEPersonalizedLearning: false,
             maxLength: 6,
             showCursor: true,
             cursorColor: AppColors.primary,
@@ -553,7 +580,21 @@ class _PasswordOtpSquareState extends State<_PasswordOtpSquare> {
               contentPadding: EdgeInsets.zero,
             ),
             onTap: widget.enabled ? _selectAll : null,
-            onChanged: widget.onChanged,
+            onChanged: (value) {
+              final digits = value.replaceAll(RegExp(r'\D'), '');
+              if (digits.length > 1) {
+                widget.onChanged(digits);
+                return;
+              }
+              final digit = digits.isEmpty ? '' : digits;
+              if (widget.controller.text != digit) {
+                widget.controller.value = TextEditingValue(
+                  text: digit,
+                  selection: TextSelection.collapsed(offset: digit.length),
+                );
+              }
+              widget.onChanged(digit);
+            },
           ),
         ),
       ),

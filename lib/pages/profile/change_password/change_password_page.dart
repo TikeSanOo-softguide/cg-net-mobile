@@ -9,6 +9,7 @@ import '../../../components/app_button/app_button.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_input/app_input.dart';
+import '../../../core/auth/otp_sms_consent.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/route_names/route_names.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
@@ -238,6 +239,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                             );
 
                             try {
+                              await OtpSmsConsent.instance.arm();
                               final challenge =
                                   await LoadingHelper.runWithLoading(
                                 () => ref
@@ -247,7 +249,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                                 dismissAnimation: false,
                               );
 
-                              if (!context.mounted) return;
+                              if (!context.mounted) {
+                                await OtpSmsConsent.instance.stop();
+                                return;
+                              }
 
                               _current.clear();
                               _next.clear();
@@ -266,6 +271,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage>
                                 ),
                               );
                             } catch (error) {
+                              await OtpSmsConsent.instance.stop();
                               if (!context.mounted) return;
                               final handledInline = handleApiError(
                                 error,

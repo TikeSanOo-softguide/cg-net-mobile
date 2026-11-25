@@ -17,6 +17,9 @@ import '../../home/home/bound_broadband_provider.dart';
 
 final profileHeaderLoadingProvider = StateProvider<bool>((ref) => false);
 
+/// False until the first profile request in this session has finished.
+final profileHeaderSettledProvider = StateProvider<bool>((ref) => false);
+
 class ProfileController extends StateNotifier<UserProfileModel> {
   ProfileController({
     required Ref ref,
@@ -47,6 +50,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
   final ProfileRepository _profileRepository;
   final AuthApi _authApi;
   int _fetchSeq = 0;
+  Future<void>? _activeFetch;
 
   static bool _hasIdentity(UserProfileModel profile) {
     return profile.fullName.isNotEmpty ||
@@ -75,7 +79,17 @@ class ProfileController extends StateNotifier<UserProfileModel> {
     await fetchProfile();
   }
 
-  Future<void> fetchProfile() async {
+  Future<void> fetchProfile() {
+    final active = _activeFetch;
+    if (active != null) return active;
+    final run = _loadProfile();
+    _activeFetch = run;
+    return run.whenComplete(() {
+      if (identical(_activeFetch, run)) _activeFetch = null;
+    });
+  }
+
+  Future<void> _loadProfile() async {
     final seq = ++_fetchSeq;
     final firstLoad = !_hasIdentity(state);
     if (firstLoad) {
@@ -98,6 +112,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
         Future.microtask(() {
           if (!mounted) return;
           _ref.read(profileHeaderLoadingProvider.notifier).state = false;
+          _ref.read(profileHeaderSettledProvider.notifier).state = true;
         });
       }
     }
@@ -117,6 +132,7 @@ class ProfileController extends StateNotifier<UserProfileModel> {
       username: '',
     );
     _ref.read(boundBroadbandProvider.notifier).state = null;
+    _ref.read(profileHeaderSettledProvider.notifier).state = false;
     _ref.read(localPrefsProvider).clearSessionUserId();
     _ref.read(listSnapshotStoreProvider).clear();
     _ref.invalidate(userProfileProvider);

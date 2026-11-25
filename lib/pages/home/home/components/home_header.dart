@@ -14,6 +14,7 @@ import '../../../../core/router/route_names/route_names.dart';
 import '../../../../core/theme/app_colors/app_colors.dart';
 import '../../../../core/theme/app_style/app_style.dart';
 import '../../../../core/theme/app_theme/app_theme.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../data/profile/profile_repository.dart';
 import '../../../../models/user_model/user_model.dart';
 import '../../../profile/profile/profile_controller.dart';
@@ -98,10 +99,12 @@ class HomePinnedBar extends StatelessWidget {
     super.key,
     required this.accountNumber,
     required this.broadbandAccount,
+    this.accountLoading = false,
   });
 
   final String accountNumber;
   final String broadbandAccount;
+  final bool accountLoading;
 
   static const double _padTop = 14;
   static const double _padBottom = 8;
@@ -161,17 +164,19 @@ class HomePinnedBar extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 3),
-                        Text(
-                          accountNumber,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.english(
-                            color: AppColors.onPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
+                        accountLoading
+                            ? const _OnPrimaryShimmer(width: 128, height: 14)
+                            : Text(
+                                accountNumber,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.english(
+                                  color: AppColors.onPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
                       ],
                     ),
                   ),
@@ -261,10 +266,19 @@ class _LiquidGlassChip extends StatelessWidget {
 }
 
 /// Scrollable header: balance (below the pinned bar).
-class HomeBalanceHeader extends ConsumerStatefulWidget {
-  const HomeBalanceHeader({super.key, required this.balanceAmount});
+class HomeBalanceHeader extends StatelessWidget {
+  const HomeBalanceHeader({
+    super.key,
+    required this.balanceAmount,
+    this.balanceLoading = false,
+    required this.balanceVisible,
+    required this.onToggleBalance,
+  });
 
   final String balanceAmount;
+  final bool balanceLoading;
+  final bool balanceVisible;
+  final VoidCallback onToggleBalance;
 
   /// Blue block height (content is centered inside).
   static const double sectionHeight = 162;
@@ -272,19 +286,12 @@ class HomeBalanceHeader extends ConsumerStatefulWidget {
   /// Matches HomeQuickActions.hangBelow — room above the overlapping card.
   static const double cardClearance = 30;
 
-  @override
-  ConsumerState<HomeBalanceHeader> createState() => _HomeBalanceHeaderState();
-}
-
-class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
-  bool _balanceVisible = false;
-
   static const int _maskCount = 6;
 
   String get _visibleAmount {
-    final raw = widget.balanceAmount.replaceAll(',', '');
+    final raw = balanceAmount.replaceAll(',', '');
     final value = double.tryParse(raw);
-    if (value == null) return widget.balanceAmount;
+    if (value == null) return balanceAmount;
     return NumberFormat('#,##0.00', 'en').format(value);
   }
 
@@ -318,7 +325,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
   }
 
   Widget _balanceBlock() {
-    if (_balanceVisible) {
+    if (balanceVisible) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -328,7 +335,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
             padding: const EdgeInsets.only(bottom: 8),
             child: SizedBox(
               height: 40,
-              child: Center(child: _amountRow()),
+              child: Center(child: _amountSlot()),
             ),
           ),
         ],
@@ -347,21 +354,25 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
             padding: const EdgeInsets.only(bottom: 8),
             child: SizedBox(
               height: 40,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  for (var i = 0; i < _maskCount; i++)
-                    Text(
-                      '*',
-                      style: AppTheme.english(
-                        color: AppColors.onPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        height: AppTheme.lineHeightMyanmarSafe,
-                      ),
+              child: balanceLoading
+                  ? const Center(
+                      child: _OnPrimaryShimmer(width: 108, height: 22),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        for (var i = 0; i < _maskCount; i++)
+                          Text(
+                            '*',
+                            style: AppTheme.english(
+                              color: AppColors.onPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              height: AppTheme.lineHeightMyanmarSafe,
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
             ),
           ),
         ],
@@ -373,9 +384,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          setState(() => _balanceVisible = !_balanceVisible);
-        },
+        onTap: onToggleBalance,
         borderRadius: BorderRadius.circular(20),
         overlayColor: WidgetStateProperty.all(
           Colors.white.withValues(alpha: 0.08),
@@ -411,7 +420,7 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
               ),
               const SizedBox(width: 4),
               Icon(
-                _balanceVisible ? LucideIcons.eye : LucideIcons.eye_off,
+                balanceVisible ? LucideIcons.eye : LucideIcons.eye_off,
                 color: AppColors.onPrimary,
                 size: 11,
               ),
@@ -420,6 +429,13 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
         ),
       ),
     );
+  }
+
+  Widget _amountSlot() {
+    if (balanceLoading) {
+      return const _OnPrimaryShimmer(width: 108, height: 22);
+    }
+    return _amountRow();
   }
 
   Widget _amountRow() {
@@ -465,6 +481,28 @@ class _HomeBalanceHeaderState extends ConsumerState<HomeBalanceHeader> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Glass placeholder on the blue home header.
+class _OnPrimaryShimmer extends StatelessWidget {
+  const _OnPrimaryShimmer({required this.width, required this.height});
+
+  final double width;
+  final double height;
+
+  static const _base = Color(0x38FFFFFF);
+  static const _highlight = Color(0x73FFFFFF);
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerBox(
+      width: width,
+      height: height,
+      borderRadius: 6,
+      baseColor: _base,
+      highlightColor: _highlight,
     );
   }
 }
