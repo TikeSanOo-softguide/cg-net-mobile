@@ -27,7 +27,7 @@ class OfflineEmptyState extends StatelessWidget {
       child: Padding(
         padding: AppStyle.pagePaddingH,
         child: DecoratedBox(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: AppStyle.borderRadiusListCard,
           ),
@@ -38,7 +38,7 @@ class OfflineEmptyState extends StatelessWidget {
               children: [
                 const OfflineStatusContent(prominent: true),
                 const SizedBox(height: 12),
-                _OfflineRetryButton(onPressed: onRetry),
+                OfflineRetryButton(onPressed: onRetry),
               ],
             ),
           ),
@@ -67,7 +67,7 @@ class ServerUnavailableEmptyState extends StatelessWidget {
       child: Padding(
         padding: AppStyle.pagePaddingH,
         child: DecoratedBox(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: AppStyle.borderRadiusListCard,
           ),
@@ -78,7 +78,7 @@ class ServerUnavailableEmptyState extends StatelessWidget {
               children: [
                 const ServerUnavailableContent(prominent: true),
                 const SizedBox(height: 12),
-                _OfflineRetryButton(onPressed: onRetry),
+                OfflineRetryButton(onPressed: onRetry),
               ],
             ),
           ),
@@ -104,8 +104,8 @@ Widget _fillScroll(Widget content) {
   );
 }
 
-class _OfflineRetryButton extends StatelessWidget {
-  const _OfflineRetryButton({required this.onPressed});
+class OfflineRetryButton extends StatelessWidget {
+  const OfflineRetryButton({super.key, required this.onPressed});
 
   final VoidCallback onPressed;
 

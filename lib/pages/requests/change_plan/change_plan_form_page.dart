@@ -5,6 +5,8 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../components/app_spinner/app_spinner.dart';
 import '../../../components/app_choice_chip/app_choice_chip.dart';
 import '../../../components/app_date_picker/app_compact_date_picker.dart';
 import '../../../components/app_input/app_input.dart';
@@ -483,21 +485,14 @@ class _ChangePlanFormPageState extends ConsumerState<ChangePlanFormPage>
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppStyle.spaceXl),
                   child: Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
-                      ),
-                    ),
+                    child: AppSpinner(size: 28, color: AppColors.primary),
                   ),
                 )
               else if (_optionsFailed)
-                Center(
-                  child: TextButton(
-                    onPressed: _loadProducts,
-                    child: Text('common.retry'.tr()),
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Center(
+                    child: OfflineRetryButton(onPressed: _loadProducts),
                   ),
                 )
               else if (_packages.isEmpty)

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -21,13 +22,28 @@ class ProcessingStatus extends StatelessWidget {
       type: MaterialType.transparency,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 280),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const _ProcessingDots(),
-            const SizedBox(height: 2),
-            _ShimmerLabel(label: label),
-          ],
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+                color: AppColors.primaryLight.withValues(alpha: 0.55),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const _ProcessingDots(),
+                    const SizedBox(height: 6),
+                    _ShimmerLabel(label: label),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -65,9 +81,9 @@ class _ShimmerLabelState extends State<_ShimmerLabel>
   @override
   Widget build(BuildContext context) {
     final style = AppTheme.english(
-      fontSize: 12,
+      fontSize: 10,
       fontWeight: FontWeight.w600,
-      color: AppColors.primaryLight,
+      color: AppColors.primary,
       height: 1,
     ).copyWith(decoration: TextDecoration.none);
 
@@ -82,9 +98,9 @@ class _ShimmerLabelState extends State<_ShimmerLabel>
               begin: Alignment(slide, 0),
               end: Alignment(slide + 1.1, 0),
               colors: const [
-                Color(0x8CEBEBFB),
-                Color(0xFFEBEBFB),
-                Color(0x8CEBEBFB),
+                Color(0x8C0100CA),
+                Color(0xFF0100CA),
+                Color(0x8C0100CA),
               ],
               stops: const [0.25, 0.5, 0.75],
             ).createShader(bounds);
@@ -146,7 +162,7 @@ class _ProcessingDotsState extends State<_ProcessingDots>
           mainAxisSize: MainAxisSize.min,
           children: [
             for (var i = 0; i < 3; i++) ...[
-              if (i > 0) const SizedBox(width: 14),
+              if (i > 0) const SizedBox(width: 4),
               _Dot(t: _pulse(i)),
             ],
           ],
@@ -163,10 +179,10 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = 12 + (10 * t);
+    final size = 5 + (3 * t);
     return SizedBox(
-      width: 22,
-      height: 22,
+      width: 8,
+      height: 8,
       child: Center(
         child: DecoratedBox(
           decoration: BoxDecoration(
