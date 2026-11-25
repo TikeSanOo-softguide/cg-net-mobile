@@ -230,9 +230,9 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
           await ref.read(authApiProvider).syncCurrentLanguage();
           if (!mounted) return;
           TextInput.finishAutofillContext();
-          context.goNamed(RouteNames.home);
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) return;
           navigated = true;
-          await Future.delayed(const Duration(milliseconds: 350));
         },
         dismissAnimation: false,
         onBeforeDismiss: () async {
@@ -245,7 +245,12 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
     } on ApiException catch (error) {
       submitError = error;
     }
-    if (navigated) return;
+    if (navigated) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      context.goNamed(RouteNames.home);
+      return;
+    }
 
     if (mounted && _submitting) {
       setState(() => _submitting = false);

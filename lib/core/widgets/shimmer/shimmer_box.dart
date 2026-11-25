@@ -11,12 +11,16 @@ class ShimmerBox extends StatelessWidget {
     this.height,
     this.borderRadius = 8,
     this.radius,
+    this.baseColor,
+    this.highlightColor,
   });
 
   final double? width;
   final double? height;
   final double borderRadius;
   final BorderRadius? radius;
+  final Color? baseColor;
+  final Color? highlightColor;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +28,8 @@ class ShimmerBox extends StatelessWidget {
       width: width,
       height: height,
       radius: radius ?? BorderRadius.circular(borderRadius),
+      baseColor: baseColor,
+      highlightColor: highlightColor,
     );
     if (AppShimmer.hasScope(context)) return box;
     return AppShimmer(child: box);
@@ -35,18 +41,22 @@ class _ShimmerFill extends StatelessWidget {
     required this.width,
     required this.height,
     required this.radius,
+    required this.baseColor,
+    required this.highlightColor,
   });
 
   final double? width;
   final double? height;
   final BorderRadius radius;
+  final Color? baseColor;
+  final Color? highlightColor;
 
   @override
   Widget build(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<ShimmerScope>();
     final brightness = scope?.brightness ?? Theme.of(context).brightness;
-    final base = ShimmerConfig.base(brightness);
-    final highlight = ShimmerConfig.highlight(brightness);
+    final base = baseColor ?? ShimmerConfig.base(brightness);
+    final highlight = highlightColor ?? ShimmerConfig.highlight(brightness);
     final progress = scope?.progress ?? 0;
     final travel = -1.4 + (progress * 2.8);
 

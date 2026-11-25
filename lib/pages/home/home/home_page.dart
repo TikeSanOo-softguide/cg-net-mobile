@@ -32,13 +32,25 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   bool _launchPromoHandled = false;
   bool _launchPromoShowing = false;
+  bool _balanceVisible = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileIfEmpty();
       _maybeShowLaunchPromotion();
     });
+  }
+
+  void _loadProfileIfEmpty() {
+    if (!mounted) return;
+    final live = ref.read(profileControllerProvider);
+    final hasIdentity = live.fullName.isNotEmpty ||
+        live.phone.isNotEmpty ||
+        live.accountNumber.isNotEmpty;
+    if (hasIdentity) return;
+    ref.read(profileControllerProvider.notifier).fetchProfile();
   }
 
   Future<void> _refreshSession() {
@@ -85,11 +97,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final liveProfile = ref.watch(profileControllerProvider);
     final cachedProfile = ref.watch(cachedUserProfileProvider);
+    final profileSettled = ref.watch(profileHeaderSettledProvider);
     final hasLiveProfile = liveProfile.fullName.isNotEmpty ||
         liveProfile.phone.isNotEmpty ||
         liveProfile.accountNumber.isNotEmpty;
     final displayProfile =
         hasLiveProfile ? liveProfile : cachedProfile.valueOrNull;
+    final phone = displayProfile?.phone.trim() ?? '';
+    final balance = displayProfile?.walletBalance.trim() ?? '';
     final broadbandAccount =
         ref.watch(boundBroadbandProvider)?.account.trim() ?? '';
     final localeCode = ref.watch(appLocaleProvider);
@@ -135,13 +150,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             HomeBalanceHeader(
-                              balanceAmount:
-                                  displayProfile?.walletBalance.isNotEmpty ==
-                                          true
-                                      ? displayProfile!.walletBalance
-                                      : cachedProfile.isLoading
-                                          ? ''
-                                          : '—',
+                              balanceAmount: balance.isNotEmpty
+                                  ? balance
+                                  : profileSettled
+                                      ? '—'
+                                      : '',
+                              balanceLoading:
+                                  balance.isEmpty && !profileSettled,
+                              balanceVisible: _balanceVisible,
+                              onToggleBalance: () {
+                                setState(
+                                  () => _balanceVisible = !_balanceVisible,
+                                );
+                              },
                             ),
                             const SizedBox(height: HomeQuickActions.hangBelow),
                           ],
@@ -187,8 +208,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: ColoredBox(
                 color: AppColors.primary,
                 child: HomePinnedBar(
-                  accountNumber: displayProfile?.phone ??
-                      (cachedProfile.isLoading ? '' : '—'),
+                  accountNumber: phone.isNotEmpty
+                      ? phone
+                      : profileSettled
+                          ? '—'
+                          : '',
+                  accountLoading: phone.isEmpty && !profileSettled,
                   broadbandAccount: broadbandAccount,
                 ),
               ),
