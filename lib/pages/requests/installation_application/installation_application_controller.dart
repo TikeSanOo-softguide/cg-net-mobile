@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../data/requests/installation_application/installation_application_repository.dart';
 import '../../../models/requests/installation_application/installation_application_model.dart';
 
@@ -48,8 +49,17 @@ class InstallationApplicationController
 
   Future<void> fetchRequests() async {
     final sequence = ++_fetchSequence;
-    final firstLoad = state.status == InstallationApplicationStatus.initial;
-    if (firstLoad) {
+    final firstLoad = state.status == InstallationApplicationStatus.initial ||
+        (state.status == InstallationApplicationStatus.error &&
+            state.requests.isEmpty);
+    final cached = _repository.readCachedRequests();
+    if (firstLoad && cached != null) {
+      state = state.copyWith(
+        status: InstallationApplicationStatus.success,
+        requests: cached,
+        clearError: true,
+      );
+    } else if (firstLoad) {
       state = state.copyWith(
         status: InstallationApplicationStatus.loading,
         clearError: true,
@@ -67,7 +77,7 @@ class InstallationApplicationController
       if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: InstallationApplicationStatus.error,
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
     } catch (error) {
       if (sequence != _fetchSequence) return;
@@ -92,7 +102,7 @@ class InstallationApplicationController
     } on ApiException catch (error) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
       rethrow;
     } catch (error) {
@@ -111,7 +121,7 @@ class InstallationApplicationController
       await fetchRequests();
       return code;
     } on ApiException catch (error) {
-      state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
+      state = state.copyWith(errorMessage: storedApiMessage(error));
       return null;
     } catch (error) {
       state = state.copyWith(errorMessage: error.toString());
@@ -126,7 +136,7 @@ class InstallationApplicationController
       await fetchRequests();
       return true;
     } on ApiException catch (error) {
-      state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
+      state = state.copyWith(errorMessage: storedApiMessage(error));
       return false;
     } catch (error) {
       state = state.copyWith(errorMessage: error.toString());

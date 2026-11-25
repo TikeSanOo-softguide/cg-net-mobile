@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
+import '../../../core/storage/list_snapshot_store.dart';
 import '../../../models/requests/change_plan/change_plan_request_model.dart';
 
 List<dynamic> _changePlanItemsFromResponse(Object? payload) {
@@ -25,26 +26,34 @@ List<dynamic> _changePlanItemsFromResponse(Object? payload) {
 }
 
 class ChangePlanRepository {
-  ChangePlanRepository(this._dio);
+  ChangePlanRepository(this._dio, {ListSnapshotStore? snapshots})
+      : _snapshots = snapshots;
 
   final Dio _dio;
+  final ListSnapshotStore? _snapshots;
 
   Future<List<ChangePlanRequestModel>> fetchRequests() async {
     try {
       final response = await _dio.get<dynamic>(ApiEndpoints.changePlanRequests);
       final items = _changePlanItemsFromResponse(response.data);
-
-      return items
+      final maps = items
           .whereType<Map>()
-          .map(
-            (item) => ChangePlanRequestModel.fromJson(
-              Map<String, dynamic>.from(item),
-            ),
-          )
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
+      await _snapshots?.write(ListSnapshotStore.changePlan, maps);
+
+      return maps.map(ChangePlanRequestModel.fromJson).toList();
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  List<ChangePlanRequestModel>? readCachedRequests() {
+    return decodeSnapshot(
+      _snapshots,
+      ListSnapshotStore.changePlan,
+      ChangePlanRequestModel.fromJson,
+    );
   }
 
   Future<ChangePlanSaveResult> createRequest(
@@ -143,5 +152,8 @@ class ChangePlanSaveResult {
 }
 
 final changePlanRepositoryProvider = Provider<ChangePlanRepository>((ref) {
-  return ChangePlanRepository(ref.watch(dioProvider));
+  return ChangePlanRepository(
+    ref.watch(dioProvider),
+    snapshots: ref.watch(listSnapshotStoreProvider),
+  );
 });

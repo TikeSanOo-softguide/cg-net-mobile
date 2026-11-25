@@ -54,20 +54,26 @@ class InboxListController
       _syncPendingReads(items, merged);
     } on ApiException catch (error, stackTrace) {
       if (!mounted || error.failure == ApiFailure.cancelled) return;
-      if (error.failure == ApiFailure.offline) {
+      final unreachable = error.failure == ApiFailure.offline;
+      if (unreachable) {
         final cached = state.valueOrNull ?? _repository.readCache();
         if (cached != null) {
           _setOffline(true);
           state = AsyncValue.data(cached);
-          if (rethrowOffline) throw error;
+          if (rethrowOffline) throw const ApiException(ApiFailure.offline);
           return;
         }
-      } else if (state.hasValue) {
+        _setOffline(true);
+        state = AsyncValue.error(
+          const ApiException(ApiFailure.offline),
+          stackTrace,
+        );
+        if (rethrowOffline) throw const ApiException(ApiFailure.offline);
         return;
       }
+      if (state.hasValue) return;
       _setOffline(false);
       state = AsyncValue.error(error, stackTrace);
-      if (rethrowOffline && error.failure == ApiFailure.offline) throw error;
     }
   }
 

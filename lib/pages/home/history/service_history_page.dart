@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,10 +7,12 @@ import '../../../components/app_card/app_card.dart';
 import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/activity_skeletons.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
@@ -24,9 +25,28 @@ import '../../../data/history/history_repository.dart';
 import '../../../models/history_model/history_model.dart';
 import '../pay_bill/pay_bill_result.dart';
 
+final serviceHistoryOfflineProvider = StateProvider<bool>((ref) => false);
+
 final serviceHistoryProvider =
-    FutureProvider.autoDispose<List<HistoryModel>>((ref) {
-  return ref.watch(historyRepositoryProvider).fetchService();
+    FutureProvider.autoDispose<List<HistoryModel>>((ref) async {
+  final repository = ref.watch(historyRepositoryProvider);
+  var active = true;
+  ref.onDispose(() => active = false);
+  try {
+    final items = await repository.fetchService();
+    if (active) {
+      ref.read(serviceHistoryOfflineProvider.notifier).state = false;
+    }
+    return items;
+  } catch (error) {
+    if (!isOfflineError(error)) rethrow;
+    final cached = repository.readCachedServiceHistory();
+    if (cached == null) rethrow;
+    if (active) {
+      ref.read(serviceHistoryOfflineProvider.notifier).state = true;
+    }
+    return cached;
+  }
 });
 
 class ServiceHistoryPage extends ConsumerWidget {
@@ -46,70 +66,83 @@ class ServiceHistoryPage extends ConsumerWidget {
       showBack: true,
       onBack: () => context.pop(),
       body: showSkeleton
-          ? const CardListShimmer(
-              itemCount: 5,
-              itemHeight: 96,
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
-            )
+          ? const ServiceHistoryListSkeleton()
           : AppRefreshIndicator(
               color: AppColors.primary,
               onRefresh: () async {
+                ref.read(serviceHistoryOfflineProvider.notifier).state = false;
                 ref.invalidate(serviceHistoryProvider);
                 try {
                   await ref.read(serviceHistoryProvider.future);
                 } catch (_) {}
               },
               child: items == null
-          ? _pullableFill(EmptyState(
-          icon: LucideIcons.wifi_off,
-          iconAsset: isOfflineError(failure)
-              ? null
-              : QuickActionIconChip.billAsset,
-          iconBackground: QuickActionIconChip.billSoft,
-          title: isOfflineError(failure)
-              ? 'shared.no_internet_title'.tr()
-              : 'common.error'.tr(),
-          message: isOfflineError(failure)
-              ? 'shared.no_internet_body'.tr()
-              : apiErrorText(failure ?? 'common.error'),
-          actionLabel: 'common.retry'.tr(),
-          onAction: () async {
-            const recoveryKey = 'service-history-reload';
-            if (isOfflineError(failure)) {
-              ref.read(networkRecoveryControllerProvider).enqueue(
-                    recoveryKey,
-                    () async => ref.invalidate(serviceHistoryProvider),
-                  );
-              final shouldRetry = await openNoInternetPage(context);
-              if (shouldRetry == true && context.mounted) {
-                ref.read(networkRecoveryControllerProvider).clear(recoveryKey);
-                ref.invalidate(serviceHistoryProvider);
-              }
-              return;
-            }
-            ref.invalidate(serviceHistoryProvider);
-          },
-        ))
-          : items.isEmpty
-              ? const _ServiceHistoryEmpty()
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    12,
-                    16,
-                    AppStyle.listPaddingBottom,
-                  ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 2),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _ServiceHistoryRow(
-                      item: item,
-                      onTap: () => _openDetail(context, ref, item),
-                    );
-                  },
-                ),
+                  ? _pullableFill(
+                      isUnreachableError(failure)
+                          ? OfflineEmptyState(
+                              scrollable: false,
+                              onRetry: () {
+                                armOfflineRetry(
+                                  recovery: ref.read(
+                                    networkRecoveryControllerProvider,
+                                  ),
+                                  key: 'service-history-reload',
+                                  reload: () async {
+                                    ref.invalidate(serviceHistoryProvider);
+                                    try {
+                                      await ref.read(
+                                        serviceHistoryProvider.future,
+                                      );
+                                    } catch (error) {
+                                      if (isOfflineError(error)) {
+                                        throw const ApiException(
+                                          ApiFailure.offline,
+                                        );
+                                      }
+                                    }
+                                  },
+                                );
+                              },
+                            )
+                          : isServerUnavailableError(failure)
+                              ? ServerUnavailableEmptyState(
+                                  scrollable: false,
+                                  onRetry: () {
+                                    ref.invalidate(serviceHistoryProvider);
+                                  },
+                                )
+                          : EmptyState(
+                              iconAsset: QuickActionIconChip.billAsset,
+                              iconBackground: QuickActionIconChip.billSoft,
+                              title: 'common.error'.tr(),
+                              message: apiErrorText(failure ?? 'common.error'),
+                              actionLabel: 'common.retry'.tr(),
+                              onAction: () {
+                                ref.invalidate(serviceHistoryProvider);
+                              },
+                            ),
+                    )
+                  : items.isEmpty
+                      ? const _ServiceHistoryEmpty()
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(
+                            16,
+                            12,
+                            16,
+                            AppStyle.listPaddingBottom,
+                          ),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 2),
+                          itemBuilder: (context, index) {
+                            final item = items[index];
+                            return _ServiceHistoryRow(
+                              item: item,
+                              onTap: () => _openDetail(context, ref, item),
+                            );
+                          },
+                        ),
             ),
     );
   }
@@ -133,9 +166,8 @@ class ServiceHistoryPage extends ConsumerWidget {
     var detail = item;
     try {
       if (item.id.isNotEmpty) {
-        detail = await ref
-            .read(historyRepositoryProvider)
-            .fetchServiceById(item.id);
+        detail =
+            await ref.read(historyRepositoryProvider).fetchServiceById(item.id);
       }
     } catch (_) {}
     if (!context.mounted) return;

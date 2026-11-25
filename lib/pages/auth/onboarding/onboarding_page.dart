@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,169 +39,104 @@ class OnboardingPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    controller: controller.pageController,
-                    itemCount: slides.length,
-                    onPageChanged: controller.setPage,
-                    itemBuilder: (context, index) {
-                      final slide = slides[index];
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(28, 52, 28, 0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: illustrationSize,
-                              height: illustrationSize,
-                              child: Image.asset(
-                                slide.asset,
-                                width: illustrationSize,
-                                height: illustrationSize,
-                                fit: BoxFit.contain,
-                                alignment: Alignment.center,
-                                filterQuality: FilterQuality.high,
-                                isAntiAlias: true,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              slide.title,
-                              style: AppTheme.pageTitle(
-                                color: AppColors.primary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 320),
-                              child: Text(
-                                slide.body,
-                                style: AppTheme.bodySecondary().copyWith(
-                                  fontSize: 14,
-                                  height: 1.5,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 3,
-                              ),
-                            ),
-                          ],
+            Expanded(
+              child: PageView.builder(
+                controller: controller.pageController,
+                itemCount: slides.length,
+                onPageChanged: controller.setPage,
+                itemBuilder: (context, index) {
+                  final slide = slides[index];
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 24, 28, 0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: illustrationSize,
+                          height: illustrationSize,
+                          child: Image.asset(
+                            slide.asset,
+                            width: illustrationSize,
+                            height: illustrationSize,
+                            fit: BoxFit.contain,
+                            alignment: Alignment.center,
+                            filterQuality: FilterQuality.high,
+                            isAntiAlias: true,
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(slides.length, (i) {
-                    final active = i == page;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: active ? 22 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: active ? AppColors.primary : AppColors.border,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 20),
-                ColoredBox(
-                  color: AppColors.background,
-                  child: AppCard(
-                    color: const Color(0xFFFFFFFF),
-                    elevated: false,
-                    bordered: false,
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(AppStyle.radiusCurve),
-                      topRight: Radius.circular(AppStyle.radiusCurve),
+                        const SizedBox(height: 4),
+                        Text(
+                          slide.title,
+                          style: AppTheme.pageTitle(
+                            color: AppColors.primary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: Text(
+                            slide.body,
+                            style: AppTheme.bodySecondary().copyWith(
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 3,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: AppButton(
-                      label: page == slides.length - 1
-                          ? 'onboarding.get_started'.tr()
-                          : 'common.next'.tr(),
-                      onPressed: () {
-                        if (page == slides.length - 1) {
-                          controller.finish(context);
-                        } else {
-                          controller.next(slides.length);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
-            Positioned(
-              top: 8,
-              right: 16,
-              child: _GlassSkipButton(
-                onTap: () => controller.finish(context),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(slides.length, (i) {
+                final active = i == page;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: active ? 22 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.primary : AppColors.border,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+            ColoredBox(
+              color: AppColors.background,
+              child: AppCard(
+                color: const Color(0xFFFFFFFF),
+                elevated: false,
+                bordered: false,
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppStyle.radiusCurve),
+                  topRight: Radius.circular(AppStyle.radiusCurve),
+                ),
+                child: AppButton(
+                  label: page == slides.length - 1
+                      ? 'onboarding.get_started'.tr()
+                      : 'common.next'.tr(),
+                  onPressed: () {
+                    if (page == slides.length - 1) {
+                      controller.finish(context);
+                    } else {
+                      controller.next(slides.length);
+                    }
+                  },
+                ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassSkipButton extends StatelessWidget {
-  const _GlassSkipButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        overlayColor: WidgetStateProperty.all(
-          Colors.white.withValues(alpha: 0.16),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.62),
-                    Colors.white.withValues(alpha: 0.22),
-                  ],
-                ),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  width: 0.8,
-                ),
-              ),
-              child: Text(
-                'common.skip'.tr(),
-                style: AppTheme.english(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                  letterSpacing: 0.2,
-                  height: AppTheme.lineHeightMyanmarSafe,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

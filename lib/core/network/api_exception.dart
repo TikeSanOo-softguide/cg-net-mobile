@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import 'network_status.dart';
+
 enum ApiFailure {
   offline,
   timeout,
@@ -19,14 +21,18 @@ class ApiException implements Exception {
     this.responseData,
     this.code,
     this.level,
+    this.connectionFailed = false,
   });
 
   final ApiFailure failure;
+
+  /// The socket to the API never completed. Send and receive timeouts stay false.
   final String? detail;
   final int? statusCode;
   final Object? responseData;
   final String? code;
   final String? level;
+  final bool connectionFailed;
 
   String get messageKey => switch (failure) {
         ApiFailure.offline => 'api.offline',
@@ -44,14 +50,14 @@ class ApiException implements Exception {
       return const ApiException(ApiFailure.cancelled);
     }
 
-    if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.sendTimeout ||
+    if (error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.receiveTimeout) {
       return const ApiException(ApiFailure.timeout);
     }
 
-    if (error.type == DioExceptionType.connectionError) {
-      return const ApiException(ApiFailure.offline);
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.connectionError) {
+      return _connectFailure();
     }
 
     final status = error.response?.statusCode;
@@ -110,6 +116,14 @@ class ApiException implements Exception {
           level: level,
         ),
     };
+  }
+
+  /// No internet is offline. A reached internet with a dead API is unavailable.
+  static ApiException _connectFailure() {
+    if (NetworkStatusSnapshot.current == NetworkStatus.offline) {
+      return const ApiException(ApiFailure.offline, connectionFailed: true);
+    }
+    return const ApiException(ApiFailure.server, connectionFailed: true);
   }
 
   static String? _code(Object? data) {

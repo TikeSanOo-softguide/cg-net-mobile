@@ -5,12 +5,15 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../core/network/api_endpoints/api_endpoints.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client/dio_client.dart';
+import '../../../core/storage/list_snapshot_store.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 
 class RelocationRepository {
-  RelocationRepository(this._dio);
+  RelocationRepository(this._dio, {ListSnapshotStore? snapshots})
+      : _snapshots = snapshots;
 
   final Dio _dio;
+  final ListSnapshotStore? _snapshots;
 
   Future<List<RelocationRequestModel>> fetchRequests() async {
     try {
@@ -23,18 +26,24 @@ class RelocationRepository {
           : data is List
               ? data
               : const [];
-
-      return items
+      final maps = items
           .whereType<Map>()
-          .map(
-            (item) => RelocationRequestModel.fromJson(
-              Map<String, dynamic>.from(item),
-            ),
-          )
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
+      await _snapshots?.write(ListSnapshotStore.relocation, maps);
+
+      return maps.map(RelocationRequestModel.fromJson).toList();
     } on DioException catch (error) {
       throw ApiException.fromDio(error);
     }
+  }
+
+  List<RelocationRequestModel>? readCachedRequests() {
+    return decodeSnapshot(
+      _snapshots,
+      ListSnapshotStore.relocation,
+      RelocationRequestModel.fromJson,
+    );
   }
 
   Future<RelocationSaveResult> createRequest(
@@ -151,5 +160,8 @@ class RelocationSaveResult {
 }
 
 final relocationRepositoryProvider = Provider<RelocationRepository>((ref) {
-  return RelocationRepository(ref.watch(dioProvider));
+  return RelocationRepository(
+    ref.watch(dioProvider),
+    snapshots: ref.watch(listSnapshotStoreProvider),
+  );
 });

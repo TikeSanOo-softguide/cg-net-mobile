@@ -5,10 +5,13 @@ import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/request_ticket_skeleton.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/network/message_codes.dart';
 import '../../../core/router/slide_page.dart';
@@ -51,9 +54,9 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
     _accountSubscription = ref.listenManual(
       boundBroadbandProvider,
       (previous, next) {
-        final account = (next?.account ??
-                ref.read(profileControllerProvider).accountNumber)
-            .trim();
+        final account =
+            (next?.account ?? ref.read(profileControllerProvider).accountNumber)
+                .trim();
         final serviceChanged = previous?.serviceType != next?.serviceType;
         if (account == _lastActiveAccount && !serviceChanged) return;
         _lastActiveAccount = account;
@@ -108,9 +111,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
     }
 
     _pendingFetchAccount = accountNumber;
-    final fetch = ref
-        .read(changePlanControllerProvider.notifier)
-        .fetchRequests(
+    final fetch = ref.read(changePlanControllerProvider.notifier).fetchRequests(
           accountNumber: accountNumber.isEmpty ? null : accountNumber,
         );
     _pendingFetch = fetch;
@@ -123,6 +124,17 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
   }
 
   Future<void> _refresh() => _loadRequests(refreshProfile: true);
+
+  void _retryOfflineList() {
+    armOfflineRetry(
+      recovery: ref.read(networkRecoveryControllerProvider),
+      key: 'change-plan-list-reload',
+      reload: () => _loadRequests(),
+      stillOffline: () => isUnreachableMessage(
+        ref.read(changePlanControllerProvider).errorMessage,
+      ),
+    );
+  }
 
   Future<void> _openForm({ChangePlanRequestModel? request}) async {
     final result = await Navigator.of(context).push<Object?>(
@@ -146,7 +158,6 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
         ).tr(),
       );
     }
-
   }
 
   Future<void> _confirmCancel(ChangePlanRequestModel request) async {
@@ -160,12 +171,22 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
     if (confirmed != true) return;
 
     final code = await LoadingHelper.runWithLoading(
-      () => ref.read(changePlanControllerProvider.notifier).cancelRequest(request.id),
+      () => ref
+          .read(changePlanControllerProvider.notifier)
+          .cancelRequest(request.id),
     );
     if (!mounted) return;
     if (code == null &&
         ref.read(changePlanControllerProvider).errorMessage != null) {
       final state = ref.read(changePlanControllerProvider);
+      if (isUnreachableMessage(state.errorMessage)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
@@ -221,10 +242,16 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
     List<ChangePlanRequestModel> requests,
   ) {
     if (state.status == ChangePlanStatus.loading && requests.isEmpty) {
-      return const CardListShimmer();
+      return const RequestTicketListSkeleton();
     }
 
     if (state.status == ChangePlanStatus.error && requests.isEmpty) {
+      if (isUnreachableMessage(state.errorMessage)) {
+        return OfflineEmptyState(onRetry: _retryOfflineList);
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        return ServerUnavailableEmptyState(onRetry: _refresh);
+      }
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [

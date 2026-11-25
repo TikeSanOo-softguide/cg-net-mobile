@@ -138,10 +138,16 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
           }
           return;
         } on ApiException catch (error) {
-          if (!isOfflineError(error)) rethrow;
+          if (isServerUnavailableError(error)) {
+            if (!mounted) return;
+            final shouldRetry = await showServerUnavailableModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (!isUnreachableError(error)) rethrow;
           if (!mounted) return;
-          final shouldRetry = await openNoInternetPage(context);
-          if (!mounted || shouldRetry != true) return;
+          final shouldRetry = await showOfflineModal(context);
+          if (!mounted || !shouldRetry) return;
         }
       }
     } on ApiException catch (error) {
@@ -234,7 +240,14 @@ class _TopUpPageState extends ConsumerState<TopUpPage> {
           response = result;
           break;
         } on ApiException catch (error) {
-          if (!isOfflineError(error)) rethrow;
+          if (isServerUnavailableError(error)) {
+            if (!mounted) return;
+            _closeProcessingDialog();
+            final shouldRetry = await showServerUnavailableModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (!isUnreachableError(error)) rethrow;
           if (!mounted) return;
           _closeProcessingDialog();
           final shouldRetry = await showOfflineModal(context);

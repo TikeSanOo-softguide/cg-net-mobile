@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/api_endpoints/api_endpoints.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dio_client/dio_client.dart';
+import '../../core/network/get_retry_interceptor.dart';
 import '../../core/storage/local_prefs/local_prefs.dart';
 import '../../models/user_model/user_model.dart';
 
@@ -30,6 +31,11 @@ class InboxRepository {
           ApiEndpoints.notifications,
           queryParameters: {'page': page},
           cancelToken: cancelToken,
+          options: Options(
+            connectTimeout: const Duration(seconds: 8),
+            sendTimeout: const Duration(seconds: 8),
+            extra: const {GetRetryInterceptor.skipKey: true},
+          ),
         );
         final data = response.data;
         if (page == 1) unreadCount = unreadCountOf(data);

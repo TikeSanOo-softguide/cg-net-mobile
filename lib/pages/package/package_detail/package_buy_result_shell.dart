@@ -65,6 +65,9 @@ class PackageBuyResultShell extends StatelessWidget {
     final priceLabel =
         '${NumberFormat('#,##0').format(result.pricePoints)} ${'topup.pts'.tr()}';
     final statusTitle = 'package.detail_status'.tr();
+    final statusLabel = _isSuccess
+        ? 'package.status_completed'.tr()
+        : 'package.status_failed'.tr();
     final transactionId = result.transactionId.trim();
     final packageName = result.packageTitle.trim();
     final duration = result.duration?.trim() ?? '';
@@ -86,6 +89,7 @@ class PackageBuyResultShell extends StatelessWidget {
         duration.isEmpty ? '—' : duration,
       ),
       ('package.price'.tr(), priceLabel),
+      (statusTitle, statusLabel),
     ];
 
     final statusIcon = _isSuccess
@@ -349,10 +353,7 @@ class _DetailRows extends StatelessWidget {
                         ? Align(
                             alignment: Alignment.centerRight,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 3,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(8, 2, 6, 2),
                               decoration: BoxDecoration(
                                 color: statusBackground,
                                 borderRadius: BorderRadius.circular(8),
@@ -360,7 +361,7 @@ class _DetailRows extends StatelessWidget {
                               child: Text(
                                 rows[i].$2,
                                 style: AppTheme.english(
-                                  fontSize: 14,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   color: statusColor,
                                 ),

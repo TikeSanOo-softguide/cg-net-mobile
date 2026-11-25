@@ -10,7 +10,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../components/page_skeletons/show_room_skeleton.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../data/show_room/show_room_repository.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -33,12 +36,23 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
     });
   }
 
-  Future<void> _loadShowRooms({bool retry = false}) async {
-    if (retry) ref.invalidate(showRoomsProvider);
+  Future<void> _loadShowRooms({
+    bool retry = false,
+  }) async {
+    final hadItems = ref.read(showRoomsProvider).valueOrNull != null;
+    if (retry) {
+      ref.read(showRoomsOfflineProvider.notifier).state = false;
+      ref.invalidate(showRoomsProvider);
+    }
     try {
       await ref.read(showRoomsProvider.future);
     } catch (error) {
-      if (!mounted || ref.read(showRoomsProvider).valueOrNull != null) return;
+      if (!mounted) return;
+      if (hadItems && isUnreachableError(error)) return;
+      if (ref.read(showRoomsProvider).valueOrNull != null) return;
+      if (isUnreachableError(error) || isServerUnavailableError(error)) {
+        return;
+      }
       await showApiMessageModal(context, error);
     }
   }
@@ -54,55 +68,74 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
       title: Text('home.service_show_room'.tr()),
       showBack: true,
       body: showSkeleton
-          ? const CardListShimmer(
-              itemHeight: 168,
-              separator: 12,
-              borderRadius: 12,
-            )
+          ? const ShowRoomListSkeleton()
           : AppRefreshIndicator(
               color: AppColors.primary,
               onRefresh: () => _loadShowRooms(retry: true),
               child: rooms == null
-              ? LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: constraints.maxHeight,
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('common.error'.tr()),
-                              TextButton(
-                                onPressed: () =>
-                                    unawaited(_loadShowRooms(retry: true)),
-                                child: Text('common.retry'.tr()),
+                  ? isUnreachableError(roomsAsync.error)
+                      ? OfflineEmptyState(
+                          onRetry: () {
+                            armOfflineRetry(
+                              recovery: ref.read(
+                                networkRecoveryControllerProvider,
                               ),
-                            ],
-                          ),
-                        ),
+                              key: 'show-room-list-reload',
+                              reload: () => _loadShowRooms(retry: true),
+                              stillOffline: () {
+                                final rooms = ref.read(showRoomsProvider);
+                                return !rooms.hasValue &&
+                                    isUnreachableError(rooms.error);
+                              },
+                            );
+                          },
+                        )
+                      : isServerUnavailableError(roomsAsync.error)
+                          ? ServerUnavailableEmptyState(
+                              onRetry: () =>
+                                  unawaited(_loadShowRooms(retry: true)),
+                            )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height: constraints.maxHeight,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('common.error'.tr()),
+                                      TextButton(
+                                        onPressed: () => unawaited(
+                                            _loadShowRooms(retry: true)),
+                                        child: Text('common.retry'.tr()),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        AppStyle.listPaddingBottom,
                       ),
-                    );
-                  },
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    AppStyle.listPaddingBottom,
-                  ),
-                  itemCount: rooms.length + 1,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    if (index == rooms.length) {
-                      return const _SocialMediaCard();
-                    }
-                    return _ShowRoomCard(room: rooms[index], locale: locale);
-                  },
-                ),
+                      itemCount: rooms.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        if (index == rooms.length) {
+                          return const _SocialMediaCard();
+                        }
+                        return _ShowRoomCard(
+                            room: rooms[index], locale: locale);
+                      },
+                    ),
             ),
     );
   }
@@ -372,7 +405,8 @@ class _SocialMediaCard extends StatelessWidget {
               _SocialMediaTile(
                 asset: _websiteAsset,
                 label: 'home.social_website'.tr(),
-                onTap: () => _open('https://www.google.com/search?q=Yaung+Ni+Oo'),
+                onTap: () =>
+                    _open('https://www.google.com/search?q=Yaung+Ni+Oo'),
               ),
             ],
           ),

@@ -22,25 +22,9 @@ class NetworkRecoveryController extends ChangeNotifier {
   int _backoffSeconds = 4;
   static const _maxBackoffSeconds = 60;
   DateTime? _nextCheckAt;
-  DateTime? _lastProbeAt;
-  bool? _lastProbeOnline;
-  int _queuedTotal = 0;
-  int _replayedTotal = 0;
-  int _requeuedTotal = 0;
-
-  int get pendingCount => _pending.length;
-  int get queuedTotal => _queuedTotal;
-  int get replayedTotal => _replayedTotal;
-  int get requeuedTotal => _requeuedTotal;
-  int get backoffSeconds => _backoffSeconds;
-  DateTime? get nextCheckAt => _nextCheckAt;
-  DateTime? get lastProbeAt => _lastProbeAt;
-  bool? get lastProbeOnline => _lastProbeOnline;
 
   void enqueue(String key, RecoveryAction action) {
-    final isNew = !_pending.containsKey(key);
     _pending[key] = action;
-    if (isNew) _queuedTotal++;
     _scheduleCheck(const Duration(milliseconds: 250));
     unawaited(checkNow());
     notifyListeners();
@@ -89,7 +73,6 @@ class NetworkRecoveryController extends ChangeNotifier {
   }
 
   Future<bool> _probeOnline() async {
-    _lastProbeAt = DateTime.now();
     try {
       await _dio.get<dynamic>(
         ApiEndpoints.healthCheckPath,
@@ -100,18 +83,15 @@ class NetworkRecoveryController extends ChangeNotifier {
           extra: {GetRetryInterceptor.skipKey: true},
         ),
       );
-      _lastProbeOnline = true;
       _debugLog('online probe success via ${ApiEndpoints.healthCheckPath}');
       return true;
     } on DioException catch (error) {
       final connectionIssue = _isConnectionIssue(error);
-      _lastProbeOnline = !connectionIssue;
       if (connectionIssue) {
         _debugLog('online probe failed (${error.type})');
       }
       return !connectionIssue;
     } catch (_) {
-      _lastProbeOnline = true;
       return true;
     }
   }
@@ -123,16 +103,13 @@ class NetworkRecoveryController extends ChangeNotifier {
     for (final entry in entries) {
       try {
         await entry.value();
-        _replayedTotal++;
       } on ApiException catch (error) {
         if (error.failure == ApiFailure.offline) {
           _pending[entry.key] = entry.value;
-          _requeuedTotal++;
         }
       } on DioException catch (error) {
         if (_isConnectionIssue(error)) {
           _pending[entry.key] = entry.value;
-          _requeuedTotal++;
         }
       }
     }
@@ -171,3 +148,27 @@ final networkRecoveryControllerProvider =
     ChangeNotifierProvider<NetworkRecoveryController>((ref) {
   return NetworkRecoveryController(ref.watch(dioProvider));
 });
+
+/// Runs [reload] now, and again after the connection returns if it is still
+/// offline. [stillOffline] is read after [reload] finishes.
+void armOfflineRetry({
+  required NetworkRecoveryController recovery,
+  required String key,
+  required Future<void> Function() reload,
+  bool Function()? stillOffline,
+}) {
+  Future<void> action() async {
+    await reload();
+    if (stillOffline?.call() ?? false) {
+      throw const ApiException(ApiFailure.offline);
+    }
+  }
+
+  recovery.enqueue(key, action);
+  unawaited(() async {
+    try {
+      await action();
+      recovery.clear(key);
+    } catch (_) {}
+  }());
+}

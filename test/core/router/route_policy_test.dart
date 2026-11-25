@@ -8,7 +8,7 @@ void main() {
       expect(isPublicRouteLocation(RoutePaths.login), isTrue);
       expect(isPublicRouteLocation(RoutePaths.loginQa), isTrue);
       expect(isPublicRouteLocation(RoutePaths.terms), isTrue);
-      expect(isPublicRouteLocation(RoutePaths.errorNoInternet), isTrue);
+      expect(isPublicRouteLocation(RoutePaths.forceUpdate), isTrue);
       expect(isPublicRouteLocation(RoutePaths.home), isFalse);
     });
 

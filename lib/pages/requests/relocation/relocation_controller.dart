@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../data/requests/relocation/relocation_repository.dart';
 import '../../../models/requests/relocation/relocation_request_model.dart';
 
@@ -81,26 +82,29 @@ class RelocationController extends StateNotifier<RelocationState> {
     bool clearPrevious = false,
   }) async {
     final sequence = ++_fetchSequence;
-    final showLoading =
-        clearPrevious || state.status == RelocationStatus.initial;
-    state = state.copyWith(
-      status: showLoading ? RelocationStatus.loading : null,
-      requests: clearPrevious ? const [] : null,
-      clearError: showLoading,
-    );
+    final showLoading = clearPrevious ||
+        state.status == RelocationStatus.initial ||
+        (state.status == RelocationStatus.error && state.requests.isEmpty);
+    final cached = _repository.readCachedRequests();
+    final cachedRequests =
+        cached == null ? null : _forAccount(cached, accountNumber);
+    if (showLoading && cachedRequests != null) {
+      state = state.copyWith(
+        status: RelocationStatus.success,
+        requests: cachedRequests,
+        clearError: true,
+      );
+    } else {
+      state = state.copyWith(
+        status: showLoading ? RelocationStatus.loading : null,
+        requests: clearPrevious ? const [] : null,
+        clearError: showLoading,
+      );
+    }
     try {
       final items = await _repository.fetchRequests();
       if (sequence != _fetchSequence) return;
-
-      final normalizedAccount = accountNumber?.trim().toUpperCase();
-      final requests = items.where((request) {
-        final requestAccount =
-            request.broadbandAccountNumber?.trim().toUpperCase();
-        if (requestAccount == null || requestAccount.isEmpty) return true;
-        return normalizedAccount != null &&
-            normalizedAccount.isNotEmpty &&
-            requestAccount == normalizedAccount;
-      }).toList();
+      final requests = _forAccount(items, accountNumber);
 
       state = state.copyWith(
         status: RelocationStatus.success,
@@ -111,7 +115,7 @@ class RelocationController extends StateNotifier<RelocationState> {
       if (sequence != _fetchSequence) return;
       state = state.copyWith(
         status: RelocationStatus.error,
-        errorMessage: error.detail ?? error.messageKey,
+        errorMessage: storedApiMessage(error),
       );
     } catch (error) {
       if (sequence != _fetchSequence) return;
@@ -120,6 +124,21 @@ class RelocationController extends StateNotifier<RelocationState> {
         errorMessage: error.toString(),
       );
     }
+  }
+
+  List<RelocationRequestModel> _forAccount(
+    List<RelocationRequestModel> items,
+    String? accountNumber,
+  ) {
+    final normalizedAccount = accountNumber?.trim().toUpperCase();
+    return items.where((request) {
+      final requestAccount =
+          request.broadbandAccountNumber?.trim().toUpperCase();
+      if (requestAccount == null || requestAccount.isEmpty) return true;
+      return normalizedAccount != null &&
+          normalizedAccount.isNotEmpty &&
+          requestAccount == normalizedAccount;
+    }).toList();
   }
 
   Future<RelocationSaveResult?> saveRequest(
@@ -153,7 +172,7 @@ class RelocationController extends StateNotifier<RelocationState> {
       await fetchRequests(request?.broadbandAccountNumber);
       return code;
     } on ApiException catch (error) {
-      state = state.copyWith(errorMessage: error.detail ?? error.messageKey);
+      state = state.copyWith(errorMessage: storedApiMessage(error));
       return null;
     } catch (error) {
       state = state.copyWith(errorMessage: error.toString());

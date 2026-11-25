@@ -11,7 +11,8 @@ import '../../../components/processing_status/processing_status.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../components/empty_state/empty_state.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../components/page_skeletons/package_skeletons.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/idempotency_key.dart';
@@ -153,57 +154,63 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     );
     if (!mounted || !confirmed) return;
 
+    String? password;
     while (mounted) {
+      if (password == null) {
+        final entered = await showAppPasswordModal(
+          context,
+          title: 'package.password_title'.tr(),
+          body: 'package.password_body'.tr(),
+          amountPoints: info.pricePoints,
+        );
+        if (!mounted || entered == null || entered.isEmpty) return;
+        password = entered;
+      }
+
       Object? buyError;
       var wrongPassword = false;
+      var offline = false;
+      var serverDown = false;
       PackageBuyApiResult? response;
-      if (!mounted) return;
-      await showAppPasswordModal(
-        context,
-        title: 'package.password_title'.tr(),
-        body: 'package.password_body'.tr(),
-        amountPoints: info.pricePoints,
-        onSubmit: (password) async {
-          if (_submitting) return;
-          setState(() => _submitting = true);
-          final buyKey = _buyKey ??= IdempotencyKey.generate();
-          await _showProcessing();
-          try {
-            while (true) {
-              try {
-                response = await ref.read(packageBuyRepositoryProvider).buyPackage(
-                      productId: productId,
-                      password: password,
-                      idempotencyKey: buyKey,
-                    );
-                return;
-              } on ApiException catch (error) {
-                if (!mounted) return;
-                if (isOfflineError(error)) {
-                  _closeProcessingDialog();
-                  final retry = await showOfflineModal(context);
-                  if (!mounted || !retry) return;
-                  await _showProcessing();
-                  continue;
-                }
-                if (isPayPasswordError(error)) {
-                  wrongPassword = true;
-                  return;
-                }
-                buyError = error;
-                return;
-              } catch (error) {
-                buyError = error;
-                return;
-              }
-            }
-          } finally {
-            _closeProcessingDialog();
-            if (mounted) setState(() => _submitting = false);
+      setState(() => _submitting = true);
+      final buyKey = _buyKey ??= IdempotencyKey.generate();
+      try {
+        await _showProcessing();
+        try {
+          response = await ref.read(packageBuyRepositoryProvider).buyPackage(
+                productId: productId,
+                password: password,
+                idempotencyKey: buyKey,
+              );
+        } on ApiException catch (error) {
+          if (isUnreachableError(error)) {
+            offline = true;
+          } else if (isServerUnavailableError(error)) {
+            serverDown = true;
+          } else if (isPayPasswordError(error)) {
+            wrongPassword = true;
+          } else {
+            buyError = error;
           }
-        },
-      );
+        } catch (error) {
+          buyError = error;
+        }
+      } finally {
+        _closeProcessingDialog();
+        if (mounted) setState(() => _submitting = false);
+      }
       if (!mounted) return;
+
+      if (offline) {
+        final retry = await showOfflineModal(context);
+        if (!mounted || !retry) return;
+        continue;
+      }
+      if (serverDown) {
+        final retry = await showServerUnavailableModal(context);
+        if (!mounted || !retry) return;
+        continue;
+      }
 
       final bought = response;
       if (bought != null && bought.isSuccess) {
@@ -217,6 +224,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
             packageTitle: info.title,
             pricePoints: info.pricePoints,
             speedMbps: info.speedMbps,
+            duration: info.periodLabel,
             autoRenew: false,
             transactionId: bought.transactionNo ?? 'PKG-UNKNOWN',
           ),
@@ -235,9 +243,10 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
         return;
       }
       if (wrongPassword) {
+        password = null;
         final retry = await showAppRetryFailureModal(
           context,
-          title: 'msg.user_002'.tr(),
+          title: 'common.incorrect_password'.tr(),
           body: 'msg.user_002_body'.tr(),
         );
         if (!mounted || !retry) return;
@@ -248,7 +257,7 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
       await showAppFailureModal(
         context,
         title: isInsufficientWalletError(error)
-            ? 'msg.ftth_003'.tr()
+            ? 'common.insufficient_balance'.tr()
             : 'package.result_failure_title'.tr(),
         body: isInsufficientWalletError(error)
             ? 'msg.ftth_003_body'.tr()
@@ -305,20 +314,14 @@ class _PackageDetailPageState extends ConsumerState<PackageDetailPage> {
     PackageListState state,
   ) {
     if (state.status == PackageListStatus.loading) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) => ShimmerBox(
-              width: constraints.maxWidth,
-              height: 280,
-              borderRadius: 8,
-            ),
-          ),
-        ],
-      );
+      return const PackageDetailSkeleton();
     }
     if (state.status == PackageListStatus.error) {
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        return ServerUnavailableEmptyState(
+          onRetry: () => ref.read(packageListControllerProvider.notifier).load(),
+        );
+      }
       return EmptyState(
         title: 'common.error'.tr(),
         message: apiMessageText(state.errorMessage),

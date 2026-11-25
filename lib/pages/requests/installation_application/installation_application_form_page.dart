@@ -5,6 +5,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_card/app_card.dart';
+import '../../../components/app_choice_chip/app_choice_chip.dart';
 import '../../../components/app_input/app_input.dart';
 import '../../../components/app_select/app_select_dropdown.dart';
 import '../../../core/network/api_message_modal.dart';
@@ -464,11 +465,11 @@ class _InstallationApplicationFormPageState
                 style: AppTheme.body(color: AppColors.textMuted),
               )
             else
-              _ChoiceGrid(
+              AppChoiceGrid(
                 columns: 3,
                 children: speeds
                     .map(
-                      (speed) => _ChoiceChip(
+                      (speed) => AppChoiceChip(
                         label: 'installationApplication.speed_mbps'.tr(
                           namedArgs: {'speed': '$speed'},
                         ),
@@ -494,11 +495,11 @@ class _InstallationApplicationFormPageState
                 style: AppTheme.body(color: AppColors.textMuted),
               )
             else
-              _ChoiceGrid(
+              AppChoiceGrid(
                 columns: 3,
                 children: cycles
                     .map(
-                      (cycle) => _ChoiceChip(
+                      (cycle) => AppChoiceChip(
                         label: _periodLabel(
                           cycle,
                           cycleUnitFor(
@@ -863,16 +864,16 @@ class _ServiceTypeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ChoiceGrid(
+    return AppChoiceGrid(
       children: [
-        _ServiceTypeTab(
+        AppChoiceChip(
           icon: LucideIcons.wifi,
           label: 'FTTH',
           selected: value == 'FTTH',
           enabled: enabled,
           onTap: () => onChanged('FTTH'),
         ),
-        _ServiceTypeTab(
+        AppChoiceChip(
           icon: LucideIcons.router,
           label: 'installationApplication.cg_router'.tr(),
           selected: value == 'CG',
@@ -880,149 +881,6 @@ class _ServiceTypeSwitch extends StatelessWidget {
           onTap: () => onChanged('CG'),
         ),
       ],
-    );
-  }
-}
-
-class _ServiceTypeTab extends StatelessWidget {
-  const _ServiceTypeTab({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.enabled,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(8),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          width: double.infinity,
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primaryLight : AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected ? AppColors.primaryLight : AppColors.borderLight,
-              width: 0.5,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 13,
-                color: selected ? AppColors.primary : AppColors.textMuted,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.english(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.15,
-                    color: selected ? AppColors.primary : AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChoiceGrid extends StatelessWidget {
-  const _ChoiceGrid({
-    required this.children,
-    this.columns = 2,
-  });
-
-  final List<Widget> children;
-  final int columns;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const gap = AppStyle.spaceSm;
-        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final child in children) SizedBox(width: width, child: child),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ChoiceChip extends StatelessWidget {
-  const _ChoiceChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Ink(
-          width: double.infinity,
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primaryLight : AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected ? AppColors.primaryLight : AppColors.borderLight,
-              width: 0.5,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.english(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.15,
-                color: selected ? AppColors.primary : AppColors.textMuted,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

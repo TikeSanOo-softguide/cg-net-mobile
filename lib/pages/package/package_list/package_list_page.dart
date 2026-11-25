@@ -2,14 +2,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/empty_state/empty_state.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/quick_action_icon_chip/quick_action_icon_chip.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/package_skeletons.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
@@ -38,6 +38,8 @@ class PackageListPage extends ConsumerWidget {
     final state = ref.watch(packageListControllerProvider);
 
     final hasPackages = state.packages.isNotEmpty;
+    final unreachable = isUnreachableMessage(state.errorMessage);
+    final serverDown = isServerUnavailableMessage(state.errorMessage);
     final Widget body;
     if (hasPackages || state.status == PackageListStatus.loading) {
       body = _refreshable(
@@ -64,13 +66,7 @@ class PackageListPage extends ConsumerWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => hasPackages
                       ? _packageCard(context, state, index)
-                      : LayoutBuilder(
-                          builder: (context, constraints) => ShimmerBox(
-                            width: constraints.maxWidth,
-                            height: 232,
-                            borderRadius: 8,
-                          ),
-                        ),
+                      : const PackageCardSkeleton(),
                   childCount: hasPackages ? state.packages.length : 4,
                 ),
               ),
@@ -82,17 +78,24 @@ class PackageListPage extends ConsumerWidget {
       body = _refreshable(
         ref,
         _scrollableFill(
-          EmptyState(
-            icon: LucideIcons.wifi_off,
-            iconAsset: state.errorMessage == 'api.offline'
-                ? null
-                : QuickActionIconChip.packageAsset,
-            iconBackground: QuickActionIconChip.packageSoft,
-            title: 'common.error'.tr(),
-            message: apiMessageText(state.errorMessage),
-            actionLabel: 'common.retry'.tr(),
-            onAction: () => _retry(context, ref, state),
-          ),
+          unreachable
+              ? OfflineEmptyState(
+                  scrollable: false,
+                  onRetry: () => _retry(ref, state),
+                )
+              : serverDown
+                  ? ServerUnavailableEmptyState(
+                      scrollable: false,
+                      onRetry: () => _retry(ref, state),
+                    )
+              : EmptyState(
+                  iconAsset: QuickActionIconChip.packageAsset,
+                  iconBackground: QuickActionIconChip.packageSoft,
+                  title: 'common.error'.tr(),
+                  message: apiMessageText(state.errorMessage),
+                  actionLabel: 'common.retry'.tr(),
+                  onAction: () => _retry(ref, state),
+                ),
         ),
       );
     } else {
@@ -122,7 +125,11 @@ class PackageListPage extends ConsumerWidget {
   Widget _refreshable(WidgetRef ref, Widget child) {
     return AppRefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () => ref.read(packageListControllerProvider.notifier).load(),
+      onRefresh: () async {
+        await ref.read(packageListControllerProvider.notifier).load(
+              silent: true,
+            );
+      },
       child: child,
     );
   }
@@ -140,25 +147,17 @@ class PackageListPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _retry(
-    BuildContext context,
-    WidgetRef ref,
-    PackageListState state,
-  ) async {
-    const recoveryKey = 'package-list-load';
-    if (state.errorMessage == 'api.offline') {
-      ref.read(networkRecoveryControllerProvider).enqueue(
-            recoveryKey,
-            () async => ref.read(packageListControllerProvider.notifier).load(),
-          );
-      final shouldRetry = await openNoInternetPage(context);
-      if (shouldRetry == true && context.mounted) {
-        ref.read(networkRecoveryControllerProvider).clear(recoveryKey);
-        ref.read(packageListControllerProvider.notifier).load();
-      }
+  void _retry(WidgetRef ref, PackageListState state) {
+    final notifier = ref.read(packageListControllerProvider.notifier);
+    if (isUnreachableMessage(state.errorMessage)) {
+      armOfflineRetry(
+        recovery: ref.read(networkRecoveryControllerProvider),
+        key: 'package-list-load',
+        reload: () => notifier.load(rethrowOffline: true),
+      );
       return;
     }
-    ref.read(packageListControllerProvider.notifier).load();
+    notifier.load();
   }
 
   Widget _packageCard(
@@ -285,4 +284,3 @@ class _PackageListData {
     );
   }
 }
-

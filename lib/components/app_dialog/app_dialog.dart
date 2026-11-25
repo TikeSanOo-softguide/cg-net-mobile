@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_theme/app_theme.dart';
+import '../offline_status_content/offline_status_content.dart';
 
 const _cancelRed = Color(0xFFFF0000);
 const _alert = Color(0xFFF97A00);
@@ -19,13 +20,12 @@ const String _successIconAsset = 'assets/images/dialogs/success.png';
 const String _confirmIconAsset = 'assets/images/dialogs/confirm.png';
 const String _alertIconAsset = 'assets/images/dialogs/alert.png';
 const String _failureIconAsset = 'assets/images/dialogs/failure.png';
-const String _wifiOffIconAsset = 'assets/images/dialogs/wifi-off-icon.png';
 const Color _failure = Color(0xFFD90000);
 const Color _failureSoft = Color(0xFFFCE6E6); // light of #D90000
 const double _dialogIconChip = 36;
 const double _dialogIconSize = 23;
 const double _dialogIconRadius = 8;
-const EdgeInsets _dialogPadding = EdgeInsets.fromLTRB(15, 16, 15, 16);
+const EdgeInsets _dialogPadding = EdgeInsets.fromLTRB(16, 16, 16, 16);
 const double _gapIconTitle = 8;
 const double _gapTitleBody = 6;
 const double _gapBodyButton = 14;
@@ -556,32 +556,51 @@ Future<String?> showAppPasswordModal(
   );
 }
 
-///Offline Network Modal
+/// One offline decision dialog. Internet status itself stays on the snackbar.
+class OfflineModalHub {
+  OfflineModalHub._();
+
+  static bool isOpen = false;
+  static bool _dismissRequested = false;
+  static BuildContext? _dialogContext;
+  static void Function()? onChanged;
+
+  static void dismiss() {
+    if (!isOpen) return;
+    final dialogContext = _dialogContext;
+    if (dialogContext == null || !dialogContext.mounted) {
+      _dismissRequested = true;
+      return;
+    }
+    Navigator.of(dialogContext).pop(false);
+  }
+
+  static void _changed() => onChanged?.call();
+}
+
+/// Offline Network Modal. A second caller does not open another dialog.
 Future<bool> showOfflineModal(BuildContext context) async {
-  final result = await _showAppDialog<bool>(
-    context: context,
-    barrierDismissible: true,
-    builder: (dialogContext) {
-      return _appDialogShell(
-        child: Column(
+  if (OfflineModalHub.isOpen) return false;
+  OfflineModalHub.isOpen = true;
+  OfflineModalHub._changed();
+  try {
+    final result = await _showAppDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        OfflineModalHub._dialogContext = dialogContext;
+        if (OfflineModalHub._dismissRequested) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (dialogContext.mounted) {
+              Navigator.of(dialogContext).pop(false);
+            }
+          });
+        }
+        return _appDialogShell(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _dialogPngIcon(
-              asset: _wifiOffIconAsset,
-              background: _failureSoft,
-            ),
-            const SizedBox(height: _gapIconTitle),
-            Text(
-              'shared.no_internet_title'.tr(),
-              textAlign: TextAlign.center,
-              style: _dialogTitleStyle(_failure),
-            ),
-            const SizedBox(height: _gapTitleBody),
-            Text(
-              'shared.no_internet_body'.tr(),
-              textAlign: TextAlign.center,
-              style: _dialogMessageStyle(),
-            ),
+            const OfflineStatusContent(),
             const SizedBox(height: _gapBodyButton),
             Row(
               children: [
@@ -617,11 +636,78 @@ Future<bool> showOfflineModal(BuildContext context) async {
               ],
             ),
           ],
-        ),
-      );
-    },
-  );
-  return result == true;
+          ),
+        );
+      },
+    );
+    return result == true;
+  } finally {
+    OfflineModalHub.isOpen = false;
+    OfflineModalHub._dismissRequested = false;
+    OfflineModalHub._dialogContext = null;
+    OfflineModalHub._changed();
+  }
+}
+
+bool _serverModalOpen = false;
+
+/// Server-unavailable dialog. Same actions as the offline modal.
+Future<bool> showServerUnavailableModal(BuildContext context) async {
+  if (_serverModalOpen) return false;
+  _serverModalOpen = true;
+  try {
+    final result = await _showAppDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return _appDialogShell(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ServerUnavailableContent(),
+              const SizedBox(height: _gapBodyButton),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: _modalBtnHeight,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        style: _cancelOutlineModalBtnStyle(),
+                        child: Text(
+                          'common.cancel'.tr(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _modalBtnText(
+                            color: _cancelRed,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: _modalBtnHeight,
+                      child: _modalPrimaryButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(true),
+                        label: 'common.retry'.tr(),
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    return result == true;
+  } finally {
+    _serverModalOpen = false;
+  }
 }
 
 class _AppPasswordDialog extends StatefulWidget {

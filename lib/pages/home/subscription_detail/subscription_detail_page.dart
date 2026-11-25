@@ -10,9 +10,12 @@ import 'package:go_router/go_router.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_dialog/app_dialog.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../components/page_skeletons/subscription_skeleton.dart';
 import '../../../core/network/api_error_text.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -29,10 +32,14 @@ class SubscriptionDetailPage extends ConsumerStatefulWidget {
 
 class _SubscriptionDetailPageState
     extends ConsumerState<SubscriptionDetailPage> {
+  static const _recoveryKey = 'subscription-reload';
+
   final Set<String> _shown = {};
   final Map<int, PackageCredentials> _credentials = {};
   List<_SubscriptionPlan> _plans = const [];
   var _pageLoading = true;
+  var _unreachable = false;
+  var _serverDown = false;
 
   @override
   void initState() {
@@ -40,9 +47,17 @@ class _SubscriptionDetailPageState
     Future.microtask(_load);
   }
 
+  @override
+  void dispose() {
+    ref.read(networkRecoveryControllerProvider).clear(_recoveryKey);
+    super.dispose();
+  }
+
   bool _visible(int id, String field) => _shown.contains('$id:$field');
 
-  Future<void> _load() async {
+  Future<void> _load({
+    bool rethrowOffline = false,
+  }) async {
     if (mounted) setState(() => _pageLoading = _plans.isEmpty);
     try {
       final repository = ref.read(profileRepositoryProvider);
@@ -71,15 +86,45 @@ class _SubscriptionDetailPageState
               ),
         ];
         _pageLoading = false;
+        _unreachable = false;
+        _serverDown = false;
       });
+      ref.read(networkRecoveryControllerProvider).clear(_recoveryKey);
     } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _pageLoading = false);
-      await showAppFailureModal(
-        context,
-        title: 'common.error'.tr(),
-        body: apiErrorText(error),
-      );
+      final unreachable = isUnreachableError(error);
+      if (!mounted) {
+        if (rethrowOffline && unreachable) {
+          throw const ApiException(ApiFailure.offline);
+        }
+        return;
+      }
+      final serverDown = isServerUnavailableError(error);
+      setState(() {
+        _pageLoading = false;
+        _unreachable = unreachable && _plans.isEmpty;
+        _serverDown = serverDown && _plans.isEmpty;
+      });
+      if (unreachable) {
+        if (rethrowOffline) throw const ApiException(ApiFailure.offline);
+        ref.read(networkRecoveryControllerProvider).enqueue(
+              _recoveryKey,
+              () => _load(rethrowOffline: true),
+            );
+        return;
+      }
+      if (serverDown) {
+        if (_plans.isEmpty || rethrowOffline) return;
+        final retry = await showServerUnavailableModal(context);
+        if (retry && mounted) await _load();
+        return;
+      }
+      if (!rethrowOffline) {
+        await showAppFailureModal(
+          context,
+          title: 'common.error'.tr(),
+          body: apiErrorText(error),
+        );
+      }
     }
   }
 
@@ -106,11 +151,15 @@ class _SubscriptionDetailPageState
       onBack: () => context.pop(),
       body: AppRefreshIndicator(
         color: AppColors.primary,
-        onRefresh: _load,
+        onRefresh: () => _load(),
         child: loading
             ? _loadingList()
             : plans.isEmpty
-                ? _emptyList()
+                ? _unreachable
+                    ? _offlineList()
+                    : _serverDown
+                        ? ServerUnavailableEmptyState(onRetry: () => _load())
+                        : _emptyList()
                 : ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -135,20 +184,20 @@ class _SubscriptionDetailPageState
     );
   }
 
-  Widget _loadingList() {
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: 2,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, __) => LayoutBuilder(
-        builder: (context, constraints) => ShimmerBox(
-          width: constraints.maxWidth,
-          height: 148,
-          borderRadius: 12,
-        ),
-      ),
+  Widget _offlineList() {
+    return OfflineEmptyState(
+      onRetry: () {
+        armOfflineRetry(
+          recovery: ref.read(networkRecoveryControllerProvider),
+          key: _recoveryKey,
+          reload: () => _load(rethrowOffline: true),
+        );
+      },
     );
+  }
+
+  Widget _loadingList() {
+    return const SubscriptionListSkeleton();
   }
 
   Widget _emptyList() {
@@ -293,10 +342,10 @@ class _PlanCard extends StatelessWidget {
                   plan.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                    style: AppTheme.english(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  style: AppTheme.english(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                     height: AppTheme.lineHeightMyanmarSafe,
                     letterSpacing: 0,
                   ),
@@ -512,24 +561,24 @@ class _CredentialField extends StatelessWidget {
             ),
           ),
         ),
-          if (loading)
-            const SizedBox(
-              width: 30,
-              height: 30,
-              child: Padding(
-                padding: EdgeInsets.all(8),
-                child: CircularProgressIndicator(strokeWidth: 1.6),
-              ),
-            )
-          else
-            _IconAction(
-              icon: visible ? LucideIcons.eye : LucideIcons.eye_off,
-              onTap: onToggleVisibility,
+        if (loading)
+          const SizedBox(
+            width: 30,
+            height: 30,
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: CircularProgressIndicator(strokeWidth: 1.6),
             ),
+          )
+        else
           _IconAction(
-            icon: LucideIcons.copy,
-            onTap: value.isEmpty ? () {} : () => _copy(context),
+            icon: visible ? LucideIcons.eye : LucideIcons.eye_off,
+            onTap: onToggleVisibility,
           ),
+        _IconAction(
+          icon: LucideIcons.copy,
+          onTap: value.isEmpty ? () {} : () => _copy(context),
+        ),
       ],
     );
   }

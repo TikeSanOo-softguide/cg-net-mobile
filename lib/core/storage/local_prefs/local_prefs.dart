@@ -9,8 +9,11 @@ class LocalPrefs {
   static const languageKey = 'selected_language';
   static const languageChosenKey = 'language_chosen';
   static const inboxCacheKey = 'inbox_messages_v1';
+  static const homePromotionsCacheKey = 'home_promotions_v1';
+  static const homeBannersCacheKey = 'home_banners_v1';
   static const inboxUnreadCountKey = 'inbox_unread_count_v1';
   static const chatCacheKey = 'support_chat_v1';
+  static const sessionUserIdKey = 'session_user_id';
 
   Future<void> setLanguageCode(String code) async {
     await _prefs.setString(languageKey, code);
@@ -25,6 +28,16 @@ class LocalPrefs {
   }
 
   bool get hasChosenLanguage => _prefs.getBool(languageChosenKey) ?? false;
+
+  Future<void> setSessionUserId(String id) async {
+    final userId = id.trim();
+    if (userId.isEmpty) return;
+    await _prefs.setString(sessionUserIdKey, userId);
+  }
+
+  Future<void> clearSessionUserId() async {
+    await _prefs.remove(sessionUserIdKey);
+  }
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {

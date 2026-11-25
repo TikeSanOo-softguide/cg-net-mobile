@@ -44,6 +44,17 @@ class HomePromotion {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      if (slug != null) 'slug': slug,
+      'title': titles,
+      'description': descriptions,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+    };
+  }
+
   factory HomePromotion.fromJson(Map<String, dynamic> json) {
     final imageRaw = json['imageUrl'] ?? json['image_url'];
     final slug = json['slug']?.toString().trim();

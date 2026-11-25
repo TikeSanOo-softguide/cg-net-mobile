@@ -114,8 +114,13 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         } on ApiException catch (error) {
           if (!mounted) return;
 
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final shouldRetry = await showServerUnavailableModal(context);
             if (!mounted || !shouldRetry) return;
             continue;
           }
@@ -202,8 +207,13 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         } on ApiException catch (error) {
           if (!mounted) return;
 
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final shouldRetry = await showServerUnavailableModal(context);
             if (!mounted || !shouldRetry) return;
             continue;
           }
@@ -233,21 +243,21 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
 
       ref.read(boundBroadbandProvider.notifier).state = bound;
       ref.invalidate(userProfileProvider);
-
-      try {
-        await ref.read(profileControllerProvider.notifier).fetchProfile();
-      } catch (error, stackTrace) {
-        debugPrint('Profile refresh after broadband binding failed: $error');
-        debugPrintStack(stackTrace: stackTrace);
-      }
-
-      if (!mounted) return;
+      final profileRefresh =
+          ref.read(profileControllerProvider.notifier).fetchProfile();
 
       await showAppSuccessModal(
         context,
         title: 'home.bind_success_title'.tr(),
         body: 'home.bind_success_body'.tr(),
       );
+
+      try {
+        await profileRefresh;
+      } catch (error, stackTrace) {
+        debugPrint('Profile refresh after broadband binding failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -339,8 +349,13 @@ class _BindBroadbandPageState extends ConsumerState<BindBroadbandPage> {
         } on ApiException catch (error) {
           if (!mounted) return;
 
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final shouldRetry = await showOfflineModal(context);
+            if (!mounted || !shouldRetry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final shouldRetry = await showServerUnavailableModal(context);
             if (!mounted || !shouldRetry) return;
             continue;
           }
@@ -440,7 +455,7 @@ class _BindForm extends StatelessWidget {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: AppCard(
         padding: const EdgeInsets.all(16),
-        borderRadius: AppStyle.borderRadiusLg,
+        borderRadius: AppStyle.borderRadiusListCard,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -510,7 +525,7 @@ class _BoundAccountCard extends StatelessWidget {
     return AppCard(
       elevated: false,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      borderRadius: AppStyle.borderRadiusLg,
+      borderRadius: AppStyle.borderRadiusListCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -529,25 +544,29 @@ class _BoundAccountCard extends StatelessWidget {
             context.tr('broadband.details_title'),
             textAlign: TextAlign.center,
             style: AppTheme.english(
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
-              height: AppStyle.lineHeightTitle,
-              letterSpacing: -0.15,
+              height: 1.25,
+              letterSpacing: 0.2,
             ),
           ),
           const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
             decoration: BoxDecoration(
               color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppStyle.borderRadiusListCard,
             ),
             child: Column(
               children: [
                 _DetailRow(
                   label: context.tr('home.service_type'),
                   value: bound.serviceType,
+                ),
+                _DetailRow(
+                  label: context.tr('installationApplication.network_provider'),
+                  value: profile.productLine.trim(),
                 ),
                 _DetailRow(
                   label: context.tr('broadband.detail_account'),
@@ -563,10 +582,6 @@ class _BoundAccountCard extends StatelessWidget {
                     value: profile.accountPhone,
                   ),
                 _DetailRow(
-                  label: context.tr('installationApplication.network_provider'),
-                  value: profile.productLine.trim(),
-                ),
-                _DetailRow(
                   label: context.tr('package.speed'),
                   value: productSpeed,
                 ),
@@ -579,24 +594,22 @@ class _BoundAccountCard extends StatelessWidget {
                     label: context.tr('broadband.detail_price'),
                     value: '${profile.productPrice.trim()} Pts',
                   ),
-                if (profile.startTime.trim().isNotEmpty)
-                  _DetailRow(
-                    label: context.tr('broadband.detail_start_time'),
-                    value: formatDate(profile.startTime),
-                  ),
                 if (profile.endTime.trim().isNotEmpty)
                   _DetailRow(
                     label: context.tr('broadband.detail_end_time'),
-                    value: formatDate(profile.endTime),
+                    value: formatReceiptDateTimeText(profile.endTime),
                   ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          AppButton(
-            label: context.tr('broadband.remove_account'),
-            onPressed: isSubmitting ? null : onRemove,
-            backgroundColor: AppColors.error,
+          Center(
+            child: AppButton(
+              label: context.tr('broadband.remove_account'),
+              isExpanded: false,
+              onPressed: isSubmitting ? null : onRemove,
+              backgroundColor: AppColors.error,
+            ),
           ),
         ],
       ),
@@ -608,47 +621,40 @@ class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
     required this.value,
-    this.showDivider = true,
   });
 
   final String label;
   final String value;
-  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              Text(
-                '$label',
-                style: AppTheme.english(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.end,
-                  style: AppTheme.english(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTheme.english(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
           ),
-        ),
-        if (showDivider)
-          const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
-      ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTheme.english(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

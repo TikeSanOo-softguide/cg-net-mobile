@@ -179,8 +179,13 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
           return;
         } on ApiException catch (error) {
           if (!mounted) return;
-          if (isOfflineError(error)) {
+          if (isUnreachableError(error)) {
             final retry = await showOfflineModal(context);
+            if (!mounted || !retry) return;
+            continue;
+          }
+          if (isServerUnavailableError(error)) {
+            final retry = await showServerUnavailableModal(context);
             if (!mounted || !retry) return;
             continue;
           }
@@ -275,55 +280,64 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
     final quote = _quote;
     if (quote == null || _paying) return;
 
+    String? password;
     while (mounted) {
+      if (password == null) {
+        final entered = await showAppPasswordModal(
+          context,
+          title: 'home.pay_bill_password_title'.tr(),
+          body: 'home.pay_bill_password_body'.tr(),
+          amountPoints: quote.outstandingAmount.round(),
+        );
+        if (!mounted || entered == null || entered.isEmpty) return;
+        password = entered;
+      }
+
       Object? payError;
       var wrongPassword = false;
+      var offline = false;
+      var serverDown = false;
       PayBillReceipt? receipt;
-      await showAppPasswordModal(
-        context,
-        title: 'home.pay_bill_password_title'.tr(),
-        body: 'home.pay_bill_password_body'.tr(),
-        amountPoints: quote.outstandingAmount.round(),
-        onSubmit: (password) async {
-          if (_paying) return;
-          _paying = true;
-          final key = _payKey ??= _newKey();
-          await _showProcessing();
-          try {
-            while (true) {
-              try {
-                receipt = await ref.read(payBillRepositoryProvider).pay(
-                      accountNumber: quote.account,
-                      serviceType: quote.serviceType,
-                      idempotencyKey: key,
-                      password: password,
-                      remark: _remark.text.trim(),
-                    );
-                return;
-              } on ApiException catch (error) {
-                if (!mounted) return;
-                if (isOfflineError(error)) {
-                  _closeProcessingDialog();
-                  final retry = await showOfflineModal(context);
-                  if (!mounted || !retry) return;
-                  await _showProcessing();
-                  continue;
-                }
-                if (isPayPasswordError(error)) {
-                  wrongPassword = true;
-                  return;
-                }
-                payError = error;
-                return;
-              }
-            }
-          } finally {
-            _closeProcessingDialog();
-            _paying = false;
+      _paying = true;
+      final key = _payKey ??= _newKey();
+      try {
+        await _showProcessing();
+        try {
+          receipt = await ref.read(payBillRepositoryProvider).pay(
+                accountNumber: quote.account,
+                serviceType: quote.serviceType,
+                idempotencyKey: key,
+                password: password,
+                remark: _remark.text.trim(),
+              );
+        } on ApiException catch (error) {
+          if (isUnreachableError(error)) {
+            offline = true;
+          } else if (isServerUnavailableError(error)) {
+            serverDown = true;
+          } else if (isPayPasswordError(error)) {
+            wrongPassword = true;
+          } else {
+            payError = error;
           }
-        },
-      );
+        }
+      } finally {
+        _closeProcessingDialog();
+        _paying = false;
+      }
       if (!mounted) return;
+
+      if (offline) {
+        final retry = await showOfflineModal(context);
+        if (!mounted || !retry) return;
+        continue;
+      }
+      if (serverDown) {
+        final retry = await showServerUnavailableModal(context);
+        if (!mounted || !retry) return;
+        continue;
+      }
+
       final paid = receipt;
       if (paid != null) {
         unawaited(
@@ -365,9 +379,10 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
         return;
       }
       if (wrongPassword) {
+        password = null;
         final retry = await showAppRetryFailureModal(
           context,
-          title: 'msg.user_002'.tr(),
+          title: 'common.incorrect_password'.tr(),
           body: 'msg.user_002_body'.tr(),
         );
         if (!mounted || !retry) return;
@@ -378,7 +393,7 @@ class _PayBillPageState extends ConsumerState<PayBillPage> {
       await showAppFailureModal(
         context,
         title: isInsufficientWalletError(error)
-            ? 'msg.ftth_003'.tr()
+            ? 'common.insufficient_balance'.tr()
             : 'home.pay_bill_result_failure_title'.tr(),
         body: isInsufficientWalletError(error)
             ? 'msg.ftth_003_body'.tr()

@@ -5,10 +5,13 @@ import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../components/app_add_floating_action_button/app_add_floating_action_button.dart';
-import '../../../components/shimmer_loading/shimmer_loading.dart';
+import '../../../components/page_skeletons/request_ticket_skeleton.dart';
 import '../../../components/request_ticket_card/request_ticket_card.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
+import '../../../components/offline_notice_bar/offline_notice_bar.dart';
+import '../../../core/network/network_recovery_controller.dart';
+import '../../../core/network/offline_navigation.dart';
 import '../../../components/app_dialog/app_dialog.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -60,6 +63,17 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       .read(relocationControllerProvider.notifier)
       .fetchRequests(_currentAccountNumber());
 
+  void _retryOfflineList() {
+    armOfflineRetry(
+      recovery: ref.read(networkRecoveryControllerProvider),
+      key: 'relocation-list-reload',
+      reload: _refresh,
+      stillOffline: () => isUnreachableMessage(
+        ref.read(relocationControllerProvider).errorMessage,
+      ),
+    );
+  }
+
   Future<void> _openForm([RelocationRequestModel? request]) async {
     final result = await Navigator.of(context).push<RelocationSaveResult>(
       SlidePageRoute<RelocationSaveResult>(
@@ -102,6 +116,14 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
 
     if (code == null) {
       final state = ref.read(relocationControllerProvider);
+      if (isUnreachableMessage(state.errorMessage)) {
+        await showOfflineModal(context);
+        return;
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        await showServerUnavailableModal(context);
+        return;
+      }
       await showAppFailureModal(
         context,
         title: 'common.error'.tr(),
@@ -164,10 +186,16 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
 
   Widget _buildBody(RelocationState state) {
     if (state.status == RelocationStatus.loading && state.requests.isEmpty) {
-      return const CardListShimmer();
+      return const RequestTicketListSkeleton();
     }
 
     if (state.status == RelocationStatus.error && state.requests.isEmpty) {
+      if (isUnreachableMessage(state.errorMessage)) {
+        return OfflineEmptyState(onRetry: _retryOfflineList);
+      }
+      if (isServerUnavailableMessage(state.errorMessage)) {
+        return ServerUnavailableEmptyState(onRetry: _refresh);
+      }
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
         children: [
@@ -233,8 +261,9 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       );
     }
 
-    final hasError =
-        state.status == RelocationStatus.error && state.errorMessage != null;
+    final hasError = state.status == RelocationStatus.error &&
+        state.errorMessage != null &&
+        !isUnreachableMessage(state.errorMessage);
     final underReview = state.requests
         .where((request) =>
             _statusKey(request) == 'pending' ||

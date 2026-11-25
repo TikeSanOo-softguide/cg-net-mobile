@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/app_dialog/app_dialog.dart';
 import '../network/message_codes.dart';
+import '../network/offline_navigation.dart';
 
 typedef FieldKey = GlobalKey<FormFieldState<String>>;
 
@@ -112,8 +113,16 @@ bool isInsufficientWalletError(Object error) {
       error.code == MessageCodes.pkgInsufficientBalance;
 }
 
-Future<void> showApiErrorModal(BuildContext context, Object error) {
-  return showAppFailureModal(
+Future<void> showApiErrorModal(BuildContext context, Object error) async {
+  if (shouldPresentAsOffline(error)) {
+    await showOfflineModal(context);
+    return;
+  }
+  if (isServerUnavailableError(error)) {
+    await showServerUnavailableModal(context);
+    return;
+  }
+  await showAppFailureModal(
     context,
     title: 'common.error'.tr(),
     body: apiErrorText(error),
