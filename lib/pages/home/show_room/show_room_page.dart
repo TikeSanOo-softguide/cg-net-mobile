@@ -14,6 +14,7 @@ import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/page_skeletons/show_room_skeleton.dart';
 import '../../../core/network/network_recovery_controller.dart';
 import '../../../core/network/offline_navigation.dart';
+import '../../../core/network/server_availability.dart';
 import '../../../data/show_room/show_room_repository.dart';
 import '../../../core/theme/app_colors/app_colors.dart';
 import '../../../core/theme/app_style/app_style.dart';
@@ -49,7 +50,12 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
     } catch (error) {
       if (!mounted) return;
       if (hadItems && isUnreachableError(error)) return;
-      if (ref.read(showRoomsProvider).valueOrNull != null) return;
+      if (ref.read(showRoomsProvider).valueOrNull != null) {
+        if (isServerUnavailableError(error)) {
+          GlobalServerNotice.showDown();
+        }
+        return;
+      }
       if (isUnreachableError(error) || isServerUnavailableError(error)) {
         return;
       }
@@ -71,6 +77,7 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
           ? const ShowRoomListSkeleton()
           : AppRefreshIndicator(
               color: AppColors.primary,
+              recoveryKey: 'show-room',
               onRefresh: () => _loadShowRooms(retry: true),
               child: rooms == null
                   ? isUnreachableError(roomsAsync.error)
@@ -92,6 +99,7 @@ class _ShowRoomPageState extends ConsumerState<ShowRoomPage> {
                         )
                       : isServerUnavailableError(roomsAsync.error)
                           ? ServerUnavailableEmptyState(
+                              recoveryKey: 'show-room',
                               onRetry: () =>
                                   unawaited(_loadShowRooms(retry: true)),
                             )

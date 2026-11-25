@@ -151,6 +151,7 @@ class _SubscriptionDetailPageState
       onBack: () => context.pop(),
       body: AppRefreshIndicator(
         color: AppColors.primary,
+        recoveryKey: 'subscription-detail',
         onRefresh: () => _load(),
         child: loading
             ? _loadingList()
@@ -158,7 +159,10 @@ class _SubscriptionDetailPageState
                 ? _unreachable
                     ? _offlineList()
                     : _serverDown
-                        ? ServerUnavailableEmptyState(onRetry: () => _load())
+                        ? ServerUnavailableEmptyState(
+                            recoveryKey: 'subscription-detail',
+                            onRetry: () => _load(),
+                          )
                         : _emptyList()
                 : ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),

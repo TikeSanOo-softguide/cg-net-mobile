@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/network_monitor.dart';
 import '../../core/network/network_status.dart';
+import '../../core/network/server_availability.dart';
 import '../../core/router/route_names/route_names.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
@@ -70,9 +71,12 @@ class NetworkStatusHost extends ConsumerStatefulWidget {
 class _NetworkStatusHostState extends ConsumerState<NetworkStatusHost> {
   final _policy = NetworkNoticePolicy();
   Timer? _timer;
+  Timer? _serverTimer;
   NetworkNotice _notice = NetworkNotice.none;
+  ServerNotice? _serverNotice;
   bool _ready = false;
   late final VoidCallback _onOfflineRequest;
+  late final void Function(ServerNotice notice) _onServerNotice;
 
   @override
   void initState() {
@@ -82,6 +86,12 @@ class _NetworkStatusHostState extends ConsumerState<NetworkStatusHost> {
       _show(NetworkNotice.offline);
     };
     GlobalOfflineNotice.register(_onOfflineRequest);
+    _onServerNotice = (notice) {
+      if (!_ready || !mounted) return;
+      if (ref.read(networkMonitorProvider) == NetworkStatus.offline) return;
+      _showServer(notice);
+    };
+    GlobalServerNotice.register(_onServerNotice);
     final router = widget.router;
     if (router == null) {
       _ready = true;
@@ -94,8 +104,10 @@ class _NetworkStatusHostState extends ConsumerState<NetworkStatusHost> {
   @override
   void dispose() {
     GlobalOfflineNotice.unregister(_onOfflineRequest);
+    GlobalServerNotice.unregister(_onServerNotice);
     widget.router?.routeInformationProvider.removeListener(_onRoute);
     _timer?.cancel();
+    _serverTimer?.cancel();
     super.dispose();
   }
 
@@ -126,6 +138,7 @@ class _NetworkStatusHostState extends ConsumerState<NetworkStatusHost> {
       if (notice == NetworkNotice.none || !mounted) return;
       _show(notice);
     });
+    ref.watch(serverListRecoveryProvider);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -144,6 +157,21 @@ class _NetworkStatusHostState extends ConsumerState<NetworkStatusHost> {
                 ),
               ),
             ),
+          )
+        else if (_serverNotice != null)
+          Positioned(
+            left: 16,
+            right: 16,
+            top: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Align(
+                alignment: Alignment.center,
+                child: _ServerNoticeBar(
+                  restored: _serverNotice == ServerNotice.restored,
+                ),
+              ),
+            ),
           ),
       ],
     );
@@ -154,10 +182,23 @@ class _NetworkStatusHostState extends ConsumerState<NetworkStatusHost> {
       OfflineModalHub.dismiss();
     }
     _timer?.cancel();
-    setState(() => _notice = notice);
+    if (notice == NetworkNotice.offline) _serverTimer?.cancel();
+    setState(() {
+      _notice = notice;
+      if (notice == NetworkNotice.offline) _serverNotice = null;
+    });
     _timer = Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
       setState(() => _notice = NetworkNotice.none);
+    });
+  }
+
+  void _showServer(ServerNotice notice) {
+    _serverTimer?.cancel();
+    setState(() => _serverNotice = notice);
+    _serverTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() => _serverNotice = null);
     });
   }
 }
@@ -243,6 +284,79 @@ class _GlobalNoticeBar extends StatelessWidget {
       color: color,
       height: AppStyle.lineHeightBody,
     ).copyWith(decoration: TextDecoration.none);
+  }
+}
+
+class _ServerNoticeBar extends StatelessWidget {
+  const _ServerNoticeBar({required this.restored});
+
+  final bool restored;
+
+  static const _checkAsset = 'assets/images/dialogs/check-mark.png';
+
+  @override
+  Widget build(BuildContext context) {
+    if (!restored) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0x8C000000),
+          borderRadius: AppStyle.borderRadiusSm,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.22),
+            width: 0.6,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 6),
+          child: Text(
+            'shared.server_down_notice'.tr(),
+            textAlign: TextAlign.start,
+            textWidthBasis: TextWidthBasis.longestLine,
+            style: AppTheme.english(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              height: AppStyle.lineHeightBody,
+            ).copyWith(decoration: TextDecoration.none),
+          ),
+        ),
+      );
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.success,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x471B7A4E),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 7, 8, 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                'shared.server_restored_notice'.tr(),
+                textAlign: TextAlign.start,
+                style: AppTheme.english(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  height: AppStyle.lineHeightBody,
+                ).copyWith(decoration: TextDecoration.none),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const _NoticeIcon(_checkAsset, button: true),
+          ],
+        ),
+      ),
+    );
   }
 }
 

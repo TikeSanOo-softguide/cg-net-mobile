@@ -207,7 +207,11 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
             'current_address': _currentAddressFieldKey,
         },
       );
-      if (!handledInline) await showApiErrorModal(context, error);
+      if (!handledInline &&
+          await showApiErrorModal(context, error) &&
+          mounted) {
+        await _submit();
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

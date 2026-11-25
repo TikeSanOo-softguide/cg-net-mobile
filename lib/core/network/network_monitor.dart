@@ -7,6 +7,7 @@ import 'backend_probe.dart';
 import 'internet_reachability.dart';
 import 'network_recovery_controller.dart';
 import 'network_status.dart';
+import 'server_availability.dart';
 
 abstract class NetworkLinks {
   Stream<List<ConnectivityResult>> get changes;
@@ -107,8 +108,16 @@ class NetworkMonitor extends StateNotifier<NetworkStatus> {
   }
 
   void _setBackend(BackendStatus next) {
+    final previous = BackendStatusSnapshot.current;
     backendStatus = next;
+    if (previous == next) return;
     BackendStatusSnapshot.update(next);
+    if (next == BackendStatus.unavailable) {
+      GlobalServerNotice.showDown();
+    } else if (previous == BackendStatus.unavailable &&
+        next == BackendStatus.available) {
+      GlobalServerNotice.showRestored();
+    }
   }
 
   void _emit(NetworkStatus next) {

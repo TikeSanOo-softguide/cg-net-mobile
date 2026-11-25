@@ -11,6 +11,7 @@ import '../../../components/app_glass_tab_bar/app_glass_tab_bar.dart';
 import '../../../components/empty_state/empty_state.dart';
 import '../../../components/offline_notice_bar/offline_notice_bar.dart';
 import '../../../components/inbox_category_icon/inbox_category_icon.dart';
+import '../../../components/page_skeletons/glass_tab_bar_skeleton.dart';
 import '../../../components/page_skeletons/inbox_skeleton.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/network/api_error_text.dart';
@@ -94,19 +95,25 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
       }
     });
 
+    final hasMessages = state.hasValue;
+    final showTabSkeleton = !hasMessages && state.isLoading;
+
     return AppCurvedScaffold(
       key: ValueKey('inbox-$locale'),
       title: Text('inbox.title'.tr()),
       showBack: false,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: AppGlassTabBar(
-              controller: _tabController,
-              labels: _tabLabels,
-            ),
-          ),
+          if (hasMessages)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: AppGlassTabBar(
+                controller: _tabController,
+                labels: _tabLabels,
+              ),
+            )
+          else if (showTabSkeleton)
+            const GlassTabBarSkeleton(),
           Expanded(
             child: state.when(
               loading: () => const InboxListSkeleton(),
@@ -129,6 +136,7 @@ class _InboxListPageState extends ConsumerState<InboxListPage>
                     : isServerUnavailableError(e)
                         ? ServerUnavailableEmptyState(
                             scrollable: false,
+                            recoveryKey: 'inbox-list',
                             onRetry: () {
                               ref
                                   .read(inboxListControllerProvider.notifier)
@@ -210,6 +218,7 @@ class _InboxList extends StatelessWidget {
 
     return AppRefreshIndicator(
       onRefresh: onRefresh,
+      recoveryKey: 'inbox-list',
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -239,6 +248,7 @@ Widget _inboxPullable({
 }) {
   return AppRefreshIndicator(
     onRefresh: onRefresh,
+    recoveryKey: 'inbox-list',
     child: LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;

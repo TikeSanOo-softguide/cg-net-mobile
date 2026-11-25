@@ -8,6 +8,7 @@ import 'package:cg_net_mobile/core/network/internet_reachability.dart';
 import 'package:cg_net_mobile/core/network/network_monitor.dart';
 import 'package:cg_net_mobile/core/network/network_status.dart';
 import 'package:cg_net_mobile/core/network/offline_navigation.dart';
+import 'package:cg_net_mobile/core/network/server_availability.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -348,6 +349,86 @@ void main() {
     await tester.pump();
     expect(find.text(offline), findsOneWidget);
   });
+
+  test('server restored follows an unavailable probe', () async {
+    final notices = <ServerNotice>[];
+    void onNotice(ServerNotice notice) => notices.add(notice);
+    GlobalServerNotice.register(onNotice);
+    addTearDown(() => GlobalServerNotice.unregister(onNotice));
+
+    links.now = const [ConnectivityResult.wifi];
+    reachability.result = Reachability.internet;
+    final backend = FakeBackend()..result = BackendStatus.unavailable;
+    final active = monitor(backend: backend);
+    addTearDown(active.dispose);
+
+    await active.start();
+    expect(notices, [ServerNotice.down]);
+
+    backend.result = BackendStatus.available;
+    await active.recheck();
+    expect(notices, [ServerNotice.down, ServerNotice.restored]);
+  });
+
+  test('coming online from unknown is not server restored', () async {
+    final notices = <ServerNotice>[];
+    void onNotice(ServerNotice notice) => notices.add(notice);
+    GlobalServerNotice.register(onNotice);
+    addTearDown(() => GlobalServerNotice.unregister(onNotice));
+
+    links.now = const [ConnectivityResult.wifi];
+    reachability.result = Reachability.internet;
+    final active = monitor(
+      backend: FakeBackend()..result = BackendStatus.available,
+    );
+    addTearDown(active.dispose);
+
+    await active.start();
+    expect(active.backendStatus, BackendStatus.available);
+    expect(notices, isEmpty);
+  });
+
+  testWidgets('server notice follows the API host', (tester) async {
+    links.now = const [ConnectivityResult.wifi];
+    reachability.result = Reachability.internet;
+    final backend = FakeBackend()..result = BackendStatus.unavailable;
+    final active = monitor(backend: backend);
+    addTearDown(active.dispose);
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('en'),
+        assetLoader: const _NoticeAssetLoader(),
+        saveLocale: false,
+        child: ProviderScope(
+          overrides: [
+            networkMonitorProvider.overrideWith((ref) => active),
+          ],
+          child: const _HostApp(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await active.start();
+    await tester.pump();
+
+    expect(
+      find.text('Unable to connect to the server. Please try again.'),
+      findsOneWidget,
+    );
+
+    backend.result = BackendStatus.available;
+    await active.recheck();
+    await tester.pump();
+    expect(find.text('The server is available again.'), findsOneWidget);
+    expect(
+      find.text('Your internet connection has been restored.'),
+      findsNothing,
+    );
+  });
 }
 
 class _NoticeAssetLoader extends AssetLoader {
@@ -361,6 +442,9 @@ class _NoticeAssetLoader extends AssetLoader {
             'No internet connection. Please check your connection and try again.',
         'back_online_notice':
             'Your internet connection has been restored.',
+        'server_down_notice':
+            'Unable to connect to the server. Please try again.',
+        'server_restored_notice': 'The server is available again.',
       },
     };
   }

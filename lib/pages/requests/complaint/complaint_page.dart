@@ -207,22 +207,24 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
     );
     if (confirmed != true || !mounted) return;
 
-    final result = await LoadingHelper.runWithLoading(
-      () => ref
-          .read(complaintControllerProvider.notifier)
-          .cancelComplaint(report),
-    );
-    if (!mounted) return;
-
-    if (result == null) {
+    ComplaintCancelResult? result;
+    while (mounted) {
+      result = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(complaintControllerProvider.notifier)
+            .cancelComplaint(report),
+      );
+      if (!mounted) return;
+      if (result != null) break;
       final message = ref.read(complaintControllerProvider).errorMessage;
       if (isUnreachableMessage(message)) {
         await showOfflineModal(context);
         return;
       }
       if (isServerUnavailableMessage(message)) {
-        await showServerUnavailableModal(context);
-        return;
+        final retry = await showServerUnavailableModal(context);
+        if (!retry || !mounted) return;
+        continue;
       }
       await showAppFailureModal(
         context,
@@ -231,6 +233,7 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
       );
       return;
     }
+    if (!mounted || result == null) return;
 
     await showAppSuccessModal(
       context,
@@ -274,6 +277,7 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
               onPressed: () => _openNewComplaintPage(),
             ),
       body: AppRefreshIndicator(
+        recoveryKey: 'complaint-list',
         onRefresh: _fetchComplaints,
         child: _buildBody(reportState, reports),
       ),
@@ -290,7 +294,10 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
         return OfflineEmptyState(onRetry: _retryOfflineList);
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        return ServerUnavailableEmptyState(onRetry: _fetchComplaints);
+        return ServerUnavailableEmptyState(
+          recoveryKey: 'complaint-list',
+          onRetry: _fetchComplaints,
+        );
       }
       final errorMessage = state.errorMessage;
       final displayMessage = errorMessage == null
@@ -374,7 +381,8 @@ class _ComplaintPageState extends ConsumerState<ComplaintPage>
 
     final hasError = state.status == ComplaintStatus.error &&
         state.errorMessage != null &&
-        !isUnreachableMessage(state.errorMessage);
+        !isUnreachableMessage(state.errorMessage) &&
+        !isServerUnavailableMessage(state.errorMessage);
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
@@ -835,8 +843,10 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
           'description': _descriptionFieldKey,
         },
       );
-      if (!handledInline) {
-        await showApiErrorModal(context, error);
+      if (!handledInline &&
+          await showApiErrorModal(context, error) &&
+          mounted) {
+        await _submitForm();
       }
       return;
     }
@@ -855,7 +865,8 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
         return;
       }
       if (isServerUnavailableMessage(errorMessage)) {
-        await showServerUnavailableModal(context);
+        final retry = await showServerUnavailableModal(context);
+        if (retry && mounted) await _submitForm();
         return;
       }
       await showAppFailureModal(

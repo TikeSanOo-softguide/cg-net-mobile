@@ -8,23 +8,23 @@ import 'offline_navigation.dart';
 
 /// Shows the common success / warning / failure dialog from backend `level`.
 /// Offline errors use the shared offline modal.
-Future<void> showApiMessageModal(
+/// Returns true only when the user retries a server-unavailable dialog.
+Future<bool> showApiMessageModal(
   BuildContext context,
   Object? error, {
   String fallbackKey = 'common.error',
 }) async {
-  if (error == null) return;
-  if (!context.mounted) return;
+  if (error == null) return false;
+  if (!context.mounted) return false;
 
   if (shouldPresentAsOffline(error)) {
     await showOfflineModal(context);
-    return;
+    return false;
   }
   if (isServerUnavailableError(error)) {
-    await showServerUnavailableModal(context);
-    return;
+    return showServerUnavailableModal(context);
   }
-  if (!context.mounted) return;
+  if (!context.mounted) return false;
 
   final body = apiErrorOrFallback(error, fallbackKey: fallbackKey);
   final apiError = error is ApiException ? error : null;
@@ -36,7 +36,7 @@ Future<void> showApiMessageModal(
       title: 'common.success'.tr(),
       body: body,
     );
-    return;
+    return false;
   }
 
   if (level == 'warning') {
@@ -45,7 +45,7 @@ Future<void> showApiMessageModal(
       title: 'common.warning'.tr(),
       message: body,
     );
-    return;
+    return false;
   }
 
   await showAppFailureModal(
@@ -54,6 +54,7 @@ Future<void> showApiMessageModal(
     body: body,
     retryAfterSeconds: _retryAfterSeconds(apiError),
   );
+  return false;
 }
 
 int? _retryAfterSeconds(ApiException? error) {

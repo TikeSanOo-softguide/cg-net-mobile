@@ -69,6 +69,7 @@ class ServiceHistoryPage extends ConsumerWidget {
           ? const ServiceHistoryListSkeleton()
           : AppRefreshIndicator(
               color: AppColors.primary,
+              recoveryKey: 'service-history',
               onRefresh: () async {
                 ref.read(serviceHistoryOfflineProvider.notifier).state = false;
                 ref.invalidate(serviceHistoryProvider);
@@ -105,12 +106,13 @@ class ServiceHistoryPage extends ConsumerWidget {
                               },
                             )
                           : isServerUnavailableError(failure)
-                              ? ServerUnavailableEmptyState(
-                                  scrollable: false,
-                                  onRetry: () {
-                                    ref.invalidate(serviceHistoryProvider);
-                                  },
-                                )
+                          ? ServerUnavailableEmptyState(
+                              scrollable: false,
+                              recoveryKey: 'service-history',
+                              onRetry: () {
+                                ref.invalidate(serviceHistoryProvider);
+                              },
+                            )
                           : EmptyState(
                               iconAsset: QuickActionIconChip.billAsset,
                               iconBackground: QuickActionIconChip.billSoft,
