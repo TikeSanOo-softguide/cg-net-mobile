@@ -828,6 +828,8 @@
     "no_internet_title": "您已离线",
     "back_online_notice": "您的网络连接已恢复。",
     "offline_notice": "无网络连接。请检查您的网络连接，然后重试。",
+    "server_down_notice": "无法连接到服务器。请重试。",
+    "server_restored_notice": "服务器已恢复连接。",
     "server_unavailable_title": "无法连接服务器",
     "server_unavailable_body": "目前无法连接到服务器。请稍后再试。",
     "force_update_title": "需要更新",

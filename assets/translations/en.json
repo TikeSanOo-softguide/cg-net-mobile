@@ -831,6 +831,8 @@
     "no_internet_title": "You're offline",
     "back_online_notice": "Your internet connection has been restored.",
     "offline_notice": "No internet connection. Please check your connection and try again.",
+    "server_down_notice": "Unable to connect to the server. Please try again.",
+    "server_restored_notice": "The server is available again.",
     "server_unavailable_title": "Server Unavailable",
     "server_unavailable_body": "We're unable to connect to the server right now. Please try again later.",
     "force_update_title": "Update required",

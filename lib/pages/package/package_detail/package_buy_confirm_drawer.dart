@@ -139,9 +139,9 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFFF0000),
+                  foregroundColor: const Color(0xFFD90000),
                   backgroundColor: Colors.white,
-                  side: const BorderSide(color: Color(0xFFFF0000), width: 1),
+                  side: const BorderSide(color: Color(0xFFD90000), width: 1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppStyle.radiusButton),
                   ),
@@ -151,7 +151,7 @@ class _PackageBuyConfirmSheet extends StatelessWidget {
                   style: AppTheme.english(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFFFF0000),
+                    color: const Color(0xFFD90000),
                   ),
                 ),
               ),

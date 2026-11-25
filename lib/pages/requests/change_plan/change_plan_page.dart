@@ -170,22 +170,24 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
     );
     if (confirmed != true) return;
 
-    final code = await LoadingHelper.runWithLoading(
-      () => ref
-          .read(changePlanControllerProvider.notifier)
-          .cancelRequest(request.id),
-    );
-    if (!mounted) return;
-    if (code == null &&
-        ref.read(changePlanControllerProvider).errorMessage != null) {
+    String? code;
+    while (mounted) {
+      code = await LoadingHelper.runWithLoading(
+        () => ref
+            .read(changePlanControllerProvider.notifier)
+            .cancelRequest(request.id),
+      );
+      if (!mounted) return;
+      if (code != null) break;
       final state = ref.read(changePlanControllerProvider);
       if (isUnreachableMessage(state.errorMessage)) {
         await showOfflineModal(context);
         return;
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        await showServerUnavailableModal(context);
-        return;
+        final retry = await showServerUnavailableModal(context);
+        if (!retry || !mounted) return;
+        continue;
       }
       await showAppFailureModal(
         context,
@@ -194,6 +196,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
       );
       return;
     }
+    if (!mounted || code == null) return;
     await showAppSuccessModal(
       context,
       title: 'common.success'.tr(),
@@ -231,6 +234,7 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
           ? null
           : AppAddFloatingActionButton(onPressed: _openForm),
       body: AppRefreshIndicator(
+        recoveryKey: 'change-plan-list',
         onRefresh: _refresh,
         child: _buildBody(state, requests),
       ),
@@ -250,7 +254,10 @@ class _ChangePlanPageState extends ConsumerState<ChangePlanPage>
         return OfflineEmptyState(onRetry: _retryOfflineList);
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        return ServerUnavailableEmptyState(onRetry: _refresh);
+        return ServerUnavailableEmptyState(
+          recoveryKey: 'change-plan-list',
+          onRetry: _refresh,
+        );
       }
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),

@@ -366,6 +366,7 @@ extension _SupportChatPageView on _SupportChatPageState {
     }
     if (isServerUnavailableMessage(state.errorMessage)) {
       return ServerUnavailableEmptyState(
+        recoveryKey: 'support-chat',
         onRetry: () => ref
             .read(supportChatControllerProvider.notifier)
             .loadCurrentConversation(),

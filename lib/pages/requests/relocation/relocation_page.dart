@@ -109,20 +109,22 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
     if (confirmed != true) return;
 
     final controller = ref.read(relocationControllerProvider.notifier);
-    final code = await LoadingHelper.runWithLoading(
-      () => controller.cancelRequest(request.id),
-    );
-    if (!mounted) return;
-
-    if (code == null) {
+    String? code;
+    while (mounted) {
+      code = await LoadingHelper.runWithLoading(
+        () => controller.cancelRequest(request.id),
+      );
+      if (!mounted) return;
+      if (code != null) break;
       final state = ref.read(relocationControllerProvider);
       if (isUnreachableMessage(state.errorMessage)) {
         await showOfflineModal(context);
         return;
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        await showServerUnavailableModal(context);
-        return;
+        final retry = await showServerUnavailableModal(context);
+        if (!retry || !mounted) return;
+        continue;
       }
       await showAppFailureModal(
         context,
@@ -131,6 +133,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
       );
       return;
     }
+    if (!mounted || code == null) return;
 
     await showAppSuccessModal(
       context,
@@ -178,6 +181,7 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
           ? AppAddFloatingActionButton(onPressed: () => _openForm())
           : null,
       body: AppRefreshIndicator(
+        recoveryKey: 'relocation-list',
         onRefresh: _refresh,
         child: _buildBody(state),
       ),
@@ -194,7 +198,10 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
         return OfflineEmptyState(onRetry: _retryOfflineList);
       }
       if (isServerUnavailableMessage(state.errorMessage)) {
-        return ServerUnavailableEmptyState(onRetry: _refresh);
+        return ServerUnavailableEmptyState(
+          recoveryKey: 'relocation-list',
+          onRetry: _refresh,
+        );
       }
       return ListView(
         padding: const EdgeInsets.all(AppStyle.spaceLg),
@@ -263,7 +270,8 @@ class _RelocationPageState extends ConsumerState<RelocationPage> {
 
     final hasError = state.status == RelocationStatus.error &&
         state.errorMessage != null &&
-        !isUnreachableMessage(state.errorMessage);
+        !isUnreachableMessage(state.errorMessage) &&
+        !isServerUnavailableMessage(state.errorMessage);
     final underReview = state.requests
         .where((request) =>
             _statusKey(request) == 'pending' ||

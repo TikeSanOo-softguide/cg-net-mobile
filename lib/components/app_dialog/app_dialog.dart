@@ -8,7 +8,7 @@ import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_theme/app_theme.dart';
 import '../offline_status_content/offline_status_content.dart';
 
-const _cancelRed = Color(0xFFFF0000);
+const _cancelRed = Color(0xFFD90000);
 const _alert = Color(0xFFF97A00);
 const _successSoft = Color(0xFFE8F5DC); // light of #3D7A12
 const _alertSoft = Color(0xFFFFF0E5); // light of #F97A00

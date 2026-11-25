@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/network/server_availability.dart';
 import '../../core/theme/app_colors/app_colors.dart';
 import '../../core/theme/app_style/app_style.dart';
 import '../../core/theme/app_theme/app_theme.dart';
@@ -51,15 +53,56 @@ class OfflineEmptyState extends StatelessWidget {
 }
 
 /// In-page empty state when the internet is up but the API host is not.
-class ServerUnavailableEmptyState extends StatelessWidget {
+class ServerUnavailableEmptyState extends ConsumerStatefulWidget {
   const ServerUnavailableEmptyState({
     super.key,
     required this.onRetry,
+    required this.recoveryKey,
     this.scrollable = true,
   });
 
   final VoidCallback onRetry;
+  final String recoveryKey;
   final bool scrollable;
+
+  @override
+  ConsumerState<ServerUnavailableEmptyState> createState() =>
+      _ServerUnavailableEmptyState();
+}
+
+class _ServerUnavailableEmptyState
+    extends ConsumerState<ServerUnavailableEmptyState> {
+  ServerListRecovery? _recovery;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final recovery = ref.read(serverListRecoveryProvider);
+    if (!identical(_recovery, recovery)) {
+      _recovery?.clear(widget.recoveryKey);
+      _recovery = recovery;
+    }
+    recovery.arm(widget.recoveryKey, () async {
+      widget.onRetry();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant ServerUnavailableEmptyState oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.recoveryKey != widget.recoveryKey) {
+      _recovery?.clear(oldWidget.recoveryKey);
+    }
+    _recovery?.arm(widget.recoveryKey, () async {
+      widget.onRetry();
+    });
+  }
+
+  @override
+  void dispose() {
+    _recovery?.clear(widget.recoveryKey);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +121,14 @@ class ServerUnavailableEmptyState extends StatelessWidget {
               children: [
                 const ServerUnavailableContent(prominent: true),
                 const SizedBox(height: 12),
-                OfflineRetryButton(onPressed: onRetry),
+                OfflineRetryButton(onPressed: widget.onRetry),
               ],
             ),
           ),
         ),
       ),
     );
-    if (!scrollable) return content;
+    if (!widget.scrollable) return content;
     return _fillScroll(content);
   }
 }

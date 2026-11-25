@@ -48,7 +48,11 @@ class PackageListPage extends ConsumerWidget {
           key: ValueKey('package-list-$locale'),
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const SliverToBoxAdapter(child: _PackagePageIntro()),
+            SliverToBoxAdapter(
+              child: hasPackages
+                  ? const _PackagePageIntro()
+                  : const PackageTitleSkeleton(),
+            ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 10,
@@ -86,6 +90,7 @@ class PackageListPage extends ConsumerWidget {
               : serverDown
                   ? ServerUnavailableEmptyState(
                       scrollable: false,
+                      recoveryKey: 'package-list',
                       onRetry: () => _retry(ref, state),
                     )
               : EmptyState(
@@ -125,6 +130,7 @@ class PackageListPage extends ConsumerWidget {
   Widget _refreshable(WidgetRef ref, Widget child) {
     return AppRefreshIndicator(
       color: AppColors.primary,
+      recoveryKey: 'package-list',
       onRefresh: () async {
         await ref.read(packageListControllerProvider.notifier).load(
               silent: true,

@@ -175,11 +175,14 @@ class _InstallationApplicationFormPageState
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _optionsFailed = true;
-        _loadingOptions = false;
-      });
-      await showApiMessageModal(context, error);
+      setState(() => _loadingOptions = false);
+      final retry = await showApiMessageModal(context, error);
+      if (!mounted) return;
+      if (retry) {
+        await _loadProducts();
+        return;
+      }
+      setState(() => _optionsFailed = true);
     }
   }
 
@@ -248,8 +251,8 @@ class _InstallationApplicationFormPageState
           _addressFieldKey.currentState?.validate();
           _noteFieldKey.currentState?.validate();
         });
-      } else {
-        await showApiErrorModal(context, error);
+      } else if (await showApiErrorModal(context, error) && mounted) {
+        await _continue();
       }
     }
   }
