@@ -209,9 +209,9 @@ void main() {
 
       await repository.updateRequest(request);
 
-      final payload =
-          (dio.httpClientAdapter as _JsonAdapter).lastRequestOptions!.data
-              as Map<String, dynamic>;
+      final payload = (dio.httpClientAdapter as _JsonAdapter)
+          .lastRequestOptions!
+          .data as Map<String, dynamic>;
       expect(payload.containsKey('new_wifi_name'), isTrue);
       expect(payload['new_wifi_name'], isNull);
     });
@@ -241,7 +241,9 @@ void main() {
   });
 
   group('ChangeWifiPasswordController', () {
-    test('prevents submission if an under_review request exists for same account', () async {
+    test(
+        'prevents submission if an under_review request exists for same account',
+        () async {
       final controller = ChangeWifiPasswordController(repository);
       addTearDown(controller.dispose);
 

@@ -940,7 +940,14 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                               prefixIcon: LucideIcons.lock,
                               formFieldKey: _passwordFieldKey,
                               maxLength: 30,
-                              inputFormatters: [maxLengthLimiter(30)],
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(
+                                    r'[0-9]|[!-/]|[:-@]|\[|\]|\\|\^|_|`|\{|\||\}|~',
+                                  ),
+                                ),
+                                maxLengthLimiter(30),
+                              ],
                               suffix: AppInput.iconChip(
                                 icon: _obscurePassword
                                     ? LucideIcons.eye_off
@@ -967,10 +974,13 @@ class __NewRequestFormSheetState extends ConsumerState<_NewRequestFormSheet>
                                 }
                                 return apiFieldError('new_password');
                               },
-                              onChanged: (_) => clearApiFieldError(
-                                'new_password',
-                                key: _passwordFieldKey,
-                              ),
+                              onChanged: (_) {
+                                clearApiFieldError(
+                                  'new_password',
+                                  key: _passwordFieldKey,
+                                );
+                                _passwordFieldKey.currentState?.validate();
+                              },
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
                             GestureDetector(

@@ -596,6 +596,7 @@ class _InstallationApplicationFormPageState
               onChanged: (value) {
                 clearApiFieldError('phone', key: _phoneFieldKey);
                 clearApiFieldError('contact_phone', key: _phoneFieldKey);
+                _phoneFieldKey.currentState?.validate();
                 ref
                     .read(installationRequestDraftProvider.notifier)
                     .setPhone(value);
