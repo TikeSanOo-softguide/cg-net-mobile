@@ -229,7 +229,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage>
 
           await ref.read(authApiProvider).syncCurrentLanguage();
           if (!mounted) return;
-          TextInput.finishAutofillContext();
+          TextInput.finishAutofillContext(shouldSave: false);
           await WidgetsBinding.instance.endOfFrame;
           if (!mounted) return;
           navigated = true;
