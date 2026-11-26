@@ -1159,6 +1159,7 @@ class __NewComplaintFormSheetState extends ConsumerState<_NewComplaintFormSheet>
       label: '${context.tr('complaint.complaint_type')} *',
       value: ComplaintType.fromKey(_selectedType),
       options: options,
+      selectedLabelMaxLines: 2,
       validator: (value) =>
           value == null ? _requiredMessage('complaint.complaint_type') : null,
       onChanged: (val) {

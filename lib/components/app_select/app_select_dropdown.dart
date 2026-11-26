@@ -26,6 +26,7 @@ class AppSelectDropdown<T> extends StatefulWidget {
     this.enabled = true,
     this.validator,
     this.reserveErrorSpace = true,
+    this.selectedLabelMaxLines = 1,
   });
 
   final List<AppSelectOption<T>> options;
@@ -36,6 +37,7 @@ class AppSelectDropdown<T> extends StatefulWidget {
   final bool enabled;
   final String? Function(T?)? validator;
   final bool reserveErrorSpace;
+  final int selectedLabelMaxLines;
 
   @override
   State<AppSelectDropdown<T>> createState() => _AppSelectDropdownState<T>();
@@ -163,9 +165,8 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
       options.isEmpty ? 1 : options.length,
       _menuMaxHeight,
     );
-    final offset = _openUpward
-        ? Offset(0, -height - 6)
-        : Offset(0, triggerHeight + 6);
+    final offset =
+        _openUpward ? Offset(0, -height - 6) : Offset(0, triggerHeight + 6);
 
     return Stack(
       children: [
@@ -321,9 +322,8 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                             ? LucideIcons.chevron_up
                             : LucideIcons.chevron_down,
                         size: 16,
-                        color: focused
-                            ? AppColors.primary
-                            : AppColors.textMuted,
+                        color:
+                            focused ? AppColors.primary : AppColors.textMuted,
                       ),
                       suffixIconConstraints: const BoxConstraints(
                         minWidth: 40,
@@ -343,7 +343,7 @@ class _AppSelectDropdownState<T> extends State<AppSelectDropdown<T>> {
                       focusNode: _focusNode,
                       child: Text(
                         selected?.label ?? '',
-                        maxLines: 1,
+                        maxLines: widget.selectedLabelMaxLines,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.english(
                           fontSize: 14,

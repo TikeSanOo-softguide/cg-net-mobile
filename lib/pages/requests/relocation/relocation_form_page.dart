@@ -367,6 +367,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
                                   'contact_phone',
                                   key: _phoneFieldKey,
                                 );
+                                _phoneFieldKey.currentState?.validate();
                               },
                             ),
                             const SizedBox(height: AppStyle.spaceXs),
@@ -418,6 +419,7 @@ class _RelocationFormPageState extends ConsumerState<RelocationFormPage>
                               prefixIcon: LucideIcons.notebook_pen,
                               maxLines: 2,
                               maxLength: 255,
+                              inputFormatters: [maxLengthLimiter(255)],
                               validator: _detailsError,
                               onChanged: (_) => clearApiFieldError(
                                 'details',
