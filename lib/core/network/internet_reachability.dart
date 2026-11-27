@@ -12,7 +12,7 @@ class ReachabilityTarget {
   final int port;
 }
 
-/// Opens a short socket to a public host. This does not call the CG-NET API.
+/// Opens a short socket to a public host. This does not call the Chen Guang API.
 abstract class InternetReachability {
   Future<Reachability> check();
 }
@@ -67,7 +67,7 @@ List<ReachabilityTarget> reachabilityTargets() {
   return publicReachabilityTargets;
 }
 
-/// CG-NET API host. Used only for backend availability, never for internet.
+/// Chen Guang API host. Used only for backend availability, never for internet.
 ReachabilityTarget? apiHostTarget() {
   final uri = Uri.tryParse(ApiEndpoints.baseUrl);
   if (uri == null || uri.host.isEmpty) return null;

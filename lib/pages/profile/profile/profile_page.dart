@@ -57,8 +57,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Future<void> _shareApp() async {
     await SharePlus.instance.share(
       ShareParams(
-        text: 'Download Yaung Ni Oo mobile app now! $_shareUrl',
-        subject: 'Share Yaung Ni Oo mobile app',
+        text: 'Download Chen Guang mobile app now! $_shareUrl',
+        subject: 'Share Chen Guang mobile app',
       ),
     );
   }

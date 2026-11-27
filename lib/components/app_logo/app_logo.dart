@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors/app_colors.dart';
 
-/// Shared CG-NET logo: original logo colors (no tint).
+/// Shared chen guang logo: original logo colors (no tint).
 ///
 /// The artwork is wider than tall, so [width]/[height] can be set when the
 /// surrounding surface should hug the mark instead of using a square box.

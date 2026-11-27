@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.cgnet" "\0"
-            VALUE "FileDescription", "cg_net_mobile" "\0"
+            VALUE "FileDescription", "Chen Guang" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "cg_net_mobile" "\0"
+            VALUE "InternalName", "ChenGuang" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.cgnet. All rights reserved." "\0"
-            VALUE "OriginalFilename", "cg_net_mobile.exe" "\0"
-            VALUE "ProductName", "cg_net_mobile" "\0"
+            VALUE "OriginalFilename", "ChenGuang.exe" "\0"
+            VALUE "ProductName", "Chen Guang" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_colors/app_colors.dart';
 
-/// Shared layout + type tokens for CG-NET UI.
+/// Shared layout + type tokens for Chen Guang UI.
 class AppStyle {
   AppStyle._();
 

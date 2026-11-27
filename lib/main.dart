@@ -90,7 +90,7 @@ class _CgNetAppState extends ConsumerState<CgNetApp>
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'YNO',
+      title: 'Chen Guang',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,

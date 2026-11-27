@@ -4,7 +4,7 @@ import 'dart:io';
 import 'internet_reachability.dart';
 import 'network_status.dart';
 
-/// Checks whether the CG-NET API host accepts a connection.
+/// Checks whether the Chen Guang API host accepts a connection.
 /// This result is not an internet status.
 abstract class BackendProbe {
   Future<BackendStatus> check();

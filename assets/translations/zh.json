@@ -1,5 +1,5 @@
 {
-  "app_name": "YNO",
+  "app_name": "ChenGuang",
   "common": {
     "continue": "继续",
     "next": "下一步",
@@ -653,6 +653,8 @@
     "minimum_version": "最低版本",
     "release_date": "发布日期",
     "release_notes": "版本说明",
+    "release_notes_empty_title": "暂无版本说明",
+    "release_notes_empty_desc": "有可用的版本说明时会显示在这里。",
     "force_update": "必须更新",
     "check_for_updates": "检查更新",
     "checking_for_updates": "正在检查...",

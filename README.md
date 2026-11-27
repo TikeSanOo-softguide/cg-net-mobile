@@ -1,6 +1,6 @@
-# CG Net Mobile
+# Chen Guang Mobile
 
-Customer app for CG-NET subscribers. The Android display name is YNO.
+Customer app for Chen Guang subscribers. The Android display name is Chen Guang.
 
 ## Stack
 

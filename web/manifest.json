@@ -1,11 +1,11 @@
 {
-    "name": "YNO",
-    "short_name": "YNO",
+    "name": "Chen Guang",
+    "short_name": "Chen Guang",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0100CA",
     "theme_color": "#0100CA",
-    "description": "A new Flutter project.",
+    "description": "Chen Guang mobile app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

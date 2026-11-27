@@ -182,7 +182,7 @@ class CommonAuthCard extends StatelessWidget {
   }
 }
 
-/// Shared auth shell — primary header + curved white sheet (no CG-NET label).
+/// Shared auth shell — primary header + curved white sheet (no Chen Guang label).
 class AuthBackgroundScaffold extends StatelessWidget {
   const AuthBackgroundScaffold({
     super.key,

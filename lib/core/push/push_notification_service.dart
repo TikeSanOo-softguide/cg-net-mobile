@@ -28,7 +28,7 @@ class PushNotificationService {
   /// Must match `default_notification_channel_id` in AndroidManifest.xml.
   static const _channel = AndroidNotificationChannel(
     'cg_net_default',
-    'CG-NET',
+    'Chen Guang',
     description: 'Announcements, promotions and account updates',
     importance: Importance.high,
   );

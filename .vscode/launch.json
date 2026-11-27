@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "cg_net_mobile (Chrome)",
+      "name": "Chen Guang (Chrome)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -13,7 +13,7 @@
       ]
     },
     {
-      "name": "cg_net_mobile (emulator)",
+      "name": "Chen Guang (emulator)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -22,7 +22,7 @@
       ]
     },
     {
-      "name": "cg_net_mobile",
+      "name": "Chen Guang",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",

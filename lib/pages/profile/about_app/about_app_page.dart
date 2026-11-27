@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../components/app_card/app_card.dart';
 import '../../../components/app_curved_scaffold/app_curved_scaffold.dart';
 import '../../../components/app_logo/app_logo.dart';
+import '../../../components/app_refresh_indicator/app_refresh_indicator.dart';
 import '../../../components/page_skeletons/about_skeleton.dart';
 import '../../../core/locale/app_locale_provider.dart';
 import '../../../core/theme/app_theme/app_theme.dart';
@@ -30,75 +31,64 @@ class AboutAppPage extends ConsumerWidget {
       showBack: true,
       body: SafeArea(
         top: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-          children: [
-            const _AboutLogo(),
-            const SizedBox(height: 20),
-            appVersion.when(
-              loading: () => const AboutVersionSkeleton(),
-              error: (error, _) => _LoadError(
-                message: error is ApiException
-                    ? apiErrorOrFallback(error)
-                    : 'profile.version_load_failed'.tr(),
-                onRetry: () => ref.refresh(aboutAppVersionProvider),
+        child: AppRefreshIndicator(
+          onRefresh: () => ref
+              .refresh(aboutAppVersionProvider.future)
+              .then<void>((_) {}),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            children: [
+              const _AboutLogo(),
+              const SizedBox(height: 20),
+              appVersion.when(
+                loading: () => const AboutVersionSkeleton(),
+                error: (error, _) => _LoadError(
+                  message: error is ApiException
+                      ? apiErrorOrFallback(error)
+                      : 'profile.version_load_failed'.tr(),
+                ),
+                data: (info) => _VersionContent(
+                  info: info,
+                  installedVersion: installedVersion.valueOrNull?.version,
+                  languageCode: languageCode,
+                ),
               ),
-              data: (info) => _VersionContent(
-                info: info,
-                installedVersion: installedVersion.valueOrNull?.version,
-                languageCode: languageCode,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'profile.icon_credits'.tr(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: InkWell(
-                onTap: () async {
-                  final uri = Uri.parse('https://www.flaticon.com/legal');
-                  await launchUrl(
-                    uri,
+              const SizedBox(height: 6),
+              AppCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                borderRadius: AppStyle.borderRadiusLg,
+                child: InkWell(
+                  onTap: () => launchUrl(
+                    Uri.parse('https://www.flaticon.com/legal'),
                     mode: LaunchMode.externalApplication,
-                  );
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(
-                        child: Text(
-                          'Flaticon - Receipt icons',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                decoration: TextDecoration.underline,
-                              ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('profile.icon_credits'.tr(),
+                                style: AppTheme.bodySecondary()),
+                            const SizedBox(height: 2),
+                            Text('Flaticon - Receipt icons',
+                                style: AppTheme.english(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  height: AppStyle.lineHeightBody,
+                                  letterSpacing: 0,
+                                )),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.open_in_new,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      Icon(Icons.open_in_new, size: 18, color: AppColors.primary),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -215,40 +205,79 @@ class _VersionContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        AppCard(
-          padding: const EdgeInsets.all(16),
-          borderRadius: AppStyle.borderRadiusLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'profile.release_notes'.tr(),
-                style: AppTheme.english(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  height: AppStyle.lineHeightTitle,
-                  letterSpacing: -0.15,
-                ),
-              ),
-              const SizedBox(height: 12),
-              for (var i = 0; i < notes.length; i++) ...[
-                if (i > 0) const SizedBox(height: 10),
+        if (notes.isEmpty)
+          const _EmptyReleaseNotes()
+        else
+          AppCard(
+            padding: const EdgeInsets.all(16),
+            borderRadius: AppStyle.borderRadiusLg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  notes[i],
+                  'profile.release_notes'.tr(),
                   style: AppTheme.english(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textSecondary,
-                    height: AppStyle.lineHeightBody,
-                    letterSpacing: 0,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    height: AppStyle.lineHeightTitle,
+                    letterSpacing: -0.15,
                   ),
                 ),
+                const SizedBox(height: 12),
+                for (var i = 0; i < notes.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  Text(
+                    notes[i],
+                    style: AppTheme.english(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
+                      height: AppStyle.lineHeightBody,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
       ],
+    );
+  }
+}
+
+class _EmptyReleaseNotes extends StatelessWidget {
+  const _EmptyReleaseNotes();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      elevated: false,
+      bordered: false,
+      padding: const EdgeInsets.all(AppStyle.spaceXxl),
+      child: Column(
+        children: [
+          const ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              Color(0xFFDA0C81),
+              BlendMode.srcIn,
+            ),
+            child: Icon(Icons.description_outlined, size: 36),
+          ),
+          const SizedBox(height: AppStyle.spaceMd),
+          Text(
+            'profile.release_notes_empty_title'.tr(),
+            style: AppTheme.sectionTitle(color: AppColors.primary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppStyle.spaceXs),
+          Text(
+            'profile.release_notes_empty_desc'.tr(),
+            textAlign: TextAlign.center,
+            style: AppTheme.bodySecondary(),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -320,24 +349,24 @@ class _StatusBadge extends StatelessWidget {
 }
 
 class _LoadError extends StatelessWidget {
-  const _LoadError({required this.message, required this.onRetry});
+  const _LoadError({required this.message});
 
   final String message;
-  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(20),
-      borderRadius: AppStyle.borderRadiusLg,
+      elevated: false,
+      bordered: false,
+      padding: const EdgeInsets.all(AppStyle.spaceXxl),
       child: Column(
         children: [
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: Text('common.retry'.tr()),
+          const Icon(Icons.info_outline, size: 36, color: Color(0xFFDA0C81)),
+          const SizedBox(height: AppStyle.spaceMd),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTheme.sectionTitle(color: AppColors.primary),
           ),
         ],
       ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// CG-NET brand color tokens.
+/// Chen Guang brand color tokens.
 class AppColors {
   AppColors._();
 

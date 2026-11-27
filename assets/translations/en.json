@@ -1,5 +1,5 @@
 {
-  "app_name": "YNO",
+  "app_name": "ChenGuang",
   "common": {
     "continue": "Continue",
     "next": "Next",
@@ -119,7 +119,7 @@
   },
   "terms": {
     "title": "Terms & Conditions",
-    "body": "By using the CG-NET mobile app, you agree to use our internet services lawfully and keep your account credentials secure.\n\nYou are responsible for activity under your account. CG-NET may update these terms to improve service quality, security, and compliance.\n\nWe collect only the information needed to provide connectivity, billing, and support. Your data is handled according to our privacy practices.\n\nService availability depends on network coverage and plan status. For support, contact CG-NET Help from the app anytime."
+    "body": "By using the Chen Guang mobile app, you agree to use our internet services lawfully and keep your account credentials secure.\n\nYou are responsible for activity under your account. Chen Guang may update these terms to improve service quality, security, and compliance.\n\nWe collect only the information needed to provide connectivity, billing, and support. Your data is handled according to our privacy practices.\n\nService availability depends on network coverage and plan status. For support, contact Chen Guang Help from the app anytime."
   },
   "otp": {
     "title": "Verify With OTP",
@@ -581,7 +581,7 @@
     "msg6_detail": "Celebrate with a limited-time discount on selected 6-month plans.\n\nSave on prepaid packages while the festival offer is active. Discounts apply automatically at checkout for eligible plans.\n\nTerms:\n• One promotional purchase per account\n• Cannot be combined with other coupons\n• Offer may end without prior notice when stock or campaign ends\n\nVisit Packages → See all to review eligible plans and buy now.",
     "msg7_title": "Package purchase successful",
     "msg7_body": "Your package purchase completed. The plan is now active on your account.",
-    "msg7_detail": "Your package purchase was successful.\n\nThe selected plan is now active. You can review package details anytime from Packages.\n\nIf auto-renew is on, the plan will renew when it ends using your available points.\n\nThank you for choosing CG-NET.",
+    "msg7_detail": "Your package purchase was successful.\n\nThe selected plan is now active. You can review package details anytime from Packages.\n\nIf auto-renew is on, the plan will renew when it ends using your available points.\n\nThank you for choosing Chen Guang.",
     "msg8_title": "Package purchase failed",
     "msg8_body": "Your package purchase could not be completed. Please try again.",
     "msg8_detail": "Your package purchase did not complete.\n\nPossible reasons:\n• Incorrect password\n• Insufficient points\n• Temporary network issue\n\nPlease try again from Packages. If the problem continues, contact Support from the Help chat."
@@ -656,6 +656,8 @@
     "minimum_version": "Minimum version",
     "release_date": "Release date",
     "release_notes": "Release notes",
+    "release_notes_empty_title": "No release notes yet",
+    "release_notes_empty_desc": "Release notes will appear here when available.",
     "force_update": "Required update",
     "check_for_updates": "Check for updates",
     "checking_for_updates": "Checking...",

@@ -5,7 +5,7 @@ enum NetworkStatus {
   offline,
 }
 
-/// Whether the CG-NET API host itself can accept a connection.
+/// Whether the Chen Guang API host itself can accept a connection.
 enum BackendStatus {
   unknown,
   available,

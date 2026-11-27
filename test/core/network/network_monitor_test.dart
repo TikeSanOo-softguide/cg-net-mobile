@@ -125,7 +125,7 @@ void main() {
     expect(notices, 1);
   });
 
-  test('public targets are not the CG-NET API host', () {
+  test('public targets are not the Chen Guang API host', () {
     expect(
       publicReachabilityTargets.any((target) => target.host == '192.168.100.178'),
       isFalse,

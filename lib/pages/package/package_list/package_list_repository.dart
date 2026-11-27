@@ -11,7 +11,7 @@ class PackageListRepository {
 
   final Dio _dio;
 
-  /// CG-NET product list from `GET /web-app/cg-net-products`.
+  /// Chen Guang product list from `GET /web-app/cg-net-products`.
   Future<List<PackageModel>> fetchPackages() async {
     try {
       final response = await _dio.get<dynamic>(ApiEndpoints.cgNetProducts);
