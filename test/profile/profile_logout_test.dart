@@ -78,12 +78,11 @@ class _TestProfileRepository implements ProfileRepository {
 }
 
 void main() {
-  test('keeps local session and reports offline logout failure', () async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    SharedPreferences.setMockInitialValues({});
-    final preferences = await SharedPreferences.getInstance();
-    const error = ApiException(ApiFailure.offline);
-    final events = <String>[];
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('keeps the local session when the logout API fails', () async {
+    const error = ApiException(ApiFailure.server);
+    final preferences = await _mockSharedPreferences();
     final storage = _TestSecureStorage();
     final push = _TestPushNotificationService(events);
     final container = ProviderContainer(
@@ -121,10 +120,7 @@ void main() {
   });
 
   test('clears the local session after the logout API succeeds', () async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    SharedPreferences.setMockInitialValues({});
-    final preferences = await SharedPreferences.getInstance();
-    final events = <String>[];
+    final preferences = await _mockSharedPreferences();
     final storage = _TestSecureStorage();
     final push = _TestPushNotificationService(events);
     final container = ProviderContainer(
@@ -201,4 +197,9 @@ void main() {
     expect(push.syncCalls, 0);
     expect(events, ['unregister', 'logout']);
   });
+}
+
+Future<SharedPreferences> _mockSharedPreferences() async {
+  SharedPreferences.setMockInitialValues({});
+  return SharedPreferences.getInstance();
 }

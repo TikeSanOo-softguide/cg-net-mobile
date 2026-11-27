@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cg_net_mobile/core/storage/local_prefs/local_prefs.dart';
 import 'package:cg_net_mobile/core/storage/secure_storage/secure_storage.dart';
 import 'package:cg_net_mobile/core/storage/local_prefs/local_prefs.dart';
 import 'package:cg_net_mobile/data/profile/profile_repository.dart';
@@ -90,6 +91,8 @@ class _ProfileAdapter implements HttpClientAdapter {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('UserProfileModel Tests', () {
     test('UserProfileModel.fromJson parses profile correctly', () {
       final json = {
@@ -266,9 +269,7 @@ void main() {
 
   group('EditProfileController Tests', () {
     test('save updates profile state on success', () async {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      SharedPreferences.setMockInitialValues({});
-      final preferences = await SharedPreferences.getInstance();
+      final preferences = await _mockSharedPreferences();
       final adapter = _ProfileAdapter(
         responseBody: jsonEncode({
           'data': {
@@ -303,9 +304,7 @@ void main() {
     });
 
     test('save optimistically updates profile on server error', () async {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      SharedPreferences.setMockInitialValues({});
-      final preferences = await SharedPreferences.getInstance();
+      final preferences = await _mockSharedPreferences();
       final adapter = _ProfileAdapter(statusCode: 500);
       final dio = Dio()..httpClientAdapter = adapter;
       final storage = _MockSecureStorage();
@@ -329,4 +328,9 @@ void main() {
       expect(profile.fullName, 'Optimistic Name');
     });
   });
+}
+
+Future<SharedPreferences> _mockSharedPreferences() async {
+  SharedPreferences.setMockInitialValues({});
+  return SharedPreferences.getInstance();
 }

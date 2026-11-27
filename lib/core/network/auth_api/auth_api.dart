@@ -7,6 +7,7 @@ import '../api_exception.dart';
 import '../auth_interceptor/auth_interceptor.dart';
 import '../dio_client/dio_client.dart';
 import '../get_retry_interceptor.dart';
+import '../message_codes.dart';
 
 class OtpChallengeResult {
   const OtpChallengeResult({
@@ -103,11 +104,14 @@ class AuthApi {
   final Dio _dio;
   final String Function() _languageCode;
 
-  Future<AccountSessionCheckResult> checkPhoneSession(String phone) async {
+  Future<AccountSessionCheckResult> checkPhoneSession(
+    String phone, {
+    required String deviceId,
+  }) async {
     try {
       final response = await _dio.post(
         ApiEndpoints.checkSession,
-        data: {'phone': phone},
+        data: {'phone': phone, 'device_id': deviceId},
       );
       final raw = response.data;
       if (raw is! Map) {
@@ -117,8 +121,35 @@ class AuthApi {
           raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw);
       return AccountSessionCheckResult.fromJson(data);
     } on DioException catch (error) {
+      final sessionConflict = _sessionConflictFrom(error);
+      if (sessionConflict != null) return sessionConflict;
       throw _otpRequestException(error);
     }
+  }
+
+  static AccountSessionCheckResult? _sessionConflictFrom(
+    DioException error,
+  ) {
+    if (error.response?.statusCode != 403) return null;
+    final raw = error.response?.data;
+    if (raw is! Map) return null;
+
+    final nested = raw['data'];
+    final nestedData = nested is Map ? nested : null;
+    final codes =
+        [raw['code'], nestedData?['code']].map((code) => code?.toString());
+    if (!codes.any(MessageCodes.isAlreadySignedIn)) {
+      return null;
+    }
+
+    final rawDeviceName = nestedData?['device_name'] ?? raw['device_name'];
+    final deviceName = rawDeviceName?.toString().trim();
+    return AccountSessionCheckResult(
+      showAlert: true,
+      deviceName: deviceName == null || deviceName.isEmpty ? null : deviceName,
+      code: MessageCodes.authAlreadySignedIn,
+      level: 'warning',
+    );
   }
 
   Future<OtpChallengeResult> requestOtp(String phone) async {
@@ -196,6 +227,7 @@ class AuthApi {
   Future<String> loginWithPassword({
     required String verificationToken,
     required String password,
+    required String deviceId,
   }) async {
     final response = await _send(
       () => _dio.post(
@@ -203,19 +235,26 @@ class AuthApi {
         data: {
           'verification_token': verificationToken,
           'password': password,
+          'device_id': deviceId,
           'lang': _languageCode(),
           'platform':
               defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
         },
       ),
     );
-    return response.data['token'] as String;
+    final raw = response.data;
+    final token = raw is Map ? raw['token']?.toString() : null;
+    if (token == null || token.isEmpty) {
+      throw const ApiException(ApiFailure.unknown);
+    }
+    return token;
   }
 
   Future<RegistrationResult> completeRegistration({
     required String verificationToken,
     required String name,
     required String password,
+    required String deviceId,
   }) async {
     final response = await _send(
       () => _dio.post(
@@ -224,6 +263,7 @@ class AuthApi {
           'verification_token': verificationToken,
           'name': name,
           'password': password,
+          'device_id': deviceId,
           'password_confirmation': password,
           'lang': _languageCode(),
           'platform':

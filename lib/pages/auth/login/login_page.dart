@@ -141,6 +141,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final error = ref.read(loginControllerProvider).error;
     if (error == null) return;
 
+    if (error.code == MessageCodes.authAlreadySignedIn) {
+      await showApiMessageModal(context, error);
+      return;
+    }
+
     if (error.code == MessageCodes.userDeactivated ||
         error.code == MessageCodes.userSuspended) {
       await showAppFailureModal(
@@ -226,7 +231,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             textInputAction: TextInputAction.done,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(12),
+              LengthLimitingTextInputFormatter(15),
             ],
             prefix: Padding(
               padding: const EdgeInsets.only(left: 12, right: 6),

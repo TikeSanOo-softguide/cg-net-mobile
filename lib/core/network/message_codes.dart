@@ -207,4 +207,9 @@ class MessageCodes {
     if (code == null || code.trim().isEmpty) return false;
     return known.contains(code.trim().toUpperCase());
   }
+
+  static bool isAlreadySignedIn(String? code) {
+    final normalized = code?.trim().toUpperCase();
+    return normalized == authAlreadySignedIn;
+  }
 }
