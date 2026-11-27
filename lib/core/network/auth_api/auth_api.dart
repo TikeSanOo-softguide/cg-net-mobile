@@ -273,7 +273,12 @@ class AuthApi {
         ApiEndpoints.profile,
         options: Options(
           receiveTimeout: const Duration(seconds: 5),
-          extra: {GetRetryInterceptor.skipKey: true},
+          extra: {
+            GetRetryInterceptor.skipKey: true,
+            // This request validates the stored token during cold start,
+            // before SessionClock is marked authenticated.
+            AuthInterceptor.publicKey: true,
+          },
         ),
       ),
     );

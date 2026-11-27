@@ -29,22 +29,35 @@ class _TestSecureStorage implements SecureStorage {
 }
 
 class _TestAuthApi extends AuthApi {
-  _TestAuthApi(this.error) : super(Dio(), () => 'en');
+  _TestAuthApi(this.error, this.events) : super(Dio(), () => 'en');
 
   final Object? error;
+  final List<String> events;
 
   @override
   Future<void> logout() async {
+    events.add('logout');
     if (error != null) throw error!;
   }
 }
 
 class _TestPushNotificationService implements PushNotificationService {
+  _TestPushNotificationService(this.events);
+
+  final List<String> events;
   int unregisterCalls = 0;
+  int syncCalls = 0;
 
   @override
   Future<void> unregister() async {
     unregisterCalls++;
+    events.add('unregister');
+  }
+
+  @override
+  Future<void> syncToken() async {
+    syncCalls++;
+    events.add('sync');
   }
 
   @override
@@ -65,16 +78,21 @@ class _TestProfileRepository implements ProfileRepository {
 }
 
 void main() {
-  test('keeps the local session when the logout API fails', () async {
-    const error = ApiException(ApiFailure.server);
+  test('keeps local session and reports offline logout failure', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    const error = ApiException(ApiFailure.offline);
+    final events = <String>[];
     final storage = _TestSecureStorage();
-    final push = _TestPushNotificationService();
+    final push = _TestPushNotificationService(events);
     final container = ProviderContainer(
       overrides: [
         secureStorageProvider.overrideWithValue(storage),
-        authApiProvider.overrideWithValue(_TestAuthApi(error)),
+        authApiProvider.overrideWithValue(_TestAuthApi(error, events)),
         pushNotificationServiceProvider.overrideWithValue(push),
         profileRepositoryProvider.overrideWithValue(_TestProfileRepository()),
+        sharedPreferencesProvider.overrideWithValue(preferences),
       ],
     );
     addTearDown(container.dispose);
@@ -93,20 +111,26 @@ void main() {
     await expectLater(controller.logout(), throwsA(same(error)));
 
     expect(storage.clearTokenCalls, 0);
-    expect(push.unregisterCalls, 0);
-    expect(container.read(profileControllerProvider).fullName, 'Test User');
+    expect(push.unregisterCalls, 1);
+    expect(
+      container.read(profileControllerProvider).fullName,
+      'Test User',
+    );
+    expect(push.syncCalls, 1);
+    expect(events, ['unregister', 'logout', 'sync']);
   });
 
   test('clears the local session after the logout API succeeds', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();
+    final events = <String>[];
     final storage = _TestSecureStorage();
-    final push = _TestPushNotificationService();
+    final push = _TestPushNotificationService(events);
     final container = ProviderContainer(
       overrides: [
         secureStorageProvider.overrideWithValue(storage),
-        authApiProvider.overrideWithValue(_TestAuthApi(null)),
+        authApiProvider.overrideWithValue(_TestAuthApi(null, events)),
         pushNotificationServiceProvider.overrideWithValue(push),
         profileRepositoryProvider.overrideWithValue(_TestProfileRepository()),
         sharedPreferencesProvider.overrideWithValue(preferences),
@@ -124,7 +148,8 @@ void main() {
           username: 'test',
         ),
       );
-    container.read(boundBroadbandProvider.notifier).state = const BoundBroadband(
+    container.read(boundBroadbandProvider.notifier).state =
+        const BoundBroadband(
       account: '456',
       serviceType: 'CG',
     );
@@ -135,5 +160,45 @@ void main() {
     expect(push.unregisterCalls, 1);
     expect(container.read(profileControllerProvider).fullName, isEmpty);
     expect(container.read(boundBroadbandProvider), isNull);
+    expect(events, ['unregister', 'logout']);
+  });
+
+  test('clears the local session after the backend rejects the session',
+      () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    const error = ApiException(ApiFailure.unauthorized);
+    final events = <String>[];
+    final storage = _TestSecureStorage();
+    final push = _TestPushNotificationService(events);
+    final container = ProviderContainer(
+      overrides: [
+        secureStorageProvider.overrideWithValue(storage),
+        authApiProvider.overrideWithValue(_TestAuthApi(error, events)),
+        pushNotificationServiceProvider.overrideWithValue(push),
+        profileRepositoryProvider.overrideWithValue(_TestProfileRepository()),
+        sharedPreferencesProvider.overrideWithValue(preferences),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final controller = container.read(profileControllerProvider.notifier)
+      ..updateProfile(
+        const UserProfileModel(
+          id: '1',
+          fullName: 'Test User',
+          phone: '123',
+          accountNumber: '456',
+          username: 'test',
+        ),
+      );
+
+    await controller.logout();
+
+    expect(storage.clearTokenCalls, 1);
+    expect(container.read(profileControllerProvider).fullName, isEmpty);
+    expect(push.syncCalls, 0);
+    expect(events, ['unregister', 'logout']);
   });
 }

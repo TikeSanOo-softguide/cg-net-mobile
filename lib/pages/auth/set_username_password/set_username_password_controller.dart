@@ -45,7 +45,7 @@ class SetUsernamePasswordController
         password: password,
       );
       await _secureStorage.writeToken(result.token);
-      _push.syncToken();
+      _push.activateAuthenticatedSession();
       if (!mounted) return result;
       state = state.copyWith(isLoading: false);
       return result;

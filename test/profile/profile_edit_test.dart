@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cg_net_mobile/core/storage/secure_storage/secure_storage.dart';
+import 'package:cg_net_mobile/core/storage/local_prefs/local_prefs.dart';
 import 'package:cg_net_mobile/data/profile/profile_repository.dart';
 import 'package:cg_net_mobile/models/user_model/user_model.dart';
 import 'package:cg_net_mobile/pages/profile/edit_profile/edit_profile_controller.dart';
@@ -9,6 +10,7 @@ import 'package:cg_net_mobile/pages/profile/profile/profile_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockSecureStorage implements SecureStorage {
   String? _cachedProfile;
@@ -264,6 +266,9 @@ void main() {
 
   group('EditProfileController Tests', () {
     test('save updates profile state on success', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
       final adapter = _ProfileAdapter(
         responseBody: jsonEncode({
           'data': {
@@ -280,6 +285,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          sharedPreferencesProvider.overrideWithValue(preferences),
           profileRepositoryProvider.overrideWithValue(
             ProfileRepository(dio, storage),
           ),
@@ -297,12 +303,16 @@ void main() {
     });
 
     test('save optimistically updates profile on server error', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
       final adapter = _ProfileAdapter(statusCode: 500);
       final dio = Dio()..httpClientAdapter = adapter;
       final storage = _MockSecureStorage();
 
       final container = ProviderContainer(
         overrides: [
+          sharedPreferencesProvider.overrideWithValue(preferences),
           profileRepositoryProvider.overrideWithValue(
             ProfileRepository(dio, storage),
           ),
