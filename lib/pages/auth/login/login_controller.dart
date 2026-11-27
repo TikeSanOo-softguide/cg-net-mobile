@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
+import '../../../core/utils/device_id_service.dart';
 import '../../../core/utils/phone_number.dart';
 
 enum CountryDial {
@@ -71,9 +73,11 @@ class LoginSessionCheck {
 }
 
 class LoginController extends StateNotifier<LoginState> {
-  LoginController(this._authApi) : super(const LoginState());
+  LoginController(this._authApi, this._deviceIdService)
+      : super(const LoginState());
 
   final AuthApi _authApi;
+  final DeviceIdService _deviceIdService;
   String? challengeId;
   String? debugOtp;
   int resendAfter = 60;
@@ -87,11 +91,27 @@ class LoginController extends StateNotifier<LoginState> {
       dialCode: state.country.dialCode,
       localInput: rawPhone,
     );
-    if (apiPhone == null || state.isLoading) return null;
+    if (state.isLoading) return null;
+    if (apiPhone == null) {
+      state = state.copyWith(error: const ApiException(ApiFailure.validation));
+      return null;
+    }
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final result = await _authApi.checkPhoneSession(apiPhone);
+      final deviceId = await _deviceIdService.getDeviceId();
+      final result = await _authApi.checkPhoneSession(
+        apiPhone,
+        deviceId: deviceId,
+      );
+      if (kDebugMode) {
+        final deviceIdType = deviceId.split(':').first;
+        debugPrint(
+          'device_id=$deviceIdType:<redacted> '
+          'showAlert=${result.showAlert} '
+          'code=${result.code} device=${result.deviceName}',
+        );
+      }
       if (!mounted) return null;
       state = state.copyWith(isLoading: false);
       return LoginSessionCheck(
@@ -101,6 +121,13 @@ class LoginController extends StateNotifier<LoginState> {
         code: result.code,
         level: result.level,
       );
+    } on DeviceIdException {
+      if (!mounted) return null;
+      state = state.copyWith(
+        isLoading: false,
+        error: const ApiException(ApiFailure.unknown),
+      );
+      return null;
     } on ApiException catch (error) {
       if (!mounted) return null;
       state = state.copyWith(
@@ -148,5 +175,8 @@ class LoginController extends StateNotifier<LoginState> {
 
 final loginControllerProvider =
     StateNotifierProvider<LoginController, LoginState>((ref) {
-  return LoginController(ref.watch(authApiProvider));
+  return LoginController(
+    ref.watch(authApiProvider),
+    ref.watch(deviceIdServiceProvider),
+  );
 });

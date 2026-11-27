@@ -6,6 +6,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/auth_api/auth_api.dart';
 import '../../../core/push/push_notification_service.dart';
 import '../../../core/storage/secure_storage/secure_storage.dart';
+import '../../../core/utils/device_id_service.dart';
 
 class PasswordLoginState {
   const PasswordLoginState({this.isLoading = false, this.error});
@@ -26,12 +27,17 @@ class PasswordLoginState {
 }
 
 class PasswordLoginController extends StateNotifier<PasswordLoginState> {
-  PasswordLoginController(this._authApi, this._secureStorage, this._push)
-      : super(const PasswordLoginState());
+  PasswordLoginController(
+    this._authApi,
+    this._secureStorage,
+    this._push,
+    this._deviceIdService,
+  ) : super(const PasswordLoginState());
 
   final AuthApi _authApi;
   final SecureStorage _secureStorage;
   final PushNotificationService _push;
+  final DeviceIdService _deviceIdService;
 
   Future<bool> submit({
     required String verificationToken,
@@ -39,14 +45,22 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      final deviceId = await _deviceIdService.getDeviceId();
       final token = await _authApi.loginWithPassword(
         verificationToken: verificationToken,
         password: password,
+        deviceId: deviceId,
       );
       await _secureStorage.writeToken(token);
       _push.activateAuthenticatedSession();
       if (!mounted) return true;
       return true;
+    } on DeviceIdException {
+      if (!mounted) return false;
+      state = state.copyWith(
+        error: const ApiException(ApiFailure.unknown),
+      );
+      return false;
     } on ApiException catch (error) {
       if (!mounted) return false;
       state = state.copyWith(
@@ -72,5 +86,6 @@ final passwordLoginControllerProvider =
     ref.watch(authApiProvider),
     ref.watch(secureStorageProvider),
     ref.watch(pushNotificationServiceProvider),
+    ref.watch(deviceIdServiceProvider),
   );
 });

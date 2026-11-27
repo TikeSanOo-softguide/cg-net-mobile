@@ -1,5 +1,7 @@
 import 'package:cg_net_mobile/core/network/api_endpoints/api_endpoints.dart';
+import 'package:cg_net_mobile/core/network/api_exception.dart';
 import 'package:cg_net_mobile/core/network/auth_api/auth_api.dart';
+import 'package:cg_net_mobile/core/network/message_codes.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,16 +15,20 @@ void main() {
       verificationToken: 'verification-token',
       name: 'new_user',
       password: '123456',
+      deviceId: 'android:test-device',
     );
     await api.loginWithPassword(
       verificationToken: 'verification-token',
       password: '123456',
+      deviceId: 'android:test-device',
     );
 
     expect(requests[0].path, ApiEndpoints.completeRegistration);
     expect(requests[0].data['lang'], 'my');
+    expect(requests[0].data['device_id'], 'android:test-device');
     expect(requests[1].path, ApiEndpoints.login);
     expect(requests[1].data['lang'], 'my');
+    expect(requests[1].data['device_id'], 'android:test-device');
   });
 
   test('updates an existing user language using PATCH', () async {
@@ -48,12 +54,18 @@ void main() {
       () => 'en',
     );
 
-    final result = await api.checkPhoneSession('+959123456789');
+    final result = await api.checkPhoneSession(
+      '+959123456789',
+      deviceId: 'android:test-device',
+    );
 
     expect(requests.single.method, 'POST');
     expect(ApiEndpoints.checkSession, '/auth/session/check');
     expect(requests.single.uri.path, '/api/auth/session/check');
-    expect(requests.single.data, {'phone': '+959123456789'});
+    expect(requests.single.data, {
+      'phone': '+959123456789',
+      'device_id': 'android:test-device',
+    });
     expect(result.showAlert, isTrue);
     expect(result.deviceName, isNull);
   });
@@ -72,7 +84,10 @@ void main() {
       () => 'en',
     );
 
-    final result = await api.checkPhoneSession('+959123456789');
+    final result = await api.checkPhoneSession(
+      '+959123456789',
+      deviceId: 'android:test-device',
+    );
 
     expect(result.showAlert, isTrue);
     expect(result.deviceName, 'Samsung SM-A155F');
@@ -89,10 +104,76 @@ void main() {
       () => 'en',
     );
 
-    final result = await api.checkPhoneSession('+959123456789');
+    final result = await api.checkPhoneSession(
+      '+959123456789',
+      deviceId: 'android:test-device',
+    );
     expect(result.showAlert, isFalse);
     expect(result.showAlert, isFalse);
   });
+
+  test('maps a 403 with the signed-in code to the existing warning', () async {
+    final result = await _checkSession403({
+      'code': MessageCodes.authAlreadySignedIn,
+      'device_name': 'Samsung SM-A155F',
+    });
+
+    expect(result.showAlert, isTrue);
+    expect(result.deviceName, 'Samsung SM-A155F');
+    expect(result.code, MessageCodes.authAlreadySignedIn);
+    expect(result.level, 'warning');
+  });
+
+  test('does not map an unrecognized 403 code to the signed-in warning',
+      () async {
+    await expectLater(
+      _checkSession403({'code': MessageCodes.authRegistrationInUse}),
+      throwsA(isA<ApiException>()),
+    );
+  });
+
+  test('reads a session conflict code from the Laravel data envelope',
+      () async {
+    final result = await _checkSession403({
+      'code': 'MSG-SYS-001',
+      'data': {
+        'code': MessageCodes.authAlreadySignedIn,
+        'device_name': 'Samsung SM-A155F',
+      },
+    });
+
+    expect(result.showAlert, isTrue);
+    expect(result.deviceName, 'Samsung SM-A155F');
+  });
+}
+
+Future<AccountSessionCheckResult> _checkSession403(
+  Map<String, dynamic> responseData,
+) async {
+  final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        handler.reject(
+          DioException(
+            requestOptions: options,
+            response: Response<dynamic>(
+              requestOptions: options,
+              statusCode: 403,
+              data: responseData,
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+      },
+    ),
+  );
+  final api = AuthApi(dio, () => 'en');
+
+  return api.checkPhoneSession(
+    '+959123456789',
+    deviceId: 'android:other-device',
+  );
 }
 
 Dio _recordingDio(
